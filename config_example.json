@@ -1,0 +1,22 @@
+{
+    "okapis": {
+        "folio": {
+            "url": "https://folio-release-okapi.aws.indexdata.com",
+            "tenant": "diku",
+            "user": "diku_admin",
+            "password": "password_goes_here",
+            "extractDir": "/var/lib/ldp/extract/"
+        }
+    },
+    "databases": {
+        "ldpdemo": {
+            "database": "ldp",
+            "type": "postgresql",
+            "host": "ldp.indexdata.com",
+            "port": "5432",
+            "user": "ldpadmin",
+            "password": "password_goes_here"
+        }
+    }
+}
+

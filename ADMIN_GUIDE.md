@@ -1,0 +1,321 @@
+LDP Admin Guide
+===============
+
+##### Contents  
+1\. System requirements  
+2\. Installing the software  
+3\. Creating the LDP database  
+4\. Configuration file  
+5\. Loading data into the database  
+6\. Anonymization of personal data  
+7\. Loading data from files (for testing only)  
+8\. Disabling database TLS/SSL (for testing only)  
+9\. Reporting bugs and feature requests
+
+
+1\. System requirements
+-----------------------
+
+### Software
+
+* Linux
+* [PostgreSQL](https://www.postgresql.org/) 11.5 or later; or
+  [Amazon Redshift](https://aws.amazon.com/redshift/) 1.0.8995 or later
+* To build the LDP software from source code:
+  * [CMake](https://cmake.org/) 3.13.4 or later
+  * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
+  * [libpq](https://www.postgresql.org/) 11.5 or later
+  * [libcurl](https://curl.haxx.se/) 7.64.0 or later
+  * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
+
+### Hardware
+
+The LDP is designed to be performant on low cost hardware, and in most
+cases it should run well with the following minimum requirements:
+
+* Database
+  * Memory: 1 GB
+  * Storage: 320 GB HDD
+* LDP software (data loader)
+  * Memory: 100 MB
+  * Storage: 320 GB HDD
+
+For large libraries, or if very high performance is desired, CPU and
+memory can be increased as needed.  Alternatively, Redshift can be used
+instead of PostgreSQL for significantly higher performance and
+scalability.  The storage capacity also can be increased as needed.
+
+
+2\. Installing the software
+---------------------------
+
+### Before installation
+
+The software dependencies required for building the LDP software can be
+installed via package manager in many recent versions of Linux.
+
+To install them in Debian 10:
+
+```shell
+$ sudo apt install cmake g++ git libcurl4-openssl-dev libpq-dev \
+      postgresql-server-dev-all rapidjson-dev
+```
+
+The LDP software can be used on macOS for testing or development.  The
+build dependencies can be installed using [Homebrew](https://brew.sh/):
+
+```shell
+$ brew install cmake postgresql rapidjson
+```
+
+### LDP software releases
+
+LDP releases use version numbers in the form, *a*.*b*.*c*, where *a*.*b*
+is the release version and *c* indicates bug fixes.  For example,
+suppose that LDP 1.3 is released.  The first version of the 1.3 release
+will be 1.3.0.  Any subsequent versions of the release, for example
+1.3.1, 1.3.2, etc., will generally contain only bug fixes.  The next
+version to include new features will be the 1.4 release (1.4.0).
+
+In the source code repository there are three main branches:
+
+* `master` is the latest release.  This is the version that most people
+  should use.
+
+* `stable` is the branch that releases are made from.  It contains
+  recently added features that have had some testing.
+
+* `current` is for active development and tends to be unstable.  This is
+  where new features are first added.
+
+The following build instructions use the `master` branch.
+
+### Building the software
+
+To build the latest release of the LDP software:
+
+```shell
+$ git clone https://github.com/folio-org/ldp.git
+$ cd ldp/
+$ cmake .
+$ make
+```
+
+The compiled executable file `ldp` should appear in `ldp/src/`:
+
+```shell
+$ cd src/
+$ ./ldp --help
+```
+
+
+3\. Creating the LDP database
+-----------------------------
+
+Before using the LDP software, we need a database to load data into.
+Two database users are also required: `ldpadmin`, an administrator
+account, and `ldp`, a normal user of the database.  It is also a good
+idea to restrict access permissions.
+
+With PostgreSQL, for example, this can be done with:
+
+```shell
+$ createuser ldpadmin --username=<admin_user> --pwprompt
+$ createuser ldp --username=<admin_user> --pwprompt
+$ createdb ldp --username=<admin_user> --owner=ldpadmin
+$ psql ldp --username=<admin_user> --single-transaction \
+      --command="REVOKE ALL ON SCHEMA public FROM public;" \
+      --command="GRANT ALL ON SCHEMA public TO ldpadmin;" \
+      --command="GRANT USAGE ON SCHEMA public TO ldp;"
+```
+
+Additional command line options may be required to specify the database
+host, port, etc.
+
+
+4\. Configuration file
+----------------------
+
+The LDP software also needs a configuration file that looks something
+like:
+
+```
+{
+    "okapis": {
+        "folio": {
+            "url": "https://folio-snapshot-okapi.aws.indexdata.com",
+            "tenant": "diku",
+            "user": "diku_admin",
+            "password": "(Okapi password here)",
+            "extractDir": "/var/lib/ldp/extract/"
+        }
+    },
+    "databases": {
+        "ldpdemo": {
+            "database": "ldp",
+            "type": "postgresql",
+            "host": "ldp.indexdata.com",
+            "port": "5432",
+            "user": "ldpadmin",
+            "password": "(database password here)"
+        }
+    }
+}
+```
+
+This file defines parameters for connecting to Okapi and to the LDP
+database.  Please see the next section for how the parameters are used.
+
+The LDP software looks for the configuration file in a location
+specified by the `LDPCONFIG` environment variable, e.g.:
+
+```shell
+$ export LDPCONFIG=/etc/ldp/ldp.conf
+```
+
+The location also can be specified using the command line option
+`--config`:
+
+```shell
+$ ldp --config /etc/ldp/ldp.conf  ( etc. )
+```
+
+
+5\. Loading data into the database
+----------------------------------
+
+The LDP loader is intended to be run once per day, at a time of day when
+usage is low, in order to refresh the database with new data from Okapi.
+
+To extract data from Okapi and load it into the LDP database:
+```shell
+$ ldp --etl --extract folio --load ldpdemo -v
+```
+
+The `--etl` command line option is used to run "extract-transform-load"
+which is the data loading process.
+
+The `--extract` option specifies the name of a section under `okapis` in
+the LDP configuration file.  This section should provide connection
+details for Okapi, as well as a temporary directory (`extractDir`) where
+extracted files can be written.
+
+The `--load` option works in the same way to specify a section under
+`databases` in the configuration file that provides connection details
+for the LDP database where data will be loaded.
+
+The `-v` option enables verbose output.  For even more verbose output,
+the `--debug` option can be used to see commands that are sent to the
+database when loading data, among other details.  The `--debug` option
+can generate extremely large output, and for this reason it is best used
+when loading relatively small data sets.
+
+Another option that is available to assist with debugging problems is
+`--savetemps` (used together with `--unsafe`), which tells the loader
+not to delete temporary files that store extracted data.  These files
+are not anonymized and may contain personal data.
+
+Note that some of the final stages of the loading process involve schema
+changes and may interrupt any queries that are running at the same time.
+
+If the loading process fails for some reason, it generally leaves the
+database unchanged.  Once the problem has been addressed, the loader can
+simply be started again.
+
+
+6\. Anonymization of personal data
+----------------------------------
+
+By default, the LDP loader tries to "anonymize" personal data that it
+extracts from Okapi by deleting values in user data from interface
+`/users`, except for the following root-level fields:
+
+* `id`
+* `active`
+* `type`
+* `patronGroup`
+* `enrollmentDate`
+* `expirationDate`
+* `meta`
+* `proxyFor`
+* `createdDate`
+* `updatedDate`
+* `metadata`
+* `tags`
+
+Note: We also plan to anonymize the user ID field, `id`, in the near
+future.
+
+There is no need to do anything to enable these anonymizations; they are
+enabled unless the LDP loader is otherwise configured.
+
+<!--
+If it should be necessary to disable anonymization, this can be done by
+setting the `disable_anonymization` parameter to `true` in the LDP
+configuration file, within the section that defines connection details
+for Okapi.
+
+**WARNING:  Please note that this software does not provide a way to
+anonymize the LDP database after personal data have been loaded into it.
+This configuration parameter should be used only with great care.**
+
+Turning on the `disable_anonymization` parameter prevents the LDP loader
+from attempting to anonymize extracted data, so that all data provided
+by Okapi will be loaded into the LDP database.
+-->
+
+
+7\. Loading data from files (for testing only)
+----------------------------------------------
+
+As an alternative to loading data with the `--extract` option, source
+data can be loaded directly from the file system for testing purposes,
+using the `--unsafe` and `--dir` options, e.g.:
+
+```shell
+$ ldp --etl --unsafe --dir ldp-analytics/testdata/ --load ldpdemo
+```
+
+The loader expects the data files to have particular names, e.g.
+`loans_0.json`; and when `--dir` is used, it also looks for an optional,
+accompanying file ending with the suffix, `_test.json`, e.g.
+`loans_test.json`.  Data in these "test" files are loaded into the same
+table as the files they accompany.  This is used for testing in query
+development to combine extracted test data with additional static test
+data.
+
+
+8\. Disabling database TLS/SSL (for testing only)
+-------------------------------------------------
+
+For very preliminary testing with a database running on `localhost`, one
+may desire to connect to the database without TLS/SSL.  Disabling
+TLS/SSL is generally not recommended, because it may expose passwords
+and library data transmitted to the database.  However, TLS/SSL can be
+disabled using the `--unsafe` and `--nossl` options, e.g.:
+
+```shell
+$ ldp --etl --extract folio --load ldpdemo --unsafe --nossl
+```
+
+
+9\. Reporting bugs and feature requests
+---------------------------------------
+
+Please use the [FOLIO Issue Tracker](https://issues.folio.org/) to
+report a bug or feature request, by creating an issue in the "Library
+Data Platform (LDP)" project.  Set the issue type to "Bug" or "New
+Feature", and fill in the summary and description fields.  Please do not
+set any other fields in the issue.
+
+<!--
+Please use the [issue tracker](https://github.com/folio-org/ldp/issues)
+to report a bug or feature request.
+-->
+
+
+Further reading
+---------------
+
+[**Learn about using the LDP database in the User Guide > > >**](USER_GUIDE.md)
+
