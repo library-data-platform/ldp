@@ -57,7 +57,7 @@ installed via package manager in many recent versions of Linux.
 To install them in Debian 10:
 
 ```shell
-$ sudo apt install cmake g++ git libcurl4-openssl-dev libpq-dev \
+$ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
       postgresql-server-dev-all rapidjson-dev
 ```
 
@@ -68,6 +68,7 @@ build dependencies can be installed using [Homebrew](https://brew.sh/):
 $ brew install cmake postgresql rapidjson
 ```
 
+<!--
 ### LDP software releases
 
 LDP releases use version numbers in the form, *a*.*b*.*c*, where *a*.*b*
@@ -77,26 +78,22 @@ will be 1.3.0.  Any subsequent versions of the release, for example
 1.3.1, 1.3.2, etc., will generally contain only bug fixes.  The next
 version to include new features will be the 1.4 release (1.4.0).
 
-In the source code repository there are three main branches:
+In the source code repository there are two main branches:
 
-* `master` is the latest release.  This is the version that most people
-  should use.
-
-* `stable` is the branch that releases are made from.  It contains
+* `master` is the branch that releases are made from.  It contains
   recently added features that have had some testing.
 
 * `current` is for active development and tends to be unstable.  This is
   where new features are first added.
-
-The following build instructions use the `master` branch.
+-->
 
 ### Building the software
 
-To build the latest release of the LDP software:
+To build the latest release of the LDP software, download and unpack
+[the latest release](https://github.com/folio-org/ldp/releases) and `cd`
+into the unpacked directory.  Then:
 
 ```shell
-$ git clone https://github.com/folio-org/ldp.git
-$ cd ldp/
 $ cmake .
 $ make
 ```

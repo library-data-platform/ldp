@@ -1,8 +1,12 @@
 Library Data Platform
 =====================
 
-Copyright (C) 2019 The Open Library Foundation.  This software is distributed
-under the terms of the Apache License, Version 2.0.  See the file
+Copyright (C) 2019 The Open Library Foundation.
+Copyright (C) 2019 Index Data ApS
+Copyright (C) 1998-2006 Etymon Systems Inc.  
+
+This software is distributed under the terms of the Apache License,
+Version 2.0.  See the file
 [LICENSE](https://github.com/folio-org/ldp/blob/master/LICENSE) for more
 information.
 
