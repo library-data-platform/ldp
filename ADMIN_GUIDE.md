@@ -89,9 +89,9 @@ In the source code repository there are two main branches:
 
 ### Building the software
 
-To build the latest release of the LDP software, download and unpack
-[the latest release](https://github.com/folio-org/ldp/releases) and `cd`
-into the unpacked directory.  Then:
+To build the LDP software, download and unpack [the latest
+release](https://github.com/folio-org/ldp/releases) and `cd` into the
+unpacked directory.  Then:
 
 ```shell
 $ cmake .
