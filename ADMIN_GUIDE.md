@@ -68,30 +68,50 @@ build dependencies can be installed using [Homebrew](https://brew.sh/):
 $ brew install cmake postgresql rapidjson
 ```
 
-<!--
-### LDP software releases
+### LDP software pre-releases
 
-LDP releases use version numbers in the form, *a*.*b*.*c*, where *a*.*b*
-is the release version and *c* indicates bug fixes.  For example,
-suppose that LDP 1.3 is released.  The first version of the 1.3 release
-will be 1.3.0.  Any subsequent versions of the release, for example
-1.3.1, 1.3.2, etc., will generally contain only bug fixes.  The next
-version to include new features will be the 1.4 release (1.4.0).
+Before LDP 1.0, all LDP
+[releases](https://github.com/folio-org/ldp/releases) are "pre-releases"
+intended for testing purposes.
 
-In the source code repository there are two main branches:
+Within the [source code repository](https://github.com/folio-org/ldp)
+there are two main branches:
 
 * `master` is the branch that releases are made from.  It contains
   recently added features that have had some testing.
 
 * `current` is for active development and tends to be unstable.  This is
   where new features are first added.
+
+<!--
+### LDP software releases
+
+Beginning with LDP 1.0, releases use version numbers in the form,
+*a*.*b*.*c*, where *a*.*b* is the release version and *c* indicates bug
+fixes.  For example, suppose that LDP 1.3 is released.  The first
+version of the 1.3 release will be 1.3.0.  Any subsequent versions of
+the release, for example 1.3.1, 1.3.2, etc., will generally contain only
+bug fixes.  The next version to include new features will be the 1.4
+release (1.4.0).
+
+Within the [source code repository](https://github.com/folio-org/ldp)
+there are two main branches:
+
+* `master` is the branch that releases are made from.  It contains
+  recently added features that have had some testing.
+
+* `current` is for active development and tends to be unstable.  This is
+  where new features are first added.
+
+In addition there are numbered release branches based on `master` that
+are used for bug fixes.
 -->
 
 ### Building the software
 
-To build the latest release of the LDP software, download and unpack
-[the latest release](https://github.com/folio-org/ldp/releases) and `cd`
-into the unpacked directory.  Then:
+To build the LDP software, download and unpack [the latest
+release](https://github.com/folio-org/ldp/releases) and `cd` into the
+unpacked directory.  Then:
 
 ```shell
 $ cmake .
