@@ -3,21 +3,22 @@
 
 #include <string>
 
+#include "../etymoncpp/include/util.h"
 #include "dbtype.h"
 
 using namespace std;
 
 class Options {
 public:
-    bool etl = false;
+    string command;
     string loadFromDir;
-    string extract;
+    string okapi;
     string okapiURL;
     string okapiTenant;
     string okapiUser;
     string okapiPassword;
     string extractDir;
-    string load;
+    string database;
     string databaseName;
     string databaseType;
     string databaseHost;
@@ -33,7 +34,6 @@ public:
     bool verbose = false;
     bool debug = false;
     //bool version = false;
-    bool help = false;
     size_t pageSize = 1000;
     string config;
     int nargc = 0;
@@ -41,7 +41,7 @@ public:
     const char* prog = "ldp";
 };
 
-int evalopt(int argc, char *argv[], Options *opt);
+int evalopt(const etymon::CommandArgs& cargs, Options *opt);
 void debugOptions(const Options& o);
 
 #endif
