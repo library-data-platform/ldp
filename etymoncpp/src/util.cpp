@@ -22,6 +22,21 @@ File::~File()
         fclose(file);
 }
 
+CommandArgs::CommandArgs(int argc, char* const argv[])
+{
+    this->argc = argc - 1;
+    this->argv = (char**) malloc(sizeof(char*) * this->argc);
+    this->argv[0] = argv[0];
+    this->command = argc >= 2 ? argv[1] : "";
+    for (int x = 2; x < argc; x++)
+        this->argv[x - 1] = argv[x];
+}
+
+CommandArgs::~CommandArgs()
+{
+    free(argv);
+}
+
 bool fileExists(const string& filename) {
     struct stat st;   
     if (stat(filename.c_str(), &st) == 0)

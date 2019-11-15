@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "../etymoncpp/include/postgres.h"
-#include "../etymoncpp/include/util.h"
 #include "config_json.h"
 #include "extract.h"
 #include "merge.h"
@@ -20,25 +19,30 @@
 #include "util.h"
 
 static const char* optionHelp =
-"Usage:  ldp --etl --extract <okapi> --load <database> [options...]\n"
+"Usage:  ldp <command> <options>\n"
+"  e.g.  ldp load --okapi folio --database ldp\n"
 "Commands:\n"
-"--etl             - Runs the data loader (extract-transform-load)\n"
+"  load              - Load data into the LDP database\n"
+"  help              - Display help information\n"
 "Options:\n"
-"--extract <okapi> - Refers to a configuration section describing the\n"
-"                    okapi instance to extract data from\n"
-"--load <database> - Refers to a configuration section describing the\n"
-"                    database connection parameters\n"
-"--config <file>   - Specifies the location of the configuration file,\n"
-"                    overriding the LDPCONFIG environment variable\n"
-"--unsafe          - Enables functions used for testing/debugging\n"
-"--nossl           - Disables SSL in the database connection (unsafe)\n"
-"--savetemps       - Disables deletion of temporary files containing\n"
-"                    extracted data (unsafe)\n"
-"--dir             - Load data from a directory instead of extracting\n"
-"                    from okapi (unsafe)\n"
-"--verbose, -v     - Enables verbose output\n"
-"--debug           - Enables extremely verbose debugging output\n"
-"--help, -h        - Prints this usage text\n";
+"  --okapi <name>    - Extract data from the Okapi instance <name>, which\n"
+"                      refers to the name of an object under \"okapis\" in\n"
+"                      the configuration file that describes connection\n"
+"                      parameters for the instance\n"
+"  --database <name> - Load data into the database <name>, which refers to\n"
+"                      the name of an object under \"databases\" in the\n"
+"                      configuration file that describes connection\n"
+"                      parameters for the database\n"
+"  --config <file>   - Specify the location of the configuration file,\n"
+"                      overriding the LDPCONFIG environment variable\n"
+"  --unsafe          - Enable functions used for testing/debugging\n"
+"  --nossl           - Disable SSL in the database connection (unsafe)\n"
+"  --savetemps       - Disable deletion of temporary files containing\n"
+"                      extracted data (unsafe)\n"
+"  --dir             - Load data from a directory instead of extracting\n"
+"                      from Okapi (unsafe)\n"
+"  --verbose, -v     - Enable verbose output\n"
+"  --debug           - Enable extremely verbose debugging output\n";
 
 void debugNoticeProcessor(void *arg, const char *message)
 {
@@ -95,7 +99,7 @@ const char* sslmode(bool nossl)
     return nossl ? "disable" : "require";
 }
 
-void runETL(const Options& opt)
+void runLoad(const Options& opt)
 {
     //string ct;
     //getCurrentTime(&ct);
@@ -134,7 +138,7 @@ void runETL(const Options& opt)
         }
 
         if (opt.verbose)
-            fprintf(opt.err, "%s: logging in to okapi service\n", opt.prog);
+            fprintf(opt.err, "%s: logging in to Okapi service\n", opt.prog);
 
         string token;
         okapiLogin(opt, &token);
@@ -207,7 +211,7 @@ void fillOptions(const Config& config, Options* opt)
 {
     if (opt->loadFromDir == "") {
         string okapi = "/okapis/";
-        okapi += opt->extract;
+        okapi += opt->okapi;
         okapi += "/";
         fillOpt(config, okapi, "url", &(opt->okapiURL));
         fillOpt(config, okapi, "tenant", &(opt->okapiTenant));
@@ -217,7 +221,7 @@ void fillOptions(const Config& config, Options* opt)
     }
 
     string database = "/databases/";
-    database += opt->load;
+    database += opt->database;
     database += "/";
     fillOpt(config, database, "database", &(opt->databaseName));
     fillOpt(config, database, "type", &(opt->databaseType));
@@ -228,14 +232,14 @@ void fillOptions(const Config& config, Options* opt)
     opt->dbtype.setType(opt->databaseType);
 }
 
-void run(int argc, char* argv[])
+void run(const etymon::CommandArgs& cargs)
 {
     Options opt;
 
-    if (evalopt(argc, argv, &opt) < 0)
+    if (evalopt(cargs, &opt) < 0)
         throw runtime_error("unable to parse command line options");
 
-    if (argc < 2 || opt.help) {
+    if (cargs.argc < 2 || opt.command == "help") {
         printf("%s", optionHelp);
         return;
     }
@@ -246,9 +250,9 @@ void run(int argc, char* argv[])
     if (opt.debug)
         debugOptions(opt);
 
-    if (opt.etl) {
+    if (opt.command == "load") {
         Timer t(opt);
-        runETL(opt);
+        runLoad(opt);
         if (opt.verbose)
             t.print("total time");
         return;
@@ -257,8 +261,9 @@ void run(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
+    etymon::CommandArgs cargs(argc, argv);
     try {
-        run(argc, argv);
+        run(cargs);
     } catch (runtime_error& e) {
         fprintf(stderr, "ldp: error: %s\n", e.what());
         return 1;

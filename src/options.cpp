@@ -6,13 +6,18 @@
 #include "options.h"
 #include "err.h"
 
-static void check_conflicts(const Options& opt)
+static void validate(const Options& opt)
 {
-    if (opt.etl) {
-        if (opt.extract == "" && opt.loadFromDir == "")
-            throw runtime_error("--etl requires --extract or --dir");
-        if (opt.load == "")
-            throw runtime_error("--etl requires --load");
+    if (opt.command != "load" &&
+            opt.command != "help" &&
+            opt.command != "")
+        throw runtime_error("unknown command: " + opt.command);
+
+    if (opt.command == "load") {
+        if (opt.okapi == "" && opt.loadFromDir == "")
+            throw runtime_error("load requires --okapi or --dir");
+        if (opt.database == "")
+            throw runtime_error("load requires --database");
     }
 
     if (opt.nossl && !opt.unsafe)
@@ -22,26 +27,22 @@ static void check_conflicts(const Options& opt)
     if (opt.loadFromDir != "" && !opt.unsafe)
         throw runtime_error("--dir requires --unsafe");
 
-    if (opt.loadFromDir != "" && opt.extract != "")
-        throw runtime_error("--extract and --dir cannot both be specified");
+    if (opt.loadFromDir != "" && opt.okapi != "")
+        throw runtime_error("--okapi and --dir cannot both be specified");
 }
 
 static void evaloptlong(char *name, char *arg, Options *opt)
 {
-    if (!strcmp(name, "etl")) {
-        opt->etl = true;
-        return;
-    }
     if (!strcmp(name, "dir")) {
         opt->loadFromDir = arg;
         return;
     }
-    if (!strcmp(name, "extract")) {
-        opt->extract = arg;
+    if (!strcmp(name, "okapi")) {
+        opt->okapi = arg;
         return;
     }
-    if (!strcmp(name, "load")) {
-        opt->load = arg;
+    if (!strcmp(name, "database")) {
+        opt->database = arg;
         return;
     }
     if (!strcmp(name, "config")) {
@@ -71,13 +72,12 @@ static void evaloptlong(char *name, char *arg, Options *opt)
     //}
 }
 
-int evalopt(int argc, char *argv[], Options* opt)
+int evalopt(const etymon::CommandArgs& cargs, Options *opt)
 {
     static struct option longopts[] = {
-        { "etl",       no_argument,       NULL, 0   },
         { "dir",       required_argument, NULL, 0   },
-        { "extract",   required_argument, NULL, 0   },
-        { "load",      required_argument, NULL, 0   },
+        { "okapi",     required_argument, NULL, 0   },
+        { "database",  required_argument, NULL, 0   },
         { "config",    required_argument, NULL, 0   },
         { "verbose",   no_argument,       NULL, 'v' },
         { "debug",     no_argument,       NULL, 0   },
@@ -85,14 +85,15 @@ int evalopt(int argc, char *argv[], Options* opt)
         { "nossl",     no_argument,       NULL, 0   },
         { "savetemps", no_argument,       NULL, 0   },
         //{ "version",   no_argument,       NULL, 0   },
-        { "help",      no_argument,       NULL, 'h' },
         { 0,           0,                 0,    0   }
     };
     int g, x;
 
+    opt->command = cargs.command;
+
     while (1) {
         int longindex = 0;
-        g = getopt_long(argc, argv,
+        g = getopt_long(cargs.argc, cargs.argv,
                 "hv",
                 longopts, &longindex);
         if (g == -1)
@@ -104,17 +105,14 @@ int evalopt(int argc, char *argv[], Options* opt)
                 evaloptlong( (char *) longopts[longindex].name,
                         optarg, opt);
                 break;
-            case 'h':
-                opt->help = true;
-                break;
             case 'v':
                 opt->verbose = true;
                 break;
         }
     }
-    if (optind < argc) {
-        opt->nargv = argv + optind;
-        opt->nargc = argc - optind;
+    if (optind < cargs.argc) {
+        opt->nargv = cargs.argv + optind;
+        opt->nargc = cargs.argc - optind;
     }
     if (opt->nargc > 0) {
         printf("%s: unrecognized extra arguments `", opt->prog);
@@ -126,17 +124,18 @@ int evalopt(int argc, char *argv[], Options* opt)
         printf("'\n");
         return -1;
     }
-    check_conflicts(*opt);
+    validate(*opt);
     return 0;
 }
 
 void debugOptions(const Options& opt)
 {
-    fprintf(stderr, "%s: option: etl = %d\n", opt.prog, opt.etl);
+    fprintf(stderr, "%s: option: command = %s\n", opt.prog,
+            opt.command.c_str());
     fprintf(stderr, "%s: option: loadFromDir = %s\n", opt.prog,
             opt.loadFromDir.c_str());
-    fprintf(stderr, "%s: option: extract = %s\n", opt.prog,
-            opt.extract.c_str());
+    fprintf(stderr, "%s: option: okapi = %s\n", opt.prog,
+            opt.okapi.c_str());
     fprintf(stderr, "%s: option: okapiURL = %s\n", opt.prog,
             opt.okapiURL.c_str());
     fprintf(stderr, "%s: option: okapiTenant = %s\n", opt.prog,
@@ -145,7 +144,8 @@ void debugOptions(const Options& opt)
             opt.okapiUser.c_str());
     fprintf(stderr, "%s: option: extractDir = %s\n", opt.prog,
             opt.extractDir.c_str());
-    fprintf(stderr, "%s: option: load = %s\n", opt.prog, opt.load.c_str());
+    fprintf(stderr, "%s: option: database = %s\n", opt.prog,
+            opt.database.c_str());
     fprintf(stderr, "%s: option: databaseName = %s\n", opt.prog,
             opt.databaseName.c_str());
     fprintf(stderr, "%s: option: databaseType = %s\n", opt.prog,
@@ -171,6 +171,5 @@ void debugOptions(const Options& opt)
     fprintf(stderr, "%s: option: verbose = %d\n", opt.prog, opt.verbose);
     fprintf(stderr, "%s: option: debug = %d\n", opt.prog, opt.debug);
     //fprintf(stderr, "%s: option: version = %d\n", opt.prog, opt.version);
-    fprintf(stderr, "%s: option: help = %d\n", opt.prog, opt.help);
 }
 

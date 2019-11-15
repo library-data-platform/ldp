@@ -255,8 +255,8 @@ void extract(const Options& opt, const Schema& schema, const string& token,
                 "application/json,text/plain");
         curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
 
-        fprintf(opt.err, "%s: extracting data from okapi: %s\n", opt.prog,
-                opt.extract.c_str());
+        fprintf(opt.err, "%s: extracting data from Okapi: %s\n", opt.prog,
+                opt.okapi.c_str());
         for (auto table : schema.tables) {
             if (opt.verbose)
                 fprintf(opt.err, "%s: extracting: %s\n", opt.prog,

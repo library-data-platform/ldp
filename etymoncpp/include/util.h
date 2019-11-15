@@ -15,6 +15,15 @@ public:
     ~File();
 };
 
+class CommandArgs {
+public:
+    string command;
+    int argc;
+    char** argv;
+    CommandArgs(int argc, char* const argv[]);
+    ~CommandArgs();
+};
+
 bool fileExists(const string& filename);
 
 void join(string* s1, const string& s2);

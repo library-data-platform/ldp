@@ -117,12 +117,15 @@ unpacked directory.  Then:
 $ cmake .
 $ make
 ```
+<!--
+make install
+-->
 
 The compiled executable file `ldp` should appear in `ldp/src/`:
 
 ```shell
 $ cd src/
-$ ./ldp --help
+$ ./ldp help
 ```
 
 
@@ -194,7 +197,7 @@ The location also can be specified using the command line option
 `--config`:
 
 ```shell
-$ ldp --config /etc/ldp/ldp.conf  ( etc. )
+$ ldp load --config /etc/ldp/ldp.conf  ( etc. )
 ```
 
 
@@ -206,18 +209,17 @@ usage is low, in order to refresh the database with new data from Okapi.
 
 To extract data from Okapi and load it into the LDP database:
 ```shell
-$ ldp --etl --extract folio --load ldpdemo -v
+$ ldp load --okapi folio --database ldpdemo -v
 ```
 
-The `--etl` command line option is used to run "extract-transform-load"
-which is the data loading process.
+The `load` command is used to load data into the LDP database.
 
-The `--extract` option specifies the name of a section under `okapis` in
+The `--okapi` option specifies the name of a section under `okapis` in
 the LDP configuration file.  This section should provide connection
 details for Okapi, as well as a temporary directory (`extractDir`) where
 extracted files can be written.
 
-The `--load` option works in the same way to specify a section under
+The `--database` option works in the same way to specify a section under
 `databases` in the configuration file that provides connection details
 for the LDP database where data will be loaded.
 
@@ -285,12 +287,12 @@ by Okapi will be loaded into the LDP database.
 7\. Loading data from files (for testing only)
 ----------------------------------------------
 
-As an alternative to loading data with the `--extract` option, source
-data can be loaded directly from the file system for testing purposes,
-using the `--unsafe` and `--dir` options, e.g.:
+As an alternative to loading data with the `--okapi` option, source data
+can be loaded directly from the file system for testing purposes, using
+the `--unsafe` and `--dir` options, e.g.:
 
 ```shell
-$ ldp --etl --unsafe --dir ldp-analytics/testdata/ --load ldpdemo
+$ ldp load --unsafe --dir ldp-analytics/testdata/ --database ldpdemo
 ```
 
 The loader expects the data files to have particular names, e.g.
@@ -312,7 +314,7 @@ and library data transmitted to the database.  However, TLS/SSL can be
 disabled using the `--unsafe` and `--nossl` options, e.g.:
 
 ```shell
-$ ldp --etl --extract folio --load ldpdemo --unsafe --nossl
+$ ldp load --okapi folio --database ldpdemo --unsafe --nossl
 ```
 
 
