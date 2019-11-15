@@ -70,12 +70,10 @@ $ brew install cmake postgresql rapidjson
 
 ### LDP software pre-releases
 
-Before LDP 1.0, all LDP
-[releases](https://github.com/folio-org/ldp/releases) are "pre-releases"
-intended for testing purposes.
+Before LDP 1.0, all LDP releases are "pre-releases" intended for testing
+purposes.
 
-Within the [source code repository](https://github.com/folio-org/ldp)
-there are two main branches:
+Within the source code repository there are two main branches:
 
 * `master` is the branch that releases are made from.  It contains
   recently added features that have had some testing.
