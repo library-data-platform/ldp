@@ -18,7 +18,7 @@ LDP Admin Guide
 
 ### Software
 
-* Linux
+* Linux or FreeBSD
 * [PostgreSQL](https://www.postgresql.org/) 11.5 or later; or
   [Amazon Redshift](https://aws.amazon.com/redshift/) 1.0.8995 or later
 * To build the LDP software from source code:
@@ -51,18 +51,24 @@ scalability.  The storage capacity also can be increased as needed.
 
 ### Before installation
 
-The software dependencies required for building the LDP software can be
-installed via package manager in many recent versions of Linux.
+The software dependencies required for building the LDP software
+generally can be installed via a package manager.
 
-To install them in Debian 10:
+To install them in Debian 10.1:
 
 ```shell
-$ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
+# apt install cmake g++ libcurl4-openssl-dev libpq-dev \
       postgresql-server-dev-all rapidjson-dev
 ```
 
-The LDP software can be used on macOS for testing or development.  The
-build dependencies can be installed using [Homebrew](https://brew.sh/):
+To install them in FreeBSD 12.0:
+
+```shell
+# pkg install cmake postgresql11-client rapidjson
+```
+
+The LDP software can be used on macOS for testing or development.  To
+install the build dependencies using [Homebrew](https://brew.sh/):
 
 ```shell
 $ brew install cmake postgresql rapidjson
@@ -185,7 +191,8 @@ This file defines parameters for connecting to Okapi and to the LDP
 database.  Please see the next section for how the parameters are used.
 
 The LDP software looks for the configuration file in a location
-specified by the `LDPCONFIG` environment variable, e.g.:
+specified by the `LDPCONFIG` environment variable, e.g. using the Bash
+shell:
 
 ```shell
 $ export LDPCONFIG=/etc/ldp/ldp.conf

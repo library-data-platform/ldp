@@ -18,7 +18,7 @@ IF(OPTIMIZE)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 ENDIF(OPTIMIZE)
 
-set(CURL_LIBRARY "-lcurl") 
+#set(CURL_LIBRARY "-lcurl") 
 find_package(CURL REQUIRED) 
 include_directories(${CURL_INCLUDE_DIR})
 
