@@ -51,20 +51,20 @@ scalability.  The storage capacity also can be increased as needed.
 
 ### Before installation
 
-The software dependencies required for building the LDP software
-generally can be installed via a package manager.
+Dependencies required for building the LDP software can be installed via
+a package manager on some platforms.
 
 To install them in Debian 10.1:
 
 ```shell
-# apt install cmake g++ libcurl4-openssl-dev libpq-dev \
+$ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
       postgresql-server-dev-all rapidjson-dev
 ```
 
-To install them in FreeBSD 12.0:
+To install them in FreeBSD 12.1:
 
 ```shell
-# pkg install cmake postgresql11-client rapidjson
+$ sudo pkg install cmake postgresql11-client rapidjson
 ```
 
 The LDP software can be used on macOS for testing or development.  To
