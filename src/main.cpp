@@ -178,11 +178,11 @@ void runLoad(const Options& opt)
         fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
     updateDBPermissions(opt, &db);
 
-    fprintf(opt.err, "%s: committing changes\n", opt.prog);
+    print(Print::verbose, opt, "committing changes");
     sql = "COMMIT;";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(&db, sql); }
-    fprintf(opt.err, "%s: all changes committed\n", opt.prog);
+    print(Print::verbose, opt, "all changes committed");
 
     //vacuumAnalyzeAll();
 
