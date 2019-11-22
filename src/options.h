@@ -12,13 +12,13 @@ class Options {
 public:
     string command;
     string loadFromDir;
-    string okapi;
+    string source;
     string okapiURL;
     string okapiTenant;
     string okapiUser;
     string okapiPassword;
     string extractDir;
-    string database;
+    string target;
     string databaseName;
     string databaseType;
     string databaseHost;

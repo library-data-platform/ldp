@@ -1,5 +1,5 @@
 {
-    "okapis": {
+    "sources": {
         "folio": {
             "url": "https://folio-release-okapi.aws.indexdata.com",
             "tenant": "diku",
@@ -8,7 +8,7 @@
             "extractDir": "/var/lib/ldp/extract/"
         }
     },
-    "databases": {
+    "targets": {
         "ldpdemo": {
             "database": "ldp",
             "type": "postgresql",

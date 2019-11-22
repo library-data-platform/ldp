@@ -545,8 +545,8 @@ static void stageTable(const Options& opt, TableSchema* table,
 void stageAll(const Options& opt, Schema* schema, etymon::Postgres* db,
         const string& loadDir)
 {
-    fprintf(opt.err, "%s: staging in database: %s\n", opt.prog,
-            opt.database.c_str());
+    fprintf(opt.err, "%s: staging in target: %s\n", opt.prog,
+            opt.target.c_str());
     for (auto& table : schema->tables) {
         if (opt.verbose)
             fprintf(opt.err, "%s: staging table: %s\n", opt.prog,
