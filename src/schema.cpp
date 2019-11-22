@@ -119,6 +119,10 @@ void Schema::MakeDefaultSchema(Schema* schema)
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
+    table.sourcePath = "/loan-storage/loan-history";
+    deriveTableName(table.sourcePath, &(table.tableName));
+    schema->tables.push_back(table);
+
     table.sourcePath =
         "/patron-action-session-storage/expired-session-patron-ids";
     deriveTableName(table.sourcePath, &(table.tableName));
