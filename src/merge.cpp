@@ -113,15 +113,13 @@ static void replaceTable(const Options& opt, TableSchema* table,
 
 void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
 {
-    fprintf(opt.err, "%s: merging\n", opt.prog);
+    print(Print::verbose, opt, "merging");
     for (auto table : schema->tables) {
-        if (opt.verbose)
-            fprintf(opt.err, "%s: merging table: %s\n", opt.prog,
-                    table.tableName.c_str());
+        print(Print::verbose, opt, "merging table: " + table.tableName);
         mergeTable(opt, &table, db);
     }
     // Table-level exclusive locks begin here.
-    fprintf(opt.err, "%s: replacing tables\n", opt.prog);
+    print(Print::verbose, opt, "replacing tables");
     for (auto table : schema->tables) {
         replaceTable(opt, &table, db);
     }

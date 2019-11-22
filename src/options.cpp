@@ -14,10 +14,10 @@ static void validate(const Options& opt)
         throw runtime_error("unknown command: " + opt.command);
 
     if (opt.command == "load") {
-        if (opt.okapi == "" && opt.loadFromDir == "")
-            throw runtime_error("load requires --okapi or --dir");
-        if (opt.database == "")
-            throw runtime_error("load requires --database");
+        if (opt.source == "" && opt.loadFromDir == "")
+            throw runtime_error("load requires --source or --sourcedir");
+        if (opt.target == "")
+            throw runtime_error("load requires --target");
     }
 
     if (opt.nossl && !opt.unsafe)
@@ -25,24 +25,25 @@ static void validate(const Options& opt)
     if (opt.savetemps && !opt.unsafe)
         throw runtime_error("--savetemps requires --unsafe");
     if (opt.loadFromDir != "" && !opt.unsafe)
-        throw runtime_error("--dir requires --unsafe");
+        throw runtime_error("--sourcedir requires --unsafe");
 
-    if (opt.loadFromDir != "" && opt.okapi != "")
-        throw runtime_error("--okapi and --dir cannot both be specified");
+    if (opt.loadFromDir != "" && opt.source != "")
+        throw runtime_error(
+                "--source and --sourcedir cannot both be specified");
 }
 
 static void evaloptlong(char *name, char *arg, Options *opt)
 {
-    if (!strcmp(name, "dir")) {
+    if (!strcmp(name, "sourcedir")) {
         opt->loadFromDir = arg;
         return;
     }
-    if (!strcmp(name, "okapi")) {
-        opt->okapi = arg;
+    if (!strcmp(name, "source")) {
+        opt->source = arg;
         return;
     }
-    if (!strcmp(name, "database")) {
-        opt->database = arg;
+    if (!strcmp(name, "target")) {
+        opt->target = arg;
         return;
     }
     if (!strcmp(name, "config")) {
@@ -75,9 +76,9 @@ static void evaloptlong(char *name, char *arg, Options *opt)
 int evalopt(const etymon::CommandArgs& cargs, Options *opt)
 {
     static struct option longopts[] = {
-        { "dir",       required_argument, NULL, 0   },
-        { "okapi",     required_argument, NULL, 0   },
-        { "database",  required_argument, NULL, 0   },
+        { "sourcedir", required_argument, NULL, 0   },
+        { "source",    required_argument, NULL, 0   },
+        { "target",    required_argument, NULL, 0   },
         { "config",    required_argument, NULL, 0   },
         { "verbose",   no_argument,       NULL, 'v' },
         { "debug",     no_argument,       NULL, 0   },
@@ -134,8 +135,8 @@ void debugOptions(const Options& opt)
             opt.command.c_str());
     fprintf(stderr, "%s: option: loadFromDir = %s\n", opt.prog,
             opt.loadFromDir.c_str());
-    fprintf(stderr, "%s: option: okapi = %s\n", opt.prog,
-            opt.okapi.c_str());
+    fprintf(stderr, "%s: option: source = %s\n", opt.prog,
+            opt.source.c_str());
     fprintf(stderr, "%s: option: okapiURL = %s\n", opt.prog,
             opt.okapiURL.c_str());
     fprintf(stderr, "%s: option: okapiTenant = %s\n", opt.prog,
@@ -144,8 +145,8 @@ void debugOptions(const Options& opt)
             opt.okapiUser.c_str());
     fprintf(stderr, "%s: option: extractDir = %s\n", opt.prog,
             opt.extractDir.c_str());
-    fprintf(stderr, "%s: option: database = %s\n", opt.prog,
-            opt.database.c_str());
+    fprintf(stderr, "%s: option: target = %s\n", opt.prog,
+            opt.target.c_str());
     fprintf(stderr, "%s: option: databaseName = %s\n", opt.prog,
             opt.databaseName.c_str());
     fprintf(stderr, "%s: option: databaseType = %s\n", opt.prog,

@@ -20,26 +20,26 @@
 
 static const char* optionHelp =
 "Usage:  ldp <command> <options>\n"
-"  e.g.  ldp load --okapi folio --database ldp\n"
+"  e.g.  ldp load --source folio --target ldp\n"
 "Commands:\n"
 "  load              - Load data into the LDP database\n"
 "  help              - Display help information\n"
 "Options:\n"
-"  --okapi <name>    - Extract data from the Okapi instance <name>, which\n"
-"                      refers to the name of an object under \"okapis\" in\n"
-"                      the configuration file that describes connection\n"
-"                      parameters for the instance\n"
-"  --database <name> - Load data into the database <name>, which refers to\n"
-"                      the name of an object under \"databases\" in the\n"
+"  --source <name>   - Extract data from source <name>, which refers to\n"
+"                      the name of an object under \"sources\" in the\n"
 "                      configuration file that describes connection\n"
-"                      parameters for the database\n"
+"                      parameters for an Okapi instance\n"
+"  --target <name>   - Load data into target <name>, which refers to\n"
+"                      the name of an object under \"targets\" in the\n"
+"                      configuration file that describes connection\n"
+"                      parameters for a database\n"
 "  --config <file>   - Specify the location of the configuration file,\n"
 "                      overriding the LDPCONFIG environment variable\n"
 "  --unsafe          - Enable functions used for testing/debugging\n"
 "  --nossl           - Disable SSL in the database connection (unsafe)\n"
 "  --savetemps       - Disable deletion of temporary files containing\n"
 "                      extracted data (unsafe)\n"
-"  --dir             - Load data from a directory instead of extracting\n"
+"  --sourcedir       - Load data from a directory instead of extracting\n"
 "                      from Okapi (unsafe)\n"
 "  --verbose, -v     - Enable verbose output\n"
 "  --debug           - Enable extremely verbose debugging output\n";
@@ -178,11 +178,11 @@ void runLoad(const Options& opt)
         fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
     updateDBPermissions(opt, &db);
 
-    fprintf(opt.err, "%s: committing changes\n", opt.prog);
+    print(Print::verbose, opt, "committing changes");
     sql = "COMMIT;";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(&db, sql); }
-    fprintf(opt.err, "%s: all changes committed\n", opt.prog);
+    print(Print::verbose, opt, "all changes committed");
 
     //vacuumAnalyzeAll();
 
@@ -210,25 +210,25 @@ void fillOpt(const Config& config, const string& basePointer, const string& key,
 void fillOptions(const Config& config, Options* opt)
 {
     if (opt->loadFromDir == "") {
-        string okapi = "/okapis/";
-        okapi += opt->okapi;
-        okapi += "/";
-        fillOpt(config, okapi, "url", &(opt->okapiURL));
-        fillOpt(config, okapi, "tenant", &(opt->okapiTenant));
-        fillOpt(config, okapi, "user", &(opt->okapiUser));
-        fillOpt(config, okapi, "password", &(opt->okapiPassword));
-        fillOpt(config, okapi, "extractDir", &(opt->extractDir));
+        string source = "/sources/";
+        source += opt->source;
+        source += "/";
+        fillOpt(config, source, "url", &(opt->okapiURL));
+        fillOpt(config, source, "tenant", &(opt->okapiTenant));
+        fillOpt(config, source, "user", &(opt->okapiUser));
+        fillOpt(config, source, "password", &(opt->okapiPassword));
+        fillOpt(config, source, "extractDir", &(opt->extractDir));
     }
 
-    string database = "/databases/";
-    database += opt->database;
-    database += "/";
-    fillOpt(config, database, "database", &(opt->databaseName));
-    fillOpt(config, database, "type", &(opt->databaseType));
-    fillOpt(config, database, "host", &(opt->databaseHost));
-    fillOpt(config, database, "port", &(opt->databasePort));
-    fillOpt(config, database, "user", &(opt->databaseUser));
-    fillOpt(config, database, "password", &(opt->databasePassword));
+    string target = "/targets/";
+    target += opt->target;
+    target += "/";
+    fillOpt(config, target, "database", &(opt->databaseName));
+    fillOpt(config, target, "type", &(opt->databaseType));
+    fillOpt(config, target, "host", &(opt->databaseHost));
+    fillOpt(config, target, "port", &(opt->databasePort));
+    fillOpt(config, target, "user", &(opt->databaseUser));
+    fillOpt(config, target, "password", &(opt->databasePassword));
     opt->dbtype.setType(opt->databaseType);
 }
 

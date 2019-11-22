@@ -165,7 +165,7 @@ like:
 
 ```
 {
-    "okapis": {
+    "sources": {
         "folio": {
             "url": "https://folio-snapshot-okapi.aws.indexdata.com",
             "tenant": "diku",
@@ -174,7 +174,7 @@ like:
             "extractDir": "/var/lib/ldp/extract/"
         }
     },
-    "databases": {
+    "targets": {
         "ldpdemo": {
             "database": "ldp",
             "type": "postgresql",
@@ -186,6 +186,10 @@ like:
     }
 }
 ```
+
+The provided example file
+[config_example.json](https://raw.githubusercontent.com/folio-org/ldp/master/config_example.json)
+can be used as a template.
 
 This file defines parameters for connecting to Okapi and to the LDP
 database.  Please see the next section for how the parameters are used.
@@ -212,21 +216,22 @@ $ ldp load --config /etc/ldp/ldp.conf  ( etc. )
 The LDP loader is intended to be run once per day, at a time of day when
 usage is low, in order to refresh the database with new data from Okapi.
 
-To extract data from Okapi and load it into the LDP database:
+To extract data from Okapi and load them into the LDP database:
 ```shell
-$ ldp load --okapi folio --database ldpdemo -v
+$ ldp load --source folio --target ldpdemo -v
 ```
 
-The `load` command is used to load data into the LDP database.
+The `load` command is used to load data.  The data are extracted from a
+data "source" (Okapi) and loaded into a "target" (the LDP database).
 
-The `--okapi` option specifies the name of a section under `okapis` in
+The `--source` option specifies the name of a section under `sources` in
 the LDP configuration file.  This section should provide connection
 details for Okapi, as well as a temporary directory (`extractDir`) where
 extracted files can be written.
 
-The `--database` option works in the same way to specify a section under
-`databases` in the configuration file that provides connection details
-for the LDP database where data will be loaded.
+The `--target` option works in the same way to specify a section under
+`targets` in the configuration file that provides connection details for
+the LDP database where data will be loaded.
 
 The `-v` option enables verbose output.  For even more verbose output,
 the `--debug` option can be used to see commands that are sent to the
@@ -292,17 +297,17 @@ by Okapi will be loaded into the LDP database.
 7\. Loading data from files (for testing only)
 ----------------------------------------------
 
-As an alternative to loading data with the `--okapi` option, source data
-can be loaded directly from the file system for testing purposes, using
-the `--unsafe` and `--dir` options, e.g.:
+As an alternative to loading data with the `--source` option, source
+data can be loaded directly from the file system for testing purposes,
+using the `--unsafe` and `--sourcedir` options, e.g.:
 
 ```shell
-$ ldp load --unsafe --dir ldp-analytics/testdata/ --database ldpdemo
+$ ldp load --unsafe --sourcedir ldp-analytics/testdata/ --target ldpdemo
 ```
 
 The loader expects the data files to have particular names, e.g.
-`loans_0.json`; and when `--dir` is used, it also looks for an optional,
-accompanying file ending with the suffix, `_test.json`, e.g.
+`loans_0.json`; and when `--sourcedir` is used, it also looks for an
+optional, accompanying file ending with the suffix, `_test.json`, e.g.
 `loans_test.json`.  Data in these "test" files are loaded into the same
 table as the files they accompany.  This is used for testing in query
 development to combine extracted test data with additional static test
@@ -319,7 +324,7 @@ and library data transmitted to the database.  However, TLS/SSL can be
 disabled using the `--unsafe` and `--nossl` options, e.g.:
 
 ```shell
-$ ldp load --okapi folio --database ldpdemo --unsafe --nossl
+$ ldp load --source folio --target ldpdemo --unsafe --nossl
 ```
 
 
