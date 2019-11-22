@@ -12,9 +12,9 @@ void print(Print level, const Options& opt, const string& str)
     case Print::warning:
         fprintf(opt.err, "%s: warning: %s\n", opt.prog, s.c_str());
         break;
-    case Print::info:
-        fprintf(opt.err, "%s: %s\n", opt.prog, s.c_str());
-        break;
+    //case Print::info:
+    //    fprintf(opt.err, "%s: %s\n", opt.prog, s.c_str());
+    //    break;
     case Print::verbose:
         if (opt.verbose || opt.debug)
             fprintf(opt.err, "%s: %s\n", opt.prog, s.c_str());
