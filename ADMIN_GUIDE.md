@@ -187,6 +187,10 @@ like:
 }
 ```
 
+The provided example file
+[config_example.json](https://raw.githubusercontent.com/folio-org/ldp/master/config_example.json)
+can be used as a template.
+
 This file defines parameters for connecting to Okapi and to the LDP
 database.  Please see the next section for how the parameters are used.
 
@@ -212,7 +216,7 @@ $ ldp load --config /etc/ldp/ldp.conf  ( etc. )
 The LDP loader is intended to be run once per day, at a time of day when
 usage is low, in order to refresh the database with new data from Okapi.
 
-To extract data from Okapi and load it into the LDP database:
+To extract data from Okapi and load them into the LDP database:
 ```shell
 $ ldp load --source folio --target ldpdemo -v
 ```
@@ -225,7 +229,7 @@ the LDP configuration file.  This section should provide connection
 details for Okapi, as well as a temporary directory (`extractDir`) where
 extracted files can be written.
 
-The `--target option works in the same way to specify a section under
+The `--target` option works in the same way to specify a section under
 `targets` in the configuration file that provides connection details for
 the LDP database where data will be loaded.
 
