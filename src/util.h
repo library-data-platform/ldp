@@ -10,7 +10,7 @@ using namespace std;
 enum class Print {
     error,
     warning,
-    info,
+    //info,
     verbose,
     debug
 };

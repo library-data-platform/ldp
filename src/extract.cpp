@@ -25,7 +25,7 @@ ExtractionFiles::~ExtractionFiles()
                         dir + string(": ") + string(strerror(errno)) );
         }
     } else {
-        print(Print::info, opt, string("directory not removed: ") + dir);
+        print(Print::verbose, opt, string("directory not removed: ") + dir);
     }
 }
 
