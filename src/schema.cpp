@@ -237,7 +237,7 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.sourcePath = "/holdings-storage/holdings";
     deriveTableName(table.sourcePath, &(table.tableName));
     // large data
-    schema->tables.push_back(table);
+    //schema->tables.push_back(table);
 
     table.sourcePath = "/holdings-types";
     deriveTableName(table.sourcePath, &(table.tableName));
@@ -274,7 +274,7 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.sourcePath = "/instance-storage/instances";
     deriveTableName(table.sourcePath, &(table.tableName));
     // large data
-    schema->tables.push_back(table);
+    //schema->tables.push_back(table);
 
     table.sourcePath = "/instance-types";
     deriveTableName(table.sourcePath, &(table.tableName));
@@ -291,7 +291,7 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.sourcePath = "/item-storage/items";
     deriveTableName(table.sourcePath, &(table.tableName));
     // large data
-    schema->tables.push_back(table);
+    //schema->tables.push_back(table);
 
     table.sourcePath = "/location-units/campuses";
     deriveTableName(table.sourcePath, &(table.tableName));

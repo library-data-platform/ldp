@@ -36,6 +36,7 @@ public:
 
 class TableSchema {
 public:
+    bool skip = false;
     string tableName;
     string sourcePath;
     int sourceType;

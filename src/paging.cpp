@@ -117,8 +117,7 @@ bool PagingJSONHandler::Null()
     return true;
 }
 
-// TODO Boolean result is reversed.
-bool pageEmpty(const Options& opt, const string& filename)
+bool pageIsEmpty(const Options& opt, const string& filename)
 {
     PagingJSONHandler handler(opt);
     json::Reader reader;
@@ -126,6 +125,6 @@ bool pageEmpty(const Options& opt, const string& filename)
     etymon::File f(filename, "r");
     json::FileReadStream is(f.file, readBuffer, sizeof(readBuffer));
     reader.Parse(is, handler);
-    return handler.foundRecord;
+    return !(handler.foundRecord);
 }
 
