@@ -106,6 +106,9 @@ void runLoad(const Options& opt)
     //if (opt.verbose)
     //    fprintf(opt.err, "%s: start time: %s\n", opt.prog, ct.c_str());
 
+    // TODO Check if a time-out is used here, for example if the client
+    // connection hangs due to a firewall.  Non-verbose output does not
+    // communicate any problem while frozen.
     print(Print::verbose, opt, "testing database connection");
     { etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.databaseUser,
             opt.databasePassword, opt.databaseName, sslmode(opt.nossl)); }
@@ -265,7 +268,10 @@ int main(int argc, char* argv[])
     try {
         run(cargs);
     } catch (runtime_error& e) {
-        fprintf(stderr, "ldp: error: %s\n", e.what());
+        string s = e.what();
+        if ( !(s.empty()) && s.back() == '\n' )
+            s.pop_back();
+        fprintf(stderr, "ldp: error: %s\n", s.c_str());
         return 1;
     }
     return 0;
