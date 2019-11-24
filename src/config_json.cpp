@@ -39,12 +39,8 @@ bool Config::get(const string& key, string* value) const
 
 void Config::getRequired(const string& key, string* value) const
 {
-    if (!get(key, value)) {
-        string err = "Configuration value not found at \"";
-        err += key;
-        err += '\"';
-        throw runtime_error(err);
-    }
+    if (!get(key, value))
+        throw runtime_error("configuration value not found: " + key);
 }
 
 void Config::getOptional(const string& key, string* value) const
