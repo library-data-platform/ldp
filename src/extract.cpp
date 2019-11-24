@@ -17,7 +17,6 @@ ExtractionFiles::~ExtractionFiles()
         for (const auto& f : files)
             unlink(f.c_str());
         if (dir != "") {
-            print(Print::debug, opt, string("removing directory: ") + dir);
             int r = rmdir(dir.c_str());
             if (r == -1)
                 print(Print::warning, opt,
@@ -122,7 +121,7 @@ void okapiLogin(const Options& opt, string* token)
         CURLcode code = curl_easy_perform(c.curl);
 
         if (code) {
-            throw runtime_error(string("logging in to Okapi: ") +
+            throw runtime_error(string("logging in to okapi: ") +
                     curl_easy_strerror(code));
         }
 
@@ -151,11 +150,18 @@ void okapiLogin(const Options& opt, string* token)
     //    timer.print("login time");
 }
 
-static bool retrieve(const Curl& c, const Options& opt, const string& token,
-        const TableSchema& table, const string& loadDir,
+enum class PageStatus {
+    interfaceNotFound,
+    pageEmpty,
+    containsRecords
+};
+
+static PageStatus retrieve(const Curl& c, const Options& opt,
+        const string& token, const TableSchema& table, const string& loadDir,
         ExtractionFiles* extractionFiles, size_t page)
 {
-    Timer timer(opt);
+    // TODO move timing code to calling function and re-enable
+    //Timer timer(opt);
 
     string path = opt.okapiURL;
     etymon::join(&path, table.sourcePath);
@@ -188,55 +194,74 @@ static bool retrieve(const Curl& c, const Options& opt, const string& token,
         CURLcode code = curl_easy_perform(c.curl);
 
         if (code) {
-            throw runtime_error(string("error retrieving data from Okapi: ") +
+            throw runtime_error(string("error retrieving data from okapi: ") +
                     curl_easy_strerror(code));
         }
     }
 
     long response_code = 0;
     curl_easy_getinfo(c.curl, CURLINFO_RESPONSE_CODE, &response_code);
+    if (response_code == 404) {
+        return PageStatus::interfaceNotFound;
+    }
     if (response_code != 200) {
-        string err = string("error retrieving data from Okapi: ") +
+        string err = string("error retrieving data from okapi: ") +
             to_string(response_code);
             //string(": server response in file: " + output);
         // TODO read and print server response, before tmp files cleaned up
         throw runtime_error(err);
     }
 
-    bool records = pageEmpty(opt, output);
+    bool empty = pageIsEmpty(opt, output);
+    return empty ? PageStatus::pageEmpty : PageStatus::containsRecords;
 
-    // TODO enable times
+    // TODO move timing code to calling function and re-enable
     // Temporarily disabled until timing added for staging, merging, etc.
     //if (opt.verbose)
     //    timer.print("extraction time");
-
-    return records;
 }
 
-static void retrievePages(const Curl& c, const Options& opt,
+static void writeCountFile(const string& loadDir, const string& tableName,
+        ExtractionFiles* extractionFiles, size_t page) {
+    string countFile = loadDir;
+    etymon::join(&countFile, tableName);
+    countFile += "_count.txt";
+    etymon::File f(countFile, "w");
+    extractionFiles->files.push_back(countFile);
+    string pageStr = to_string(page) + "\n";
+    fputs(pageStr.c_str(), f.file);
+}
+
+static bool retrievePages(const Curl& c, const Options& opt,
         const string& token, const TableSchema& table, const string& loadDir,
         ExtractionFiles* extractionFiles)
 {
     size_t page = 0;
     while (true) {
         print(Print::debug, opt, "page: " + to_string(page));
-        bool records = retrieve(c, opt, token, table, loadDir,
+        PageStatus status = retrieve(c, opt, token, table, loadDir,
                 extractionFiles, page);
-        if (!records) {
-            string countFile = loadDir;
-            etymon::join(&countFile, table.tableName);
-            countFile += "_count.txt";
-            etymon::File f(countFile, "w");
-            extractionFiles->files.push_back(countFile);
-            string pageStr = to_string(page) + "\n";
-            fputs(pageStr.c_str(), f.file);
+        switch (status) {
+        case PageStatus::interfaceNotFound:
+            print(Print::verbose, opt,
+                    "interface not found: " + table.sourcePath);
+            return false;
+        case PageStatus::pageEmpty:
+            if (page == 0) {
+                print(Print::verbose, opt,
+                        "no data found: " + table.sourcePath);
+                return false;
+            }
+            writeCountFile(loadDir, table.tableName, extractionFiles, page);
+            return true;
+        case PageStatus::containsRecords:
             break;
         }
         page++;
     }
 }
 
-void extract(const Options& opt, const Schema& schema, const string& token,
+void extract(const Options& opt, Schema* schema, const string& token,
         const string& loadDir, ExtractionFiles* extractionFiles)
 {
     Curl c;
@@ -257,9 +282,12 @@ void extract(const Options& opt, const Schema& schema, const string& token,
 
         print(Print::verbose, opt,
                 "extracting data from source: " + opt.source);
-        for (auto table : schema.tables) {
+        for (auto& table : schema->tables) {
             print(Print::verbose, opt, "extracting: " + table.sourcePath);
-            retrievePages(c, opt, token, table, loadDir, extractionFiles);
+            bool foundData = retrievePages(c, opt, token, table, loadDir,
+                    extractionFiles);
+            if (!foundData)
+                table.skip = true;
         }
     }
 }

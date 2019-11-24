@@ -146,7 +146,7 @@ void runLoad(const Options& opt)
         makeTmpDir(opt, &loadDir);
         extractionFiles.dir = loadDir;
 
-        extract(opt, schema, token, loadDir, &extractionFiles);
+        extract(opt, &schema, token, loadDir, &extractionFiles);
         if (opt.verbose)
             extractionTimer.print("total data extraction time");
 

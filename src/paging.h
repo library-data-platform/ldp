@@ -5,6 +5,6 @@
 
 using namespace std;
 
-bool pageEmpty(const Options& opt, const string& filename);
+bool pageIsEmpty(const Options& opt, const string& filename);
 
 #endif

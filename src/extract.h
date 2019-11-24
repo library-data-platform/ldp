@@ -19,7 +19,7 @@ public:
 
 void okapiLogin(const Options& o, string* token);
 
-void extract(const Options& o, const Schema& spec, const string& token,
+void extract(const Options& o, Schema* spec, const string& token,
         const string& loadDir, ExtractionFiles* extractionFiles);
 
 #endif

@@ -2,20 +2,20 @@
 #include "names.h"
 #include "util.h"
 
-static void mergeTable(const Options& opt, TableSchema* table,
+static void mergeTable(const Options& opt, const TableSchema& table,
         etymon::Postgres* db)
 {
     string stagingTable;
-    stagingTableName(table->tableName, &stagingTable);
+    stagingTableName(table.tableName, &stagingTable);
     string loadingTable;
-    loadingTableName(table->tableName, &loadingTable);
+    loadingTableName(table.tableName, &loadingTable);
 
     string sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
         "    id VARCHAR(65535) NOT NULL PRIMARY KEY,\n";
     string columnType;
-    for (const auto& column : table->columns) {
+    for (const auto& column : table.columns) {
         if (column.columnName != "id") {
             sql += "    \"";
             sql += column.columnName;
@@ -33,14 +33,14 @@ static void mergeTable(const Options& opt, TableSchema* table,
     { etymon::PostgresResult result(db, sql); }
 
     // Add comment on table.
-    if (table->moduleName != "mod-agreements") {
+    if (table.moduleName != "mod-agreements") {
         sql = "COMMENT ON TABLE " + loadingTable + " IS '";
-        sql += table->sourcePath;
+        sql += table.sourcePath;
         sql += " in ";
-        sql += table->moduleName;
+        sql += table.moduleName;
         sql += ": ";
         sql += "https://dev.folio.org/reference/api/#";
-        sql += table->moduleName;
+        sql += table.moduleName;
         sql += "';";
         printSQL(Print::debug, opt, sql);
         { etymon::PostgresResult result(db, sql); }
@@ -50,7 +50,7 @@ static void mergeTable(const Options& opt, TableSchema* table,
         "SELECT json_extract_path_text(data, 'id') AS id,\n";
     string exp;
     string val;
-    for (const auto& column : table->columns) {
+    for (const auto& column : table.columns) {
         if (column.columnName != "id") {
             ColumnSchema::columnTypeToString(column.columnType, &columnType);
             val = "json_extract_path_text(data, '";
@@ -96,17 +96,21 @@ static void mergeTable(const Options& opt, TableSchema* table,
 
 }
 
-static void replaceTable(const Options& opt, TableSchema* table,
+static void dropTable(const Options& opt, const TableSchema& table,
         etymon::Postgres* db)
 {
-    string sql;
-    sql = "DROP TABLE IF EXISTS " + table->tableName + ";";
+    string sql = "DROP TABLE IF EXISTS " + table.tableName + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
+}
+
+static void placeTable(const Options& opt, const TableSchema& table,
+        etymon::Postgres* db)
+{
     string loadingTable;
-    loadingTableName(table->tableName, &loadingTable);
-    sql = "ALTER TABLE " + loadingTable +
-        " RENAME TO " + table->tableName + ";";
+    loadingTableName(table.tableName, &loadingTable);
+    string sql = "ALTER TABLE " + loadingTable +
+        " RENAME TO " + table.tableName + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 }
@@ -114,15 +118,20 @@ static void replaceTable(const Options& opt, TableSchema* table,
 void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
 {
     print(Print::verbose, opt, "merging");
-    for (auto table : schema->tables) {
+    for (auto& table : schema->tables) {
+        if (table.skip)
+            continue;
         print(Print::verbose, opt, "merging table: " + table.tableName);
-        mergeTable(opt, &table, db);
+        mergeTable(opt, table, db);
     }
     // Table-level exclusive locks begin here.
     print(Print::verbose, opt, "replacing tables");
-    for (auto table : schema->tables) {
-        replaceTable(opt, &table, db);
+    for (auto& table : schema->tables)
+        dropTable(opt, table, db);
+    for (auto& table : schema->tables) {
+        if (table.skip)
+            continue;
+        placeTable(opt, table, db);
     }
 }
-
 

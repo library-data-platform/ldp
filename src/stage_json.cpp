@@ -547,6 +547,8 @@ void stageAll(const Options& opt, Schema* schema, etymon::Postgres* db,
 {
     print(Print::verbose, opt, "staging in target: " + opt.target);
     for (auto& table : schema->tables) {
+        if (table.skip)
+            continue;
         print(Print::verbose, opt, "staging table: " + table.tableName);
         stageTable(opt, &table, db, loadDir);
     }
