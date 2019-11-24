@@ -213,22 +213,22 @@ void fillOptions(const Config& config, Options* opt)
         string source = "/sources/";
         source += opt->source;
         source += "/";
-        fillOpt(config, source, "url", &(opt->okapiURL));
-        fillOpt(config, source, "tenant", &(opt->okapiTenant));
-        fillOpt(config, source, "user", &(opt->okapiUser));
-        fillOpt(config, source, "password", &(opt->okapiPassword));
+        fillOpt(config, source, "okapiURL", &(opt->okapiURL));
+        fillOpt(config, source, "okapiTenant", &(opt->okapiTenant));
+        fillOpt(config, source, "okapiUser", &(opt->okapiUser));
+        fillOpt(config, source, "okapiPassword", &(opt->okapiPassword));
         fillOpt(config, source, "extractDir", &(opt->extractDir));
     }
 
     string target = "/targets/";
     target += opt->target;
     target += "/";
-    fillOpt(config, target, "database", &(opt->databaseName));
-    fillOpt(config, target, "type", &(opt->databaseType));
-    fillOpt(config, target, "host", &(opt->databaseHost));
-    fillOpt(config, target, "port", &(opt->databasePort));
-    fillOpt(config, target, "user", &(opt->databaseUser));
-    fillOpt(config, target, "password", &(opt->databasePassword));
+    fillOpt(config, target, "databaseName", &(opt->databaseName));
+    fillOpt(config, target, "databaseType", &(opt->databaseType));
+    fillOpt(config, target, "databaseHost", &(opt->databaseHost));
+    fillOpt(config, target, "databasePort", &(opt->databasePort));
+    fillOpt(config, target, "databaseUser", &(opt->databaseUser));
+    fillOpt(config, target, "databasePassword", &(opt->databasePassword));
     opt->dbtype.setType(opt->databaseType);
 }
 
