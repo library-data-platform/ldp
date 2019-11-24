@@ -1,21 +1,21 @@
 {
     "sources": {
         "folio": {
-            "url": "https://folio-release-okapi.aws.indexdata.com",
-            "tenant": "diku",
-            "user": "diku_admin",
-            "password": "password_goes_here",
+            "okapiURL": "https://folio-release-okapi.aws.indexdata.com",
+            "okapiTenant": "diku",
+            "okapiUser": "diku_admin",
+            "okapiPassword": "(Okapi password here)",
             "extractDir": "/var/lib/ldp/extract/"
         }
     },
     "targets": {
         "ldpdemo": {
-            "database": "ldp",
-            "type": "postgresql",
-            "host": "ldp.indexdata.com",
-            "port": "5432",
-            "user": "ldpadmin",
-            "password": "password_goes_here"
+            "databaseName": "ldp",
+            "databaseType": "postgresql",
+            "databaseHost": "ldp.indexdata.com",
+            "databasePort": "5432",
+            "databaseUser": "ldpadmin",
+            "databasePassword": "(database password here)"
         }
     }
 }

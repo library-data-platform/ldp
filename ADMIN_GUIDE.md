@@ -167,21 +167,21 @@ like:
 {
     "sources": {
         "folio": {
-            "url": "https://folio-snapshot-okapi.aws.indexdata.com",
-            "tenant": "diku",
-            "user": "diku_admin",
-            "password": "(Okapi password here)",
+            "okapiURL": "https://folio-release-okapi.aws.indexdata.com",
+            "okapiTenant": "diku",
+            "okapiUser": "diku_admin",
+            "okapiPassword": "(Okapi password here)",
             "extractDir": "/var/lib/ldp/extract/"
         }
     },
     "targets": {
         "ldpdemo": {
-            "database": "ldp",
-            "type": "postgresql",
-            "host": "ldp.indexdata.com",
-            "port": "5432",
-            "user": "ldpadmin",
-            "password": "(database password here)"
+            "databaseName": "ldp",
+            "databaseType": "postgresql",
+            "databaseHost": "ldp.indexdata.com",
+            "databasePort": "5432",
+            "databaseUser": "ldpadmin",
+            "databasePassword": "(database password here)"
         }
     }
 }
@@ -199,14 +199,14 @@ specified by the `LDPCONFIG` environment variable, e.g. using the Bash
 shell:
 
 ```shell
-$ export LDPCONFIG=/etc/ldp/ldp.conf
+$ export LDPCONFIG=/etc/ldp/ldpconfig.json
 ```
 
 The location also can be specified using the command line option
 `--config`:
 
 ```shell
-$ ldp load --config /etc/ldp/ldp.conf  ( etc. )
+$ ldp load --config /etc/ldp/ldpconfig.json  ( etc. )
 ```
 
 
