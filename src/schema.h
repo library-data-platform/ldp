@@ -42,6 +42,7 @@ public:
     int sourceType;
     vector<ColumnSchema> columns;
     string moduleName;
+    string directSourceTable;
 };
 
 class Schema {

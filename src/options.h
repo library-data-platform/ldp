@@ -8,6 +8,16 @@
 
 using namespace std;
 
+class DirectExtraction {
+public:
+    vector<string> interfaces;
+    string databaseName;
+    string databaseHost;
+    string databasePort;
+    string databaseUser;
+    string databasePassword;
+};
+
 class Options {
 public:
     string command;
@@ -18,6 +28,7 @@ public:
     string okapiUser;
     string okapiPassword;
     string extractDir;
+    DirectExtraction direct;
     string target;
     string databaseName;
     string databaseType;

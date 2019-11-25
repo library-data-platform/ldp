@@ -235,6 +235,7 @@ void Schema::MakeDefaultSchema(Schema* schema)
     schema->tables.push_back(table);
 
     table.sourcePath = "/holdings-storage/holdings";
+    table.directSourceTable = "public.holdings_record";
     deriveTableName(table.sourcePath, &(table.tableName));
     // large data
     schema->tables.push_back(table);
@@ -272,6 +273,7 @@ void Schema::MakeDefaultSchema(Schema* schema)
     schema->tables.push_back(table);
 
     table.sourcePath = "/instance-storage/instances";
+    table.directSourceTable = "";
     deriveTableName(table.sourcePath, &(table.tableName));
     // large data
     schema->tables.push_back(table);
@@ -289,6 +291,7 @@ void Schema::MakeDefaultSchema(Schema* schema)
     schema->tables.push_back(table);
 
     table.sourcePath = "/item-storage/items";
+    table.directSourceTable = "";
     deriveTableName(table.sourcePath, &(table.tableName));
     // large data
     schema->tables.push_back(table);

@@ -210,6 +210,27 @@ void fillOpt(const Config& config, const string& basePointer, const string& key,
     config.getRequired(p, result);
 }
 
+void fillDirectOptions(const Config& config, const string& basePointer,
+        Options* opt)
+{
+    int x = 0;
+    string directInterfaces = basePointer + "directInterfaces/";
+    while (true) {
+        string interface;
+        config.get(directInterfaces + to_string(x), &interface);
+        if (interface == "")
+            break;
+        opt->direct.interfaces.push_back(interface);
+        x++;
+    }
+    config.get(basePointer + "directDatabaseName", &(opt->direct.databaseName));
+    config.get(basePointer + "directDatabaseHost", &(opt->direct.databaseHost));
+    config.get(basePointer + "directDatabasePort", &(opt->direct.databasePort));
+    config.get(basePointer + "directDatabaseUser", &(opt->direct.databaseUser));
+    config.get(basePointer + "directDatabasePassword",
+            &(opt->direct.databasePassword));
+}
+
 void fillOptions(const Config& config, Options* opt)
 {
     if (opt->loadFromDir == "") {
@@ -221,6 +242,7 @@ void fillOptions(const Config& config, Options* opt)
         fillOpt(config, source, "okapiUser", &(opt->okapiUser));
         fillOpt(config, source, "okapiPassword", &(opt->okapiPassword));
         fillOpt(config, source, "extractDir", &(opt->extractDir));
+        fillDirectOptions(config, source, opt);
     }
 
     string target = "/targets/";

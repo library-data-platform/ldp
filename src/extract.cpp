@@ -261,6 +261,26 @@ static bool retrievePages(const Curl& c, const Options& opt,
     }
 }
 
+static bool directOverride(const Options& opt, const string& sourcePath)
+{
+    for (auto& interface : opt.direct.interfaces) {
+        if (interface == sourcePath)
+            return true;
+    }
+    return false;
+}
+
+static bool retrieveDirect(const Options& opt, const TableSchema& table,
+        const string& loadDir, ExtractionFiles* extractionFiles)
+{
+    print(Print::verbose, opt, "direct from database: " + table.sourcePath);
+    // Select jsonb from table.directSourceTable and write to JSON file.
+
+    // Write 1 to count file (refactor writing code).
+
+    return false; // return whether any records found
+}
+
 void extract(const Options& opt, Schema* schema, const string& token,
         const string& loadDir, ExtractionFiles* extractionFiles)
 {
@@ -276,16 +296,16 @@ void extract(const Options& opt, Schema* schema, const string& token,
         c.headers = curl_slist_append(c.headers, tenantHeader.c_str());
         c.headers = curl_slist_append(c.headers, tokenHeader.c_str());
         c.headers = curl_slist_append(c.headers,
-                "Accept: "
-                "application/json,text/plain");
+                "Accept: application/json,text/plain");
         curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
 
         print(Print::verbose, opt,
                 "extracting data from source: " + opt.source);
         for (auto& table : schema->tables) {
             print(Print::verbose, opt, "extracting: " + table.sourcePath);
-            bool foundData = retrievePages(c, opt, token, table, loadDir,
-                    extractionFiles);
+            bool foundData = directOverride(opt, table.sourcePath) ?
+                retrieveDirect(opt, table, loadDir, extractionFiles) :
+                retrievePages(c, opt, token, table, loadDir, extractionFiles);
             if (!foundData)
                 table.skip = true;
         }
