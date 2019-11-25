@@ -278,14 +278,20 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
         opt.dbtype.encodeStringConst(doc["id"].GetString(), &id);
         string data;
         opt.dbtype.encodeStringConst(jsondata.GetString(), &data);
-        if (recordCount > 0)
-            insertBuffer += ',';
-        insertBuffer += '(';
-        insertBuffer += id;
-        insertBuffer += ",";
-        insertBuffer += data;
-        insertBuffer += ')';
-        recordCount++;
+
+        //////////////////////////////////////////////////////////////////////
+        // TODO This is a temporary workaround for long strings.
+        //////////////////////////////////////////////////////////////////////
+        if (data.length() < 65535) {
+            if (recordCount > 0)
+                insertBuffer += ',';
+            insertBuffer += '(';
+            insertBuffer += id;
+            insertBuffer += ",";
+            insertBuffer += data;
+            insertBuffer += ')';
+            recordCount++;
+        }
 
         free(buffer);
 
@@ -452,6 +458,8 @@ size_t readPageCount(const string& loadDir, const string& tableName)
     string filename = loadDir;
     etymon::join(&filename, tableName);
     filename += "_count.txt";
+    if ( !(etymon::fileExists(filename)) )
+        return 0;
     etymon::File f(filename, "r");
     size_t count;
     int r = fscanf(f.file, "%zu", &count);
@@ -474,14 +482,20 @@ static void stagePage(const Options& opt, const TableSchema& tableSchema,
 static void stageTable(const Options& opt, TableSchema* table,
         etymon::Postgres* db, const string& loadDir)
 {
+    size_t pageCount = readPageCount(loadDir, table->tableName);
+    if (pageCount == 0) {
+        print(Print::verbose, opt, "no data found: " + table->sourcePath);
+        table->skip = true;
+        return;
+    }
+
+    print(Print::debug, opt, "staging: " + table->tableName +
+            ": page count: " + to_string(pageCount));
+
     createStagingTable(opt, table->tableName, db);
 
     map<string,Counts> stats;
     char readBuffer[65536];
-
-    size_t pageCount = readPageCount(loadDir, table->tableName);
-    print(Print::debug, opt, "staging: " + table->tableName +
-            ": page count: " + to_string(pageCount));
 
     for (size_t page = 0; page < pageCount; page++) {
         string filename = loadDir;
