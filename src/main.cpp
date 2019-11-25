@@ -210,6 +210,40 @@ void fillOpt(const Config& config, const string& basePointer, const string& key,
     config.getRequired(p, result);
 }
 
+/*
+
+    Direct extraction is an experimental workaround to allow retrieving
+    a larger number of records from FOLIO modules than is typically
+    supported by the module APIs (e.g. 10 million).  It allows LDP
+    extraction to bypass a module API and retrieve data directly from
+    the module's internal database.  To enable this for specific
+    interfaces, several values are added to the source configuration,
+    for example:
+
+        "folio": {
+
+            ( . . . )
+
+	    "directInterfaces": [
+	        "/holdings-storage/holdings",
+		"/instance-storage/instances",
+		"/item-storage/items"
+            ],
+            "directDatabaseName": "okapi",
+            "directDatabaseHost": "the.database.host",
+            "directDatabasePort": "5432",
+            "directDatabaseUser": "folio_admin",
+            "directDatabasePassword": "the_database_password",
+	    "directSchemaPrefix": "diku"
+        }
+
+    In order for this to work, the client host must have permission to
+    connect to the database, and the LDP loader's default schema
+    (currently defined in schema.cpp) must include the name of each
+    internal table.
+
+*/
+
 void fillDirectOptions(const Config& config, const string& basePointer,
         Options* opt)
 {
@@ -229,6 +263,7 @@ void fillDirectOptions(const Config& config, const string& basePointer,
     config.get(basePointer + "directDatabaseUser", &(opt->direct.databaseUser));
     config.get(basePointer + "directDatabasePassword",
             &(opt->direct.databasePassword));
+    config.get(basePointer + "directSchemaPrefix", &(opt->direct.schemaPrefix));
 }
 
 void fillOptions(const Config& config, Options* opt)

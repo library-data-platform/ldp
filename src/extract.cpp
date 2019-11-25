@@ -5,6 +5,7 @@
 #include <iostream>
 #include <stdio.h>
 
+#include "../etymoncpp/include/postgres.h"
 #include "../etymoncpp/include/util.h"
 #include "extract.h"
 #include "paging.h"
@@ -274,11 +275,50 @@ static bool retrieveDirect(const Options& opt, const TableSchema& table,
         const string& loadDir, ExtractionFiles* extractionFiles)
 {
     print(Print::verbose, opt, "direct from database: " + table.sourcePath);
+    if (table.directSourceTable == "") {
+        print(Print::warning, opt,
+                "direct source table undefined: " + table.sourcePath);
+        return false;
+    }
+
     // Select jsonb from table.directSourceTable and write to JSON file.
+    etymon::Postgres db(opt.direct.databaseHost, opt.direct.databasePort,
+            opt.direct.databaseUser, opt.direct.databasePassword,
+            opt.direct.databaseName, "disable" /* "require" */ );
+    string sql = "SELECT jsonb FROM " +
+        opt.direct.schemaPrefix + "_" + table.directSourceTable + ";";
+    printSQL(Print::debug, opt, sql);
+    {
+        etymon::PostgresResult res(&db, sql);
 
-    // Write 1 to count file (refactor writing code).
+        if (PQresultStatus(res.result) != PGRES_TUPLES_OK)
+            return false;
 
-    return false; // return whether any records found
+        int rows = PQntuples(res.result);
+        if (rows == 0)
+            return false;
+
+        string output = loadDir;
+        etymon::join(&output, table.tableName + "_0.json");
+        etymon::File f(output, "w");
+        extractionFiles->files.push_back(output);
+
+        fprintf(f.file, "{\n  \"a\": [\n");
+
+        for (int x = 0; x < rows; x++) {
+            if (x > 0)
+                fprintf(f.file, ",\n");
+            const char* j = PQgetvalue(res.result, x, 0);
+            fprintf(f.file, "%s\n", j);
+        }   
+
+        fprintf(f.file, "\n  ]\n}\n");
+    }
+
+    // Write 1 to count file.
+    writeCountFile(loadDir, table.tableName, extractionFiles, 1);
+
+    return true;
 }
 
 void extract(const Options& opt, Schema* schema, const string& token,

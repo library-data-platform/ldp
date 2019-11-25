@@ -16,6 +16,7 @@ public:
     string databasePort;
     string databaseUser;
     string databasePassword;
+    string schemaPrefix;
 };
 
 class Options {

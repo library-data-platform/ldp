@@ -234,10 +234,10 @@ void Schema::MakeDefaultSchema(Schema* schema)
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
-    table.sourcePath = "/holdings-storage/holdings";
-    table.directSourceTable = "public.holdings_record";
-    deriveTableName(table.sourcePath, &(table.tableName));
     // large data
+    table.sourcePath = "/holdings-storage/holdings";
+    table.directSourceTable = "mod_inventory_storage.holdings_record";
+    deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
     table.sourcePath = "/holdings-types";
@@ -272,10 +272,10 @@ void Schema::MakeDefaultSchema(Schema* schema)
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
-    table.sourcePath = "/instance-storage/instances";
-    table.directSourceTable = "";
-    deriveTableName(table.sourcePath, &(table.tableName));
     // large data
+    table.sourcePath = "/instance-storage/instances";
+    table.directSourceTable = "mod_inventory_storage.instance";
+    deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
     table.sourcePath = "/instance-types";
@@ -290,10 +290,10 @@ void Schema::MakeDefaultSchema(Schema* schema)
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
-    table.sourcePath = "/item-storage/items";
-    table.directSourceTable = "";
-    deriveTableName(table.sourcePath, &(table.tableName));
     // large data
+    table.sourcePath = "/item-storage/items";
+    table.directSourceTable = "mod_inventory_storage.item";
+    deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
     table.sourcePath = "/location-units/campuses";
