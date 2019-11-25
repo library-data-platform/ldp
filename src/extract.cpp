@@ -284,36 +284,42 @@ static bool retrieveDirect(const Options& opt, const TableSchema& table,
     // Select jsonb from table.directSourceTable and write to JSON file.
     etymon::Postgres db(opt.direct.databaseHost, opt.direct.databasePort,
             opt.direct.databaseUser, opt.direct.databasePassword,
-            opt.direct.databaseName, "disable" /* "require" */ );
+            opt.direct.databaseName, "require");
     string sql = "SELECT jsonb FROM " +
         opt.direct.schemaPrefix + "_" + table.directSourceTable + ";";
     printSQL(Print::debug, opt, sql);
-    {
-        etymon::PostgresResult res(&db, sql);
 
-        if (PQresultStatus(res.result) != PGRES_TUPLES_OK)
-            return false;
-
-        int rows = PQntuples(res.result);
-        if (rows == 0)
-            return false;
-
-        string output = loadDir;
-        etymon::join(&output, table.tableName + "_0.json");
-        etymon::File f(output, "w");
-        extractionFiles->files.push_back(output);
-
-        fprintf(f.file, "{\n  \"a\": [\n");
-
-        for (int x = 0; x < rows; x++) {
-            if (x > 0)
-                fprintf(f.file, ",\n");
-            const char* j = PQgetvalue(res.result, x, 0);
-            fprintf(f.file, "%s\n", j);
-        }   
-
-        fprintf(f.file, "\n  ]\n}\n");
+    if (PQsendQuery(db.conn, sql.c_str()) == 0) {
+        string err = PQerrorMessage(db.conn);
+        throw runtime_error(err);
     }
+    if (PQsetSingleRowMode(db.conn) == 0)
+        throw runtime_error("unable to set single-row mode in database query");
+
+    string output = loadDir;
+    etymon::join(&output, table.tableName + "_0.json");
+    etymon::File f(output, "w");
+    extractionFiles->files.push_back(output);
+
+    fprintf(f.file, "{\n  \"a\": [\n");
+
+    int row = 0;
+    while (true) {
+        etymon::PostgresResultAsync res(&db);
+        if (res.result == nullptr)
+            break;
+        const char* j = PQgetvalue(res.result, 0, 0);
+        if (j == nullptr)
+            break;
+        if (row > 0)
+            fprintf(f.file, ",\n");
+        fprintf(f.file, "%s\n", j);
+        row++;
+    }
+    if (row == 0)
+        return false;
+
+    fprintf(f.file, "\n  ]\n}\n");
 
     // Write 1 to count file.
     writeCountFile(loadDir, table.tableName, extractionFiles, 1);

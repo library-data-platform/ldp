@@ -454,7 +454,9 @@ size_t readPageCount(const string& loadDir, const string& tableName)
     filename += "_count.txt";
     etymon::File f(filename, "r");
     size_t count;
-    fscanf(f.file, "%zu", &count);
+    int r = fscanf(f.file, "%zu", &count);
+    if (r < 1 || r == EOF)
+        throw runtime_error("unable to read page count from " + filename);
     return count;
 }
 

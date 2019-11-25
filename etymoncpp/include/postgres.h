@@ -24,6 +24,13 @@ public:
     ~PostgresResult();
 };
 
+class PostgresResultAsync {
+public:
+    PGresult* result;
+    PostgresResultAsync(Postgres* postgres);
+    ~PostgresResultAsync();
+};
+
 }
 
 #endif
