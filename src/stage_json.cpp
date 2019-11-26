@@ -275,23 +275,28 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
         }
 
         string id;
-        opt.dbtype.encodeStringConst(doc["id"].GetString(), &id);
+        const char* idc = doc["id"].GetString();
+        opt.dbtype.encodeStringConst(idc, &id);
         string data;
-        opt.dbtype.encodeStringConst(jsondata.GetString(), &data);
+        const char* datac = jsondata.GetString();
+        opt.dbtype.encodeStringConst(datac, &data);
 
-        //////////////////////////////////////////////////////////////////////
-        // TODO This is a temporary workaround for long strings.
-        //////////////////////////////////////////////////////////////////////
-        if (data.length() < 65535) {
-            if (recordCount > 0)
-                insertBuffer += ',';
-            insertBuffer += '(';
-            insertBuffer += id;
-            insertBuffer += ",";
-            insertBuffer += data;
-            insertBuffer += ')';
-            recordCount++;
+        // Check if JSON object exceeds maximum string length (65535).
+        if (data.length() >= 65535) {
+            print(Print::warning, opt,
+                    "json object size exceeds database limit: " +
+                    tableSchema.sourcePath + ": " + idc);
+            opt.dbtype.encodeStringConst("", &data);
         }
+
+        if (recordCount > 0)
+            insertBuffer += ',';
+        insertBuffer += '(';
+        insertBuffer += id;
+        insertBuffer += ",";
+        insertBuffer += data;
+        insertBuffer += ')';
+        recordCount++;
 
         free(buffer);
 
