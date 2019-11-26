@@ -24,7 +24,6 @@ Postgres::~Postgres()
     PQfinish(conn);
 }
 
-
 PostgresResult::PostgresResult(Postgres* postgres, const string& command)
 {
     result = PQexec(postgres->conn, command.c_str());
@@ -39,6 +38,30 @@ PostgresResult::PostgresResult(Postgres* postgres, const string& command)
 PostgresResult::~PostgresResult()
 {
     PQclear(result);
+}
+
+PostgresResultAsync::PostgresResultAsync(Postgres* postgres)
+{
+    result = PQgetResult(postgres->conn);
+    if (result != nullptr && PQresultStatus(result) == PGRES_FATAL_ERROR) {
+        string err = PQresultErrorMessage(result);
+        if (result != nullptr)
+            PQclear(result);
+        while (true) {
+            result = PQgetResult(postgres->conn);
+            if (result != nullptr)
+                PQclear(result);
+            else
+                break;
+        }
+        throw runtime_error(err);
+    }
+}
+
+PostgresResultAsync::~PostgresResultAsync()
+{
+    if (result != nullptr)
+        PQclear(result);
 }
 
 }
