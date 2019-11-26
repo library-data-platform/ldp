@@ -306,11 +306,12 @@ static bool retrieveDirect(const Options& opt, const TableSchema& table,
     int row = 0;
     while (true) {
         etymon::PostgresResultAsync res(&db);
-        if (res.result == nullptr)
+        if (res.result == nullptr ||
+                PQresultStatus(res.result) != PGRES_SINGLE_TUPLE)
             break;
         const char* j = PQgetvalue(res.result, 0, 0);
-        if (j == nullptr)
-            break;
+        //if (j == nullptr)
+        //    break;
         if (row > 0)
             fprintf(f.file, ",\n");
         fprintf(f.file, "%s\n", j);
