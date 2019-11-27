@@ -27,7 +27,7 @@ static void mergeTable(const Options& opt, const TableSchema& table,
     }
     sql += "    data ";
     sql += opt.dbtype.jsonType();
-    sql += " NOT NULL\n"
+    sql += "\n"
         ");\n";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
@@ -47,7 +47,7 @@ static void mergeTable(const Options& opt, const TableSchema& table,
     }
 
     sql = "INSERT INTO " + loadingTable + "\n"
-        "SELECT json_extract_path_text(data, 'id') AS id,\n";
+        "SELECT id,\n";
     string exp;
     string val;
     for (const auto& column : table.columns) {
