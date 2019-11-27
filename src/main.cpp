@@ -209,7 +209,8 @@ void runLoad(const Options& opt)
     { etymon::PostgresResult result(&db, sql); }
     print(Print::verbose, opt, "all changes committed");
 
-    vacuumAnalyzeAll(opt, &schema, &db);
+    // TODO Check if needed for history tables.
+    //vacuumAnalyzeAll(opt, &schema, &db);
 
     if (opt.verbose) {
         fprintf(opt.err, "%s: data loading complete\n", opt.prog);
