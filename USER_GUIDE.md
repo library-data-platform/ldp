@@ -6,7 +6,8 @@ LDP User Guide
 2\. JSON queries  
 3\. Relational attributes vs. JSON  
 4\. Local schemas  
-5\. Important note on database views
+5\. Important note on database views  
+6\. Historical data
 
 
 1\. Data model
@@ -215,10 +216,12 @@ to be able to update queries and to prepare to recreate local result
 sets if needed.
 
 
-<!--
-
 6\. Historical data
 -------------------
+
+**Note:  The historical data feature described in this section is
+currently not available in the LDP 0.3 release but will return in the
+next few weeks.**
 
 As mentioned earlier, the LDP database reflects the state of the source
 data as of the last time the LDP data loader was run.  The loader also
@@ -280,30 +283,24 @@ From there one might examine the data to check for inconsistent or missing
 values, update them, etc.  Note that in SQL, `''` and `NULL` may look the same
 in the output of a `SELECT`, but they are distinct values.
 
--->
-
 
 <!--
-
 6\. Schema documentation
 ------------------------
 
 The LDP project plans to include documentation on mappings between LDP tables
 and the FOLIO module interfaces defined by the [FOLIO API
 documentation](https://dev.folio.org/reference/api/).
-
 -->
 
 
 <!--
-
 6\. Report queries
 ------------------
 
 Report queries for the LDP are being developed by the FOLIO reporting
 community in the [ldp-analytics](https://github.com/folio-org/ldp-analytics)
 repository.
-
 -->
 
 
