@@ -99,6 +99,28 @@ const char* sslmode(bool nossl)
     return nossl ? "disable" : "require";
 }
 
+static void vacuumAnalyzeTable(const Options& opt, const TableSchema& table,
+        etymon::Postgres* db)
+{
+    string sql = "VACUUM " + table.tableName + ";\n";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+
+    sql = "ANALYZE " + table.tableName + ";\n";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+}
+
+void vacuumAnalyzeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
+{
+    print(Print::verbose, opt, "vacuum/analyze");
+    for (auto& table : schema->tables) {
+        if (table.skip)
+            continue;
+        vacuumAnalyzeTable(opt, table, db);
+    }
+}
+
 void runLoad(const Options& opt)
 {
     //string ct;
@@ -187,7 +209,7 @@ void runLoad(const Options& opt)
     { etymon::PostgresResult result(&db, sql); }
     print(Print::verbose, opt, "all changes committed");
 
-    //vacuumAnalyzeAll();
+    vacuumAnalyzeAll(opt, &schema, &db);
 
     if (opt.verbose) {
         fprintf(opt.err, "%s: data loading complete\n", opt.prog);

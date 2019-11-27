@@ -118,14 +118,16 @@ release](https://github.com/folio-org/ldp/releases) and `cd` into the
 unpacked directory.  Then:
 
 ```shell
-$ cmake .
+$ mkdir build
+$ cd build/
+$ cmake ..
 $ make
 ```
 <!--
 make install
 -->
 
-The compiled executable file `ldp` should appear in `ldp/src/`:
+The compiled executable file `ldp` should appear in `ldp/build/src/`:
 
 ```shell
 $ cd src/

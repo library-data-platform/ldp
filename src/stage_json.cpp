@@ -286,8 +286,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
             print(Print::warning, opt,
                     "json object size exceeds database limit: " +
                     tableSchema.sourcePath + ": " + idc);
-            string idobj = "{\n    \"id\": \"" + string(idc) +  "\"\n}";
-            opt.dbtype.encodeStringConst(idobj.c_str(), &data);
+            data = "NULL";
         }
 
         if (recordCount > 0)
