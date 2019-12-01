@@ -67,30 +67,29 @@ bool looksLikeDateTime(const char* str)
     return regex_match(str, dateTime);
 }
 
+// Collect stats and anonimize
 void processJSONRecord(json::Document* root, json::Value* node,
-        bool anonymizeTable, const string& path, unsigned int depth,
-        map<string,Counts>* stats)
+        bool collectStats, bool anonymizeTable, const string& path,
+        unsigned int depth, map<string,Counts>* stats)
 {
     switch (node->GetType()) {
         case json::kNullType:
-            if (depth == 1) {
+            if (collectStats && depth == 1)
                 (*stats)[path.c_str() + 1].null++;
-            }
             break;
         case json::kTrueType:
         case json::kFalseType:
             if (anonymizeTable && possiblePersonalData(path.c_str())) {
                 json::Pointer(path.c_str()).Set(*root, false);
             }
-            if (depth == 1) {
+            if (collectStats && depth == 1)
                 (*stats)[path.c_str() + 1].boolean++;
-            }
             break;
         case json::kNumberType:
             if (anonymizeTable && possiblePersonalData(path.c_str())) {
                 json::Pointer(path.c_str()).Set(*root, 0);
             }
-            if (depth == 1) {
+            if (collectStats && depth == 1) {
                 (*stats)[path.c_str() + 1].number++;
                 if (node->IsInt() || node->IsUint() || node->IsInt64() ||
                         node->IsUint64())
@@ -103,7 +102,7 @@ void processJSONRecord(json::Document* root, json::Value* node,
             if (anonymizeTable && possiblePersonalData(path.c_str())) {
                 json::Pointer(path.c_str()).Set(*root, "");
             }
-            if (depth == 1) {
+            if (collectStats && depth == 1) {
                 (*stats)[path.c_str() + 1].string++;
                 if (looksLikeDateTime(node->GetString()))
                     (*stats)[path.c_str() + 1].dateTime++;
@@ -117,8 +116,8 @@ void processJSONRecord(json::Document* root, json::Value* node,
                     string newpath = path;
                     newpath += '/';
                     newpath += to_string(x);
-                    processJSONRecord(root, i, anonymizeTable, newpath,
-                            depth + 1, stats);
+                    processJSONRecord(root, i, collectStats, anonymizeTable,
+                            newpath, depth + 1, stats);
                     x++;
                 }
             }
@@ -130,8 +129,8 @@ void processJSONRecord(json::Document* root, json::Value* node,
                 string newpath = path;
                 newpath += '/';
                 newpath += i->name.GetString();
-                processJSONRecord(root, &(i->value), anonymizeTable, newpath,
-                        depth + 1, stats);
+                processJSONRecord(root, &(i->value), collectStats,
+                        anonymizeTable, newpath, depth + 1, stats);
             }
             break;
         default:
@@ -156,18 +155,24 @@ void processJSONRecord(json::Document* root, json::Value* node,
 class JSONHandler :
     public json::BaseReaderHandler<json::UTF8<>, JSONHandler> {
 public:
+    int pass;
+    // General parsing / building record
     const Options& opt;
-    const TableSchema& tableSchema;
-    etymon::Postgres* db;
+    int level = 0;
     bool active = false;
     string record;
-    int level = 0;
+    const TableSchema& tableSchema;
+    // Collect stats
     map<string,Counts>* stats;
+    // Loading
+    etymon::Postgres* db;
     size_t recordCount = 0;
     string insertBuffer;
-    JSONHandler(const Options& options, const TableSchema& table,
+    /////////////////////////////////////////////////////////////////////////
+    JSONHandler(int pass, const Options& options, const TableSchema& table,
             etymon::Postgres* database, map<string,Counts>* statistics) :
-        opt(options), tableSchema(table), db(database), stats(statistics) { }
+        pass(pass), opt(options), tableSchema(table), stats(statistics),
+        db(database) { }
     bool StartObject();
     bool EndObject(json::SizeType memberCount);
     bool StartArray();
@@ -254,49 +259,62 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
         //Pointer("/personal/firstName").Set(d, "ANONYMIZED");
 
         string path;
-        bool anonymizeTable =
-            (strcmp(tableSchema.tableName.c_str(), "users") == 0);
-        processJSONRecord(&doc, &doc, anonymizeTable, path, 0, stats);
-
-        json::StringBuffer jsondata;
-        json::PrettyWriter<json::StringBuffer> writer(jsondata);
-        doc.Accept(writer);
-
-        //if (opt.debug)
-        //    fprintf(opt.err, "Record ready for staging:\n%s\n",
-        //            jsondata.GetString());
-
-        //const char* id = doc["id"].GetString();
-
-        if (insertBuffer.length() > 16500000) {
-            endInserts(opt, &insertBuffer, db);
-            beginInserts(tableSchema.tableName, &insertBuffer);
-            recordCount = 0;
+        bool collectStats = (pass == 1);
+        bool anonymizeTable;
+        if (pass == 1) {
+            anonymizeTable = false;
+        } else {
+            anonymizeTable =
+                (strcmp(tableSchema.tableName.c_str(), "users") == 0);
         }
+        // Stats and anonimize
+        processJSONRecord(&doc, &doc, collectStats, anonymizeTable, path, 0,
+                stats);
 
-        string id;
-        const char* idc = doc["id"].GetString();
-        opt.dbtype.encodeStringConst(idc, &id);
-        string data;
-        const char* datac = jsondata.GetString();
-        opt.dbtype.encodeStringConst(datac, &data);
+        if (pass == 2) {
 
-        // Check if JSON object exceeds maximum string length (65535).
-        if (data.length() >= 65535) {
-            print(Print::warning, opt,
-                    "json object size exceeds database limit: " +
-                    tableSchema.sourcePath + ": " + idc);
-            data = "NULL";
+            // Normalize JSON format
+            json::StringBuffer jsondata;
+            json::PrettyWriter<json::StringBuffer> writer(jsondata);
+            doc.Accept(writer);
+
+            //if (opt.debug)
+            //    fprintf(opt.err, "Record ready for staging:\n%s\n",
+            //            jsondata.GetString());
+
+            //const char* id = doc["id"].GetString();
+
+            if (insertBuffer.length() > 16500000) {
+                endInserts(opt, &insertBuffer, db);
+                beginInserts(tableSchema.tableName, &insertBuffer);
+                recordCount = 0;
+            }
+
+            string id;
+            const char* idc = doc["id"].GetString();
+            opt.dbtype.encodeStringConst(idc, &id);
+            string data;
+            const char* datac = jsondata.GetString();
+            opt.dbtype.encodeStringConst(datac, &data);
+
+            // Check if JSON object exceeds maximum string length (65535).
+            if (data.length() >= 65535) {
+                print(Print::warning, opt,
+                        "json object size exceeds database limit: " +
+                        tableSchema.sourcePath + ": " + idc);
+                data = "NULL";
+            }
+
+            if (recordCount > 0)
+                insertBuffer += ',';
+            insertBuffer += '(';
+            insertBuffer += id;
+            insertBuffer += ",";
+            insertBuffer += data;
+            insertBuffer += ')';
+            recordCount++;
+
         }
-
-        if (recordCount > 0)
-            insertBuffer += ',';
-        insertBuffer += '(';
-        insertBuffer += id;
-        insertBuffer += ",";
-        insertBuffer += data;
-        insertBuffer += ')';
-        recordCount++;
 
         free(buffer);
 
@@ -315,7 +333,8 @@ bool JSONHandler::StartArray()
 {
     if (level == 1) {
         active = true;
-        beginInserts(tableSchema.tableName, &insertBuffer);
+        if (pass == 2)
+            beginInserts(tableSchema.tableName, &insertBuffer);
     } else {
         if (level > 1)
             record += '[';
@@ -329,7 +348,8 @@ bool JSONHandler::EndArray(json::SizeType elementCount)
     if (level == 2) {
         active = false;
         if (recordCount > 0)
-            endInserts(opt, &insertBuffer, db);
+            if (pass == 2)
+                endInserts(opt, &insertBuffer, db);
     } else {
         if (level > 2)
             record += "],";
@@ -473,15 +493,24 @@ size_t readPageCount(const string& loadDir, const string& tableName)
     return count;
 }
 
-static void stagePage(const Options& opt, const TableSchema& tableSchema,
-        etymon::Postgres* db, map<string,Counts>* stats,
-        const string& filename, char* readBuffer, size_t readBufferSize)
+static void stagePage(const Options& opt, int pass,
+        const TableSchema& tableSchema, etymon::Postgres* db,
+        map<string,Counts>* stats, const string& filename, char* readBuffer,
+        size_t readBufferSize)
 {
     json::Reader reader;
     etymon::File f(filename, "r");
     json::FileReadStream is(f.file, readBuffer, readBufferSize);
-    JSONHandler handler(opt, tableSchema, db, stats);
+    JSONHandler handler(pass, opt, tableSchema, db, stats);
     reader.Parse(is, handler);
+}
+
+static void composeDataFilePath(const string& loadDir,
+        const TableSchema& table, const string& suffix, string* path)
+{
+    *path = loadDir;
+    etymon::join(path, table.tableName);
+    *path += suffix;
 }
 
 static void stageTable(const Options& opt, TableSchema* table,
@@ -502,65 +531,72 @@ static void stageTable(const Options& opt, TableSchema* table,
     map<string,Counts> stats;
     char readBuffer[65536];
 
-    for (size_t page = 0; page < pageCount; page++) {
-        string filename = loadDir;
-        etymon::join(&filename, table->tableName);
-        filename += "_" + to_string(page) + ".json";
-        print(Print::debug, opt, "staging: " + table->tableName + ": page: " +
-                to_string(page));
-        stagePage(opt, *table, db, &stats, filename, readBuffer,
-                sizeof readBuffer);
-    }
+    for (int pass = 1; pass <= 2; pass++) {
 
-    if (opt.loadFromDir != "") {
-        string filename = loadDir;
-        etymon::join(&filename, table->tableName);
-        filename += "_test.json";
-        if (etymon::fileExists(filename)) {
-            print(Print::debug, opt, "staging: " + table->tableName +
-                    ": test file");
-            stagePage(opt, *table, db, &stats, filename, readBuffer,
+        print(Print::verbose, opt,
+                (pass == 1 ?  "analyzing: " : "loading: ") + table->tableName);
+
+        for (size_t page = 0; page < pageCount; page++) {
+            string path;
+            composeDataFilePath(loadDir, *table,
+                    "_" + to_string(page) + ".json", &path);
+            print(Print::debug, opt,
+                    "staging: " + table->tableName + ": page: " +
+                    to_string(page));
+            stagePage(opt, pass, *table, db, &stats, path, readBuffer,
                     sizeof readBuffer);
         }
-    }
 
-    if (opt.debug) {
-        for (const auto& [field, counts] : stats) {
-            fprintf(opt.err, "%s: stats: in field:  %s\n", opt.prog,
-                    field.c_str());
-            fprintf(opt.err, "%s: stats: string     %8u\n", opt.prog,
-                    counts.string);
-            fprintf(opt.err, "%s: stats: datetime   %8u\n", opt.prog,
-                    counts.dateTime);
-            fprintf(opt.err, "%s: stats: bool       %8u\n", opt.prog,
-                    counts.boolean);
-            fprintf(opt.err, "%s: stats: number     %8u\n", opt.prog,
-                    counts.number);
-            fprintf(opt.err, "%s: stats: int        %8u\n", opt.prog,
-                    counts.integer);
-            fprintf(opt.err, "%s: stats: float      %8u\n", opt.prog,
-                    counts.floating);
-            fprintf(opt.err, "%s: stats: null       %8u\n", opt.prog,
-                    counts.null);
+        if (opt.loadFromDir != "") {
+            string path;
+            composeDataFilePath(loadDir, *table, "_test.json", &path);
+            if (etymon::fileExists(path)) {
+                print(Print::debug, opt, "staging: " + table->tableName +
+                        ": test file");
+                stagePage(opt, pass, *table, db, &stats, path, readBuffer,
+                        sizeof readBuffer);
+            }
         }
+
+        if (pass == 1 && opt.debug) {
+            for (const auto& [field, counts] : stats) {
+                fprintf(opt.err, "%s: stats: in field:  %s\n", opt.prog,
+                        field.c_str());
+                fprintf(opt.err, "%s: stats: string     %8u\n", opt.prog,
+                        counts.string);
+                fprintf(opt.err, "%s: stats: datetime   %8u\n", opt.prog,
+                        counts.dateTime);
+                fprintf(opt.err, "%s: stats: bool       %8u\n", opt.prog,
+                        counts.boolean);
+                fprintf(opt.err, "%s: stats: number     %8u\n", opt.prog,
+                        counts.number);
+                fprintf(opt.err, "%s: stats: int        %8u\n", opt.prog,
+                        counts.integer);
+                fprintf(opt.err, "%s: stats: float      %8u\n", opt.prog,
+                        counts.floating);
+                fprintf(opt.err, "%s: stats: null       %8u\n", opt.prog,
+                        counts.null);
+            }
+        }
+
+        if (pass == 1) {
+            for (const auto& [field, counts] : stats) {
+                ColumnSchema column;
+                column.columnType = ColumnSchema::selectColumnType(counts);
+                string typeStr;
+                ColumnSchema::columnTypeToString(column.columnType, &typeStr);
+                string newattr;
+                decodeCamelCase(field.c_str(), &newattr);
+                print(Print::debug, opt,
+                        string("column: ") + newattr + string(" ") + typeStr);
+                column.columnName = newattr;
+                column.sourceColumnName = field;
+                table->columns.push_back(column);
+            }
+        }
+
     }
 
-    for (const auto& [field, counts] : stats) {
-        ColumnSchema column;
-        column.columnType = ColumnSchema::selectColumnType(counts);
-        string typeStr;
-        ColumnSchema::columnTypeToString(column.columnType, &typeStr);
-        string newattr;
-        decodeCamelCase(field.c_str(), &newattr);
-        print(Print::debug, opt,
-                string("column: ") + newattr + string(" ") + typeStr);
-        //if (opt.debug)
-        //    fprintf(opt.err, "debug: column: %s %s\n",
-        //            newattr.c_str(), typeStr.c_str());
-        column.columnName = newattr;
-        column.sourceColumnName = field;
-        table->columns.push_back(column);
-    }
 }
 
 void stageAll(const Options& opt, Schema* schema, etymon::Postgres* db,
