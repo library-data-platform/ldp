@@ -5,59 +5,6 @@
 static void mergeTable(const Options& opt, const TableSchema& table,
         etymon::Postgres* db)
 {
-    //createLoadingTable(opt, table, db);
-
-    /*
-    string loadingTable;
-    loadingTableName(table.tableName, &loadingTable);
-    string stagingTable;
-    stagingTableName(table.tableName, &stagingTable);
-    string sql = "INSERT INTO " + loadingTable + "\n"
-        "SELECT id,\n";
-    string exp;
-    string val;
-    string columnType;
-    for (const auto& column : table.columns) {
-        if (column.columnName != "id") {
-            ColumnSchema::columnTypeToString(column.columnType, &columnType);
-            val = "json_extract_path_text(data, '";
-            val += column.sourceColumnName;
-            val += "')";
-            switch (column.columnType) {
-            case ColumnType::varchar:
-                exp = val;
-                break;
-            case ColumnType::boolean:
-                exp = "CASE ";
-                exp += val;
-                exp += "\n"
-                    "            WHEN 'true' THEN TRUE "
-                    "WHEN 'false' THEN FALSE "
-                    "ELSE NULL "
-                    "END";
-                break;
-            default:
-                exp = "NULLIF(";
-                exp += val;
-                exp += ", '')::";
-                exp += columnType;
-            }
-            sql += "       ";
-            sql += exp;
-            sql += "\n"
-                "                AS \"";
-            sql += column.columnName;
-            sql += "\",\n";
-        }
-    }
-    sql += "       data\n"
-        "    FROM ";
-    sql += stagingTable;
-    sql += ";\n";
-    printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
-    */
-
     // Update history tables.
 
     // TODO merge history table.

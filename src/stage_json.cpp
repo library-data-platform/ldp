@@ -67,7 +67,7 @@ bool looksLikeDateTime(const char* str)
     return regex_match(str, dateTime);
 }
 
-// Collect stats and anonimize
+// Collect statistics and anonimize data
 void processJSONRecord(json::Document* root, json::Value* node,
         bool collectStats, bool anonymizeTable, const string& path,
         unsigned int depth, map<string,Counts>* stats)
@@ -142,33 +142,32 @@ void processJSONRecord(json::Document* root, json::Value* node,
   * \brief  Main ETL processor for JSON data.
   *
   * This class handles most of the ETL processing for a FOLIO interface.
-  * Several functions are performed:  (1) The large JSON file retrieved
-  * from Okapi is streamed in and parsed into individual JSON object
-  * records, in order that only a single record needs to be held in
-  * memory at a time.  (2) Some data are removed or altered as part of
-  * anonymization of personal data.  (3) Statistics are collected on the
-  * data types, and a table schema is generated based on the results.
-  * (4) Each JSON object is normalized to enable later comparison with
-  * historical data.  (5) SQL insert statements are generated and
-  * submitted to the database for initial staging of the data.
+  * The large JSON files that have been retrieved from Okapi are
+  * streamed in and parsed into individual JSON object records, in order
+  * that only a single record needs to be held in memory at a time.
+  * Several functions are performed during two passes over the data.  In
+  * pass 1:  Statistics are collected on the data types, and a table
+  * schema is generated based on the results.  In pass 2:  (i) Some data
+  * are removed or altered as part of anonymization of personal data.
+  * (ii) Each JSON object is normalized to enable later comparison with
+  * historical data.  (iii) SQL insert statements are generated and
+  * submitted to the database to stage the data for merging.
   */
 class JSONHandler :
     public json::BaseReaderHandler<json::UTF8<>, JSONHandler> {
 public:
     int pass;
-    // General parsing / building record
     const Options& opt;
     int level = 0;
     bool active = false;
     string record;
     const TableSchema& tableSchema;
-    // Collect stats
+    // Collection of statistics
     map<string,Counts>* stats;
-    // Loading
+    // Loading to database
     etymon::Postgres* db;
     size_t recordCount = 0;
     string insertBuffer;
-    /////////////////////////////////////////////////////////////////////////
     JSONHandler(int pass, const Options& options, const TableSchema& table,
             etymon::Postgres* database, map<string,Counts>* statistics) :
         pass(pass), opt(options), tableSchema(table), stats(statistics),
@@ -200,29 +199,11 @@ bool JSONHandler::StartObject()
     return true;
 }
 
-/*
-static void createStagingTable(const Options& opt, const string& table,
-        etymon::Postgres* db)
-{
-    string stagingTable;
-    stagingTableName(table, &stagingTable);
-    string sql = ""
-        "CREATE TEMP TABLE " + stagingTable + " (\n"
-        "    id VARCHAR(65535),\n"
-        "    data " + opt.dbtype.jsonType() + "\n"
-        ");";
-    printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
-}
-*/
-
 static void beginInserts(const string& table, string* buffer)
 {
     string loadingTable;
     loadingTableName(table, &loadingTable);
-    *buffer = "INSERT INTO " + loadingTable +
-        " (id, data) " +  // temporary line
-        " VALUES ";
+    *buffer = "INSERT INTO " + loadingTable + " VALUES ";
 }
 
 static void endInserts(const Options& opt, string* buffer, etymon::Postgres* db)
@@ -233,9 +214,79 @@ static void endInserts(const Options& opt, string* buffer, etymon::Postgres* db)
     buffer->clear();
 }
 
+static void writeTuple(const Options& opt, const TableSchema& table,
+        const json::Document& doc, const json::StringBuffer& jsondata,
+        size_t* recordCount, string* insertBuffer)
+{
+    if (*recordCount > 0)
+        *insertBuffer += ',';
+    *insertBuffer += '(';
+
+    const char* id = doc["id"].GetString();
+    string idenc;
+    opt.dbtype.encodeStringConst(id, &idenc);
+    *insertBuffer += idenc;
+    *insertBuffer += ",";
+
+    string s;
+    for (const auto& column : table.columns) {
+        if (column.columnName == "id")
+            continue;
+        const char* sourceColumnName = column.sourceColumnName.c_str();
+        if (doc.HasMember(sourceColumnName) == false) {
+            *insertBuffer += "NULL,";
+            continue;
+        }
+        const json::Value& jsonValue = doc[sourceColumnName];
+        if (jsonValue.IsNull()) {
+            *insertBuffer += "NULL,";
+            continue;
+        }
+        switch (column.columnType) {
+        case ColumnType::bigint:
+            *insertBuffer += to_string(jsonValue.GetInt());
+            break;
+        case ColumnType::boolean:
+            *insertBuffer += ( jsonValue.GetBool() ?  "TRUE" : "FALSE" );
+            break;
+        case ColumnType::numeric:
+            *insertBuffer += to_string(jsonValue.GetDouble());
+            break;
+        case ColumnType::timestamptz:
+        case ColumnType::varchar:
+            opt.dbtype.encodeStringConst(jsonValue.GetString(), &s);
+            // Check if varchar exceeds maximum string length (65535).
+            if (s.length() >= 65535) {
+                print(Print::warning, opt,
+                        "string length exceeds database limit: " +
+                        table.sourcePath + ": " + id + ": " +
+                        column.columnName);
+                s = "NULL";
+            }
+            *insertBuffer += s;
+            break;
+        }
+        *insertBuffer += ",";
+    }
+
+    string data;
+    opt.dbtype.encodeStringConst(jsondata.GetString(), &data);
+    // Check if JSON object exceeds maximum string length (65535).
+    if (data.length() >= 65535) {
+        print(Print::warning, opt,
+                "json object size exceeds database limit: " +
+                table.sourcePath + ": " + id);
+        data = "NULL";
+    }
+    *insertBuffer += data;
+    *insertBuffer += ')';
+    (*recordCount)++;
+}
+
 bool JSONHandler::EndObject(json::SizeType memberCount)
 {
     if (level == 3) {
+
         record += '}';
 
         //if (opt.debug)
@@ -271,7 +322,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
             anonymizeTable =
                 (strcmp(tableSchema.tableName.c_str(), "users") == 0);
         }
-        // Stats and anonimize
+        // Collect statistics and anonimize data
         processJSONRecord(&doc, &doc, collectStats, anonymizeTable, path, 0,
                 stats);
 
@@ -286,45 +337,19 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
             //    fprintf(opt.err, "Record ready for staging:\n%s\n",
             //            jsondata.GetString());
 
-            //const char* id = doc["id"].GetString();
-
             if (insertBuffer.length() > 16500000) {
                 endInserts(opt, &insertBuffer, db);
                 beginInserts(tableSchema.tableName, &insertBuffer);
                 recordCount = 0;
             }
 
-            string id;
-            const char* idc = doc["id"].GetString();
-            opt.dbtype.encodeStringConst(idc, &id);
-            string data;
-            const char* datac = jsondata.GetString();
-            opt.dbtype.encodeStringConst(datac, &data);
-
-            // Check if JSON object exceeds maximum string length (65535).
-            if (data.length() >= 65535) {
-                print(Print::warning, opt,
-                        "json object size exceeds database limit: " +
-                        tableSchema.sourcePath + ": " + idc);
-                data = "NULL";
-            }
-
-            if (recordCount > 0)
-                insertBuffer += ',';
-            insertBuffer += '(';
-            insertBuffer += id;
-            insertBuffer += ",";
-            insertBuffer += data;
-            insertBuffer += ')';
-            recordCount++;
+            writeTuple(opt, tableSchema, doc, jsondata, &recordCount,
+                    &insertBuffer);
 
         }
 
         free(buffer);
 
-        //Document document;
-        //document.Parse<pflags>(record.c_str());
-        //printf("id = %s\n", document["id"].GetString());
     } else {
         if (level > 3)
             record += "},";
