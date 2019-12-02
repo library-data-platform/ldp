@@ -200,6 +200,7 @@ bool JSONHandler::StartObject()
     return true;
 }
 
+/*
 static void createStagingTable(const Options& opt, const string& table,
         etymon::Postgres* db)
 {
@@ -213,12 +214,15 @@ static void createStagingTable(const Options& opt, const string& table,
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 }
+*/
 
 static void beginInserts(const string& table, string* buffer)
 {
-    string stagingTable;
-    stagingTableName(table, &stagingTable);
-    *buffer = "INSERT INTO " + stagingTable + " VALUES ";
+    string loadingTable;
+    loadingTableName(table, &loadingTable);
+    *buffer = "INSERT INTO " + loadingTable +
+        " (id, data) " +  // temporary line
+        " VALUES ";
 }
 
 static void endInserts(const Options& opt, string* buffer, etymon::Postgres* db)
@@ -513,6 +517,50 @@ static void composeDataFilePath(const string& loadDir,
     *path += suffix;
 }
 
+static void createLoadingTable(const Options& opt, const TableSchema& table,
+        etymon::Postgres* db)
+{
+    string loadingTable;
+    loadingTableName(table.tableName, &loadingTable);
+
+    string sql = "CREATE TABLE ";
+    sql += loadingTable;
+    sql += " (\n"
+        "    id VARCHAR(65535) NOT NULL PRIMARY KEY,\n";
+    string columnType;
+    for (const auto& column : table.columns) {
+        if (column.columnName != "id") {
+            sql += "    \"";
+            sql += column.columnName;
+            sql += "\" ";
+            ColumnSchema::columnTypeToString(column.columnType, &columnType);
+            sql += columnType;
+            sql += ",\n";
+        }
+    }
+    sql += "    data ";
+    sql += opt.dbtype.jsonType();
+    sql += "\n"
+        ");\n";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+
+    // Add comment on table.
+    if (table.moduleName != "mod-agreements") {
+        sql = "COMMENT ON TABLE " + loadingTable + " IS '";
+        sql += table.sourcePath;
+        sql += " in ";
+        sql += table.moduleName;
+        sql += ": ";
+        sql += "https://dev.folio.org/reference/api/#";
+        sql += table.moduleName;
+        sql += "';";
+        printSQL(Print::debug, opt, sql);
+        { etymon::PostgresResult result(db, sql); }
+    }
+
+}
+
 static void stageTable(const Options& opt, TableSchema* table,
         etymon::Postgres* db, const string& loadDir)
 {
@@ -526,22 +574,24 @@ static void stageTable(const Options& opt, TableSchema* table,
     print(Print::debug, opt, "staging: " + table->tableName +
             ": page count: " + to_string(pageCount));
 
-    createStagingTable(opt, table->tableName, db);
+    // TODO remove this and create the load table from merge.cpp after
+    // pass 1
+    //createStagingTable(opt, table->tableName, db);
 
     map<string,Counts> stats;
     char readBuffer[65536];
 
     for (int pass = 1; pass <= 2; pass++) {
 
-        print(Print::verbose, opt,
-                (pass == 1 ?  "analyzing: " : "loading: ") + table->tableName);
+        print(Print::debug, opt, "staging: " + table->tableName +
+                (pass == 1 ?  ": analyze" : ": load"));
 
         for (size_t page = 0; page < pageCount; page++) {
             string path;
             composeDataFilePath(loadDir, *table,
                     "_" + to_string(page) + ".json", &path);
-            print(Print::debug, opt,
-                    "staging: " + table->tableName + ": page: " +
+            print(Print::debug, opt, "staging: " + table->tableName +
+                    (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                     to_string(page));
             stagePage(opt, pass, *table, db, &stats, path, readBuffer,
                     sizeof readBuffer);
@@ -552,6 +602,7 @@ static void stageTable(const Options& opt, TableSchema* table,
             composeDataFilePath(loadDir, *table, "_test.json", &path);
             if (etymon::fileExists(path)) {
                 print(Print::debug, opt, "staging: " + table->tableName +
+                        (pass == 1 ?  ": analyze" : ": load") +
                         ": test file");
                 stagePage(opt, pass, *table, db, &stats, path, readBuffer,
                         sizeof readBuffer);
@@ -593,6 +644,7 @@ static void stageTable(const Options& opt, TableSchema* table,
                 column.sourceColumnName = field;
                 table->columns.push_back(column);
             }
+            createLoadingTable(opt, *table, db);
         }
 
     }

@@ -5,51 +5,18 @@
 static void mergeTable(const Options& opt, const TableSchema& table,
         etymon::Postgres* db)
 {
-    string stagingTable;
-    stagingTableName(table.tableName, &stagingTable);
+    //createLoadingTable(opt, table, db);
+
+    /*
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
-
-    string sql = "CREATE TABLE ";
-    sql += loadingTable;
-    sql += " (\n"
-        "    id VARCHAR(65535) NOT NULL PRIMARY KEY,\n";
-    string columnType;
-    for (const auto& column : table.columns) {
-        if (column.columnName != "id") {
-            sql += "    \"";
-            sql += column.columnName;
-            sql += "\" ";
-            ColumnSchema::columnTypeToString(column.columnType, &columnType);
-            sql += columnType;
-            sql += ",\n";
-        }
-    }
-    sql += "    data ";
-    sql += opt.dbtype.jsonType();
-    sql += "\n"
-        ");\n";
-    printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
-
-    // Add comment on table.
-    if (table.moduleName != "mod-agreements") {
-        sql = "COMMENT ON TABLE " + loadingTable + " IS '";
-        sql += table.sourcePath;
-        sql += " in ";
-        sql += table.moduleName;
-        sql += ": ";
-        sql += "https://dev.folio.org/reference/api/#";
-        sql += table.moduleName;
-        sql += "';";
-        printSQL(Print::debug, opt, sql);
-        { etymon::PostgresResult result(db, sql); }
-    }
-
-    sql = "INSERT INTO " + loadingTable + "\n"
+    string stagingTable;
+    stagingTableName(table.tableName, &stagingTable);
+    string sql = "INSERT INTO " + loadingTable + "\n"
         "SELECT id,\n";
     string exp;
     string val;
+    string columnType;
     for (const auto& column : table.columns) {
         if (column.columnName != "id") {
             ColumnSchema::columnTypeToString(column.columnType, &columnType);
@@ -89,6 +56,7 @@ static void mergeTable(const Options& opt, const TableSchema& table,
     sql += ";\n";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
+    */
 
     // Update history tables.
 

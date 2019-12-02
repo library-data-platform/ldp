@@ -54,6 +54,11 @@ void debugNoticeProcessor(void *arg, const char *message)
 static void initDB(const Options& opt, etymon::Postgres* db)
 {
     string sql;
+
+    sql = "CREATE SCHEMA IF NOT EXISTS system;";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+
     sql = "CREATE SCHEMA IF NOT EXISTS history;";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
@@ -66,6 +71,15 @@ static void initDB(const Options& opt, etymon::Postgres* db)
 static void updateDBPermissions(const Options& opt, etymon::Postgres* db)
 {
     string sql;
+
+    sql = "GRANT USAGE ON SCHEMA system TO ldp;";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA system TO ldp;";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO ldp;";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
