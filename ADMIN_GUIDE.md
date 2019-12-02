@@ -7,10 +7,11 @@ LDP Admin Guide
 3\. Creating the LDP database  
 4\. Configuration file  
 5\. Loading data into the database  
-6\. Anonymization of personal data  
-7\. Loading data from files (for testing only)  
-8\. Disabling database TLS/SSL (for testing only)  
-9\. Reporting bugs and feature requests
+6\. Running the data loader in production  
+7\. Anonymization of personal data  
+8\. Loading data from files (for testing only)  
+9\. Disabling database TLS/SSL (for testing only)  
+10\. Reporting bugs and feature requests
 
 
 1\. System requirements
@@ -246,15 +247,30 @@ Another option that is available to assist with debugging problems is
 not to delete temporary files that store extracted data.  These files
 are not anonymized and may contain personal data.
 
-Note that some of the final stages of the loading process involve schema
-changes and may interrupt any queries that are running at the same time.
 
-If the loading process fails for some reason, it generally leaves the
-database unchanged.  Once the problem has been addressed, the loader can
-simply be started again.
+6\. Running the data loader in production
+-----------------------------------------
+
+The data loader is intended to be run automatically once per day, using
+a job scheduler such as Cron.
+
+While the data loader runs, the database is still available for users,
+although query performance may be affected.  However, note that some of
+the final stages of the loading process involve schema changes and can
+interrupt any long-running queries that are executing at the same time.
+For these reasons, it may be best to run the data loader at a time when
+the database will not be used heavily.
+
+If the data loading fails, the `ldp` process returns a non-zero exit
+status.  It is recommended to check the exit status if the process is
+being run automatically, in order to alert the administrator that data
+loading was not completed.  In such cases the data loader generally
+leaves the database unchanged, i.e. the database continues to reflect
+the data from the previous successful data load.  Once the problem has
+been addressed, simply run the data loader again.
 
 
-6\. Anonymization of personal data
+7\. Anonymization of personal data
 ----------------------------------
 
 By default, the LDP loader tries to "anonymize" personal data that it
@@ -296,7 +312,7 @@ by Okapi will be loaded into the LDP database.
 -->
 
 
-7\. Loading data from files (for testing only)
+8\. Loading data from files (for testing only)
 ----------------------------------------------
 
 As an alternative to loading data with the `--source` option, source
@@ -316,7 +332,7 @@ development to combine extracted test data with additional static test
 data.
 
 
-8\. Disabling database TLS/SSL (for testing only)
+9\. Disabling database TLS/SSL (for testing only)
 -------------------------------------------------
 
 For very preliminary testing with a database running on `localhost`, one
@@ -330,8 +346,8 @@ $ ldp load --source folio --target ldpdemo --unsafe --nossl
 ```
 
 
-9\. Reporting bugs and feature requests
----------------------------------------
+10\. Reporting bugs and feature requests
+----------------------------------------
 
 Please use the [FOLIO Issue Tracker](https://issues.folio.org/) to
 report a bug or feature request, by creating an issue in the "Library
