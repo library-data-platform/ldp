@@ -251,7 +251,7 @@ are not anonymized and may contain personal data.
 6\. Running the data loader in production
 -----------------------------------------
 
-The data loader is designed to be run automatically once per day, using
+The data loader is intended to be run automatically once per day, using
 a job scheduler such as Cron.
 
 While the data loader runs, the database is still available for users,
