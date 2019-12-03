@@ -55,9 +55,16 @@ static void initDB(const Options& opt, etymon::Postgres* db)
 {
     string sql;
 
-    //sql = "CREATE SCHEMA IF NOT EXISTS system;";
-    //printSQL(Print::debug, opt, sql);
-    //{ etymon::PostgresResult result(db, sql); }
+    sql = "CREATE SCHEMA IF NOT EXISTS sys;";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+
+    sql =
+        "CREATE TABLE IF NOT EXISTS sys.zz_loading  (\n"
+        "    completed  TIMESTAMPTZ NOT NULL\n"
+        ");";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
 
     sql = "CREATE SCHEMA IF NOT EXISTS history;";
     printSQL(Print::debug, opt, sql);
@@ -72,13 +79,13 @@ static void updateDBPermissions(const Options& opt, etymon::Postgres* db)
 {
     string sql;
 
-    //sql = "GRANT USAGE ON SCHEMA system TO ldp;";
-    //printSQL(Print::debug, opt, sql);
-    //{ etymon::PostgresResult result(db, sql); }
+    sql = "GRANT USAGE ON SCHEMA sys TO ldp;";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
 
-    //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA system TO ldp;";
-    //printSQL(Print::debug, opt, sql);
-    //{ etymon::PostgresResult result(db, sql); }
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA sys TO ldp;";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO ldp;";
     printSQL(Print::debug, opt, sql);
@@ -222,6 +229,14 @@ void runLoad(const Options& opt)
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(&db, sql); }
     print(Print::verbose, opt, "all changes committed");
+
+    sql = "INSERT INTO sys.zz_loading (completed) VALUES ('now');";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(&db, sql); }
+    sql = "COMMIT;";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(&db, sql); }
+
 
     // TODO Check if needed for history tables.
     //vacuumAnalyzeAll(opt, &schema, &db);
