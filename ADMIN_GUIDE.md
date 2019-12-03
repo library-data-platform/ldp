@@ -229,7 +229,7 @@ data "source" (Okapi) and loaded into a "target" (the LDP database).
 
 The `--source` option specifies the name of a section under `sources` in
 the LDP configuration file.  This section should provide connection
-details for Okapi, as well as a temporary directory (`extractDir`) where
+details for Okapi, as well as a directory (`extractDir`) where temporary
 extracted files can be written.
 
 The `--target` option works in the same way to specify a section under
@@ -251,15 +251,19 @@ are not anonymized and may contain personal data.
 6\. Running the data loader in production
 -----------------------------------------
 
+**Note:  LDP releases earlier than 1.0 should not be used in production.
+This section is included here to assist system administrators in
+planning for production deployment.**
+
 The data loader is intended to be run automatically once per day, using
 a job scheduler such as Cron.
 
-While the data loader runs, the database is still available for users,
-although query performance may be affected.  However, note that some of
-the final stages of the loading process involve schema changes and can
-interrupt any long-running queries that are executing at the same time.
-For these reasons, it may be best to run the data loader at a time when
-the database will not be used heavily.
+While the data loader runs, the database generally will be available to
+users, although query performance may be affected.  However, note that
+some of the final stages of the loading process involve schema changes
+and could interrupt any long-running queries that are executing at the
+same time.  For these reasons, it may be best to run the data loader at
+a time when the database will not be used heavily.
 
 If the data loading fails, the `ldp` process returns a non-zero exit
 status.  It is recommended to check the exit status if the process is
@@ -268,6 +272,22 @@ loading was not completed.  In such cases the data loader generally
 leaves the database unchanged, i.e. the database continues to reflect
 the data from the previous successful data load.  Once the problem has
 been addressed, simply run the data loader again.
+
+As mentioned earlier, the "sources" listed in the configuration file
+include `extractDir` which is a directory used for writing temporary
+files extracted from a source.  This directory should have enough disk
+space to hold all of the extracted data in JSON format.
+
+The data loader expects that the `extractDir` directory already exists,
+and it creates a temporary directory under it beginning with the prefix,
+`tmp_ldp_`.  After data loading has been completed, the `ldp` process
+will normally try to delete the temporary directory as part of "cleaning
+up".  However, it is possible that the clean-up phase may not always
+run, for example, if a signal 9 is sent to the process.  This could
+result in filling up disk space and cause future data loading to fail.
+In a production context it is a good idea to take additional steps to
+ensure that any temporary directories under the `extractDir` directory
+are removed after each run of the data loader.
 
 
 7\. Anonymization of personal data
