@@ -59,10 +59,29 @@ static void initDB(const Options& opt, etymon::Postgres* db)
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
+    sql = "DROP TABLE IF EXISTS sys.zz_loading;";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+
     sql =
-        "CREATE TABLE IF NOT EXISTS sys.zz_loading  (\n"
-        "    completed  TIMESTAMPTZ NOT NULL\n"
+        "CREATE TABLE IF NOT EXISTS sys.loading (\n"
+        "    table_name VARCHAR(65535) NOT NULL PRIMARY KEY,\n"
+        "    updated TIMESTAMPTZ NOT NULL\n"
         ");";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+
+    sql =
+        "CREATE OR REPLACE VIEW sys.status AS\n"
+        "SELECT table_name,\n"
+        "       CASE 'now'::TIMESTAMPTZ - INTERVAL '24 hours' <= updated\n"
+        "           WHEN TRUE THEN 'OK'\n"
+        "           ELSE 'EXPIRED'\n"
+        "           END\n"
+        "               AS status,\n"
+        "       updated\n"
+        "    FROM sys.loading\n"
+        "    ORDER BY table_name;";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
@@ -79,27 +98,29 @@ static void updateDBPermissions(const Options& opt, etymon::Postgres* db)
 {
     string sql;
 
-    sql = "GRANT USAGE ON SCHEMA sys TO ldp;";
+    sql = "GRANT USAGE ON SCHEMA sys TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA sys TO ldp;";
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA sys TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO ldp;";
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
+        opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
-    sql = "GRANT USAGE ON SCHEMA history TO ldp;";
+    sql = "GRANT USAGE ON SCHEMA history TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA history TO ldp;";
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA history TO " +
+        opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
-    sql = "GRANT CREATE, USAGE ON SCHEMA local TO ldp;";
+    sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 }
@@ -153,8 +174,8 @@ void runLoad(const Options& opt)
     // connection hangs due to a firewall.  Non-verbose output does not
     // communicate any problem while frozen.
     print(Print::verbose, opt, "testing database connection");
-    { etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.databaseUser,
-            opt.databasePassword, opt.databaseName, sslmode(opt.nossl)); }
+    { etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
+            opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl)); }
 
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
@@ -199,8 +220,8 @@ void runLoad(const Options& opt)
     }
 
     print(Print::verbose, opt, "connecting to database");
-    etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.databaseUser,
-            opt.databasePassword, opt.databaseName, sslmode(opt.nossl));
+    etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
+            opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
     PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
     string sql;
@@ -229,10 +250,6 @@ void runLoad(const Options& opt)
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(&db, sql); }
     print(Print::verbose, opt, "all changes committed");
-
-    sql = "INSERT INTO sys.zz_loading (completed) VALUES ('now');";
-    printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(&db, sql); }
 
     // TODO Check if needed for history tables.
     //vacuumAnalyzeAll(opt, &schema, &db);
@@ -335,8 +352,9 @@ void fillOptions(const Config& config, Options* opt)
     fillOpt(config, target, "databaseType", &(opt->databaseType));
     fillOpt(config, target, "databaseHost", &(opt->databaseHost));
     fillOpt(config, target, "databasePort", &(opt->databasePort));
-    fillOpt(config, target, "databaseUser", &(opt->databaseUser));
-    fillOpt(config, target, "databasePassword", &(opt->databasePassword));
+    fillOpt(config, target, "ldpAdmin", &(opt->ldpAdmin));
+    fillOpt(config, target, "ldpAdminPassword", &(opt->ldpAdminPassword));
+    fillOpt(config, target, "ldpUser", &(opt->ldpUser));
     opt->dbtype.setType(opt->databaseType);
 }
 

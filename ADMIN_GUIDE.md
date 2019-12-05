@@ -183,12 +183,18 @@ like:
             "databaseType": "postgresql",
             "databaseHost": "ldp.indexdata.com",
             "databasePort": "5432",
-            "databaseUser": "ldpadmin",
-            "databasePassword": "(database password here)"
+            "ldpAdmin": "ldpadmin",
+            "ldpAdminPassword": "(ldpadmin password here)",
+            "ldpUser": "ldp"
         }
     }
 }
 ```
+
+**Version 0.3.8 and earlier releases:**  The parameters, `databaseUser`
+and `databasePassword`, have changed.  Please rename `databaseUser` to
+`ldpAdmin`, and rename `databasePassword` to `ldpAdminPassword`.  Also
+add the new `ldpUser` parameter as in the example above.
 
 The provided example file
 [config_example.json](https://raw.githubusercontent.com/folio-org/ldp/master/config_example.json)

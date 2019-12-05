@@ -155,8 +155,10 @@ void debugOptions(const Options& opt)
             opt.databaseHost.c_str());
     fprintf(stderr, "%s: option: databasePort = %s\n", opt.prog,
             opt.databasePort.c_str());
-    fprintf(stderr, "%s: option: databaseUser = %s\n", opt.prog,
-            opt.databaseUser.c_str());
+    fprintf(stderr, "%s: option: ldpAdmin = %s\n", opt.prog,
+            opt.ldpAdmin.c_str());
+    fprintf(stderr, "%s: option: ldpUser = %s\n", opt.prog,
+            opt.ldpUser.c_str());
     fprintf(stderr, "%s: option: dbtype = %s\n", opt.prog, opt.dbtype.dbType());
     //fprintf(stderr, "%s: option: err = ", opt.prog);
     //if (opt.err == stdout)
