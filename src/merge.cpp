@@ -7,8 +7,47 @@ static void mergeTable(const Options& opt, const TableSchema& table,
 {
     // Update history tables.
 
-    // TODO merge history table.
+    string historyTable;
+    historyTableName(table.tableName, &historyTable);
 
+    string sql = ""
+        "CREATE TABLE IF NOT EXISTS " + historyTable + " (\n"
+        "    id  VARCHAR(65535),\n"
+        "    data  " + opt.dbtype.jsonType() + ",\n"
+        "    updated  TIMESTAMPTZ\n"
+        ");";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+
+    string latestHistoryTable;
+    latestHistoryTableName(table.tableName, &latestHistoryTable);
+
+    sql = ""
+        "CREATE TEMPORARY TABLE " + latestHistoryTable + " AS\n"
+        "SELECT id, data\n"
+        "    FROM " + historyTable + " AS h1\n"
+        "    WHERE NOT EXISTS\n"
+        "      ( SELECT 1\n"
+        "            FROM " + historyTable + " AS h2\n"
+        "            WHERE h1.id = h2.id AND\n"
+        "                  h1.updated < h2.updated\n"
+        "      );";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+
+    string loadingTable;
+    loadingTableName(table.tableName, &loadingTable);
+
+    sql = ""
+        "INSERT INTO " + historyTable + "\n"+
+        "SELECT s.id, s.data, 'now'\n"+
+        "    FROM " + loadingTable + " s\n"+
+        "        LEFT JOIN " + latestHistoryTable + " AS h\n"+
+        "            ON s.id = h.id\n"+
+        "    WHERE h.id IS NULL OR\n"+
+        "          (s.data)::VARCHAR <> (h.data)::VARCHAR;\n",
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
 }
 
 static void dropTable(const Options& opt, const TableSchema& table,

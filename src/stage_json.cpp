@@ -566,7 +566,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     sql += "    data ";
     sql += opt.dbtype.jsonType();
     sql += "\n"
-        ");\n";
+        ");";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 

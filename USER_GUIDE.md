@@ -219,10 +219,6 @@ sets if needed.
 6\. Historical data
 -------------------
 
-**Note:  The historical data feature described in this section is
-currently not available in the LDP 0.3 release but will return in the
-next few weeks.**
-
 As mentioned earlier, the LDP database reflects the state of the source
 data as of the last time the LDP data loader was run.  The loader also
 maintains another schema called `history` which stores all data that

@@ -233,10 +233,6 @@ void runLoad(const Options& opt)
     sql = "INSERT INTO sys.zz_loading (completed) VALUES ('now');";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(&db, sql); }
-    sql = "COMMIT;";
-    printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(&db, sql); }
-
 
     // TODO Check if needed for history tables.
     //vacuumAnalyzeAll(opt, &schema, &db);
