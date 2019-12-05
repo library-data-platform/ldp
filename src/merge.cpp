@@ -10,11 +10,12 @@ static void mergeTable(const Options& opt, const TableSchema& table,
     string historyTable;
     historyTableName(table.tableName, &historyTable);
 
-    string sql = ""
+    string sql =
         "CREATE TABLE IF NOT EXISTS " + historyTable + " (\n"
-        "    id  VARCHAR(65535),\n"
-        "    data  " + opt.dbtype.jsonType() + ",\n"
-        "    updated  TIMESTAMPTZ\n"
+        "    id VARCHAR(65535),\n"
+        "    data " + opt.dbtype.jsonType() + ",\n"
+        "    updated TIMESTAMPTZ,\n"
+        "    PRIMARY KEY (id, updated)\n"
         ");";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
@@ -22,7 +23,7 @@ static void mergeTable(const Options& opt, const TableSchema& table,
     string latestHistoryTable;
     latestHistoryTableName(table.tableName, &latestHistoryTable);
 
-    sql = ""
+    sql =
         "CREATE TEMPORARY TABLE " + latestHistoryTable + " AS\n"
         "SELECT id, data\n"
         "    FROM " + historyTable + " AS h1\n"
@@ -38,10 +39,10 @@ static void mergeTable(const Options& opt, const TableSchema& table,
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
 
-    sql = ""
+    sql =
         "INSERT INTO " + historyTable + "\n"+
         "SELECT s.id, s.data, 'now'\n"+
-        "    FROM " + loadingTable + " s\n"+
+        "    FROM " + loadingTable + " AS s\n"+
         "        LEFT JOIN " + latestHistoryTable + " AS h\n"+
         "            ON s.id = h.id\n"+
         "    WHERE h.id IS NULL OR\n"+
@@ -63,8 +64,23 @@ static void placeTable(const Options& opt, const TableSchema& table,
 {
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
-    string sql = "ALTER TABLE " + loadingTable +
-        " RENAME TO " + table.tableName + ";";
+    string sql =
+        "ALTER TABLE " + loadingTable + " RENAME TO " + table.tableName + ";";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+}
+
+static void updateStatus(const Options& opt, const TableSchema& table,
+        etymon::Postgres* db)
+{
+    string sql =
+        "DELETE FROM sys.loading WHERE table_name = '" + table.tableName + "';";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+
+    sql =
+        "INSERT INTO sys.loading (table_name, updated)\n"
+        "    VALUES ('" + table.tableName + "', 'now');";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 }
@@ -80,12 +96,12 @@ void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
     }
     // Table-level exclusive locks begin here.
     print(Print::verbose, opt, "replacing tables");
-    for (auto& table : schema->tables)
-        dropTable(opt, table, db);
     for (auto& table : schema->tables) {
         if (table.skip)
             continue;
+        dropTable(opt, table, db);
         placeTable(opt, table, db);
+        updateStatus(opt, table, db);
     }
 }
 

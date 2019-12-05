@@ -35,8 +35,9 @@ public:
     string databaseType;
     string databaseHost;
     string databasePort;
-    string databaseUser;
-    string databasePassword;
+    string ldpAdmin;
+    string ldpAdminPassword;
+    string ldpUser;
     DBType dbtype;
     bool unsafe = false;
     bool nossl = false;

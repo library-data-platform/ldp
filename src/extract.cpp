@@ -152,7 +152,7 @@ void okapiLogin(const Options& opt, string* token)
 }
 
 enum class PageStatus {
-    interfaceNotFound,
+    interfaceNotAvailable,
     pageEmpty,
     containsRecords
 };
@@ -202,8 +202,8 @@ static PageStatus retrieve(const Curl& c, const Options& opt,
 
     long response_code = 0;
     curl_easy_getinfo(c.curl, CURLINFO_RESPONSE_CODE, &response_code);
-    if (response_code == 404) {
-        return PageStatus::interfaceNotFound;
+    if (response_code == 403 || response_code == 404) {
+        return PageStatus::interfaceNotAvailable;
     }
     if (response_code != 200) {
         string err = string("error retrieving data from okapi: ") +
@@ -243,9 +243,9 @@ static bool retrievePages(const Curl& c, const Options& opt,
         PageStatus status = retrieve(c, opt, token, table, loadDir,
                 extractionFiles, page);
         switch (status) {
-        case PageStatus::interfaceNotFound:
+        case PageStatus::interfaceNotAvailable:
             print(Print::verbose, opt,
-                    "interface not found: " + table.sourcePath);
+                    "interface not available: " + table.sourcePath);
             return false;
         case PageStatus::pageEmpty:
             if (page == 0) {
