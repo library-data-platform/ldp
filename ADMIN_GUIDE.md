@@ -4,10 +4,10 @@ LDP Admin Guide
 ##### Contents  
 1\. System requirements  
 2\. Installing the software  
-3\. Creating the LDP database  
-4\. Configuration file  
+3\. Configuring the LDP database  
+4\. Configuring the LDP software  
 5\. Loading data into the database  
-6\. Running the data loader in production  
+6\. Running the LDP in production  
 7\. Anonymization of personal data  
 8\. Loading data from files (for testing only)  
 9\. Disabling database TLS/SSL (for testing only)  
@@ -42,9 +42,10 @@ cases it should run well with the following minimum requirements:
   * Storage: 320 GB HDD
 
 For large libraries, or if very high performance is desired, CPU and
-memory can be increased as needed.  Alternatively, Redshift can be used
-instead of PostgreSQL for significantly higher performance and
-scalability.  The storage capacity also can be increased as needed.
+memory can be increased as needed.  Alternatively, Amazon Redshift can
+be used instead of PostgreSQL for significantly higher performance and
+scalability.  (See below for notes on configuring Redshift.)  The
+storage capacity also can be increased as needed.
 
 
 2\. Installing the software
@@ -136,8 +137,8 @@ $ ./ldp help
 ```
 
 
-3\. Creating the LDP database
------------------------------
+3\. Configuring the LDP database
+--------------------------------
 
 Before using the LDP software, we need a database to load data into.
 Two database users are also required: `ldpadmin`, an administrator
@@ -172,8 +173,8 @@ GRANT USAGE ON SCHEMA public TO ldp;
 ```
 
 
-4\. Configuration file
-----------------------
+4\. Configuring the LDP software
+--------------------------------
 
 The LDP software also needs a configuration file that looks something
 like:
@@ -265,8 +266,8 @@ not to delete temporary files that store extracted data.  These files
 are not anonymized and may contain personal data.
 
 
-6\. Running the data loader in production
------------------------------------------
+6\. Running the LDP in production
+---------------------------------
 
 **Note:  LDP releases earlier than 1.0 should not be used in production.
 This section is included here to assist system administrators in
@@ -275,12 +276,16 @@ planning for production deployment.**
 The data loader is intended to be run automatically once per day, using
 a job scheduler such as Cron.
 
+### Scheduling data loads and availability of the database
+
 While the data loader runs, the database generally will be available to
 users, although query performance may be affected.  However, note that
 some of the final stages of the loading process involve schema changes
 and could interrupt any long-running queries that are executing at the
 same time.  For these reasons, it may be best to run the data loader at
 a time when the database will not be used heavily.
+
+### Handling errors in data loading
 
 If the data loading fails, the `ldp` process returns a non-zero exit
 status.  It is recommended to check the exit status if the process is
@@ -289,6 +294,8 @@ loading was not completed.  In such cases the data loader generally
 leaves the database unchanged, i.e. the database continues to reflect
 the data from the previous successful data load.  Once the problem has
 been addressed, simply run the data loader again.
+
+### Managing temporary disk space for data loading
 
 As mentioned earlier, the "sources" listed in the configuration file
 include `extractDir` which is a directory used for writing temporary
@@ -305,6 +312,31 @@ result in filling up disk space and cause future data loading to fail.
 In a production context it is a good idea to take additional steps to
 ensure that any temporary directories under the `extractDir` directory
 are removed after each run of the data loader.
+
+### Redshift configuration
+
+These are some suggestions on configuration for libraries that deploy
+the LDP using Redshift:
+
+* Node type:  `ds2.xlarge` is generally recommended for the LDP
+  database.
+
+* Cluster type:  `Single Node` is sufficient for most small libraries.
+  `Multi Node` should be used for most large libraries.
+
+* Number of compute nodes:  `1` is the only option for Single Node
+  clusters (see "Cluster type" above).  `3` is a suggested default for
+  large libraries.  Adding more nodes generally enables higher
+  performance of queries and also increases storage capacity.
+
+* Cluster parameter group:  For large libraries running many concurrent
+  queries, workload queues in "Workload Management" (WLM) optionally can
+  be configured to enable "Concurrency Scaling" mode by setting it to
+  "Auto".
+
+* Snapshots:  Automated snapshots should always be enabled.
+
+* Maintenance Track:  `Trailing` is recommended.
 
 
 7\. Anonymization of personal data
