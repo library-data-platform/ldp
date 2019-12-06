@@ -342,30 +342,18 @@ the LDP using Redshift:
 7\. Anonymization of personal data
 ----------------------------------
 
-By default, the LDP loader tries to "anonymize" personal data that it
-extracts from Okapi by deleting values in user data from interface
-`/users`, except for the following root-level fields:
+By default, the LDP data loader tries to "anonymize" personal data that
+it extracts from Okapi.  At present this anonymization consists of
+removing data extracted from interface `/users` except for the following
+root-level fields: `id`, `active`, `type`, `patronGroup`,
+`enrollmentDate`, `expirationDate`, `meta`, `proxyFor`, `createdDate`,
+`updatedDate`, `metadata`, and `tags`.  It is planned that in a future
+LDP release, the user ID field, `id`, will also be anonymized.
 
-* `id`
-* `active`
-* `type`
-* `patronGroup`
-* `enrollmentDate`
-* `expirationDate`
-* `meta`
-* `proxyFor`
-* `createdDate`
-* `updatedDate`
-* `metadata`
-* `tags`
-
-Note: We also plan to anonymize the user ID field, `id`, in the near
-future.
-
+<!--
 There is no need to do anything to enable these anonymizations; they are
 enabled unless the LDP loader is otherwise configured.
 
-<!--
 If it should be necessary to disable anonymization, this can be done by
 setting the `disable_anonymization` parameter to `true` in the LDP
 configuration file, within the section that defines connection details
