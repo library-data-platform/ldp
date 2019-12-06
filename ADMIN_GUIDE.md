@@ -144,7 +144,7 @@ Two database users are also required: `ldpadmin`, an administrator
 account, and `ldp`, a normal user of the database.  It is also a good
 idea to restrict access permissions.
 
-With PostgreSQL, for example, this can be done with:
+This can be done on the command line, for example with PostgreSQL:
 
 ```shell
 $ createuser ldpadmin --username=<admin_user> --pwprompt
@@ -158,6 +158,18 @@ $ psql ldp --username=<admin_user> --single-transaction \
 
 Additional command line options may be required to specify the database
 host, port, etc.
+
+Or this can be done in the database once it has been created, for
+example with Redshift:
+
+```sql
+CREATE USER ldpadmin PASSWORD '(ldpadmin password here)';
+CREATE USER ldp PASSWORD '(ldp password here)';
+ALTER DATABASE ldp OWNER TO ldpadmin;
+REVOKE ALL ON SCHEMA public FROM public;
+GRANT ALL ON SCHEMA public TO ldpadmin;
+GRANT USAGE ON SCHEMA public TO ldp;
+```
 
 
 4\. Configuration file
