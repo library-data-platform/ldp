@@ -15,8 +15,7 @@
             "databaseHost": "ldp.indexdata.com",
             "databasePort": "5432",
             "ldpAdmin": "ldpadmin",
-            "ldpAdminPassword": "(ldpadmin password here)",
-            "ldpUser": "ldp"
+            "ldpAdminPassword": "(ldpadmin password here)"
         }
     }
 }

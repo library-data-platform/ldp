@@ -343,6 +343,26 @@ void fillDirectOptions(const Config& config, const string& base, Options* opt)
             &(opt->direct.databasePassword));
 }
 
+void checkForOldParameters(const Options& opt, const Config& config,
+        const string& target)
+{
+    string s;
+    if (!config.get(target + "ldpAdmin", &s) &&
+            config.get(target + "databaseUser", &s))
+        fprintf(opt.err, "\n"
+                "The target configuration parameter \"databaseUser\" "
+                "is no longer supported;\n"
+                "it has been renamed to \"ldpAdmin\".\n"
+                "Please make this change in your configuration file.\n\n");
+    if (!config.get(target + "ldpAdminPassword", &s) &&
+            config.get(target + "databasePassword", &s))
+        fprintf(opt.err, "\n"
+                "The target configuration parameter \"databasePassword\" "
+                "is no longer supported;\n"
+                "it has been renamed to \"ldpAdminPassword\".\n"
+                "Please make this change in your configuration file.\n\n");
+}
+
 void fillOptions(const Config& config, Options* opt)
 {
     if (opt->loadFromDir == "") {
@@ -364,6 +384,7 @@ void fillOptions(const Config& config, Options* opt)
     config.getRequired(target + "databaseType", &(opt->databaseType));
     config.getRequired(target + "databaseHost", &(opt->databaseHost));
     config.getRequired(target + "databasePort", &(opt->databasePort));
+    checkForOldParameters(*opt, config, target);
     config.getRequired(target + "ldpAdmin", &(opt->ldpAdmin));
     config.getRequired(target + "ldpAdminPassword", &(opt->ldpAdminPassword));
     config.get(target + "ldpUser", &(opt->ldpUser));

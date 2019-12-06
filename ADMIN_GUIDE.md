@@ -196,17 +196,16 @@ like:
             "databaseHost": "ldp.indexdata.com",
             "databasePort": "5432",
             "ldpAdmin": "ldpadmin",
-            "ldpAdminPassword": "(ldpadmin password here)",
-            "ldpUser": "ldp"
+            "ldpAdminPassword": "(ldpadmin password here)"
         }
     }
 }
 ```
 
-**Version 0.3.8 and earlier releases:**  The parameters, `databaseUser`
-and `databasePassword`, have changed.  Please rename `databaseUser` to
-`ldpAdmin`, and rename `databasePassword` to `ldpAdminPassword`.  Also
-add the new `ldpUser` parameter as in the example above.
+**Upgrading from version 0.3.8 or earlier:**  The parameters,
+`databaseUser` and `databasePassword`, have changed.  Please rename
+`databaseUser` to `ldpAdmin`, and rename `databasePassword` to
+`ldpAdminPassword`.
 
 The provided example file
 [config_example.json](https://raw.githubusercontent.com/folio-org/ldp/master/config_example.json)
