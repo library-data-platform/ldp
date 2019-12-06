@@ -16,7 +16,6 @@ public:
     string databasePort;
     string databaseUser;
     string databasePassword;
-    string schemaPrefix;
 };
 
 class Options {
@@ -37,7 +36,7 @@ public:
     string databasePort;
     string ldpAdmin;
     string ldpAdminPassword;
-    string ldpUser;
+    string ldpUser = "ldp";
     DBType dbtype;
     bool unsafe = false;
     bool nossl = false;

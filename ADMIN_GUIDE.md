@@ -144,7 +144,7 @@ Two database users are also required: `ldpadmin`, an administrator
 account, and `ldp`, a normal user of the database.  It is also a good
 idea to restrict access permissions.
 
-With PostgreSQL, for example, this can be done with:
+In PostgreSQL, this can be done on the command line, for example:
 
 ```shell
 $ createuser ldpadmin --username=<admin_user> --pwprompt
@@ -158,6 +158,18 @@ $ psql ldp --username=<admin_user> --single-transaction \
 
 Additional command line options may be required to specify the database
 host, port, etc.
+
+If Redshift, this can be done in the database once it has been created,
+for example:
+
+```sql
+CREATE USER ldpadmin PASSWORD '(ldpadmin password here)';
+CREATE USER ldp PASSWORD '(ldp password here)';
+ALTER DATABASE ldp OWNER TO ldpadmin;
+REVOKE ALL ON SCHEMA public FROM public;
+GRANT ALL ON SCHEMA public TO ldpadmin;
+GRANT USAGE ON SCHEMA public TO ldp;
+```
 
 
 4\. Configuration file
@@ -184,17 +196,16 @@ like:
             "databaseHost": "ldp.indexdata.com",
             "databasePort": "5432",
             "ldpAdmin": "ldpadmin",
-            "ldpAdminPassword": "(ldpadmin password here)",
-            "ldpUser": "ldp"
+            "ldpAdminPassword": "(ldpadmin password here)"
         }
     }
 }
 ```
 
-**Version 0.3.8 and earlier releases:**  The parameters, `databaseUser`
-and `databasePassword`, have changed.  Please rename `databaseUser` to
-`ldpAdmin`, and rename `databasePassword` to `ldpAdminPassword`.  Also
-add the new `ldpUser` parameter as in the example above.
+**Upgrading from version 0.3.8 or earlier:**  The parameters,
+`databaseUser` and `databasePassword`, have changed.  Please rename
+`databaseUser` to `ldpAdmin`, and rename `databasePassword` to
+`ldpAdminPassword`.
 
 The provided example file
 [config_example.json](https://raw.githubusercontent.com/folio-org/ldp/master/config_example.json)

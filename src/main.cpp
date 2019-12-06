@@ -163,6 +163,35 @@ void vacuumAnalyzeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
     }
 }
 
+// Check for obvious problems that could show up later in the loading
+// process.
+static void runPreloadTests(const Options& opt)
+{
+    print(Print::verbose, opt, "running pre-load checks");
+
+    // Check database connection.
+    etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
+            opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
+    // TODO Check if a time-out is used here, for example if the client
+    // connection hangs due to a firewall.  Non-verbose output does not
+    // communicate any problem while frozen.
+
+    string sql;
+    sql = "BEGIN ISOLATION LEVEL READ COMMITTED;";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(&db, sql); }
+
+    // Check that ldpUser is a valid user.
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
+        opt.ldpUser + ";";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(&db, sql); }
+
+    sql = "ROLLBACK;";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(&db, sql); }
+}
+
 void runLoad(const Options& opt)
 {
     //string ct;
@@ -170,12 +199,7 @@ void runLoad(const Options& opt)
     //if (opt.verbose)
     //    fprintf(opt.err, "%s: start time: %s\n", opt.prog, ct.c_str());
 
-    // TODO Check if a time-out is used here, for example if the client
-    // connection hangs due to a firewall.  Non-verbose output does not
-    // communicate any problem while frozen.
-    print(Print::verbose, opt, "testing database connection");
-    { etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
-            opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl)); }
+    runPreloadTests(opt);
 
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
@@ -267,14 +291,6 @@ void runLoad(const Options& opt)
     // TODO Wrap curl_global_init() in a class.
 }
 
-void fillOpt(const Config& config, const string& basePointer, const string& key,
-        string* result)
-{
-    string p = basePointer;
-    p += key;
-    config.getRequired(p, result);
-}
-
 /*
 
     Direct extraction is an experimental workaround to allow retrieving
@@ -298,8 +314,7 @@ void fillOpt(const Config& config, const string& basePointer, const string& key,
             "directDatabaseHost": "the.database.host",
             "directDatabasePort": "5432",
             "directDatabaseUser": "folio_admin",
-            "directDatabasePassword": "the_database_password",
-	    "directSchemaPrefix": "diku"
+            "directDatabasePassword": "the_database_password"
         }
 
     In order for this to work, the client host must have permission to
@@ -309,26 +324,43 @@ void fillOpt(const Config& config, const string& basePointer, const string& key,
 
 */
 
-void fillDirectOptions(const Config& config, const string& basePointer,
-        Options* opt)
+void fillDirectOptions(const Config& config, const string& base, Options* opt)
 {
     int x = 0;
-    string directInterfaces = basePointer + "directInterfaces/";
+    string directInterfaces = base + "directInterfaces/";
     while (true) {
         string interface;
-        config.get(directInterfaces + to_string(x), &interface);
-        if (interface == "")
+        if (!config.get(directInterfaces + to_string(x), &interface))
             break;
         opt->direct.interfaces.push_back(interface);
         x++;
     }
-    config.get(basePointer + "directDatabaseName", &(opt->direct.databaseName));
-    config.get(basePointer + "directDatabaseHost", &(opt->direct.databaseHost));
-    config.get(basePointer + "directDatabasePort", &(opt->direct.databasePort));
-    config.get(basePointer + "directDatabaseUser", &(opt->direct.databaseUser));
-    config.get(basePointer + "directDatabasePassword",
+    config.get(base + "directDatabaseName", &(opt->direct.databaseName));
+    config.get(base + "directDatabaseHost", &(opt->direct.databaseHost));
+    config.get(base + "directDatabasePort", &(opt->direct.databasePort));
+    config.get(base + "directDatabaseUser", &(opt->direct.databaseUser));
+    config.get(base + "directDatabasePassword",
             &(opt->direct.databasePassword));
-    config.get(basePointer + "directSchemaPrefix", &(opt->direct.schemaPrefix));
+}
+
+void checkForOldParameters(const Options& opt, const Config& config,
+        const string& target)
+{
+    string s;
+    if (!config.get(target + "ldpAdmin", &s) &&
+            config.get(target + "databaseUser", &s))
+        fprintf(opt.err, "\n"
+                "The target configuration parameter \"databaseUser\" "
+                "is no longer supported;\n"
+                "it has been renamed to \"ldpAdmin\".\n"
+                "Please make this change in your configuration file.\n\n");
+    if (!config.get(target + "ldpAdminPassword", &s) &&
+            config.get(target + "databasePassword", &s))
+        fprintf(opt.err, "\n"
+                "The target configuration parameter \"databasePassword\" "
+                "is no longer supported;\n"
+                "it has been renamed to \"ldpAdminPassword\".\n"
+                "Please make this change in your configuration file.\n\n");
 }
 
 void fillOptions(const Config& config, Options* opt)
@@ -337,24 +369,25 @@ void fillOptions(const Config& config, Options* opt)
         string source = "/sources/";
         source += opt->source;
         source += "/";
-        fillOpt(config, source, "okapiURL", &(opt->okapiURL));
-        fillOpt(config, source, "okapiTenant", &(opt->okapiTenant));
-        fillOpt(config, source, "okapiUser", &(opt->okapiUser));
-        fillOpt(config, source, "okapiPassword", &(opt->okapiPassword));
-        fillOpt(config, source, "extractDir", &(opt->extractDir));
+        config.getRequired(source + "okapiURL", &(opt->okapiURL));
+        config.getRequired(source + "okapiTenant", &(opt->okapiTenant));
+        config.getRequired(source + "okapiUser", &(opt->okapiUser));
+        config.getRequired(source + "okapiPassword", &(opt->okapiPassword));
+        config.getRequired(source + "extractDir", &(opt->extractDir));
         fillDirectOptions(config, source, opt);
     }
 
     string target = "/targets/";
     target += opt->target;
     target += "/";
-    fillOpt(config, target, "databaseName", &(opt->databaseName));
-    fillOpt(config, target, "databaseType", &(opt->databaseType));
-    fillOpt(config, target, "databaseHost", &(opt->databaseHost));
-    fillOpt(config, target, "databasePort", &(opt->databasePort));
-    fillOpt(config, target, "ldpAdmin", &(opt->ldpAdmin));
-    fillOpt(config, target, "ldpAdminPassword", &(opt->ldpAdminPassword));
-    fillOpt(config, target, "ldpUser", &(opt->ldpUser));
+    config.getRequired(target + "databaseName", &(opt->databaseName));
+    config.getRequired(target + "databaseType", &(opt->databaseType));
+    config.getRequired(target + "databaseHost", &(opt->databaseHost));
+    config.getRequired(target + "databasePort", &(opt->databasePort));
+    checkForOldParameters(*opt, config, target);
+    config.getRequired(target + "ldpAdmin", &(opt->ldpAdmin));
+    config.getRequired(target + "ldpAdminPassword", &(opt->ldpAdminPassword));
+    config.get(target + "ldpUser", &(opt->ldpUser));
     opt->dbtype.setType(opt->databaseType);
 }
 
