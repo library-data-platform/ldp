@@ -286,7 +286,7 @@ static bool retrieveDirect(const Options& opt, const TableSchema& table,
             opt.direct.databaseUser, opt.direct.databasePassword,
             opt.direct.databaseName, "require");
     string sql = "SELECT jsonb FROM " +
-        opt.direct.schemaPrefix + "_" + table.directSourceTable + ";";
+        opt.okapiTenant + "_" + table.directSourceTable + ";";
     printSQL(Print::debug, opt, sql);
 
     if (PQsendQuery(db.conn, sql.c_str()) == 0) {
