@@ -590,11 +590,6 @@ static void stageTable(const Options& opt, TableSchema* table,
         etymon::Postgres* db, const string& loadDir)
 {
     size_t pageCount = readPageCount(loadDir, table->tableName);
-    if (pageCount == 0) {
-        print(Print::verbose, opt, "no data found: " + table->sourcePath);
-        table->skip = true;
-        return;
-    }
 
     print(Print::debug, opt, "staging: " + table->tableName +
             ": page count: " + to_string(pageCount));
