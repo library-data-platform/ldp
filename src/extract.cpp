@@ -248,11 +248,6 @@ static bool retrievePages(const Curl& c, const Options& opt,
                     "interface not available: " + table.sourcePath);
             return false;
         case PageStatus::pageEmpty:
-            if (page == 0) {
-                print(Print::verbose, opt,
-                        "no data found: " + table.sourcePath);
-                return false;
-            }
             writeCountFile(loadDir, table.tableName, extractionFiles, page);
             return true;
         case PageStatus::containsRecords:

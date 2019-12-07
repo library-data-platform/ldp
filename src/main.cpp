@@ -71,17 +71,7 @@ static void initDB(const Options& opt, etymon::Postgres* db)
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
-    sql =
-        "CREATE OR REPLACE VIEW sys.status AS\n"
-        "SELECT table_name,\n"
-        "       CASE 'now'::TIMESTAMPTZ - INTERVAL '24 hours' <= updated\n"
-        "           WHEN TRUE THEN 'OK'\n"
-        "           ELSE 'EXPIRED'\n"
-        "           END\n"
-        "               AS status,\n"
-        "       updated\n"
-        "    FROM sys.loading\n"
-        "    ORDER BY table_name;";
+    sql = "DROP VIEW IF EXISTS sys.status;";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
