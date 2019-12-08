@@ -219,6 +219,8 @@ sets if needed.
 6\. Historical data
 -------------------
 
+### Overview
+
 As mentioned earlier, the LDP database reflects the state of the source
 data as of the last time the LDP data loader was run.  The loader also
 maintains another schema called `history` which stores all data that
@@ -258,13 +260,47 @@ if a value in the source database changes more than once during the
 interval between any two runs of the LDP loader, the LDP history will
 only reflect the last of those changes.
 
-Since the source data schemas evolve over time, the `data` attribute in
-history tables does not necessarily have a single schema that is
+### Querying historical data
+
+To view the history of changes to a specific record, for example, using
+the record ID above:
+
+```sql
+SELECT *
+    FROM history.loans
+    WHERE id = '0bab56e5-1ab6-4ac2-afdf-8b2df0434378'
+    ORDER BY updated;
+```
+
+The `SELECT` clause of this query can be modified to examine changes in
+only specific fields, e.g.:
+
+```sql
+SELECT json_extract_path_text(data, 'action'),
+       json_extract_path_text(data, 'returnDate'),
+       updated
+    FROM history.loans
+    WHERE id = '0bab56e5-1ab6-4ac2-afdf-8b2df0434378'
+    ORDER BY updated;
+```
+
+Alternatively, for a higher level view of all updated records, for
+example, in loans:
+
+```sql
+SELECT updated, count(*) FROM history.loans GROUP BY updated;
+```
+
+### Data cleaning
+
+Since the source data schemas may evolve over time, the `data` attribute
+in history tables does not necessarily have a single schema that is
 consistent over an entire table.  As a result, reporting on history
-tables may require "data cleaning" as preparation before the data can be
-used.  A suggested first step could be to select a subset of data within
-a time window, pulling out JSON fields of interest into relational
-attributes, and storing this result in a local table, e.g.:
+tables may require a small amount of "data cleaning" as preparation
+before the data can be queried accurately.  A suggested first step could
+be to select a subset of data within a time window, pulling out JSON
+fields of interest into relational attributes, and storing this result
+in a local table, e.g.:
 
 ```sql
 CREATE TABLE local.loan_status_history AS
@@ -275,9 +311,10 @@ SELECT id,
     WHERE updated BETWEEN '2019-01-01' AND '2019-12-31';
 ```
 
-From there one might examine the data to check for inconsistent or missing
-values, update them, etc.  Note that in SQL, `''` and `NULL` may look the same
-in the output of a `SELECT`, but they are distinct values.
+This will make it easier to examine the data to check for inconsistent
+or missing values, update them, etc.  Note that in SQL, `''` and `NULL`
+may look the same in the output of a `SELECT`, but they are distinct
+values.
 
 
 <!--
