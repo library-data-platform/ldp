@@ -233,43 +233,6 @@ void runLoad(const Options& opt)
             opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
     PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Temporary measure to fix history schemas.
-    for (auto& table : schema.tables) {
-        string historyTable;
-        historyTableName(table.tableName, &historyTable);
-        string sql = "DROP TABLE IF EXISTS " + historyTable + ";";
-        printSQL(Print::debug, opt, sql);
-        try {
-            etymon::PostgresResult result(&db, sql);
-        } catch (runtime_error& e) { }
-    }
-    ///////////////////////////////////////////////////////////////////////////
-    // Temporary measure to clean up old schema.
-    {
-        string sql;
-        sql = "DROP VIEW IF EXISTS sys.status;";
-        printSQL(Print::debug, opt, sql);
-        try {
-            etymon::PostgresResult result(&db, sql);
-        } catch (runtime_error& e) { }
-        sql = "DROP TABLE IF EXISTS sys.loading;";
-        printSQL(Print::debug, opt, sql);
-        try {
-            etymon::PostgresResult result(&db, sql);
-        } catch (runtime_error& e) { }
-        sql = "DROP TABLE IF EXISTS sys.zz_loading;";
-        printSQL(Print::debug, opt, sql);
-        try {
-            etymon::PostgresResult result(&db, sql);
-        } catch (runtime_error& e) { }
-        sql = "DROP SCHEMA IF EXISTS sys;";
-        printSQL(Print::debug, opt, sql);
-        try {
-            etymon::PostgresResult result(&db, sql);
-        } catch (runtime_error& e) { }
-    }
-
     string sql;
     sql = "BEGIN ISOLATION LEVEL READ COMMITTED;";
     printSQL(Print::debug, opt, sql);
