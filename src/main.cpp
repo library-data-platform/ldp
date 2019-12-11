@@ -233,7 +233,8 @@ void runLoad(const Options& opt)
             opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
     PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
-    // Temporary measure fix history schemas.
+    ///////////////////////////////////////////////////////////////////////////
+    // Temporary measure to fix history schemas.
     for (auto& table : schema.tables) {
         string historyTable;
         historyTableName(table.tableName, &historyTable);
@@ -243,6 +244,7 @@ void runLoad(const Options& opt)
             etymon::PostgresResult result(&db, sql);
         } catch (runtime_error& e) { }
     }
+    ///////////////////////////////////////////////////////////////////////////
     // Temporary measure to clean up old schema.
     {
         string sql;
