@@ -14,9 +14,10 @@ static void mergeTable(const Options& opt, const TableSchema& table,
         "CREATE TABLE IF NOT EXISTS " + historyTable + " (\n"
         "    id VARCHAR(65535) NOT NULL,\n"
         "    data " + opt.dbtype.jsonType() + " NOT NULL,\n"
-        "    ldp_updated TIMESTAMPTZ NOT NULL,\n"
-        "    ldp_tenant_id SMALLINT NOT NULL,\n"
-        "    PRIMARY KEY (ldp_tenant_id, id, ldp_updated)\n"
+        "    updated TIMESTAMPTZ NOT NULL,\n"
+        "    tenant_id SMALLINT NOT NULL,\n"
+        "    CONSTRAINT ldp_history_" + table.tableName + "_pkey\n"
+        "        PRIMARY KEY (tenant_id, id, updated)\n"
         ");";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
@@ -26,14 +27,14 @@ static void mergeTable(const Options& opt, const TableSchema& table,
 
     sql =
         "CREATE TEMPORARY TABLE " + latestHistoryTable + " AS\n"
-        "SELECT id, data, ldp_tenant_id\n"
+        "SELECT id, data, tenant_id\n"
         "    FROM " + historyTable + " AS h1\n"
         "    WHERE NOT EXISTS\n"
         "      ( SELECT 1\n"
         "            FROM " + historyTable + " AS h2\n"
-        "            WHERE h1.ldp_tenant_id = h2.ldp_tenant_id AND\n"
+        "            WHERE h1.tenant_id = h2.tenant_id AND\n"
         "                  h1.id = h2.id AND\n"
-        "                  h1.ldp_updated < h2.ldp_updated\n"
+        "                  h1.updated < h2.updated\n"
         "      );";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
@@ -43,10 +44,10 @@ static void mergeTable(const Options& opt, const TableSchema& table,
 
     sql =
         "INSERT INTO " + historyTable + "\n"
-        "SELECT s.id, s.data, 'now', s.ldp_tenant_id\n"
+        "SELECT s.id, s.data, 'now', s.tenant_id\n"
         "    FROM " + loadingTable + " AS s\n"
         "        LEFT JOIN " + latestHistoryTable + " AS h\n"
-        "            ON s.ldp_tenant_id = h.ldp_tenant_id AND\n"
+        "            ON s.tenant_id = h.tenant_id AND\n"
         "               s.id = h.id\n"
         "    WHERE s.data IS NOT NULL AND\n"
         "          ( h.id IS NULL OR\n"
