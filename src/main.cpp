@@ -18,6 +18,9 @@
 #include "timer.h"
 #include "util.h"
 
+// Temporary
+#include "names.h"
+
 static const char* optionHelp =
 "Usage:  ldp <command> <options>\n"
 "  e.g.  ldp load --source folio --target ldp\n"
@@ -55,23 +58,15 @@ static void initDB(const Options& opt, etymon::Postgres* db)
 {
     string sql;
 
-    sql = "CREATE SCHEMA IF NOT EXISTS sys;";
-    printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
-
-    sql = "DROP TABLE IF EXISTS sys.zz_loading;";
+    sql = "CREATE SCHEMA IF NOT EXISTS ldp;";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
     sql =
-        "CREATE TABLE IF NOT EXISTS sys.loading (\n"
+        "CREATE TABLE IF NOT EXISTS ldp.table_updates (\n"
         "    table_name VARCHAR(65535) NOT NULL PRIMARY KEY,\n"
         "    updated TIMESTAMPTZ NOT NULL\n"
         ");";
-    printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
-
-    sql = "DROP VIEW IF EXISTS sys.status;";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
@@ -88,11 +83,11 @@ static void updateDBPermissions(const Options& opt, etymon::Postgres* db)
 {
     string sql;
 
-    sql = "GRANT USAGE ON SCHEMA sys TO " + opt.ldpUser + ";";
+    sql = "GRANT USAGE ON SCHEMA ldp TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA sys TO " + opt.ldpUser + ";";
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldp TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
@@ -237,6 +232,41 @@ void runLoad(const Options& opt)
     etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
             opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
     PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+
+    // Temporary measure fix history schemas.
+    for (auto& table : schema.tables) {
+        string historyTable;
+        historyTableName(table.tableName, &historyTable);
+        string sql = "DROP TABLE IF EXISTS " + historyTable + ";";
+        printSQL(Print::debug, opt, sql);
+        try {
+            etymon::PostgresResult result(&db, sql);
+        } catch (runtime_error& e) { }
+    }
+    // Temporary measure to clean up old schema.
+    {
+        string sql;
+        sql = "DROP VIEW IF EXISTS sys.status;";
+        printSQL(Print::debug, opt, sql);
+        try {
+            etymon::PostgresResult result(&db, sql);
+        } catch (runtime_error& e) { }
+        sql = "DROP TABLE IF EXISTS sys.loading;";
+        printSQL(Print::debug, opt, sql);
+        try {
+            etymon::PostgresResult result(&db, sql);
+        } catch (runtime_error& e) { }
+        sql = "DROP TABLE IF EXISTS sys.zz_loading;";
+        printSQL(Print::debug, opt, sql);
+        try {
+            etymon::PostgresResult result(&db, sql);
+        } catch (runtime_error& e) { }
+        sql = "DROP SCHEMA IF EXISTS sys;";
+        printSQL(Print::debug, opt, sql);
+        try {
+            etymon::PostgresResult result(&db, sql);
+        } catch (runtime_error& e) { }
+    }
 
     string sql;
     sql = "BEGIN ISOLATION LEVEL READ COMMITTED;";
