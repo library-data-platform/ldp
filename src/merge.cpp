@@ -15,29 +15,24 @@ static void mergeTable(const Options& opt, const TableSchema& table,
         "    id VARCHAR(65535) NOT NULL,\n"
         "    data " + opt.dbtype.jsonType() + " NOT NULL,\n"
         "    ldp_updated TIMESTAMPTZ NOT NULL,\n"
-        "    PRIMARY KEY (id, ldp_updated)\n"
+        "    ldp_tenant_id SMALLINT NOT NULL,\n"
+        "    PRIMARY KEY (ldp_tenant_id, id, ldp_updated)\n"
         ");";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
-
-    // This is a temporary measure to clean up history records that were
-    // incorrectly added.
-    //sql =
-    //    "DELETE FROM " + historyTable + " WHERE data IS NULL;";
-    //printSQL(Print::debug, opt, sql);
-    //{ etymon::PostgresResult result(db, sql); }
 
     string latestHistoryTable;
     latestHistoryTableName(table.tableName, &latestHistoryTable);
 
     sql =
         "CREATE TEMPORARY TABLE " + latestHistoryTable + " AS\n"
-        "SELECT id, data\n"
+        "SELECT id, data, ldp_tenant_id\n"
         "    FROM " + historyTable + " AS h1\n"
         "    WHERE NOT EXISTS\n"
         "      ( SELECT 1\n"
         "            FROM " + historyTable + " AS h2\n"
-        "            WHERE h1.id = h2.id AND\n"
+        "            WHERE h1.ldp_tenant_id = h2.ldp_tenant_id AND\n"
+        "                  h1.id = h2.id AND\n"
         "                  h1.ldp_updated < h2.ldp_updated\n"
         "      );";
     printSQL(Print::debug, opt, sql);
@@ -48,10 +43,11 @@ static void mergeTable(const Options& opt, const TableSchema& table,
 
     sql =
         "INSERT INTO " + historyTable + "\n"
-        "SELECT s.id, s.data, 'now'\n"
+        "SELECT s.id, s.data, 'now', s.ldp_tenant_id\n"
         "    FROM " + loadingTable + " AS s\n"
         "        LEFT JOIN " + latestHistoryTable + " AS h\n"
-        "            ON s.id = h.id\n"
+        "            ON s.ldp_tenant_id = h.ldp_tenant_id AND\n"
+        "               s.id = h.id\n"
         "    WHERE s.data IS NOT NULL AND\n"
         "          ( h.id IS NULL OR\n"
         "            (s.data)::VARCHAR <> (h.data)::VARCHAR );\n";

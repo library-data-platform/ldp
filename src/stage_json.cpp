@@ -279,7 +279,7 @@ static void writeTuple(const Options& opt, const TableSchema& table,
         data = "NULL";
     }
     *insertBuffer += data;
-    *insertBuffer += ')';
+    *insertBuffer += ",1)";
     (*recordCount)++;
 }
 
@@ -551,7 +551,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     string sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
-        "    id VARCHAR(65535) NOT NULL PRIMARY KEY,\n";
+        "    id VARCHAR(65535) NOT NULL,\n";
     string columnType;
     for (const auto& column : table.columns) {
         if (column.columnName != "id") {
@@ -565,7 +565,9 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     }
     sql += "    data ";
     sql += opt.dbtype.jsonType();
-    sql += "\n"
+    sql += ",\n"
+        "    ldp_tenant_id SMALLINT NOT NULL,\n"
+        "    PRIMARY KEY (ldp_tenant_id, id)\n"
         ");";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
