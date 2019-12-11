@@ -566,9 +566,15 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     sql += "    data ";
     sql += opt.dbtype.jsonType();
     sql += ",\n"
-        "    ldp_tenant_id SMALLINT NOT NULL,\n"
-        "    PRIMARY KEY (ldp_tenant_id, id)\n"
+        "    ldp_tenant_id SMALLINT NOT NULL\n"
         ");";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+
+    sql =
+        "ALTER TABLE " + loadingTable + "\n"
+        "    ADD CONSTRAINT " + table.tableName + "_pkey\n"
+        "    PRIMARY KEY (ldp_tenant_id, id);";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
