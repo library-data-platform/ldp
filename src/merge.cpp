@@ -12,10 +12,12 @@ static void mergeTable(const Options& opt, const TableSchema& table,
 
     string sql =
         "CREATE TABLE IF NOT EXISTS " + historyTable + " (\n"
-        "    id VARCHAR(65535),\n"
-        "    data " + opt.dbtype.jsonType() + ",\n"
-        "    updated TIMESTAMPTZ,\n"
-        "    PRIMARY KEY (id, updated)\n"
+        "    id VARCHAR(65535) NOT NULL,\n"
+        "    data " + opt.dbtype.jsonType() + " NOT NULL,\n"
+        "    updated TIMESTAMPTZ NOT NULL,\n"
+        "    tenant_id SMALLINT NOT NULL,\n"
+        "    CONSTRAINT ldp_history_" + table.tableName + "_pkey\n"
+        "        PRIMARY KEY (tenant_id, id, updated)\n"
         ");";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
@@ -25,12 +27,13 @@ static void mergeTable(const Options& opt, const TableSchema& table,
 
     sql =
         "CREATE TEMPORARY TABLE " + latestHistoryTable + " AS\n"
-        "SELECT id, data\n"
+        "SELECT id, data, tenant_id\n"
         "    FROM " + historyTable + " AS h1\n"
         "    WHERE NOT EXISTS\n"
         "      ( SELECT 1\n"
         "            FROM " + historyTable + " AS h2\n"
-        "            WHERE h1.id = h2.id AND\n"
+        "            WHERE h1.tenant_id = h2.tenant_id AND\n"
+        "                  h1.id = h2.id AND\n"
         "                  h1.updated < h2.updated\n"
         "      );";
     printSQL(Print::debug, opt, sql);
@@ -40,13 +43,15 @@ static void mergeTable(const Options& opt, const TableSchema& table,
     loadingTableName(table.tableName, &loadingTable);
 
     sql =
-        "INSERT INTO " + historyTable + "\n"+
-        "SELECT s.id, s.data, 'now'\n"+
-        "    FROM " + loadingTable + " AS s\n"+
-        "        LEFT JOIN " + latestHistoryTable + " AS h\n"+
-        "            ON s.id = h.id\n"+
-        "    WHERE h.id IS NULL OR\n"+
-        "          (s.data)::VARCHAR <> (h.data)::VARCHAR;\n",
+        "INSERT INTO " + historyTable + "\n"
+        "SELECT s.id, s.data, 'now', s.tenant_id\n"
+        "    FROM " + loadingTable + " AS s\n"
+        "        LEFT JOIN " + latestHistoryTable + " AS h\n"
+        "            ON s.tenant_id = h.tenant_id AND\n"
+        "               s.id = h.id\n"
+        "    WHERE s.data IS NOT NULL AND\n"
+        "          ( h.id IS NULL OR\n"
+        "            (s.data)::VARCHAR <> (h.data)::VARCHAR );\n";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 }
@@ -74,12 +79,13 @@ static void updateStatus(const Options& opt, const TableSchema& table,
         etymon::Postgres* db)
 {
     string sql =
-        "DELETE FROM sys.loading WHERE table_name = '" + table.tableName + "';";
+        "DELETE FROM ldp.table_updates WHERE table_name = '" +
+        table.tableName + "';";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
     sql =
-        "INSERT INTO sys.loading (table_name, updated)\n"
+        "INSERT INTO ldp.table_updates (table_name, updated)\n"
         "    VALUES ('" + table.tableName + "', 'now');";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
