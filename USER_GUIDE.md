@@ -285,7 +285,7 @@ SELECT updated,
     ORDER BY updated;
 ```
 
-To view how a specific record can change over time, using the record ID
+To view how a single record can change over time, using the record ID
 above:
 
 ```sql
