@@ -58,14 +58,15 @@ static void initDB(const Options& opt, etymon::Postgres* db)
 {
     string sql;
 
-    sql = "CREATE SCHEMA IF NOT EXISTS ldp;";
+    sql = "CREATE SCHEMA IF NOT EXISTS ldp_catalog;";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
     sql =
-        "CREATE TABLE IF NOT EXISTS ldp.table_updates (\n"
+        "CREATE TABLE IF NOT EXISTS ldp_catalog.table_updates (\n"
         "    table_name VARCHAR(65535) NOT NULL PRIMARY KEY,\n"
-        "    updated TIMESTAMPTZ NOT NULL\n"
+        "    updated TIMESTAMPTZ NOT NULL,\n"
+        "    tenant_id SMALLINT NOT NULL\n"
         ");";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
@@ -83,11 +84,12 @@ static void updateDBPermissions(const Options& opt, etymon::Postgres* db)
 {
     string sql;
 
-    sql = "GRANT USAGE ON SCHEMA ldp TO " + opt.ldpUser + ";";
+    sql = "GRANT USAGE ON SCHEMA ldp_catalog TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldp TO " + opt.ldpUser + ";";
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldp_catalog TO " +
+        opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 

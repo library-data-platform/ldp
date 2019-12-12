@@ -85,8 +85,9 @@ static void updateStatus(const Options& opt, const TableSchema& table,
     { etymon::PostgresResult result(db, sql); }
 
     sql =
-        "INSERT INTO ldp.table_updates (table_name, updated)\n"
-        "    VALUES ('" + table.tableName + "', 'now');";
+        "INSERT INTO ldp_catalog.table_updates\n"
+        "    (table_name, updated, tenant_id)\n"
+        "    VALUES ('" + table.tableName + "', 'now', 1);";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 }
