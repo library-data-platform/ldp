@@ -64,9 +64,10 @@ static void initDB(const Options& opt, etymon::Postgres* db)
 
     sql =
         "CREATE TABLE IF NOT EXISTS ldp_catalog.table_updates (\n"
-        "    table_name VARCHAR(65535) NOT NULL PRIMARY KEY,\n"
+        "    table_name VARCHAR(65535) NOT NULL,\n"
         "    updated TIMESTAMPTZ NOT NULL,\n"
-        "    tenant_id SMALLINT NOT NULL\n"
+        "    tenant_id SMALLINT NOT NULL,\n"
+        "    PRIMARY KEY (table_name, tenant_id)\n"
         ");";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
