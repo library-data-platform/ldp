@@ -273,8 +273,7 @@ only reflect the last of those changes.
 
 ### Querying historical data
 
-These are some examples that can help to give an idea of how data are
-evolving over time.
+These are some basic examples that show data evolving over time.
 
 For a high level view of all updated records, for example, in loans:
 
@@ -286,7 +285,7 @@ SELECT updated,
     ORDER BY updated;
 ```
 
-To view how a specific record changes over time, using the record ID
+To view how a single record can change over time, using the record ID
 above:
 
 ```sql
