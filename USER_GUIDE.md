@@ -266,7 +266,7 @@ tenant_id | 1
 ```
 
 Unlike the main LDP tables in which IDs are unique (per tenant ID), the
-history tables can have many records with the same ID.  Note also that
+history tables accumulate many records with the same ID.  Note also that
 if a value in the source database changes more than once during the
 interval between any two runs of the LDP loader, the LDP history will
 only reflect the last of those changes.
@@ -313,11 +313,11 @@ SELECT json_extract_path_text(data, 'action'),
 Since the source data schemas may evolve over time, the `data` attribute
 in history tables does not necessarily have a single schema that is
 consistent over an entire table.  As a result, reporting on history
-tables may require a small amount of "data cleaning" as preparation
-before the data can be queried accurately.  A suggested first step could
-be to select a subset of data within a time window, pulling out JSON
-fields of interest into relational attributes, and storing this result
-in a local table, e.g.:
+tables may require some "data cleaning" as preparation before the data
+can be queried accurately.  A suggested first step could be to select a
+subset of data within a time window, pulling out JSON fields of interest
+into relational attributes, and storing this result in a local table,
+e.g.:
 
 ```sql
 CREATE TABLE local.loan_status_history AS
