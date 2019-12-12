@@ -288,7 +288,11 @@ Alternatively, for a higher level view of all updated records, for
 example, in loans:
 
 ```sql
-SELECT updated, count(*) FROM history.loans GROUP BY updated;
+SELECT updated,
+       count(*)
+    FROM history.loans
+    GROUP BY updated
+    ORDER BY updated;
 ```
 
 ### Data cleaning
