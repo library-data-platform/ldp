@@ -567,7 +567,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     sql += opt.dbtype.jsonType();
     sql += ",\n"
         "    tenant_id SMALLINT NOT NULL,\n"
-        "    PRIMARY KEY (tenant_id, id)\n"
+        "    PRIMARY KEY (id, tenant_id)\n"
         ");";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }

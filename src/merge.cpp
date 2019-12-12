@@ -17,8 +17,21 @@ static void mergeTable(const Options& opt, const TableSchema& table,
         "    updated TIMESTAMPTZ NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"
         "    CONSTRAINT ldp_history_" + table.tableName + "_pkey\n"
-        "        PRIMARY KEY (tenant_id, id, updated)\n"
+        "        PRIMARY KEY (id, updated, tenant_id)\n"
         ");";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+
+    // Temporary: reorder primary key.
+    sql =
+        "ALTER TABLE " + historyTable + "\n"
+        "    DROP CONSTRAINT ldp_history_" + table.tableName + "_pkey;\n";
+    printSQL(Print::debug, opt, sql);
+    { etymon::PostgresResult result(db, sql); }
+    sql =
+        "ALTER TABLE " + historyTable + "\n"
+        "    ADD CONSTRAINT ldp_history_" + table.tableName + "_pkey\n"
+        "        PRIMARY KEY (id, updated, tenant_id);";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
@@ -79,14 +92,15 @@ static void updateStatus(const Options& opt, const TableSchema& table,
         etymon::Postgres* db)
 {
     string sql =
-        "DELETE FROM ldp.table_updates WHERE table_name = '" +
-        table.tableName + "';";
+        "DELETE FROM ldp_catalog.table_updates WHERE table_name = '" +
+        table.tableName + "' AND tenant_id = 1;";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
     sql =
-        "INSERT INTO ldp.table_updates (table_name, updated)\n"
-        "    VALUES ('" + table.tableName + "', 'now');";
+        "INSERT INTO ldp_catalog.table_updates\n"
+        "    (table_name, updated, tenant_id)\n"
+        "    VALUES ('" + table.tableName + "', 'now', 1);";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 }

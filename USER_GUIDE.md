@@ -60,8 +60,10 @@ ignored.
 
 The data in these tables are extracted from Okapi-based APIs and loaded
 into the database by the LDP data loader.  The data loader typically
-should be run once per day, and so the LDP database reflects the state
-of the source data as of sometime within the past 24 hours.
+runs once per day, and so the LDP database reflects the state of the
+source data as of sometime within the past 24 hours or so.  A table
+called `ldp_catalog.table_updates` records when each data table was last
+updated.
 
 
 2\. JSON queries

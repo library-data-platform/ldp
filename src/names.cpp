@@ -2,7 +2,7 @@
 
 void loadingTableName(const string& table, string* newtable)
 {
-    *newtable = "stage_" + table;
+    *newtable = "ldp_" + table;
 }
 
 void latestHistoryTableName(const string& table, string* newtable)
