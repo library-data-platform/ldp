@@ -273,8 +273,21 @@ only reflect the last of those changes.
 
 ### Querying historical data
 
-To view the history of changes to a specific record, for example, using
-the record ID above:
+These are some examples that can help to give an idea of how data are
+evolving over time.
+
+For a high level view of all updated records, for example, in loans:
+
+```sql
+SELECT updated,
+       count(*)
+    FROM history.loans
+    GROUP BY updated
+    ORDER BY updated;
+```
+
+To view how a specific record changes over time, using the record ID
+above:
 
 ```sql
 SELECT *
@@ -283,8 +296,8 @@ SELECT *
     ORDER BY updated;
 ```
 
-The `SELECT` clause of this query can be modified to examine changes in
-only specific fields, e.g.:
+The `SELECT` clause of this query can be modified to examine only
+specific fields, e.g.:
 
 ```sql
 SELECT json_extract_path_text(data, 'action'),
@@ -292,17 +305,6 @@ SELECT json_extract_path_text(data, 'action'),
        updated
     FROM history.loans
     WHERE id = '0bab56e5-1ab6-4ac2-afdf-8b2df0434378'
-    ORDER BY updated;
-```
-
-Alternatively, for a higher level view of all updated records, for
-example, in loans:
-
-```sql
-SELECT updated,
-       count(*)
-    FROM history.loans
-    GROUP BY updated
     ORDER BY updated;
 ```
 
