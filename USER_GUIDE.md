@@ -234,8 +234,8 @@ have been loaded in the past, including data that no longer exist in the
 source database.  Each table normally has a corresponding history table,
 e.g. the history table for `loans` is `history.loans`.
 
-This historical data capability is designed not for auditing, but for
-gaining insights about the library by analyzing trends over time.
+This historical data capability is designed for gaining insights about
+the library by analyzing trends over time.
 
 History tables include four attributes: the record ID (`id`), the JSON
 data (`data`), the date and time when the data were loaded (`updated`),
