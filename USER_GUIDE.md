@@ -13,9 +13,10 @@ LDP User Guide
 1\. Data model
 --------------
 
-The LDP data model is a hybrid of relational and JSON schemas.  Each table
-contains JSON data in a relational attribute called "data", and a subset of
-the JSON fields is also stored in individual relational attributes:
+The LDP data model is a hybrid of relational and JSON schemas.  Each
+table contains JSON data in a relational attribute called `data`, and a
+subset of the JSON fields is also stored in individual relational
+attributes:
 
 ```sql
 SELECT * FROM loans LIMIT 1;
@@ -52,6 +53,10 @@ tenant_id     | 1
 The relational attributes are provided to simplify writing queries and to
 improve query performance.  The JSON fields offer access to the complete
 extracted source data.
+
+An additional attribute, `tenant_id`, is reserved for use by library
+consortia.  In all other cases, `tenant_id` is set to `1` and can be
+ignored.
 
 The data in these tables are extracted from Okapi-based APIs and loaded
 into the database by the LDP data loader.  The data loader typically
@@ -225,9 +230,12 @@ sets if needed.
 As mentioned earlier, the LDP database reflects the state of the source
 data as of the last time the LDP data loader was run.  The loader also
 maintains another schema called `history` which stores all data that
-have been loaded in the past including data that no longer exist in the
+have been loaded in the past, including data that no longer exist in the
 source database.  Each table normally has a corresponding history table,
 e.g. the history table for `loans` is `history.loans`.
+
+This historical data capability is designed not for auditing, but for
+gaining insights about the library by analyzing trends over time.
 
 History tables include four attributes: the record ID (`id`), the JSON
 data (`data`), the date and time when the data were loaded (`updated`),
@@ -257,7 +265,7 @@ updated   | 2019-09-06 03:46:49.362606+00
 tenant_id | 1
 ```
 
-Unlike the main LDP tables in which IDs are unique per table, the
+Unlike the main LDP tables in which IDs are unique (per tenant ID), the
 history tables can have many records with the same ID.  Note also that
 if a value in the source database changes more than once during the
 interval between any two runs of the LDP loader, the LDP history will
