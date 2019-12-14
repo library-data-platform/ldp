@@ -41,11 +41,12 @@ cases it should run well with the following minimum requirements:
   * Memory: 100 MB
   * Storage: 320 GB HDD
 
-For large libraries, or if very high performance is desired, CPU and
-memory can be increased as needed.  Alternatively, Amazon Redshift can
-be used instead of PostgreSQL for significantly higher performance and
-scalability.  (See below for notes on configuring Redshift.)  The
-storage capacity also can be increased as needed.
+For large libraries, or if very high performance is desired, the
+database CPU and memory can be increased as needed.  Alternatively,
+Amazon Redshift can be used instead of PostgreSQL for significantly
+higher performance and scalability.  (See below for notes on configuring
+Redshift.)  The database storage capacity also can be increased as
+needed.
 
 
 2\. Installing the software

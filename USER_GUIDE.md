@@ -13,49 +13,57 @@ LDP User Guide
 1\. Data model
 --------------
 
-The LDP data model is a hybrid of relational and JSON schemas.  Each table
-contains JSON data in a relational attribute called "data", and a subset of
-the JSON fields is also stored in individual relational attributes:
+The LDP data model is a hybrid of relational and JSON schemas.  Each
+table contains JSON data in a relational attribute called `data`, and a
+subset of the JSON fields is also stored in individual relational
+attributes:
 
 ```sql
 SELECT * FROM loans LIMIT 1;
 ```
 ```
 id            | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
-user_id       | ab579dc3-219b-4f5b-8068-ab1c7a55c402
-proxy_user_id | a13dda6b-51ce-4543-be9c-eff894c0c2d0
-item_id       | 459afaba-5b39-468d-9072-eb1685e0ddf4
-loan_date     | 2017-02-03 08:43:15+00
-due_date      | 2017-02-17 08:43:15+00
-return_date   | 2017-03-01 11:35:12+00
 action        | checkedin
+due_date      | 2017-02-17 08:43:15+00
+item_id       | 459afaba-5b39-468d-9072-eb1685e0ddf4
 item_status   | Available
+loan_date     | 2017-02-03 08:43:15+00
+proxy_user_id | a13dda6b-51ce-4543-be9c-eff894c0c2d0
 renewal_count | 0
+return_date   | 2017-03-01 11:35:12+00
+user_id       | ab579dc3-219b-4f5b-8068-ab1c7a55c402
 data          | {                                                          
               |     "id": "0bab56e5-1ab6-4ac2-afdf-8b2df0434378",          
-              |     "userId": "ab579dc3-219b-4f5b-8068-ab1c7a55c402"       
-              |     "proxyUserId": "a13dda6b-51ce-4543-be9c-eff894c0c2d0", 
-              |     "itemId": "459afaba-5b39-468d-9072-eb1685e0ddf4",      
-              |     "loanDate": "2017-02-03T08:43:15Z",                    
-              |     "dueDate": "2017-02-17T08:43:15.000+0000",             
-              |     "returnDate": "2017-03-01T11:35:12Z",                  
               |     "action": "checkedin",                                 
+              |     "dueDate": "2017-02-17T08:43:15.000+0000",             
+              |     "itemId": "459afaba-5b39-468d-9072-eb1685e0ddf4",      
               |     "itemStatus": "Available",                             
+              |     "loanDate": "2017-02-03T08:43:15Z",                    
+              |     "proxyUserId": "a13dda6b-51ce-4543-be9c-eff894c0c2d0", 
               |     "renewalCount": 0,                                     
+              |     "returnDate": "2017-03-01T11:35:12Z",                  
               |     "status": {                                            
               |         "name": "Closed"                                   
               |     },                                                     
+              |     "userId": "ab579dc3-219b-4f5b-8068-ab1c7a55c402"       
               | }
+tenant_id     | 1
 ```
 
 The relational attributes are provided to simplify writing queries and to
 improve query performance.  The JSON fields offer access to the complete
 extracted source data.
 
+An additional attribute, `tenant_id`, is reserved for use by library
+consortia.  In all other cases, `tenant_id` is set to `1` and can be
+ignored.
+
 The data in these tables are extracted from Okapi-based APIs and loaded
 into the database by the LDP data loader.  The data loader typically
-should be run once per day, and so the LDP database reflects the state
-of the source data as of sometime within the past 24 hours.
+runs once per day, and so the LDP database reflects the state of the
+source data as of sometime within the past 24 hours or so.  A table
+called `ldp_catalog.table_updates` records when each data table was last
+updated.
 
 
 2\. JSON queries
@@ -224,46 +232,63 @@ sets if needed.
 As mentioned earlier, the LDP database reflects the state of the source
 data as of the last time the LDP data loader was run.  The loader also
 maintains another schema called `history` which stores all data that
-have been loaded in the past including data that no longer exist in the
+have been loaded in the past, including data that no longer exist in the
 source database.  Each table normally has a corresponding history table,
 e.g. the history table for `loans` is `history.loans`.
 
-History tables include three attributes: the record ID (`id`), the JSON data
-(`data`), and the date and time when the data were loaded (`updated`):
+This historical data capability is designed for gaining insights about
+the library by analyzing trends over time.
+
+History tables include four attributes: the record ID (`id`), the JSON
+data (`data`), the date and time when the data were loaded (`updated`),
+and a tenant ID (`tenant_id`):
 
 ```sql
 SELECT * FROM history.loans LIMIT 1;
 ```
 ```
-id      | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
-data    | {                                                          
-        |     "action": "checkedin",                                 
-        |     "dueDate": "2017-02-17T08:43:15.000+0000",             
-        |     "id": "0bab56e5-1ab6-4ac2-afdf-8b2df0434378",          
-        |     "itemId": "459afaba-5b39-468d-9072-eb1685e0ddf4",      
-        |     "itemStatus": "Available",                             
-        |     "loanDate": "2017-02-03T08:43:15Z",                    
-        |     "proxyUserId": "a13dda6b-51ce-4543-be9c-eff894c0c2d0", 
-        |     "renewalCount": 0,                                     
-        |     "returnDate": "2017-03-01T11:35:12Z",                  
-        |     "status": {                                            
-        |         "name": "Closed"                                   
-        |     },                                                     
-        |     "userId": "ab579dc3-219b-4f5b-8068-ab1c7a55c402"       
-        | }
-updated | 2019-09-06 03:46:49.362606+00
+id        | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
+data      | {                                                          
+          |     "id": "0bab56e5-1ab6-4ac2-afdf-8b2df0434378",          
+          |     "action": "checkedin",                                 
+          |     "dueDate": "2017-02-17T08:43:15.000+0000",             
+          |     "itemId": "459afaba-5b39-468d-9072-eb1685e0ddf4",      
+          |     "itemStatus": "Available",                             
+          |     "loanDate": "2017-02-03T08:43:15Z",                    
+          |     "proxyUserId": "a13dda6b-51ce-4543-be9c-eff894c0c2d0", 
+          |     "renewalCount": 0,                                     
+          |     "returnDate": "2017-03-01T11:35:12Z",                  
+          |     "status": {                                            
+          |         "name": "Closed"                                   
+          |     },                                                     
+          |     "userId": "ab579dc3-219b-4f5b-8068-ab1c7a55c402"       
+          | }
+updated   | 2019-09-06 03:46:49.362606+00
+tenant_id | 1
 ```
 
-Unlike the main LDP tables in which IDs are unique per table, the
-history tables can have many records with the same ID.  Note also that
+Unlike the main LDP tables in which IDs are unique (per tenant ID), the
+history tables accumulate many records with the same ID.  Note also that
 if a value in the source database changes more than once during the
 interval between any two runs of the LDP loader, the LDP history will
 only reflect the last of those changes.
 
 ### Querying historical data
 
-To view the history of changes to a specific record, for example, using
-the record ID above:
+These are some basic examples that show data evolving over time.
+
+For a high level view of all updated records, for example, in loans:
+
+```sql
+SELECT updated,
+       count(*)
+    FROM history.loans
+    GROUP BY updated
+    ORDER BY updated;
+```
+
+To view how a single record can change over time, using the record ID
+above:
 
 ```sql
 SELECT *
@@ -272,8 +297,8 @@ SELECT *
     ORDER BY updated;
 ```
 
-The `SELECT` clause of this query can be modified to examine changes in
-only specific fields, e.g.:
+The `SELECT` clause of this query can be modified to examine only
+specific fields, e.g.:
 
 ```sql
 SELECT json_extract_path_text(data, 'action'),
@@ -284,23 +309,16 @@ SELECT json_extract_path_text(data, 'action'),
     ORDER BY updated;
 ```
 
-Alternatively, for a higher level view of all updated records, for
-example, in loans:
-
-```sql
-SELECT updated, count(*) FROM history.loans GROUP BY updated;
-```
-
 ### Data cleaning
 
 Since the source data schemas may evolve over time, the `data` attribute
 in history tables does not necessarily have a single schema that is
 consistent over an entire table.  As a result, reporting on history
-tables may require a small amount of "data cleaning" as preparation
-before the data can be queried accurately.  A suggested first step could
-be to select a subset of data within a time window, pulling out JSON
-fields of interest into relational attributes, and storing this result
-in a local table, e.g.:
+tables may require some "data cleaning" as preparation before the data
+can be queried accurately.  A suggested first step could be to select a
+subset of data within a time window, pulling out JSON fields of interest
+into relational attributes, and storing this result in a local table,
+e.g.:
 
 ```sql
 CREATE TABLE local.loan_status_history AS
