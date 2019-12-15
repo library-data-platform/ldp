@@ -6,6 +6,7 @@
 
 #include "../etymoncpp/include/postgres.h"
 #include "../etymoncpp/include/util.h"
+#include "anonymize.h"
 #include "camelcase.h"
 #include "dbtype.h"
 #include "names.h"
@@ -16,32 +17,13 @@
 #include "rapidjson/reader.h"
 #include "rapidjson/stringbuffer.h"
 #include "schema.h"
-#include "util.h"
 #include "stage_json.h"
+#include "util.h"
 
 //using namespace std;
 namespace json = rapidjson;
 
 constexpr json::ParseFlag pflags = json::kParseTrailingCommasFlag;
-
-bool possiblePersonalData(const string& field)
-{
-    const char* f = field.c_str();
-    return (
-            (strcmp(f, "/id") != 0) &&
-            (strcmp(f, "/active") != 0) &&
-            (strcmp(f, "/type") != 0) &&
-            (strcmp(f, "/patronGroup") != 0) &&
-            (strcmp(f, "/enrollmentDate") != 0) &&
-            (strcmp(f, "/expirationDate") != 0) &&
-            (strcmp(f, "/meta") != 0) &&
-            (strcmp(f, "/proxyFor") != 0) &&
-            (strcmp(f, "/createdDate") != 0) &&
-            (strcmp(f, "/updatedDate") != 0) &&
-            (strcmp(f, "/metadata") != 0) &&
-            (strcmp(f, "/tags") != 0)
-           );
-}
 
 struct NameComparator {
     bool operator()(const json::Value::Member &lhs,

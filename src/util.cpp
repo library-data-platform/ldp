@@ -31,4 +31,11 @@ void printSQL(Print level, const Options& opt, const string& sql)
     print(level, opt, string("sql:\n") + sql);
 }
 
-
+void printSchema(FILE* stream, const Schema& schema)
+{
+    fprintf(stream, "Module name,Source path,Table name\n");
+    for (const auto& table : schema.tables) {
+        fprintf(stream, "%s,%s,%s\n", table.moduleName.c_str(),
+                table.sourcePath.c_str(), table.tableName.c_str());
+    }
+}

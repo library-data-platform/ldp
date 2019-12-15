@@ -32,6 +32,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 add_executable(ldp
     ../etymoncpp/src/postgres.cpp
     ../etymoncpp/src/util.cpp
+    anonymize.cpp
     camelcase.cpp
     config_json.cpp
     dbtype.cpp

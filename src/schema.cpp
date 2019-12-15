@@ -33,53 +33,65 @@ void Schema::MakeDefaultSchema(Schema* schema)
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-agreements";
 
+    // no data
     table.sourcePath = "/erm/contacts";
     table.tableName = "erm_contacts";
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
+    // no data
     table.sourcePath = "/erm/entitlements";
     table.tableName = "erm_entitlements";
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
+    // parse error
     table.sourcePath = "/erm/jobs";
     table.tableName = "erm_jobs";
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
+    // no data
     table.sourcePath = "/erm/kbs";
     table.tableName = "erm_kbs";
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
+    // no data
     table.sourcePath = "/erm/org";
     table.tableName = "erm_org";
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
+    // parse error
     table.sourcePath = "/erm/packages";
     table.tableName = "erm_packages";
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
+    // no data
     table.sourcePath = "/erm/refdata";
     table.tableName = "erm_refdata";
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
+    // parse error
     table.sourcePath = "/erm/resource";
     table.tableName = "erm_resource";
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
+    // no data
     table.sourcePath = "/erm/sas";
     table.tableName = "erm_sas";
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
+    // parse error
     table.sourcePath = "/erm/titles";
     table.tableName = "erm_titles";
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
+    // no data
     table.sourcePath = "/export";
     table.tableName = "erm_export";
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
+    // no data
     table.sourcePath = "/erm/files";
     table.tableName = "erm_files";
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-circulation-storage";
@@ -88,7 +100,8 @@ void Schema::MakeDefaultSchema(Schema* schema)
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
-    // TODO This seems to use a different json format, e.g. from folio-snapshot:
+    // TODO This seems to use a different json format.
+    // E.g. from folio-snapshot:
     // {
     //   "id" : "1721f01b-e69d-5c4c-5df2-523428a04c54",
     //     "rulesAsText" : "priority: t, s, c, b, a, m,
@@ -104,7 +117,7 @@ void Schema::MakeDefaultSchema(Schema* schema)
     // }
     table.sourcePath = "/circulation-rules-storage";
     deriveTableName(table.sourcePath, &(table.tableName));
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
     table.sourcePath =
         "/fixed-due-date-schedule-storage/fixed-due-date-schedules";
@@ -123,10 +136,11 @@ void Schema::MakeDefaultSchema(Schema* schema)
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
+    // okapi returns 422 Unprocessable Entity
     table.sourcePath =
         "/patron-action-session-storage/expired-session-patron-ids";
     deriveTableName(table.sourcePath, &(table.tableName));
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
     table.sourcePath = "/patron-action-session-storage/patron-action-sessions";
     deriveTableName(table.sourcePath, &(table.tableName));
@@ -351,9 +365,10 @@ void Schema::MakeDefaultSchema(Schema* schema)
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-invoice-storage";
 
+    // okapi returns 400 Bad Request
     table.sourcePath = "/invoice-storage/invoice-line-number";
     deriveTableName(table.sourcePath, &(table.tableName));
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
     table.sourcePath = "/invoice-storage/invoice-lines";
     deriveTableName(table.sourcePath, &(table.tableName));
@@ -414,9 +429,10 @@ void Schema::MakeDefaultSchema(Schema* schema)
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
+    // okapi returns 400 Bad Request
     table.sourcePath = "/orders-storage/po-line-number";
     deriveTableName(table.sourcePath, &(table.tableName));
-    //schema->tables.push_back(table);
+    // schema->tables.push_back(table);
 
     table.sourcePath = "/orders-storage/po-lines";
     deriveTableName(table.sourcePath, &(table.tableName));
@@ -476,19 +492,17 @@ void Schema::MakeDefaultSchema(Schema* schema)
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-users";
 
-    // Disabled for possible personal data.
     table.sourcePath = "/addresstypes";
     deriveTableName(table.sourcePath, &(table.tableName));
-    //schema->tables.push_back(table);
+    schema->tables.push_back(table);
 
     table.sourcePath = "/groups";
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
-    // Disabled for possible personal data.
     table.sourcePath = "/proxiesfor";
     deriveTableName(table.sourcePath, &(table.tableName));
-    //schema->tables.push_back(table);
+    schema->tables.push_back(table);
 
     table.sourcePath = "/users";
     deriveTableName(table.sourcePath, &(table.tableName));

@@ -54,9 +54,8 @@ The relational attributes are provided to simplify writing queries and to
 improve query performance.  The JSON fields offer access to the complete
 extracted source data.
 
-An additional attribute, `tenant_id`, is reserved for use by library
-consortia.  In all other cases, `tenant_id` is set to `1` and can be
-ignored.
+An additional attribute, `tenant_id`, is reserved for future use in
+consortial reporting.
 
 The data in these tables are extracted from Okapi-based APIs and loaded
 into the database by the LDP data loader.  The data loader typically
