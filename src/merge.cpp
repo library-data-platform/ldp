@@ -123,5 +123,5 @@ void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
         placeTable(opt, table, db);
         updateStatus(opt, table, db);
     }
+    // printSchema(stdout, *schema);
 }
-
