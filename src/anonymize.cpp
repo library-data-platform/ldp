@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "anonymize.h"
 
 bool possiblePersonalData(const string& field)
