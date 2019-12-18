@@ -6,8 +6,8 @@ LDP User Guide
 2\. JSON queries  
 3\. Relational attributes vs. JSON  
 4\. Local schemas  
-5\. Important note on database views  
-6\. Historical data  
+5\. Historical data  
+6\. Important note on database views  
 7\. Report queries
 
 
@@ -209,22 +209,7 @@ schema names be prefixed with `local_` or `l_` to avoid future naming
 collisions with the LDP.
 
 
-5\. Important note on database views
-------------------------------------
-
-The schema of source data can change over time, and the LDP reflects
-these changes when it refreshes its data.  For this reason, the LDP
-cannot support the use of database views.  The LDP loader may fail to
-run if the database contains views.  Instead of creating a view, use
-`CREATE TABLE ... AS SELECT ...` to store a result set, as in the local
-schema example above.
-
-Reporting users should be aware of schema changes in advance, in order
-to be able to update queries and to prepare to recreate local result
-sets if needed.
-
-
-6\. Historical data
+5\. Historical data
 -------------------
 
 ### Overview
@@ -333,6 +318,21 @@ This will make it easier to examine the data to check for inconsistent
 or missing values, update them, etc.  Note that in SQL, `''` and `NULL`
 may look the same in the output of a `SELECT`, but they are distinct
 values.
+
+
+6\. Important note on database views
+------------------------------------
+
+The schema of source data can change over time, and the LDP reflects
+these changes when it refreshes its data.  For this reason, the LDP
+cannot support the use of database views.  The LDP loader may fail to
+run if the database contains views.  Instead of creating a view, use
+`CREATE TABLE ... AS SELECT ...` to store a result set, as in the local
+schema example above.
+
+Reporting users should be aware of schema changes in advance, in order
+to be able to update queries and to prepare to recreate local result
+sets if needed.
 
 
 <!--
