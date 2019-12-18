@@ -162,7 +162,7 @@ $ psql ldp --username=<admin_user> --single-transaction \
 Additional command line options may be required to specify the database
 host, port, etc.
 
-If Redshift, this can be done in the database once it has been created,
+In Redshift, this can be done in the database once it has been created,
 for example:
 
 ```sql
