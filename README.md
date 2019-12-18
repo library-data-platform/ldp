@@ -11,10 +11,7 @@ Version 2.0.  See the file
 information.
 
 **The Library Data Platform (LDP) is an open source platform for
-reporting and analytics in libraries.  It extracts data from
-[Okapi](https://github.com/folio-org/okapi)-based microservices and
-produces a database that supports ad hoc, cross-domain queries and
-integration with external data.**
+reporting and analytics in libraries.**
 
 ```
 id            | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378

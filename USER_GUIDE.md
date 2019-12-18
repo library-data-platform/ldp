@@ -2,20 +2,45 @@ LDP User Guide
 ==============
 
 ##### Contents  
+Overview  
 1\. Data model  
 2\. JSON queries  
 3\. Relational attributes vs. JSON  
 4\. Local schemas  
-5\. Important note on database views  
-6\. Historical data
+5\. Historical data  
+6\. Important note on database views  
+7\. Report queries
+
+
+Overview
+--------
+
+The Library Data Platform (LDP) is an open source platform for reporting
+and analytics in libraries, offering a number of features:
+
+* Query capability:  Ad hoc, cross-domain querying of data which are
+  automatically extracted from Okapi-based microservices
+* Compatibility:  Designed to work with popular graphical database
+  clients like Tableau, Microsoft Access, and DBeaver, as well as data
+  analysis software such as R
+* Data integration:  Offers a robust platform for combining data from
+  beyond library systems
+* Historical data:  Enables analyzing trends over time to gain strategic
+  insights about your library
+* Scalability:  Provides an upgrade path that scales to virtually any
+  amount of data that libraries can collect
+
+The LDP is available now in "pre-release" versions for testing purposes,
+with version 1.0 expected in mid-2020.  This documentation covers the
+LDP as it exists at the present time.
 
 
 1\. Data model
 --------------
 
-The LDP data model is a hybrid of relational and JSON schemas.  Each
-table contains JSON data in a relational attribute called `data`, and a
-subset of the JSON fields is also stored in individual relational
+The primary LDP data model is a hybrid of relational and JSON schemas.
+Each table contains JSON data in a relational attribute called `data`,
+and a subset of the JSON fields is also stored in individual relational
 attributes:
 
 ```sql
@@ -208,22 +233,7 @@ schema names be prefixed with `local_` or `l_` to avoid future naming
 collisions with the LDP.
 
 
-5\. Important note on database views
-------------------------------------
-
-The schema of source data can change over time, and the LDP reflects
-these changes when it refreshes its data.  For this reason, the LDP
-cannot support the use of database views.  The LDP loader may fail to
-run if the database contains views.  Instead of creating a view, use
-`CREATE TABLE ... AS SELECT ...` to store a result set, as in the local
-schema example above.
-
-Reporting users should be aware of schema changes in advance, in order
-to be able to update queries and to prepare to recreate local result
-sets if needed.
-
-
-6\. Historical data
+5\. Historical data
 -------------------
 
 ### Overview
@@ -334,6 +344,21 @@ may look the same in the output of a `SELECT`, but they are distinct
 values.
 
 
+6\. Important note on database views
+------------------------------------
+
+The schema of source data can change over time, and the LDP reflects
+these changes when it refreshes its data.  For this reason, the LDP
+cannot support the use of database views.  The LDP loader may fail to
+run if the database contains views.  Instead of creating a view, use
+`CREATE TABLE ... AS SELECT ...` to store a result set, as in the local
+schema example above.
+
+Reporting users should be aware of schema changes in advance, in order
+to be able to update queries and to prepare to recreate local result
+sets if needed.
+
+
 <!--
 6\. Schema documentation
 ------------------------
@@ -344,14 +369,12 @@ documentation](https://dev.folio.org/reference/api/).
 -->
 
 
-<!--
-6\. Report queries
+7\. Report queries
 ------------------
 
 Report queries for the LDP are being developed by the FOLIO reporting
 community in the [ldp-analytics](https://github.com/folio-org/ldp-analytics)
 repository.
--->
 
 
 Further reading
