@@ -31,7 +31,8 @@ and analytics in libraries, offering a number of features:
   amount of data that libraries can collect
 
 The LDP is available now in "pre-release" versions for testing purposes,
-with version 1.0 expected in mid-2020.
+with version 1.0 expected in mid-2020.  This documentation covers the
+LDP as it exists at the present time.
 
 
 1\. Data model
