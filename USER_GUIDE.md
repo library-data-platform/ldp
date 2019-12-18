@@ -7,7 +7,8 @@ LDP User Guide
 3\. Relational attributes vs. JSON  
 4\. Local schemas  
 5\. Important note on database views  
-6\. Historical data
+6\. Historical data  
+7\. Report queries
 
 
 1\. Data model
@@ -344,14 +345,12 @@ documentation](https://dev.folio.org/reference/api/).
 -->
 
 
-<!--
-6\. Report queries
+7\. Report queries
 ------------------
 
 Report queries for the LDP are being developed by the FOLIO reporting
 community in the [ldp-analytics](https://github.com/folio-org/ldp-analytics)
 repository.
--->
 
 
 Further reading
