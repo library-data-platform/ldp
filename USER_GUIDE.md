@@ -2,6 +2,7 @@ LDP User Guide
 ==============
 
 ##### Contents  
+Overview  
 1\. Data model  
 2\. JSON queries  
 3\. Relational attributes vs. JSON  
@@ -11,12 +12,34 @@ LDP User Guide
 7\. Report queries
 
 
+Overview
+--------
+
+The Library Data Platform (LDP) is an open source platform for reporting
+and analytics in libraries, offering a number of features:
+
+* Query capability:  Ad hoc, cross-domain querying of data which are
+  automatically extracted from Okapi-based microservices
+* Compatibility:  Designed to work with popular graphical database
+  clients like Tableau, Microsoft Access, and DBeaver, as well as data
+  analysis software such as R
+* Data integration:  Offers a robust platform for combining data from
+  beyond library systems
+* Historical data:  Enables analyzing trends over time to gain strategic
+  insights about your library
+* Scalability:  Provides an upgrade path that scales to virtually any
+  amount of data that libraries can collect
+
+The LDP is available now in "pre-release" versions for testing purposes,
+with version 1.0 expected in mid-2020.
+
+
 1\. Data model
 --------------
 
-The LDP data model is a hybrid of relational and JSON schemas.  Each
-table contains JSON data in a relational attribute called `data`, and a
-subset of the JSON fields is also stored in individual relational
+The primary LDP data model is a hybrid of relational and JSON schemas.
+Each table contains JSON data in a relational attribute called `data`,
+and a subset of the JSON fields is also stored in individual relational
 attributes:
 
 ```sql

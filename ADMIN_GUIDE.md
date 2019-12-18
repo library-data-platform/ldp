@@ -321,22 +321,17 @@ the LDP using Redshift:
 
 * Node type:  `ds2.xlarge` is generally recommended for the LDP
   database.
-
 * Cluster type:  `Single Node` is sufficient for most small libraries.
   `Multi Node` should be used for most large libraries.
-
 * Number of compute nodes:  `1` is the only option for Single Node
   clusters (see "Cluster type" above).  `3` is a suggested default for
   large libraries.  Adding more nodes generally enables higher
   performance of queries and also increases storage capacity.
-
 * Cluster parameter group:  For large libraries running many concurrent
   queries, workload queues in "Workload Management" (WLM) optionally can
   be configured to enable "Concurrency Scaling" mode by setting it to
   "Auto".
-
 * Snapshots:  Automated snapshots should always be enabled.
-
 * Maintenance Track:  `Trailing` is recommended.
 
 
