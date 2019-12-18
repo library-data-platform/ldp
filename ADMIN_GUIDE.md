@@ -4,7 +4,7 @@ LDP Admin Guide
 ##### Contents  
 1\. System requirements  
 2\. Installing the software  
-3\. Configuring the LDP database  
+3\. Preparing the LDP database  
 4\. Configuring the LDP software  
 5\. Loading data into the database  
 6\. Running the LDP in production  
@@ -138,8 +138,8 @@ $ ./ldp help
 ```
 
 
-3\. Configuring the LDP database
---------------------------------
+3\. Preparing the LDP database
+------------------------------
 
 Before using the LDP software, we need a database to load data into.
 Two database users are also required: `ldpadmin`, an administrator
