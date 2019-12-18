@@ -23,8 +23,9 @@ LDP Admin Guide
 * [PostgreSQL](https://www.postgresql.org/) 11.5 or later; or
   [Amazon Redshift](https://aws.amazon.com/redshift/) 1.0.8995 or later
 * To build the LDP software from source code:
-  * [CMake](https://cmake.org/) 3.13.4 or later
-  * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
+  * [CMake](https://cmake.org/) 3.7.2 or later
+  * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later; or
+    [Clang](https://clang.llvm.org/) 8.0.1 or later
   * [libpq](https://www.postgresql.org/) 11.5 or later
   * [libcurl](https://curl.haxx.se/) 7.64.0 or later
   * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
