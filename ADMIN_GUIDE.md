@@ -10,8 +10,7 @@ LDP Admin Guide
 6\. Running the LDP in production  
 7\. Anonymization of personal data  
 8\. Loading data from files (for testing only)  
-9\. Disabling database TLS/SSL (for testing only)  
-10\. Reporting bugs and feature requests
+9\. Disabling database TLS/SSL (for testing only)
 
 
 1\. System requirements
@@ -398,21 +397,6 @@ disabled using the `--unsafe` and `--nossl` options, e.g.:
 ```shell
 $ ldp load --source folio --target ldpdemo --unsafe --nossl
 ```
-
-
-10\. Reporting bugs and feature requests
-----------------------------------------
-
-Please use the [FOLIO Issue Tracker](https://issues.folio.org/) to
-report a bug or feature request, by creating an issue in the "Library
-Data Platform (LDP)" project.  Set the issue type to "Bug" or "New
-Feature", and fill in the summary and description fields.  Please do not
-set any other fields in the issue.
-
-<!--
-Please use the [issue tracker](https://github.com/folio-org/ldp/issues)
-to report a bug or feature request.
--->
 
 
 Further reading

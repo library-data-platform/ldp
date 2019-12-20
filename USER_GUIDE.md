@@ -9,7 +9,7 @@ Overview
 4\. Local schemas  
 5\. Historical data  
 6\. Important note on database views  
-7\. Report queries
+7\. Community
 
 
 Overview
@@ -369,11 +369,43 @@ documentation](https://dev.folio.org/reference/api/).
 -->
 
 
-7\. Report queries
-------------------
+7\. Community
+-------------
 
-Report queries for the LDP are being developed by the FOLIO reporting
-community in the [ldp-analytics](https://github.com/folio-org/ldp-analytics)
+### Mailing lists
+
+Mailing lists for the LDP software are hosted on FOLIO's discussion
+site:
+
+* [`ldp-announce`](https://discuss.folio.org/c/ldp), a low volume
+  announcement list
+* [`ldp-users`](https://discuss.folio.org/c/ldp/ldp-users), for
+  discussing general usage and querying of the LDP database
+* [`ldp-sysadmin`](https://discuss.folio.org/c/ldp/ldp-sysadmin), for
+  discussing system administration of the LDP software
+
+FOLIO's [Slack organization](https://slack-invitation.folio.org/) also
+contains LDP-related channels.
+
+### Bugs and feature requests
+
+Please use the [FOLIO Issue Tracker](https://issues.folio.org/) to
+report a bug or feature request, by creating an issue in the "Library
+Data Platform (LDP)" project.  Set the issue type to "Bug" or "New
+Feature", and fill in the summary and description fields.  Please do not
+set any other fields in the issue.
+
+<!--
+Please use the [issue tracker](https://github.com/folio-org/ldp/issues)
+to report a bug or feature request.
+-->
+
+### FOLIO reporting
+
+Librarians and developers in the FOLIO community are building a
+collection of LDP-based queries to provide reporting capabilities for
+FOLIO libraries.  This effort is organized around the
+[ldp-analytics](https://github.com/folio-org/ldp-analytics)
 repository.
 
 
