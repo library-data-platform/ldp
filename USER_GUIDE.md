@@ -377,12 +377,12 @@ documentation](https://dev.folio.org/reference/api/).
 Mailing lists for the LDP software are hosted on FOLIO's discussion
 site:
 
-* [`ldp-announce`](https://discuss.folio.org/c/ldp), a low volume
+* [`ldp-announce`](https://discuss.folio.org/c/ldp) is a low volume
   announcement list
-* [`ldp-users`](https://discuss.folio.org/c/ldp/ldp-users), for
-  discussing general usage and querying of the LDP database
-* [`ldp-sysadmin`](https://discuss.folio.org/c/ldp/ldp-sysadmin), for
-  discussing system administration of the LDP software
+* [`ldp-users`](https://discuss.folio.org/c/ldp/ldp-users) is for
+  general usage and querying of the LDP database
+* [`ldp-sysadmin`](https://discuss.folio.org/c/ldp/ldp-sysadmin) is
+  for system administration of the LDP software
 
 FOLIO's [Slack organization](https://slack-invitation.folio.org/) also
 contains LDP-related channels.
