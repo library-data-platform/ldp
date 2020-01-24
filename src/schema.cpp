@@ -31,6 +31,24 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.sourceType = 1;
 
     ///////////////////////////////////////////////////////////////////////////
+    table.moduleName = "mod-erm-usage";
+
+    table.sourcePath = "/counter-reports";
+    table.tableName = "erm_counter_reports";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/usage-data-providers";
+    table.tableName = "erm_usage_data_providers";
+    schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
+    table.moduleName = "mod-licenses";
+
+    table.sourcePath = "/licenses/licenses";
+    table.tableName = "erm_licenses";
+    //schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-agreements";
 
     // no data
