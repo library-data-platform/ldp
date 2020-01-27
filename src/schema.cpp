@@ -31,87 +31,6 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.sourceType = 1;
 
     ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-erm-usage";
-
-    table.sourcePath = "/counter-reports";
-    table.tableName = "erm_counter_reports";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/usage-data-providers";
-    table.tableName = "erm_usage_data_providers";
-    schema->tables.push_back(table);
-
-    ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-licenses";
-
-    table.sourcePath = "/licenses/licenses";
-    table.tableName = "erm_licenses";
-    //schema->tables.push_back(table);
-
-    ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-agreements";
-
-    // no data
-    table.sourcePath = "/erm/contacts";
-    table.tableName = "erm_contacts";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/erm/entitlements";
-    table.tableName = "erm_entitlements";
-    // schema->tables.push_back(table);
-
-    // parse error
-    table.sourcePath = "/erm/jobs";
-    table.tableName = "erm_jobs";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/erm/kbs";
-    table.tableName = "erm_kbs";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/erm/org";
-    table.tableName = "erm_org";
-    // schema->tables.push_back(table);
-
-    // parse error
-    table.sourcePath = "/erm/packages";
-    table.tableName = "erm_packages";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/erm/refdata";
-    table.tableName = "erm_refdata";
-    // schema->tables.push_back(table);
-
-    // parse error
-    table.sourcePath = "/erm/resource";
-    table.tableName = "erm_resource";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/erm/sas";
-    table.tableName = "erm_sas";
-    // schema->tables.push_back(table);
-
-    // parse error
-    table.sourcePath = "/erm/titles";
-    table.tableName = "erm_titles";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/export";
-    table.tableName = "erm_export";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/erm/files";
-    table.tableName = "erm_files";
-    // schema->tables.push_back(table);
-
-    ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-circulation-storage";
 
     table.sourcePath = "/cancellation-reason-storage/cancellation-reasons";
@@ -525,6 +444,93 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.sourcePath = "/users";
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
+
+/*
+
+    // Experimental ERM data sources
+
+    ///////////////////////////////////////////////////////////////////////////
+    table.moduleName = "mod-erm-usage";
+
+    table.sourcePath = "/counter-reports";
+    table.tableName = "erm_counter_reports";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/usage-data-providers";
+    table.tableName = "erm_usage_data_providers";
+    schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
+    table.moduleName = "mod-licenses";
+
+    table.sourcePath = "/licenses/licenses";
+    table.tableName = "erm_licenses";
+    //schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
+    table.moduleName = "mod-agreements";
+
+    // no data
+    table.sourcePath = "/erm/contacts";
+    table.tableName = "erm_contacts";
+    // schema->tables.push_back(table);
+
+    // no data
+    table.sourcePath = "/erm/entitlements";
+    table.tableName = "erm_entitlements";
+    // schema->tables.push_back(table);
+
+    // parse error
+    table.sourcePath = "/erm/jobs";
+    table.tableName = "erm_jobs";
+    // schema->tables.push_back(table);
+
+    // no data
+    table.sourcePath = "/erm/kbs";
+    table.tableName = "erm_kbs";
+    // schema->tables.push_back(table);
+
+    // no data
+    table.sourcePath = "/erm/org";
+    table.tableName = "erm_org";
+    // schema->tables.push_back(table);
+
+    // parse error
+    table.sourcePath = "/erm/packages";
+    table.tableName = "erm_packages";
+    // schema->tables.push_back(table);
+
+    // no data
+    table.sourcePath = "/erm/refdata";
+    table.tableName = "erm_refdata";
+    // schema->tables.push_back(table);
+
+    // parse error
+    table.sourcePath = "/erm/resource";
+    table.tableName = "erm_resource";
+    // schema->tables.push_back(table);
+
+    // no data
+    table.sourcePath = "/erm/sas";
+    table.tableName = "erm_sas";
+    // schema->tables.push_back(table);
+
+    // parse error
+    table.sourcePath = "/erm/titles";
+    table.tableName = "erm_titles";
+    // schema->tables.push_back(table);
+
+    // no data
+    table.sourcePath = "/export";
+    table.tableName = "erm_export";
+    // schema->tables.push_back(table);
+
+    // no data
+    table.sourcePath = "/erm/files";
+    table.tableName = "erm_files";
+    // schema->tables.push_back(table);
+
+*/
 
 }
 
