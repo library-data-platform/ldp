@@ -18,34 +18,28 @@ LDP Admin Guide
 
 ### Software
 
-* Operating systems supported:
-  * Linux 4.18.0 or later
-  * FreeBSD 12.1 or later
-  * macOS 10.15.2 or later (non-production use only)
-* Database systems supported:
-  * [PostgreSQL](https://www.postgresql.org/) 11.5 or later
-  * [Amazon Redshift](https://aws.amazon.com/redshift/) 1.0.12094 or later
-* Required to build from source code:
-  * C++ compilers supported:
-    * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
-    * [Clang](https://clang.llvm.org/) 8.0.1 or later
+* Linux or FreeBSD
+* [PostgreSQL](https://www.postgresql.org/) 11.5 or later; or
+  [Amazon Redshift](https://aws.amazon.com/redshift/) 1.0.8995 or later
+* To build the LDP software from source code:
   * [CMake](https://cmake.org/) 3.7.2 or later
+  * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later; or
+    [Clang](https://clang.llvm.org/) 8.0.1 or later
   * [libpq](https://www.postgresql.org/) 11.5 or later
   * [libcurl](https://curl.haxx.se/) 7.64.0 or later
   * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
 
 ### Hardware
 
-The LDP software and database are designed to be performant on low
-cost hardware, and in most cases they should run well with the
-following minimum requirements:
+The LDP is designed to be performant on low cost hardware, and in most
+cases it should run well with the following minimum requirements:
 
 * Database
   * Memory: 1 GB
-  * Storage: 160 GB HDD
+  * Storage: 320 GB HDD
 * LDP software (data loader)
   * Memory: 100 MB
-  * Storage: 160 GB HDD
+  * Storage: 320 GB HDD
 
 For large libraries, or if very high performance is desired, the
 database CPU and memory can be increased as needed.  Alternatively,
@@ -63,28 +57,26 @@ needed.
 Dependencies required for building the LDP software can be installed via
 a package manager on some platforms.
 
-#### Debian Linux
+To install them in Debian 10.1:
 
 ```shell
 $ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
       postgresql-server-dev-all rapidjson-dev
 ```
 
-#### FreeBSD
+To install them in FreeBSD 12.1:
 
 ```shell
 $ sudo pkg install cmake postgresql11-client rapidjson
 ```
 
-#### macOS
-
-Using [Homebrew](https://brew.sh/):
+The LDP software can be used on macOS for testing or development.  To
+install the build dependencies using [Homebrew](https://brew.sh/):
 
 ```shell
 $ brew install cmake postgresql rapidjson
 ```
 
-<!--
 ### LDP software pre-releases
 
 Before LDP 1.0, all LDP releases are "pre-releases" intended for testing
@@ -97,7 +89,6 @@ Within the source code repository there are two main branches:
 
 * `current` is for active development and tends to be unstable.  This is
   where new features are first added.
--->
 
 <!--
 ### LDP software releases
@@ -125,7 +116,7 @@ are used for bug fixes.
 
 ### Building the software
 
-To build the LDP software, download and unpack [a recent
+To build the LDP software, download and unpack [the latest
 release](https://github.com/folio-org/ldp/releases) and `cd` into the
 unpacked directory.  Then:
 
@@ -213,12 +204,10 @@ like:
 }
 ```
 
-<!--
 **Upgrading from version 0.3.8 or earlier:**  The parameters,
 `databaseUser` and `databasePassword`, have changed.  Please rename
 `databaseUser` to `ldpAdmin`, and rename `databasePassword` to
 `ldpAdminPassword`.
--->
 
 The provided example file
 [config_example.json](https://raw.githubusercontent.com/folio-org/ldp/master/config_example.json)
@@ -327,14 +316,23 @@ are removed after each run of the data loader.
 
 ### Redshift configuration
 
-For libraries that deploy the LDP database in Redshift, these
-configuration settings are recommended as a starting point:
+These are some suggestions on configuration for libraries that deploy
+the LDP using Redshift:
 
-* Node type:  `dc2.large`
-* Cluster type:  `Single Node`
-* Number of compute nodes:  `1`
-* Snapshots:  Automated snapshots enabled
-* Maintenance Track:  `Trailing`
+* Node type:  `ds2.xlarge` is generally recommended for the LDP
+  database.
+* Cluster type:  `Single Node` is sufficient for most small libraries.
+  `Multi Node` should be used for most large libraries.
+* Number of compute nodes:  `1` is the only option for Single Node
+  clusters (see "Cluster type" above).  `3` is a suggested default for
+  large libraries.  Adding more nodes generally enables higher
+  performance of queries and also increases storage capacity.
+* Cluster parameter group:  For large libraries running many concurrent
+  queries, workload queues in "Workload Management" (WLM) optionally can
+  be configured to enable "Concurrency Scaling" mode by setting it to
+  "Auto".
+* Snapshots:  Automated snapshots should always be enabled.
+* Maintenance Track:  `Trailing` is recommended.
 
 
 7\. Anonymization of personal data
