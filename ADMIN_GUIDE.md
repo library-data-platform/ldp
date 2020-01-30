@@ -10,7 +10,8 @@ LDP Admin Guide
 6\. Running the LDP in production  
 7\. Anonymization of personal data  
 8\. Loading data from files (for testing only)  
-9\. Disabling database TLS/SSL (for testing only)
+9\. Disabling database TLS/SSL (for testing only)  
+10\. "Direct extraction" of large data
 
 
 1\. System requirements
@@ -399,6 +400,47 @@ disabled using the `--unsafe` and `--nossl` options, e.g.:
 ```shell
 $ ldp load --source folio --target ldpdemo --unsafe --nossl
 ```
+
+
+10\. "Direct extraction" of large data
+--------------------------------------
+
+At the time of writing (LDP 0.3), most FOLIO modules do not offer a
+performant method of extracting a large number of records.  For this
+reason, a workaround referred to as "direct extraction" has been
+implemented in the LDP software that allows some data to be extracted
+directly from a module's internal database, bypassing the module API.
+Direct extraction is currently supported for holdings, instances, and
+items.  It can be enabled by adding several values to the source
+configuration, for example:
+
+```
+{
+    "sources": {
+        "folio": {
+
+            ( . . . )
+
+	    "directInterfaces": [
+	        "/holdings-storage/holdings",
+		"/instance-storage/instances",
+		"/item-storage/items"
+            ],
+            "directDatabaseName": "okapi",
+            "directDatabaseHost": "database.indexdata.com",
+            "directDatabasePort": "5432",
+            "directDatabaseUser": "folio_admin",
+            "directDatabasePassword": "(database password here)"
+        }
+    },
+
+    ( . . . )
+
+}
+```
+
+Note that this requires the client host to be able to connect to the
+database, which may be protected by a firewall.
 
 
 Further reading
