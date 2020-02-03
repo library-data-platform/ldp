@@ -27,7 +27,8 @@ const char* DBType::jsonType() const
 {
     switch (dbt) {
         case DBT::postgresql:
-            return "JSON";
+            //return "JSON";
+            return "VARCHAR(65535)";
         case DBT::redshift:
             return "VARCHAR(65535)";
         default:
