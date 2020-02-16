@@ -85,7 +85,6 @@ Using [Homebrew](https://brew.sh/):
 $ brew install cmake postgresql rapidjson
 ```
 
-<!--
 ### LDP software pre-releases
 
 Before LDP 1.0, all LDP releases are "pre-releases" intended for testing
@@ -98,7 +97,9 @@ Within the source code repository there are two main branches:
 
 * `current` is for active development and tends to be unstable.  This is
   where new features are first added.
--->
+
+Beginning with LDP 1.0, bug fixes to a release will be made in a
+release branch, for example, `1.0-release`.
 
 <!--
 ### LDP software releases
@@ -120,8 +121,8 @@ there are two main branches:
 * `current` is for active development and tends to be unstable.  This is
   where new features are first added.
 
-In addition there are numbered release branches based on `master` that
-are used for bug fixes.
+In addition there will be numbered release branches used for bug
+fixes, for example, `1.0-release`..
 -->
 
 ### Building the software
