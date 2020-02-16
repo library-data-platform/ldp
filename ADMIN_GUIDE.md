@@ -341,13 +341,17 @@ configuration settings are recommended as a starting point:
 7\. Anonymization of personal data
 ----------------------------------
 
-By default, the LDP data loader tries to "anonymize" personal data that
-it extracts from Okapi.  At present this anonymization consists of
-removing data extracted from interface `/users` except for the following
-root-level fields: `id`, `active`, `type`, `patronGroup`,
+By default, the LDP data loader tries to "anonymize" personal data
+that it extracts from Okapi.  At present this anonymization consists
+of removing data extracted from interface `/users` except for the
+following root-level fields: `id`, `active`, `type`, `patronGroup`,
 `enrollmentDate`, `expirationDate`, `meta`, `proxyFor`, `createdDate`,
-`updatedDate`, `metadata`, and `tags`.  It is planned that in a future
-LDP release, the user ID field, `id`, will also be anonymized.
+`updatedDate`, `metadata`, and `tags`.
+
+<!--
+It is planned that in a future LDP release, the user ID field, `id`,
+will also be anonymized.
+-->
 
 <!--
 There is no need to do anything to enable these anonymizations; they are
