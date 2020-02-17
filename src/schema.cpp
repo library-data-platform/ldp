@@ -108,6 +108,7 @@ void Schema::MakeDefaultSchema(Schema* schema)
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
+/*
     table.moduleName = "mod-courses";
 
     table.sourcePath = "/coursereserves/courselistings";
@@ -145,6 +146,7 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.sourcePath = "/coursereserves/reserves";
     table.tableName = "courses_reserves";
     schema->tables.push_back(table);
+*/
 
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-finance-storage";
