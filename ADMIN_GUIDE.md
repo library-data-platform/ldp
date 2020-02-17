@@ -59,6 +59,40 @@ needed.
 2\. Installing the software
 ---------------------------
 
+### Releases and branches
+
+**Note: All releases earlier than LDP 1.0 are for testing purposes and
+are not intended for production use.  Releases earlier than LDP 1.0
+also do not support database migration, so that it may be necessary to
+create a new database when upgrading to a new release.**
+
+LDP releases use version numbers in the form, *a*.*b*.*c*, where
+*a*.*b* is the release number and *c* indicates a bug fix version.
+For example, suppose that LDP 1.3 has been released.  The first
+version of the 1.3 release will be 1.3.0.  Any subsequent versions
+with the same release number, for example, 1.3.1 or 1.3.2, will
+generally contain no new features but only bug fixes.  (This practice
+will be less strictly observed in pre-releases, i.e. prior to 1.0, due
+to the need for user feedback.)
+
+Stable versions of LDP are available from the [releases
+page](https://github.com/folio-org/ldp/releases) and via `-release`
+branches described below.
+
+Within the [source code repository](https://github.com/folio-org/ldp)
+there are two main branches:
+
+* `master` is the branch that new releases are made from.  It contains
+  recently added features that have had some testing.
+
+* `current` is for active development and tends to be very unstable.
+  This is where new features are first added.
+
+Beginning with LDP 1.0, a numbered branch will be created for each
+release; for example, `1.2-release`, would point to the latest version
+of LDP 1.2, such as `1.2.5`.  Prior to LDP 1.0, the `beta-release`
+version points to the latest release.
+
 ### Before installation
 
 Dependencies required for building the LDP software can be installed via
@@ -84,46 +118,6 @@ Using [Homebrew](https://brew.sh/):
 ```shell
 $ brew install cmake postgresql rapidjson
 ```
-
-### LDP software pre-releases
-
-Before LDP 1.0, all LDP releases are "pre-releases" intended for testing
-purposes.
-
-Within the source code repository there are two main branches:
-
-* `master` is the branch that releases are made from.  It contains
-  recently added features that have had some testing.
-
-* `current` is for active development and tends to be unstable.  This is
-  where new features are first added.
-
-Beginning with LDP 1.0, bug fixes to a release will be made in a
-release branch, for example, `1.0-release`.
-
-<!--
-### LDP software releases
-
-Beginning with LDP 1.0, releases use version numbers in the form,
-*a*.*b*.*c*, where *a*.*b* is the release version and *c* indicates bug
-fixes.  For example, suppose that LDP 1.3 is released.  The first
-version of the 1.3 release will be 1.3.0.  Any subsequent versions of
-the release, for example 1.3.1, 1.3.2, etc., will generally contain only
-bug fixes.  The next version to include new features will be the 1.4
-release (1.4.0).
-
-Within the [source code repository](https://github.com/folio-org/ldp)
-there are two main branches:
-
-* `master` is the branch that releases are made from.  It contains
-  recently added features that have had some testing.
-
-* `current` is for active development and tends to be unstable.  This is
-  where new features are first added.
-
-In addition there will be numbered release branches used for bug
-fixes, for example, `1.0-release`..
--->
 
 ### Building the software
 
