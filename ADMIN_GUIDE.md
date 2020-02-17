@@ -72,12 +72,11 @@ For example, suppose that LDP 1.3 has been released.  The first
 version of the 1.3 release will be 1.3.0.  Any subsequent versions
 with the same release number, for example, 1.3.1 or 1.3.2, will
 generally contain no new features but only bug fixes.  (This practice
-will be less strictly observed in pre-releases, i.e. prior to 1.0, due
-to the need for user feedback.)
+will be less strictly observed in pre-releases, i.e. prior to 1.0.)
 
 Stable versions of LDP are available from the [releases
-page](https://github.com/folio-org/ldp/releases) and via `-release`
-branches described below.
+page](https://github.com/folio-org/ldp/releases) and via the
+`-release` branches described below.
 
 Within the [source code repository](https://github.com/folio-org/ldp)
 there are two main branches:
@@ -89,9 +88,13 @@ there are two main branches:
   This is where new features are first added.
 
 Beginning with LDP 1.0, a numbered branch will be created for each
-release; for example, `1.2-release`, would point to the latest version
+release; for example, `1.2-release` would point to the latest version
 of LDP 1.2, such as `1.2.5`.  Prior to LDP 1.0, the `beta-release`
 version points to the latest release.
+
+The `-release` branches are the most stable versions, and `current` is
+the least stable; `master` is somewhere in between in terms of
+stability.
 
 ### Before installation
 
