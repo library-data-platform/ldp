@@ -108,6 +108,45 @@ void Schema::MakeDefaultSchema(Schema* schema)
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
+    table.moduleName = "mod-courses";
+
+    table.sourcePath = "/coursereserves/courselistings";
+    table.tableName = "courses_courselistings";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/coursereserves/roles";
+    table.tableName = "courses_roles";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/coursereserves/terms";
+    table.tableName = "courses_terms";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/coursereserves/coursetypes";
+    table.tableName = "courses_coursetypes";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/coursereserves/departments";
+    table.tableName = "courses_departments";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/coursereserves/processingstatuses";
+    table.tableName = "courses_processingstatuses";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/coursereserves/copyrightstatuses";
+    table.tableName = "courses_copyrightstatuses";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/coursereserves/courses";
+    table.tableName = "courses";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/coursereserves/reserves";
+    table.tableName = "courses_reserves";
+    schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-finance-storage";
 
     table.sourcePath = "/finance-storage/budgets";
