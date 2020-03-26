@@ -8,10 +8,9 @@ LDP Admin Guide
 4\. Configuring the LDP software  
 5\. Loading data into the database  
 6\. Running the LDP in production  
-7\. Anonymization of personal data  
-8\. Loading data from files (for testing only)  
-9\. Disabling database TLS/SSL (for testing only)  
-10\. "Direct extraction" of large data
+7\. Loading data from files (for testing only)  
+8\. Disabling database TLS/SSL (for testing only)  
+9\. "Direct extraction" of large data
 
 
 1\. System requirements
@@ -21,7 +20,6 @@ LDP Admin Guide
 
 * Operating systems supported:
   * Linux 4.18.0 or later
-  * FreeBSD 12.1 or later
   * macOS 10.15.2 or later (non-production use only)
 * Database systems supported:
   * [PostgreSQL](https://www.postgresql.org/) 11.5 or later
@@ -108,11 +106,13 @@ $ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
       postgresql-server-dev-all rapidjson-dev
 ```
 
+<!--
 #### FreeBSD
 
 ```shell
 $ sudo pkg install cmake postgresql11-client rapidjson
 ```
+-->
 
 #### macOS
 
@@ -336,6 +336,7 @@ configuration settings are recommended as a starting point:
 * Maintenance Track:  `Trailing`
 
 
+<!--
 7\. Anonymization of personal data
 ----------------------------------
 
@@ -346,12 +347,11 @@ following root-level fields: `id`, `active`, `type`, `patronGroup`,
 `enrollmentDate`, `expirationDate`, `meta`, `proxyFor`, `createdDate`,
 `updatedDate`, `metadata`, and `tags`.
 
-<!--
+
 It is planned that in a future LDP release, the user ID field, `id`,
 will also be anonymized.
--->
 
-<!--
+
 There is no need to do anything to enable these anonymizations; they are
 enabled unless the LDP loader is otherwise configured.
 
@@ -370,7 +370,7 @@ by Okapi will be loaded into the LDP database.
 -->
 
 
-8\. Loading data from files (for testing only)
+7\. Loading data from files (for testing only)
 ----------------------------------------------
 
 As an alternative to loading data with the `--source` option, source
@@ -390,7 +390,7 @@ development to combine extracted test data with additional static test
 data.
 
 
-9\. Disabling database TLS/SSL (for testing only)
+8\. Disabling database TLS/SSL (for testing only)
 -------------------------------------------------
 
 For very preliminary testing with a database running on `localhost`, one
@@ -404,7 +404,7 @@ $ ldp load --source folio --target ldpdemo --unsafe --nossl
 ```
 
 
-10\. "Direct extraction" of large data
+9\. "Direct extraction" of large data
 --------------------------------------
 
 At the time of writing (LDP 0.3), most FOLIO modules do not offer a
