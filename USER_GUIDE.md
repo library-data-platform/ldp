@@ -392,15 +392,15 @@ contains LDP-related channels.
 
 ### Bugs and feature requests
 
+Please use the [issue tracker](https://github.com/folio-org/ldp/issues)
+to report a bug or feature request.
+
+<!--
 Please use the [FOLIO Issue Tracker](https://issues.folio.org/) to
 report a bug or feature request, by creating an issue in the "Library
 Data Platform (LDP)" project.  Set the issue type to "Bug" or "New
 Feature", and fill in the summary and description fields.  Please do not
 set any other fields in the issue.
-
-<!--
-Please use the [issue tracker](https://github.com/folio-org/ldp/issues)
-to report a bug or feature request.
 -->
 
 ### FOLIO reporting
