@@ -17,12 +17,12 @@ static void mergeTable(const Options& opt, const TableSchema& table,
         "    updated TIMESTAMPTZ NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"
         "    CONSTRAINT ldp_history_" + table.tableName + "_pkey\n"
-        "        PRIMARY KEY (id, updated, tenant_id)\n"
+        "        PRIMARY KEY (id, updated)\n"
         ");";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
-    // Temporary: reorder primary key.
+    // Temporary: recreate primary key.
     sql =
         "ALTER TABLE " + historyTable + "\n"
         "    DROP CONSTRAINT ldp_history_" + table.tableName + "_pkey;\n";
@@ -31,7 +31,7 @@ static void mergeTable(const Options& opt, const TableSchema& table,
     sql =
         "ALTER TABLE " + historyTable + "\n"
         "    ADD CONSTRAINT ldp_history_" + table.tableName + "_pkey\n"
-        "        PRIMARY KEY (id, updated, tenant_id);";
+        "        PRIMARY KEY (id, updated);";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
