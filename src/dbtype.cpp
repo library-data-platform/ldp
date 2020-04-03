@@ -101,4 +101,21 @@ void DBType::encodeStringConst(const char* str, string* newstr) const
     }
 }
 
+void DBType::redshiftKeys(const char* distkey, const char* sortkey,
+            string* sql) const
+{
+    switch (dbt) {
+        case DBT::postgresql:
+            (*sql) = "";
+            break;
+        case DBT::redshift:
+            (*sql) = string(" DISTKEY(") + distkey +
+                string(") COMPOUND SORTKEY(") + sortkey + string(")");
+            break;
+        case DBT::unknown:
+            (*sql) = "(unknown)";
+            break;
+    }
+}
+
 

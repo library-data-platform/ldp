@@ -2,6 +2,7 @@
 
 #include "schema.h"
 
+/*
 void deriveTableName(const string& table, string* tableName)
 {
     tableName->clear();
@@ -21,6 +22,7 @@ void deriveTableName(const string& table, string* tableName)
         }
     }
 }
+*/
 
 void Schema::MakeDefaultSchema(Schema* schema)
 {
@@ -34,7 +36,7 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.moduleName = "mod-circulation-storage";
 
     table.sourcePath = "/cancellation-reason-storage/cancellation-reasons";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "circulation_cancellation_reasons";
     schema->tables.push_back(table);
 
     // TODO This seems to use a different json format.
@@ -53,58 +55,58 @@ void Schema::MakeDefaultSchema(Schema* schema)
     //     15bb6216-8198-42da-bdd7-4b1e6dfb27ff "
     // }
     table.sourcePath = "/circulation-rules-storage";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    //table.tableName = "";
     // schema->tables.push_back(table);
 
     table.sourcePath =
         "/fixed-due-date-schedule-storage/fixed-due-date-schedules";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "circulation_fixed_due_date_schedules";
     schema->tables.push_back(table);
 
     table.sourcePath = "/loan-policy-storage/loan-policies";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "circulation_loan_policies";
     schema->tables.push_back(table);
 
     table.sourcePath = "/loan-storage/loans";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "circulation_loans";
     schema->tables.push_back(table);
 
     table.sourcePath = "/loan-storage/loan-history";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "circulation_loan_history";
     schema->tables.push_back(table);
 
     // okapi returns 422 Unprocessable Entity
     table.sourcePath =
         "/patron-action-session-storage/expired-session-patron-ids";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    //table.tableName = "";
     // schema->tables.push_back(table);
 
     table.sourcePath = "/patron-action-session-storage/patron-action-sessions";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "circulation_patron_action_sessions";
     schema->tables.push_back(table);
 
     table.sourcePath = "/patron-notice-policy-storage/patron-notice-policies";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "circulation_patron_notice_policies";
     schema->tables.push_back(table);
 
     table.sourcePath = "/request-policy-storage/request-policies";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "circulation_request_policies";
     schema->tables.push_back(table);
 
     table.sourcePath = "/request-preference-storage/request-preference";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "circulation_request_preference";
     schema->tables.push_back(table);
 
     table.sourcePath = "/request-storage/requests";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "circulation_requests";
     schema->tables.push_back(table);
 
     table.sourcePath = "/scheduled-notice-storage/scheduled-notices";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "circulation_scheduled_notices";
     schema->tables.push_back(table);
 
     table.sourcePath = "/staff-slips-storage/staff-slips";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "circulation_staff_slips";
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
@@ -112,39 +114,39 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.moduleName = "mod-courses";
 
     table.sourcePath = "/coursereserves/courselistings";
-    table.tableName = "courses_courselistings";
+    table.tableName = "course_courselistings";
     schema->tables.push_back(table);
 
     table.sourcePath = "/coursereserves/roles";
-    table.tableName = "courses_roles";
+    table.tableName = "course_roles";
     schema->tables.push_back(table);
 
     table.sourcePath = "/coursereserves/terms";
-    table.tableName = "courses_terms";
+    table.tableName = "course_terms";
     schema->tables.push_back(table);
 
     table.sourcePath = "/coursereserves/coursetypes";
-    table.tableName = "courses_coursetypes";
+    table.tableName = "course_coursetypes";
     schema->tables.push_back(table);
 
     table.sourcePath = "/coursereserves/departments";
-    table.tableName = "courses_departments";
+    table.tableName = "course_departments";
     schema->tables.push_back(table);
 
     table.sourcePath = "/coursereserves/processingstatuses";
-    table.tableName = "courses_processingstatuses";
+    table.tableName = "course_processingstatuses";
     schema->tables.push_back(table);
 
     table.sourcePath = "/coursereserves/copyrightstatuses";
-    table.tableName = "courses_copyrightstatuses";
+    table.tableName = "course_copyrightstatuses";
     schema->tables.push_back(table);
 
     table.sourcePath = "/coursereserves/courses";
-    table.tableName = "courses";
+    table.tableName = "course_courses";
     schema->tables.push_back(table);
 
     table.sourcePath = "/coursereserves/reserves";
-    table.tableName = "courses_reserves";
+    table.tableName = "course_reserves";
     schema->tables.push_back(table);
 */
 
@@ -152,23 +154,23 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.moduleName = "mod-finance-storage";
 
     table.sourcePath = "/finance-storage/budgets";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "finance_budgets";
     schema->tables.push_back(table);
 
     table.sourcePath = "/finance-storage/fiscal-years";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "finance_fiscal_years";
     schema->tables.push_back(table);
 
     table.sourcePath = "/finance-storage/fund-distributions";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "finance_fund_distributions";
     schema->tables.push_back(table);
 
     table.sourcePath = "/finance-storage/fund-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "finance_fund_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/finance-storage/funds";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "finance_funds";
     schema->tables.push_back(table);
 
     table.sourcePath = "/finance-storage/group-budgets";
@@ -184,160 +186,156 @@ void Schema::MakeDefaultSchema(Schema* schema)
     schema->tables.push_back(table);
 
     table.sourcePath = "/finance-storage/ledger-fiscal-years";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "finance_ledger_fiscal_years";
     schema->tables.push_back(table);
 
     table.sourcePath = "/finance-storage/ledgers";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "finance_ledgers";
     schema->tables.push_back(table);
 
     table.sourcePath = "/finance-storage/transactions";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "finance_transactions";
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-inventory-storage";
 
     table.sourcePath = "/alternative-title-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_alternative_title_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/call-number-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_call_number_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/classification-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_classification_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/contributor-name-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_contributor_name_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/contributor-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_contributor_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/electronic-access-relationships";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_electronic_access_relationships";
     schema->tables.push_back(table);
 
     table.sourcePath = "/holdings-note-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_holdings_note_types";
     schema->tables.push_back(table);
 
     // large data
     table.sourcePath = "/holdings-storage/holdings";
     table.directSourceTable = "mod_inventory_storage.holdings_record";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_holdings";
     schema->tables.push_back(table);
 
     table.sourcePath = "/holdings-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_holdings_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/identifier-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_identifier_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/ill-policies";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_ill_policies";
     schema->tables.push_back(table);
 
     table.sourcePath = "/instance-formats";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_instance_formats";
     schema->tables.push_back(table);
 
     table.sourcePath = "/instance-note-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_instance_note_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/instance-relationship-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_instance_relationship_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/instance-statuses";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_instance_statuses";
     schema->tables.push_back(table);
 
     table.sourcePath = "/instance-storage/instance-relationships";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_instance_relationships";
     schema->tables.push_back(table);
 
     // large data
     table.sourcePath = "/instance-storage/instances";
     table.directSourceTable = "mod_inventory_storage.instance";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_instances";
     schema->tables.push_back(table);
 
     table.sourcePath = "/instance-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_instance_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/item-damaged-statuses";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_item_damaged_statuses";
     schema->tables.push_back(table);
 
     table.sourcePath = "/item-note-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_item_note_types";
     schema->tables.push_back(table);
 
     // large data
     table.sourcePath = "/item-storage/items";
     table.directSourceTable = "mod_inventory_storage.item";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_items";
     schema->tables.push_back(table);
 
     table.sourcePath = "/location-units/campuses";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_campuses";
     schema->tables.push_back(table);
 
     table.sourcePath = "/location-units/institutions";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_institutions";
     schema->tables.push_back(table);
 
     table.sourcePath = "/location-units/libraries";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_libraries";
     schema->tables.push_back(table);
 
     table.sourcePath = "/loan-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_loan_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/locations";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_locations";
     schema->tables.push_back(table);
 
     table.sourcePath = "/material-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_material_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/modes-of-issuance";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_modes_of_issuance";
     schema->tables.push_back(table);
 
     table.sourcePath = "/nature-of-content-terms";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_nature_of_content_terms";
     schema->tables.push_back(table);
 
     table.sourcePath = "/service-points";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_service_points";
     schema->tables.push_back(table);
 
     table.sourcePath = "/service-points-users";
-    deriveTableName(table.sourcePath, &(table.tableName));
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/shelf-locations";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_service_points_users";
     schema->tables.push_back(table);
 
     table.sourcePath = "/statistical-code-types";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_statistical_code_types";
     schema->tables.push_back(table);
 
     table.sourcePath = "/statistical-codes";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "inventory_statistical_codes";
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
@@ -345,234 +343,126 @@ void Schema::MakeDefaultSchema(Schema* schema)
 
     // okapi returns 400 Bad Request
     table.sourcePath = "/invoice-storage/invoice-line-number";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    //table.tableName = "";
     // schema->tables.push_back(table);
 
     table.sourcePath = "/invoice-storage/invoice-lines";
-    deriveTableName(table.sourcePath, &(table.tableName));
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/invoice-storage/invoice-number";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "invoice_lines";
     schema->tables.push_back(table);
 
     table.sourcePath = "/invoice-storage/invoices";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "invoice_invoices";
     schema->tables.push_back(table);
 
     table.sourcePath = "/voucher-storage/voucher-lines";
-    deriveTableName(table.sourcePath, &(table.tableName));
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/voucher-storage/voucher-number";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "invoice_voucher_lines";
     schema->tables.push_back(table);
 
     table.sourcePath = "/voucher-storage/vouchers";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "invoice_vouchers";
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-orders-storage";
 
     table.sourcePath = "/acquisitions-units-storage/memberships";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "acquisitions_memberships";
     schema->tables.push_back(table);
 
     table.sourcePath = "/acquisitions-units-storage/units";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "acquisitions_units";
     schema->tables.push_back(table);
 
     table.sourcePath = "/orders-storage/alerts";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "po_alerts";
     schema->tables.push_back(table);
 
     table.sourcePath = "/orders-storage/order-invoice-relns";
-    deriveTableName(table.sourcePath, &(table.tableName));
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/orders-storage/order-lines";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "po_order_invoice_relns";
     schema->tables.push_back(table);
 
     table.sourcePath = "/orders-storage/order-templates";
-    deriveTableName(table.sourcePath, &(table.tableName));
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/orders-storage/orders";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "po_order_templates";
     schema->tables.push_back(table);
 
     table.sourcePath = "/orders-storage/pieces";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "po_pieces";
     schema->tables.push_back(table);
 
     // okapi returns 400 Bad Request
     table.sourcePath = "/orders-storage/po-line-number";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    //table.tableName = "";
     // schema->tables.push_back(table);
 
     table.sourcePath = "/orders-storage/po-lines";
-    deriveTableName(table.sourcePath, &(table.tableName));
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/orders-storage/po-number";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "po_lines";
     schema->tables.push_back(table);
 
     table.sourcePath = "/orders-storage/purchase-orders";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "po_purchase_orders";
     schema->tables.push_back(table);
 
     table.sourcePath = "/orders-storage/receiving-history";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "po_receiving_history";
     schema->tables.push_back(table);
 
     table.sourcePath = "/orders-storage/reporting-codes";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "po_reporting_codes";
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-organizations-storage";
 
     table.sourcePath = "/organizations-storage/addresses";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "organization_addresses";
     schema->tables.push_back(table);
 
     table.sourcePath = "/organizations-storage/categories";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "organization_categories";
     schema->tables.push_back(table);
 
     table.sourcePath = "/organizations-storage/contacts";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "organization_contacts";
     schema->tables.push_back(table);
 
     table.sourcePath = "/organizations-storage/emails";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "organization_emails";
     schema->tables.push_back(table);
 
     table.sourcePath = "/organizations-storage/interfaces";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "organization_interfaces";
     schema->tables.push_back(table);
 
     table.sourcePath = "/organizations-storage/organizations";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "organization_organizations";
     schema->tables.push_back(table);
 
     table.sourcePath = "/organizations-storage/phone-numbers";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "organization_phone_numbers";
     schema->tables.push_back(table);
 
     table.sourcePath = "/organizations-storage/urls";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "organization_urls";
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-users";
 
     table.sourcePath = "/addresstypes";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "user_addresstypes";
     schema->tables.push_back(table);
 
     table.sourcePath = "/groups";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "user_groups";
     schema->tables.push_back(table);
 
     table.sourcePath = "/proxiesfor";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "user_proxiesfor";
     schema->tables.push_back(table);
 
     table.sourcePath = "/users";
-    deriveTableName(table.sourcePath, &(table.tableName));
+    table.tableName = "user_users";
     schema->tables.push_back(table);
-
-/*
-
-    // Experimental ERM data sources
-
-    ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-erm-usage";
-
-    table.sourcePath = "/counter-reports";
-    table.tableName = "erm_counter_reports";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/usage-data-providers";
-    table.tableName = "erm_usage_data_providers";
-    schema->tables.push_back(table);
-
-    ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-licenses";
-
-    table.sourcePath = "/licenses/licenses";
-    table.tableName = "erm_licenses";
-    //schema->tables.push_back(table);
-
-    ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-agreements";
-
-    // no data
-    table.sourcePath = "/erm/contacts";
-    table.tableName = "erm_contacts";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/erm/entitlements";
-    table.tableName = "erm_entitlements";
-    // schema->tables.push_back(table);
-
-    // parse error
-    table.sourcePath = "/erm/jobs";
-    table.tableName = "erm_jobs";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/erm/kbs";
-    table.tableName = "erm_kbs";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/erm/org";
-    table.tableName = "erm_org";
-    // schema->tables.push_back(table);
-
-    // parse error
-    table.sourcePath = "/erm/packages";
-    table.tableName = "erm_packages";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/erm/refdata";
-    table.tableName = "erm_refdata";
-    // schema->tables.push_back(table);
-
-    // parse error
-    table.sourcePath = "/erm/resource";
-    table.tableName = "erm_resource";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/erm/sas";
-    table.tableName = "erm_sas";
-    // schema->tables.push_back(table);
-
-    // parse error
-    table.sourcePath = "/erm/titles";
-    table.tableName = "erm_titles";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/export";
-    table.tableName = "erm_export";
-    // schema->tables.push_back(table);
-
-    // no data
-    table.sourcePath = "/erm/files";
-    table.tableName = "erm_files";
-    // schema->tables.push_back(table);
-
-*/
-
 }
 
 void ColumnSchema::columnTypeToString(ColumnType type, string* str)

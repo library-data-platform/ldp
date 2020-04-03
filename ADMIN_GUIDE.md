@@ -87,8 +87,12 @@ there are two main branches:
 
 Beginning with LDP 1.0, a numbered branch will be created for each
 release; for example, `1.2-release` would point to the latest version
-of LDP 1.2, such as `1.2.5`.  Prior to LDP 1.0, the `beta-release`
-version points to the latest release.
+of LDP 1.2, e.g. `1.2.5`.
+
+<!--
+Prior to LDP 1.0, the `beta-release` version points to the latest
+release.
+-->
 
 The `-release` branches are the most stable versions, and `current` is
 the least stable; `master` is somewhere in between in terms of
