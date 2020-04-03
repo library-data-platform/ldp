@@ -279,11 +279,11 @@ updated   | 2019-09-06 03:46:49.362606+00
 tenant_id | 1
 ```
 
-Unlike the main LDP tables in which IDs are unique (per tenant ID), the
-history tables accumulate many records with the same ID.  Note also that
-if a value in the source database changes more than once during the
-interval between any two runs of the LDP loader, the LDP history will
-only reflect the last of those changes.
+Unlike the main LDP tables in which IDs are unique, the history tables
+accumulate many records with the same ID.  Note also that if a value
+in the source database changes more than once during the interval
+between any two runs of the LDP loader, the LDP history will only
+reflect the last of those changes.
 
 ### Querying historical data
 
