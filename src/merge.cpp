@@ -10,6 +10,8 @@ static void mergeTable(const Options& opt, const TableSchema& table,
     string historyTable;
     historyTableName(table.tableName, &historyTable);
 
+    string rskeys;
+    opt.dbtype.redshiftKeys("id", "id, updated", &rskeys);
     string sql =
         "CREATE TABLE IF NOT EXISTS " + historyTable + " (\n"
         "    id VARCHAR(65535) NOT NULL,\n"
@@ -18,7 +20,7 @@ static void mergeTable(const Options& opt, const TableSchema& table,
         "    tenant_id SMALLINT NOT NULL,\n"
         "    CONSTRAINT ldp_history_" + table.tableName + "_pkey\n"
         "        PRIMARY KEY (id, updated)\n"
-        ");";
+        ")" + rskeys + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 

@@ -530,6 +530,8 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
 
+    string rskeys;
+    opt.dbtype.redshiftKeys("id", "id", &rskeys);
     string sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
@@ -550,7 +552,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     sql += ",\n"
         "    tenant_id SMALLINT NOT NULL,\n"
         "    PRIMARY KEY (id)\n"
-        ");";
+        ")" + rskeys + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 
