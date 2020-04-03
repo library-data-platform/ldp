@@ -71,10 +71,10 @@ static void mergeTable(const Options& opt, const TableSchema& table,
     { etymon::PostgresResult result(db, sql); }
 }
 
-static void dropTable(const Options& opt, const TableSchema& table,
+static void dropTable(const Options& opt, const string& tableName,
         etymon::Postgres* db)
 {
-    string sql = "DROP TABLE IF EXISTS " + table.tableName + ";";
+    string sql = "DROP TABLE IF EXISTS " + tableName + ";";
     printSQL(Print::debug, opt, sql);
     { etymon::PostgresResult result(db, sql); }
 }
@@ -107,6 +107,23 @@ static void updateStatus(const Options& opt, const TableSchema& table,
     { etymon::PostgresResult result(db, sql); }
 }
 
+static void dropTablePair(const Options& opt, const string& tableName,
+        etymon::Postgres* db)
+{
+    dropTable(opt, tableName, db);
+    dropTable(opt, "history." + tableName, db);
+}
+
+static void dropOldTables(const Options& opt, etymon::Postgres* db)
+{
+    dropTablePair(opt, "order_lines", db);
+    dropTablePair(opt, "orders", db);
+    dropTablePair(opt, "invoice_number", db);
+    dropTablePair(opt, "voucher_number", db);
+    dropTablePair(opt, "po_number", db);
+    dropTablePair(opt, "shelf_locations", db);
+}
+
 void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
 {
     print(Print::verbose, opt, "merging");
@@ -121,9 +138,11 @@ void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
     for (auto& table : schema->tables) {
         if (table.skip)
             continue;
-        dropTable(opt, table, db);
+        dropTable(opt, table.tableName, db);
         placeTable(opt, table, db);
         updateStatus(opt, table, db);
     }
     // printSchema(stdout, *schema);
+
+    dropOldTables(opt, db);
 }

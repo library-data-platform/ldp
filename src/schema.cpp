@@ -328,10 +328,6 @@ void Schema::MakeDefaultSchema(Schema* schema)
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
-    table.sourcePath = "/shelf-locations";
-    deriveTableName(table.sourcePath, &(table.tableName));
-    schema->tables.push_back(table);
-
     table.sourcePath = "/statistical-code-types";
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
@@ -352,19 +348,11 @@ void Schema::MakeDefaultSchema(Schema* schema)
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
-    table.sourcePath = "/invoice-storage/invoice-number";
-    deriveTableName(table.sourcePath, &(table.tableName));
-    schema->tables.push_back(table);
-
     table.sourcePath = "/invoice-storage/invoices";
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
     table.sourcePath = "/voucher-storage/voucher-lines";
-    deriveTableName(table.sourcePath, &(table.tableName));
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/voucher-storage/voucher-number";
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
@@ -391,15 +379,7 @@ void Schema::MakeDefaultSchema(Schema* schema)
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
-    table.sourcePath = "/orders-storage/order-lines";
-    deriveTableName(table.sourcePath, &(table.tableName));
-    schema->tables.push_back(table);
-
     table.sourcePath = "/orders-storage/order-templates";
-    deriveTableName(table.sourcePath, &(table.tableName));
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/orders-storage/orders";
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
@@ -413,10 +393,6 @@ void Schema::MakeDefaultSchema(Schema* schema)
     // schema->tables.push_back(table);
 
     table.sourcePath = "/orders-storage/po-lines";
-    deriveTableName(table.sourcePath, &(table.tableName));
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/orders-storage/po-number";
     deriveTableName(table.sourcePath, &(table.tableName));
     schema->tables.push_back(table);
 
