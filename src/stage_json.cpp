@@ -319,7 +319,8 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
             //    fprintf(opt.err, "Record ready for staging:\n%s\n",
             //            jsondata.GetString());
 
-            if (insertBuffer.length() > 16500000) {
+            //if (insertBuffer.length() > 16500000) {
+            if (insertBuffer.length() > 1000000) {
                 endInserts(opt, &insertBuffer, db);
                 beginInserts(tableSchema.tableName, &insertBuffer);
                 recordCount = 0;
