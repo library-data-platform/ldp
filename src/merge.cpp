@@ -116,6 +116,11 @@ static void dropTablePair(const Options& opt, const string& tableName,
 
 void dropOldTables(const Options& opt, etymon::Postgres* db)
 {
+    dropTablePair(opt, "circulation_request_preference", db);
+    dropTablePair(opt, "finance_ledger_fiscal_years", db);
+    dropTablePair(opt, "user_addresstypes", db);
+    dropTablePair(opt, "user_proxiesfor", db);
+
     dropTablePair(opt, "order_lines", db);
     dropTablePair(opt, "orders", db);
     dropTablePair(opt, "invoice_number", db);
