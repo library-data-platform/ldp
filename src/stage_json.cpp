@@ -494,8 +494,8 @@ size_t readPageCount(const string& loadDir, const string& tableName)
     string filename = loadDir;
     etymon::join(&filename, tableName);
     filename += "_count.txt";
-    if ( !(etymon::fileExists(filename)) )
-        return 0;
+    //if ( !(etymon::fileExists(filename)) )
+    //    return 0;
     etymon::File f(filename, "r");
     size_t count;
     int r = fscanf(f.file, "%zu", &count);
