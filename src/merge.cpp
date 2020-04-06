@@ -120,6 +120,7 @@ void dropOldTables(const Options& opt, etymon::Postgres* db)
     dropTablePair(opt, "finance_ledger_fiscal_years", db);
     dropTablePair(opt, "user_addresstypes", db);
     dropTablePair(opt, "user_proxiesfor", db);
+    dropTablePair(opt, "finance_fund_distributions", db);
 
     dropTablePair(opt, "order_lines", db);
     dropTablePair(opt, "orders", db);
