@@ -93,9 +93,10 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.tableName = "circulation_request_policies";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/request-preference-storage/request-preference";
-    table.tableName = "circulation_request_preference";
-    schema->tables.push_back(table);
+    // Removed for lack of data
+    //table.sourcePath = "/request-preference-storage/request-preference";
+    //table.tableName = "circulation_request_preference";
+    //schema->tables.push_back(table);
 
     table.sourcePath = "/request-storage/requests";
     table.tableName = "circulation_requests";
@@ -173,11 +174,6 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.tableName = "finance_funds";
     schema->tables.push_back(table);
 
-    // Possible duplicate
-    //table.sourcePath = "/finance-storage/group-budgets";
-    //table.tableName = "finance_group_budgets";
-    //schema->tables.push_back(table);
-
     table.sourcePath = "/finance-storage/group-fund-fiscal-years";
     table.tableName = "finance_group_fund_fiscal_years";
     schema->tables.push_back(table);
@@ -186,9 +182,10 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.tableName = "finance_groups";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/finance-storage/ledger-fiscal-years";
-    table.tableName = "finance_ledger_fiscal_years";
-    schema->tables.push_back(table);
+    // Removed for lack of data
+    //table.sourcePath = "/finance-storage/ledger-fiscal-years";
+    //table.tableName = "finance_ledger_fiscal_years";
+    //schema->tables.push_back(table);
 
     table.sourcePath = "/finance-storage/ledgers";
     table.tableName = "finance_ledgers";
@@ -449,17 +446,19 @@ void Schema::MakeDefaultSchema(Schema* schema)
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-users";
 
-    table.sourcePath = "/addresstypes";
-    table.tableName = "user_addresstypes";
-    schema->tables.push_back(table);
+    // Removed for lack of data
+    //table.sourcePath = "/addresstypes";
+    //table.tableName = "user_addresstypes";
+    //schema->tables.push_back(table);
 
     table.sourcePath = "/groups";
     table.tableName = "user_groups";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/proxiesfor";
-    table.tableName = "user_proxiesfor";
-    schema->tables.push_back(table);
+    // Removed for lack of data
+    //table.sourcePath = "/proxiesfor";
+    //table.tableName = "user_proxiesfor";
+    //schema->tables.push_back(table);
 
     table.sourcePath = "/users";
     table.tableName = "user_users";
