@@ -186,10 +186,6 @@ static void runPreloadTests(const Options& opt)
     // communicate any problem while frozen.
 
     beginTxn(opt, &db);
-    //string sql;
-    //sql = "BEGIN ISOLATION LEVEL READ COMMITTED;";
-    //printSQL(Print::debug, opt, sql);
-    //{ etymon::PostgresResult result(&db, sql); }
 
     // Check that ldpUser is a valid user.
     string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
@@ -198,9 +194,6 @@ static void runPreloadTests(const Options& opt)
     { etymon::PostgresResult result(&db, sql); }
 
     rollbackTxn(opt, &db);
-    //sql = "ROLLBACK;";
-    //printSQL(Print::debug, opt, sql);
-    //{ etymon::PostgresResult result(&db, sql); }
 }
 
 void runLoad(const Options& opt)
@@ -219,20 +212,17 @@ void runLoad(const Options& opt)
 
     string loadDir;
 
-    //print(Print::verbose, opt, "connecting to database");
-    etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
-            opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
-    PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+    {
+        print(Print::debug, opt, "connecting to database");
+        etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
+                opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
+        PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
-    //if (opt.verbose)
-    //    fprintf(opt.err, "%s: initializing database\n", opt.prog);
-    beginTxn(opt, &db);
-    initDB(opt, &db);
-    commitTxn(opt, &db);
-
-    //if (opt.verbose)
-    //    fprintf(opt.err, "%s: starting load to database\n", opt.prog);
-    //Timer loadTimer(opt);
+        print(Print::debug, opt, "initializing database");
+        beginTxn(opt, &db);
+        initDB(opt, &db);
+        commitTxn(opt, &db);
+    }
 
     Curl c;
     //if (!c.curl) {
@@ -241,27 +231,18 @@ void runLoad(const Options& opt)
     string token, tenantHeader, tokenHeader;
 
     if (opt.loadFromDir != "") {
-
         if (opt.verbose)
             fprintf(opt.err, "%s: reading data from directory: %s\n",
                     opt.prog, opt.loadFromDir.c_str());
         loadDir = opt.loadFromDir;
-
     } else {
-
-
-        //if (opt.verbose)
-        //    fprintf(opt.err, "%s: starting data extraction\n", opt.prog);
-        //Timer extractionTimer(opt);
-
         CURLcode cc = curl_global_init(CURL_GLOBAL_ALL);
         if (cc) {
             throw runtime_error(string("initializing curl: ") +
                     curl_easy_strerror(cc));
         }
 
-        //if (opt.verbose)
-        //    fprintf(opt.err, "%s: logging in to Okapi service\n", opt.prog);
+        print(Print::debug, opt, "logging in to okapi service");
 
         okapiLogin(opt, &token);
 
@@ -277,9 +258,6 @@ void runLoad(const Options& opt)
         c.headers = curl_slist_append(c.headers,
                 "Accept: application/json,text/plain");
         curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
-
-        //if (opt.verbose)
-        //    extractionTimer.print("total data extraction time");
     }
 
     for (auto& table : schema.tables) {
@@ -288,11 +266,8 @@ void runLoad(const Options& opt)
 
         print(Print::verbose, opt, "loading table: " + table.tableName);
 
-        //print(Print::verbose, opt, "starting load for table: " +
-        //        table.tableName);
-
         if (opt.loadFromDir == "") {
-            //print(Print::verbose, opt, "extracting: " + table.sourcePath);
+            print(Print::debug, opt, "extracting: " + table.sourcePath);
             bool foundData = directOverride(opt, table.sourcePath) ?
                 retrieveDirect(opt, table, loadDir, &extractionFiles) :
                 retrievePages(c, opt, token, table, loadDir, &extractionFiles);
@@ -303,29 +278,41 @@ void runLoad(const Options& opt)
         if (table.skip)
             continue;
 
+        print(Print::debug, opt, "connecting to database");
+        etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
+                opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
+        PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+
         beginTxn(opt, &db);
 
-        //print(Print::verbose, opt, "staging table: " + table.tableName);
+        print(Print::debug, opt, "staging table: " + table.tableName);
         stageTable(opt, &table, &db, loadDir);
 
-        //print(Print::verbose, opt, "merging table: " + table.tableName);
+        print(Print::debug, opt, "merging table: " + table.tableName);
         mergeTable(opt, table, &db);
 
-        //print(Print::verbose, opt, "replacing table: " + table.tableName);
+        print(Print::debug, opt, "replacing table: " + table.tableName);
         dropTable(opt, table.tableName, &db);
         placeTable(opt, table, &db);
         updateStatus(opt, table, &db);
 
-        //if (opt.verbose)
-        //    fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
+        if (opt.debug)
+            fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
         updateDBPermissions(opt, &db);
 
         commitTxn(opt, &db);
     }
 
-    beginTxn(opt, &db);
-    dropOldTables(opt, &db);
-    commitTxn(opt, &db);
+    {
+        print(Print::debug, opt, "connecting to database");
+        etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
+                opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
+        PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+
+        beginTxn(opt, &db);
+        dropOldTables(opt, &db);
+        commitTxn(opt, &db);
+    }
 
     // TODO Check if needed for history tables; if so, move into loop above.
     //vacuumAnalyzeAll(opt, &schema, &db);
