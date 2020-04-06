@@ -176,7 +176,7 @@ void rollbackTxn(const Options& opt, etymon::Postgres* db)
 // process.
 static void runPreloadTests(const Options& opt)
 {
-    print(Print::verbose, opt, "running pre-load checks");
+    //print(Print::verbose, opt, "running pre-load checks");
 
     // Check database connection.
     etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
@@ -219,13 +219,13 @@ void runLoad(const Options& opt)
 
     string loadDir;
 
-    print(Print::verbose, opt, "connecting to database");
+    //print(Print::verbose, opt, "connecting to database");
     etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
             opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
     PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
-    if (opt.verbose)
-        fprintf(opt.err, "%s: initializing database\n", opt.prog);
+    //if (opt.verbose)
+    //    fprintf(opt.err, "%s: initializing database\n", opt.prog);
     beginTxn(opt, &db);
     initDB(opt, &db);
     commitTxn(opt, &db);
@@ -260,8 +260,8 @@ void runLoad(const Options& opt)
                     curl_easy_strerror(cc));
         }
 
-        if (opt.verbose)
-            fprintf(opt.err, "%s: logging in to Okapi service\n", opt.prog);
+        //if (opt.verbose)
+        //    fprintf(opt.err, "%s: logging in to Okapi service\n", opt.prog);
 
         okapiLogin(opt, &token);
 
@@ -286,11 +286,13 @@ void runLoad(const Options& opt)
 
         ExtractionFiles extractionFiles(opt);
 
-        print(Print::verbose, opt, "starting load for table: " +
-                table.tableName);
+        print(Print::verbose, opt, "loading table: " + table.tableName);
+
+        //print(Print::verbose, opt, "starting load for table: " +
+        //        table.tableName);
 
         if (opt.loadFromDir == "") {
-            print(Print::verbose, opt, "extracting: " + table.sourcePath);
+            //print(Print::verbose, opt, "extracting: " + table.sourcePath);
             bool foundData = directOverride(opt, table.sourcePath) ?
                 retrieveDirect(opt, table, loadDir, &extractionFiles) :
                 retrievePages(c, opt, token, table, loadDir, &extractionFiles);
@@ -303,19 +305,19 @@ void runLoad(const Options& opt)
 
         beginTxn(opt, &db);
 
-        print(Print::verbose, opt, "staging table: " + table.tableName);
+        //print(Print::verbose, opt, "staging table: " + table.tableName);
         stageTable(opt, &table, &db, loadDir);
 
-        print(Print::verbose, opt, "merging table: " + table.tableName);
+        //print(Print::verbose, opt, "merging table: " + table.tableName);
         mergeTable(opt, table, &db);
 
-        print(Print::verbose, opt, "replacing table: " + table.tableName);
+        //print(Print::verbose, opt, "replacing table: " + table.tableName);
         dropTable(opt, table.tableName, &db);
         placeTable(opt, table, &db);
         updateStatus(opt, table, &db);
 
-        if (opt.verbose)
-            fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
+        //if (opt.verbose)
+        //    fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
         updateDBPermissions(opt, &db);
 
         commitTxn(opt, &db);
@@ -427,10 +429,10 @@ void run(const etymon::CommandArgs& cargs)
         debugOptions(opt);
 
     if (opt.command == "load") {
-        Timer t(opt);
+        //Timer t(opt);
         runLoad(opt);
-        if (opt.verbose)
-            t.print("total time");
+        //if (opt.verbose)
+        //    t.print("total time");
         return;
     }
 }
