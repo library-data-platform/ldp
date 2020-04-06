@@ -2,7 +2,7 @@
 #include "names.h"
 #include "util.h"
 
-static void mergeTable(const Options& opt, const TableSchema& table,
+void mergeTable(const Options& opt, const TableSchema& table,
         etymon::Postgres* db)
 {
     // Update history tables.
@@ -71,7 +71,7 @@ static void mergeTable(const Options& opt, const TableSchema& table,
     { etymon::PostgresResult result(db, sql); }
 }
 
-static void dropTable(const Options& opt, const string& tableName,
+void dropTable(const Options& opt, const string& tableName,
         etymon::Postgres* db)
 {
     string sql = "DROP TABLE IF EXISTS " + tableName + ";";
@@ -79,7 +79,7 @@ static void dropTable(const Options& opt, const string& tableName,
     { etymon::PostgresResult result(db, sql); }
 }
 
-static void placeTable(const Options& opt, const TableSchema& table,
+void placeTable(const Options& opt, const TableSchema& table,
         etymon::Postgres* db)
 {
     string loadingTable;
@@ -90,7 +90,7 @@ static void placeTable(const Options& opt, const TableSchema& table,
     { etymon::PostgresResult result(db, sql); }
 }
 
-static void updateStatus(const Options& opt, const TableSchema& table,
+void updateStatus(const Options& opt, const TableSchema& table,
         etymon::Postgres* db)
 {
     string sql =
@@ -114,7 +114,7 @@ static void dropTablePair(const Options& opt, const string& tableName,
     dropTable(opt, "history." + tableName, db);
 }
 
-static void dropOldTables(const Options& opt, etymon::Postgres* db)
+void dropOldTables(const Options& opt, etymon::Postgres* db)
 {
     dropTablePair(opt, "order_lines", db);
     dropTablePair(opt, "orders", db);
@@ -202,25 +202,25 @@ static void dropOldTables(const Options& opt, etymon::Postgres* db)
     dropTablePair(opt, "users", db);
 }
 
-void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
-{
-    print(Print::verbose, opt, "merging");
-    for (auto& table : schema->tables) {
-        if (table.skip)
-            continue;
-        print(Print::verbose, opt, "merging table: " + table.tableName);
-        mergeTable(opt, table, db);
-    }
-    // Table-level exclusive locks begin here.
-    print(Print::verbose, opt, "replacing tables");
-    for (auto& table : schema->tables) {
-        if (table.skip)
-            continue;
-        dropTable(opt, table.tableName, db);
-        placeTable(opt, table, db);
-        updateStatus(opt, table, db);
-    }
-    // printSchema(stdout, *schema);
+//void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
+//{
+//    print(Print::verbose, opt, "merging");
+//    for (auto& table : schema->tables) {
+//        if (table.skip)
+//            continue;
+//        print(Print::verbose, opt, "merging table: " + table.tableName);
+//        mergeTable(opt, table, db);
+//    }
+//    // Table-level exclusive locks begin here.
+//    print(Print::verbose, opt, "replacing tables");
+//    for (auto& table : schema->tables) {
+//        if (table.skip)
+//            continue;
+//        dropTable(opt, table.tableName, db);
+//        placeTable(opt, table, db);
+//        updateStatus(opt, table, db);
+//    }
+//    // printSchema(stdout, *schema);
+//    dropOldTables(opt, db);
+//}
 
-    dropOldTables(opt, db);
-}

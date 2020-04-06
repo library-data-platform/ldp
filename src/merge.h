@@ -9,6 +9,16 @@
 
 using namespace std;
 
-void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db);
+void mergeTable(const Options& opt, const TableSchema& table,
+        etymon::Postgres* db);
+void dropTable(const Options& opt, const string& tableName,
+        etymon::Postgres* db);
+void placeTable(const Options& opt, const TableSchema& table,
+        etymon::Postgres* db);
+void updateStatus(const Options& opt, const TableSchema& table,
+        etymon::Postgres* db);
+void dropOldTables(const Options& opt, etymon::Postgres* db);
+
+//void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db);
 
 #endif

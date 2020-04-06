@@ -489,13 +489,17 @@ bool JSONHandler::Null()
     return true;
 }
 
-size_t readPageCount(const string& loadDir, const string& tableName)
+size_t readPageCount(const Options& opt, const string& loadDir,
+        const string& tableName)
 {
     string filename = loadDir;
     etymon::join(&filename, tableName);
     filename += "_count.txt";
-    if ( !(etymon::fileExists(filename)) )
+    if ( !(etymon::fileExists(filename)) ) {
+        print(Print::warning, opt, "file not found: " + filename);
+        print(Print::warning, opt, "skipping table: " + tableName);
         return 0;
+    }
     etymon::File f(filename, "r");
     size_t count;
     int r = fscanf(f.file, "%zu", &count);
@@ -572,10 +576,10 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
 
 }
 
-static void stageTable(const Options& opt, TableSchema* table,
-        etymon::Postgres* db, const string& loadDir)
+void stageTable(const Options& opt, TableSchema* table, etymon::Postgres* db,
+        const string& loadDir)
 {
-    size_t pageCount = readPageCount(loadDir, table->tableName);
+    size_t pageCount = readPageCount(opt, loadDir, table->tableName);
 
     print(Print::debug, opt, "staging: " + table->tableName +
             ": page count: " + to_string(pageCount));
@@ -657,15 +661,15 @@ static void stageTable(const Options& opt, TableSchema* table,
 
 }
 
-void stageAll(const Options& opt, Schema* schema, etymon::Postgres* db,
-        const string& loadDir)
-{
-    print(Print::verbose, opt, "staging in target: " + opt.target);
-    for (auto& table : schema->tables) {
-        if (table.skip)
-            continue;
-        print(Print::verbose, opt, "staging table: " + table.tableName);
-        stageTable(opt, &table, db, loadDir);
-    }
-}
+//void stageAll(const Options& opt, Schema* schema, etymon::Postgres* db,
+//        const string& loadDir)
+//{
+//    print(Print::verbose, opt, "staging in target: " + opt.target);
+//    for (auto& table : schema->tables) {
+//        if (table.skip)
+//            continue;
+//        print(Print::verbose, opt, "staging table: " + table.tableName);
+//        stageTable(opt, &table, db, loadDir);
+//    }
+//}
 
