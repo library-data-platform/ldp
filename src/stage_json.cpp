@@ -489,13 +489,17 @@ bool JSONHandler::Null()
     return true;
 }
 
-size_t readPageCount(const string& loadDir, const string& tableName)
+size_t readPageCount(const Options& opt, const string& loadDir,
+        const string& tableName)
 {
     string filename = loadDir;
     etymon::join(&filename, tableName);
     filename += "_count.txt";
-    //if ( !(etymon::fileExists(filename)) )
-    //    return 0;
+    if ( !(etymon::fileExists(filename)) ) {
+        print(Print::warning, opt, "file not found: " + filename);
+        print(Print::warning, opt, "skipping table: " + tableName);
+        return 0;
+    }
     etymon::File f(filename, "r");
     size_t count;
     int r = fscanf(f.file, "%zu", &count);
@@ -575,7 +579,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
 void stageTable(const Options& opt, TableSchema* table, etymon::Postgres* db,
         const string& loadDir)
 {
-    size_t pageCount = readPageCount(loadDir, table->tableName);
+    size_t pageCount = readPageCount(opt, loadDir, table->tableName);
 
     print(Print::debug, opt, "staging: " + table->tableName +
             ": page count: " + to_string(pageCount));
