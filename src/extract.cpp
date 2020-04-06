@@ -14,7 +14,7 @@
 
 ExtractionFiles::~ExtractionFiles()
 {
-    if (!savetemps) {
+    if (!opt.savetemps) {
         for (const auto& f : files)
             unlink(f.c_str());
         if (dir != "") {
@@ -25,7 +25,9 @@ ExtractionFiles::~ExtractionFiles()
                         dir + string(": ") + string(strerror(errno)) );
         }
     } else {
-        print(Print::verbose, opt, string("directory not removed: ") + dir);
+        if (dir != "") {
+            print(Print::verbose, opt, string("directory not removed: ") + dir);
+        }
     }
 }
 

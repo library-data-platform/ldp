@@ -215,7 +215,8 @@ void runLoad(const Options& opt)
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
 
-    ExtractionFiles extractionFiles(opt);
+    ExtractionFiles extractionDir(opt);
+
     string loadDir;
 
     print(Print::verbose, opt, "connecting to database");
@@ -248,7 +249,6 @@ void runLoad(const Options& opt)
 
     } else {
 
-        extractionFiles.savetemps = opt.savetemps;
 
         //if (opt.verbose)
         //    fprintf(opt.err, "%s: starting data extraction\n", opt.prog);
@@ -266,7 +266,7 @@ void runLoad(const Options& opt)
         okapiLogin(opt, &token);
 
         makeTmpDir(opt, &loadDir);
-        extractionFiles.dir = loadDir;
+        extractionDir.dir = loadDir;
 
         tenantHeader = "X-Okapi-Tenant: ";
         tenantHeader + opt.okapiTenant;
@@ -283,6 +283,8 @@ void runLoad(const Options& opt)
     }
 
     for (auto& table : schema.tables) {
+
+        ExtractionFiles extractionFiles(opt);
 
         print(Print::verbose, opt, "starting load for table: " +
                 table.tableName);

@@ -11,7 +11,6 @@ class ExtractionFiles {
 public:
     string dir;
     vector<string> files;
-    bool savetemps = false;
     const Options& opt;
     ExtractionFiles(const Options& options) : opt(options) {};
     ~ExtractionFiles();
