@@ -572,8 +572,8 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
 
 }
 
-static void stageTable(const Options& opt, TableSchema* table,
-        etymon::Postgres* db, const string& loadDir)
+void stageTable(const Options& opt, TableSchema* table, etymon::Postgres* db,
+        const string& loadDir)
 {
     size_t pageCount = readPageCount(loadDir, table->tableName);
 
@@ -657,15 +657,15 @@ static void stageTable(const Options& opt, TableSchema* table,
 
 }
 
-void stageAll(const Options& opt, Schema* schema, etymon::Postgres* db,
-        const string& loadDir)
-{
-    print(Print::verbose, opt, "staging in target: " + opt.target);
-    for (auto& table : schema->tables) {
-        if (table.skip)
-            continue;
-        print(Print::verbose, opt, "staging table: " + table.tableName);
-        stageTable(opt, &table, db, loadDir);
-    }
-}
+//void stageAll(const Options& opt, Schema* schema, etymon::Postgres* db,
+//        const string& loadDir)
+//{
+//    print(Print::verbose, opt, "staging in target: " + opt.target);
+//    for (auto& table : schema->tables) {
+//        if (table.skip)
+//            continue;
+//        print(Print::verbose, opt, "staging table: " + table.tableName);
+//        stageTable(opt, &table, db, loadDir);
+//    }
+//}
 

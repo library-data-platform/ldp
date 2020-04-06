@@ -17,10 +17,25 @@ public:
     ~ExtractionFiles();
 };
 
+class Curl {
+public:
+    CURL* curl;
+    struct curl_slist* headers;
+    Curl();
+    ~Curl();
+};
+
 void okapiLogin(const Options& o, string* token);
 
-void extract(const Options& o, Schema* spec, const string& token,
+bool directOverride(const Options& opt, const string& sourcePath);
+bool retrieveDirect(const Options& opt, const TableSchema& table,
         const string& loadDir, ExtractionFiles* extractionFiles);
+bool retrievePages(const Curl& c, const Options& opt, const string& token,
+        const TableSchema& table, const string& loadDir,
+        ExtractionFiles* extractionFiles);
+
+//void extract(const Options& o, Schema* spec, const string& token,
+//        const string& loadDir, ExtractionFiles* extractionFiles);
 
 #endif
 

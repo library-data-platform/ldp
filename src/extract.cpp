@@ -29,14 +29,6 @@ ExtractionFiles::~ExtractionFiles()
     }
 }
 
-class Curl {
-public:
-    CURL* curl;
-    struct curl_slist* headers;
-    Curl();
-    ~Curl();
-};
-
 Curl::Curl()
 {
     curl = curl_easy_init();
@@ -233,8 +225,8 @@ static void writeCountFile(const string& loadDir, const string& tableName,
     fputs(pageStr.c_str(), f.file);
 }
 
-static bool retrievePages(const Curl& c, const Options& opt,
-        const string& token, const TableSchema& table, const string& loadDir,
+bool retrievePages(const Curl& c, const Options& opt, const string& token,
+        const TableSchema& table, const string& loadDir,
         ExtractionFiles* extractionFiles)
 {
     size_t page = 0;
@@ -257,7 +249,7 @@ static bool retrievePages(const Curl& c, const Options& opt,
     }
 }
 
-static bool directOverride(const Options& opt, const string& sourcePath)
+bool directOverride(const Options& opt, const string& sourcePath)
 {
     for (auto& interface : opt.direct.interfaces) {
         if (interface == sourcePath)
@@ -266,7 +258,7 @@ static bool directOverride(const Options& opt, const string& sourcePath)
     return false;
 }
 
-static bool retrieveDirect(const Options& opt, const TableSchema& table,
+bool retrieveDirect(const Options& opt, const TableSchema& table,
         const string& loadDir, ExtractionFiles* extractionFiles)
 {
     print(Print::verbose, opt, "direct from database: " + table.sourcePath);
@@ -323,34 +315,34 @@ static bool retrieveDirect(const Options& opt, const TableSchema& table,
     return true;
 }
 
-void extract(const Options& opt, Schema* schema, const string& token,
-        const string& loadDir, ExtractionFiles* extractionFiles)
-{
-    Curl c;
-    if (c.curl) {
+//void extract(const Options& opt, Schema* schema, const string& token,
+//        const string& loadDir, ExtractionFiles* extractionFiles)
+//{
+//    Curl c;
+//    if (c.curl) {
 
-        string tenantHeader = "X-Okapi-Tenant: ";
-        tenantHeader + opt.okapiTenant;
+//        string tenantHeader = "X-Okapi-Tenant: ";
+//        tenantHeader + opt.okapiTenant;
 
-        string tokenHeader = "X-Okapi-Token: ";
-        tokenHeader += token;
+//        string tokenHeader = "X-Okapi-Token: ";
+//        tokenHeader += token;
 
-        c.headers = curl_slist_append(c.headers, tenantHeader.c_str());
-        c.headers = curl_slist_append(c.headers, tokenHeader.c_str());
-        c.headers = curl_slist_append(c.headers,
-                "Accept: application/json,text/plain");
-        curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
+//        c.headers = curl_slist_append(c.headers, tenantHeader.c_str());
+//        c.headers = curl_slist_append(c.headers, tokenHeader.c_str());
+//        c.headers = curl_slist_append(c.headers,
+//                "Accept: application/json,text/plain");
+//        curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
 
-        print(Print::verbose, opt,
-                "extracting data from source: " + opt.source);
-        for (auto& table : schema->tables) {
-            print(Print::verbose, opt, "extracting: " + table.sourcePath);
-            bool foundData = directOverride(opt, table.sourcePath) ?
-                retrieveDirect(opt, table, loadDir, extractionFiles) :
-                retrievePages(c, opt, token, table, loadDir, extractionFiles);
-            if (!foundData)
-                table.skip = true;
-        }
-    }
-}
+//        print(Print::verbose, opt,
+//                "extracting data from source: " + opt.source);
+//        for (auto& table : schema->tables) {
+//            print(Print::verbose, opt, "extracting: " + table.sourcePath);
+//            bool foundData = directOverride(opt, table.sourcePath) ?
+//                retrieveDirect(opt, table, loadDir, extractionFiles) :
+//                retrievePages(c, opt, token, table, loadDir, extractionFiles);
+//            if (!foundData)
+//                table.skip = true;
+//        }
+//    }
+//}
 

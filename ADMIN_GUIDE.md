@@ -305,10 +305,8 @@ a time when the database will not be used heavily.
 If the data loading fails, the `ldp` process returns a non-zero exit
 status.  It is recommended to check the exit status if the process is
 being run automatically, in order to alert the administrator that data
-loading was not completed.  In such cases the data loader generally
-leaves the database unchanged, i.e. the database continues to reflect
-the data from the previous successful data load.  Once the problem has
-been addressed, simply run the data loader again.
+loading was not completed.  Once the problem has been addressed,
+simply run the data loader again.
 
 ### Managing temporary disk space for data loading
 
