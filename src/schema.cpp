@@ -162,9 +162,10 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.tableName = "finance_fiscal_years";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/finance-storage/fund-distributions";
-    table.tableName = "finance_fund_distributions";
-    schema->tables.push_back(table);
+    // Removed for lack of data
+    //table.sourcePath = "/finance-storage/fund-distributions";
+    //table.tableName = "finance_fund_distributions";
+    //schema->tables.push_back(table);
 
     table.sourcePath = "/finance-storage/fund-types";
     table.tableName = "finance_fund_types";
