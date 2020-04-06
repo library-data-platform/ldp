@@ -173,11 +173,6 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.tableName = "finance_funds";
     schema->tables.push_back(table);
 
-    // Possible duplicate
-    //table.sourcePath = "/finance-storage/group-budgets";
-    //table.tableName = "finance_group_budgets";
-    //schema->tables.push_back(table);
-
     table.sourcePath = "/finance-storage/group-fund-fiscal-years";
     table.tableName = "finance_group_fund_fiscal_years";
     schema->tables.push_back(table);

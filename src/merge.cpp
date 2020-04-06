@@ -121,6 +121,7 @@ void dropOldTables(const Options& opt, etymon::Postgres* db)
     dropTablePair(opt, "invoice_number", db);
     dropTablePair(opt, "voucher_number", db);
     dropTablePair(opt, "po_number", db);
+    dropTablePair(opt, "finance_group_budgets", db);
     dropTablePair(opt, "shelf_locations", db);
 
     dropTablePair(opt, "cancellation_reasons", db);
