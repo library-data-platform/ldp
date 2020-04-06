@@ -194,7 +194,7 @@ static PageStatus retrieve(const Curl& c, const Options& opt,
 
     long response_code = 0;
     curl_easy_getinfo(c.curl, CURLINFO_RESPONSE_CODE, &response_code);
-    if (response_code == 403 || response_code == 404) {
+    if (response_code == 403 || response_code == 404 || response_code == 500) {
         return PageStatus::interfaceNotAvailable;
     }
     if (response_code != 200) {
