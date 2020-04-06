@@ -312,17 +312,15 @@ void runLoad(const Options& opt)
         placeTable(opt, table, &db);
         updateStatus(opt, table, &db);
 
+        if (opt.verbose)
+            fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
+        updateDBPermissions(opt, &db);
+
         commitTxn(opt, &db);
     }
 
     beginTxn(opt, &db);
     dropOldTables(opt, &db);
-    commitTxn(opt, &db);
-
-    if (opt.verbose)
-        fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
-    beginTxn(opt, &db);
-    updateDBPermissions(opt, &db);
     commitTxn(opt, &db);
 
     // TODO Check if needed for history tables; if so, move into loop above.
