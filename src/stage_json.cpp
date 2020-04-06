@@ -498,7 +498,6 @@ size_t readPageCount(const Options& opt, const string& loadDir,
     filename += "_count.txt";
     if ( !(etymon::fileExists(filename)) ) {
         print(Print::warning, opt, "file not found: " + filename);
-        print(Print::warning, opt, "skipping table: " + tableName);
         return 0;
     }
     etymon::File f(filename, "r");
