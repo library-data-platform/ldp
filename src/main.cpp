@@ -198,10 +198,10 @@ static void runPreloadTests(const Options& opt)
 
 void runLoad(const Options& opt)
 {
-    //string ct;
-    //getCurrentTime(&ct);
-    //if (opt.verbose)
-    //    fprintf(opt.err, "%s: start time: %s\n", opt.prog, ct.c_str());
+    string ct;
+    getCurrentTime(&ct);
+    if (opt.verbose)
+        fprintf(opt.err, "%s: start time: %s\n", opt.prog, ct.c_str());
 
     runPreloadTests(opt);
 
@@ -266,6 +266,8 @@ void runLoad(const Options& opt)
 
         print(Print::verbose, opt, "loading table: " + table.tableName);
 
+        Timer loadTimer(opt);
+
         if (opt.loadFromDir == "") {
             print(Print::debug, opt, "extracting: " + table.sourcePath);
             bool foundData = directOverride(opt, table.sourcePath) ?
@@ -301,6 +303,9 @@ void runLoad(const Options& opt)
         updateDBPermissions(opt, &db);
 
         commitTxn(opt, &db);
+
+        if (opt.verbose)
+            loadTimer.print("load time");
     }
 
     {
@@ -317,14 +322,9 @@ void runLoad(const Options& opt)
     // TODO Check if needed for history tables; if so, move into loop above.
     //vacuumAnalyzeAll(opt, &schema, &db);
 
-    //if (opt.verbose) {
-    //    fprintf(opt.err, "%s: data loading complete\n", opt.prog);
-    //    loadTimer.print("total load time");
-    //}
-
-    //getCurrentTime(&ct);
-    //if (opt.verbose)
-    //    fprintf(opt.err, "%s: end time: %s\n", opt.prog, ct.c_str());
+    getCurrentTime(&ct);
+    if (opt.verbose)
+        fprintf(opt.err, "%s: end time: %s\n", opt.prog, ct.c_str());
 
     curl_global_cleanup();  // Clean-up after curl_global_init().
     // TODO Wrap curl_global_init() in a class.
