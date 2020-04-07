@@ -416,10 +416,10 @@ void run(const etymon::CommandArgs& cargs)
         debugOptions(opt);
 
     if (opt.command == "load") {
-        //Timer t(opt);
+        Timer t(opt);
         runLoad(opt);
-        //if (opt.verbose)
-        //    t.print("total time");
+        if (opt.verbose)
+            t.print("total time");
         return;
     }
 }
