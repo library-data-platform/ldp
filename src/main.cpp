@@ -304,7 +304,7 @@ void runLoad(const Options& opt)
 
         commitTxn(opt, &db);
 
-        vacuumAnalyzeTable(opt, table, &db);
+        //vacuumAnalyzeTable(opt, table, &db);
 
         if (opt.verbose)
             loadTimer.print("load time");
