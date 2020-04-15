@@ -407,14 +407,14 @@ $ ldp load --source folio --unsafe --nossl
 9\. "Direct extraction" of large data
 --------------------------------------
 
-At the time of writing (LDP 0.3), most FOLIO modules do not offer a
-performant method of extracting a large number of records.  For this
+At the time of writing (LDP 0.5), FOLIO modules do not generally offer
+a performant method of extracting a large number of records.  For this
 reason, a workaround referred to as "direct extraction" has been
 implemented in the LDP software that allows some data to be extracted
 directly from a module's internal database, bypassing the module API.
 Direct extraction is currently supported for holdings, instances, and
-items.  It can be enabled by adding several values to the source
-configuration, for example:
+items.  It can be enabled by adding database connection parameters to
+the source configuration, for example:
 
 ```
 {
