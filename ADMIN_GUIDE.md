@@ -418,6 +418,9 @@ configuration, for example:
 
 ```
 {
+
+    ( . . . )
+
     "dataSources": {
         "folio": {
 
@@ -434,10 +437,7 @@ configuration, for example:
             "directDatabaseUser": "folio_admin",
             "directDatabasePassword": "(database password here)"
         }
-    },
-
-    ( . . . )
-
+    }
 }
 ```
 
