@@ -24,11 +24,14 @@ LDP Admin Guide
 * Database systems supported:
   * [PostgreSQL](https://www.postgresql.org/) 11.5 or later
   * [Amazon Redshift](https://aws.amazon.com/redshift/) 1.0.12094 or later
+* Runtime dependencies
+  * ODBC driver for PostgreSQL or Redshift
 * Required to build from source code:
   * C++ compilers supported:
     * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
     * [Clang](https://clang.llvm.org/) 8.0.1 or later
   * [CMake](https://cmake.org/) 3.7.2 or later
+  * [unixODBC](http://www.unixodbc.org/) 2.3.4 or later
   * [libpq](https://www.postgresql.org/) 11.5 or later
   * [libcurl](https://curl.haxx.se/) 7.64.0 or later
   * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
@@ -59,13 +62,13 @@ needed.
 
 ### Releases and branches
 
-**Note: All releases earlier than LDP 1.0 are for testing purposes and
+Note: All releases earlier than LDP 1.0 are for testing purposes and
 are not intended for production use.  Releases earlier than LDP 1.0
 also do not support database migration, so that it may be necessary to
-create a new database when upgrading to a new release.**
+create a new database when upgrading to a new release.
 
-LDP releases use version numbers in the form, *a*.*b*.*c*, where
-*a*.*b* is the release number and *c* indicates a bug fix version.
+LDP releases use version numbers in the form, _a_._b_._c_, where
+_a_._b_ is the release number and _c_ indicates a bug fix version.
 For example, suppose that LDP 1.3 has been released.  The first
 version of the 1.3 release will be 1.3.0.  Any subsequent versions
 with the same release number, for example, 1.3.1 or 1.3.2, will
@@ -89,11 +92,6 @@ Beginning with LDP 1.0, a numbered branch will be created for each
 release; for example, `1.2-release` would point to the latest version
 of LDP 1.2, e.g. `1.2.5`.
 
-<!--
-Prior to LDP 1.0, the `beta-release` version points to the latest
-release.
--->
-
 The `-release` branches are the most stable versions, and `current` is
 the least stable; `master` is somewhere in between in terms of
 stability.
@@ -106,24 +104,44 @@ a package manager on some platforms.
 #### Debian Linux
 
 ```shell
-$ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
-      postgresql-server-dev-all rapidjson-dev
+$ sudo apt install cmake g++ libcurl4-openssl-dev unixodbc unixodbc-dev \
+      libpq-dev postgresql-server-dev-all rapidjson-dev
 ```
 
-<!--
-#### FreeBSD
+For PostgreSQL, the ODBC driver can be installed with:
 
 ```shell
-$ sudo pkg install cmake postgresql11-client rapidjson
+$ sudo apt install odbc-postgresql
 ```
--->
+
+#### RHEL/CentOS Linux
+
+```shell
+$ sudo dnf install make cmake gcc-c++ libcurl-devel unixODBC-devel \
+      libpq-devel postgresql-server-devel
+```
+
+For PostgreSQL, the ODBC driver can be installed with:
+
+```shell
+$ sudo dnf install postgresql-odbc
+```
+RapidJSON can be [installed from
+source](https://rapidjson.org/index.html#autotoc_md5).
+```
 
 #### macOS
 
 Using [Homebrew](https://brew.sh/):
 
 ```shell
-$ brew install cmake postgresql rapidjson
+$ brew install cmake unixodbc psqlodbc postgresql rapidjson
+```
+
+For PostgreSQL, the ODBC driver can be installed with:
+
+```shell
+$ brew install psqlodbc
 ```
 
 ### Building the software
@@ -138,15 +156,46 @@ $ cd build/
 $ cmake ..
 $ make
 ```
-<!--
-make install
--->
 
 The compiled executable file `ldp` should appear in `ldp/build/src/`:
 
 ```shell
 $ cd src/
 $ ./ldp help
+```
+
+### Configuring ODBC
+
+This software uses unixODBC to connect to the LDP database.  To
+configure ODBC, install the ODBC driver for the database system being
+used (PostgreSQL or Redshift), and create the files
+`$HOME/.odbcinst.ini` and `$HOME/.odbc.ini` as described in this
+[guide](http://www.unixodbc.org/odbcinst.html).
+
+The provided example files
+[odbcinst.ini](https://raw.githubusercontent.com/folio-org/ldp/master/examples/odbcinst.ini)
+and
+[odbc.ini](https://raw.githubusercontent.com/folio-org/ldp/master/examples/odbc.ini)
+can be used as templates.
+
+__odbcinst.ini__
+```
+[PostgreSQL]
+Description = PostgreSQL
+Driver      = /usr/lib/x86_64-linux-gnu/odbc/psqlodbcw.so
+FileUsage   = 1
+```
+
+__odbc.ini__
+```
+[ldpdemo]
+Description = ldp
+Driver      = PostgreSQL
+Database    = ldp
+Servername  = ldp.indexdata.com
+UserName    = ldpadmin
+Password    = (ldpadmin password here)
+Port        = 5432
 ```
 
 
@@ -189,12 +238,18 @@ GRANT USAGE ON SCHEMA public TO ldp;
 4\. Configuring the LDP software
 --------------------------------
 
-The LDP software also needs a configuration file that looks something
-like:
+The LDP software needs a configuration file.  The provided example
+file
+[ldpconfig.json](https://raw.githubusercontent.com/folio-org/ldp/master/examples/ldpconfig.json)
+can be used as a template.
 
+__ldpconfig.json__
 ```
 {
-    "sources": {
+    "ldpDatabase": {
+        "odbcDataSourceName": "ldpdemo"
+    },
+    "dataSources": {
         "folio": {
             "okapiURL": "https://folio-release-okapi.aws.indexdata.com",
             "okapiTenant": "diku",
@@ -202,30 +257,9 @@ like:
             "okapiPassword": "(Okapi password here)",
             "extractDir": "/var/lib/ldp/extract/"
         }
-    },
-    "targets": {
-        "ldpdemo": {
-            "databaseName": "ldp",
-            "databaseType": "postgresql",
-            "databaseHost": "ldp.indexdata.com",
-            "databasePort": "5432",
-            "ldpAdmin": "ldpadmin",
-            "ldpAdminPassword": "(ldpadmin password here)"
-        }
     }
 }
 ```
-
-<!--
-**Upgrading from version 0.3.8 or earlier:**  The parameters,
-`databaseUser` and `databasePassword`, have changed.  Please rename
-`databaseUser` to `ldpAdmin`, and rename `databasePassword` to
-`ldpAdminPassword`.
--->
-
-The provided example file
-[config_example.json](https://raw.githubusercontent.com/folio-org/ldp/master/config_example.json)
-can be used as a template.
 
 This file defines parameters for connecting to Okapi and to the LDP
 database.  Please see the next section for how the parameters are used.
@@ -254,20 +288,16 @@ usage is low, in order to refresh the database with new data from Okapi.
 
 To extract data from Okapi and load them into the LDP database:
 ```shell
-$ ldp load --source folio --target ldpdemo -v
+$ ldp load --source folio -v
 ```
 
 The `load` command is used to load data.  The data are extracted from a
-data "source" (Okapi) and loaded into a "target" (the LDP database).
+data "source" and loaded into the LDP database.
 
 The `--source` option specifies the name of a section under `sources` in
 the LDP configuration file.  This section should provide connection
 details for Okapi, as well as a directory (`extractDir`) where temporary
 extracted files can be written.
-
-The `--target` option works in the same way to specify a section under
-`targets` in the configuration file that provides connection details for
-the LDP database where data will be loaded.
 
 The `-v` option enables verbose output.  For even more verbose output,
 the `--debug` option can be used to see commands that are sent to the
@@ -284,9 +314,9 @@ are not anonymized and may contain personal data.
 6\. Running the LDP in production
 ---------------------------------
 
-**Note:  LDP releases earlier than 1.0 should not be used in production.
+Note:  LDP releases earlier than 1.0 should not be used in production.
 This section is included here to assist system administrators in
-planning for production deployment.**
+planning for production deployment.
 
 The data loader is intended to be run automatically once per day, using
 a job scheduler such as Cron.
@@ -338,40 +368,6 @@ configuration settings are recommended as a starting point:
 * Maintenance Track:  `Trailing`
 
 
-<!--
-7\. Anonymization of personal data
-----------------------------------
-
-By default, the LDP data loader tries to "anonymize" personal data
-that it extracts from Okapi.  At present this anonymization consists
-of removing data extracted from interface `/users` except for the
-following root-level fields: `id`, `active`, `type`, `patronGroup`,
-`enrollmentDate`, `expirationDate`, `meta`, `proxyFor`, `createdDate`,
-`updatedDate`, `metadata`, and `tags`.
-
-
-It is planned that in a future LDP release, the user ID field, `id`,
-will also be anonymized.
-
-
-There is no need to do anything to enable these anonymizations; they are
-enabled unless the LDP loader is otherwise configured.
-
-If it should be necessary to disable anonymization, this can be done by
-setting the `disable_anonymization` parameter to `true` in the LDP
-configuration file, within the section that defines connection details
-for Okapi.
-
-**WARNING:  Please note that this software does not provide a way to
-anonymize the LDP database after personal data have been loaded into it.
-This configuration parameter should be used only with great care.**
-
-Turning on the `disable_anonymization` parameter prevents the LDP loader
-from attempting to anonymize extracted data, so that all data provided
-by Okapi will be loaded into the LDP database.
--->
-
-
 7\. Loading data from files (for testing only)
 ----------------------------------------------
 
@@ -380,7 +376,7 @@ data can be loaded directly from the file system for testing purposes,
 using the `--unsafe` and `--sourcedir` options, e.g.:
 
 ```shell
-$ ldp load --unsafe --sourcedir ldp-analytics/testdata/ --target ldpdemo
+$ ldp load --unsafe --sourcedir ldp-analytics/testdata/
 ```
 
 The loader expects the data files to have particular names, e.g.
@@ -402,7 +398,7 @@ and library data transmitted to the database.  However, TLS/SSL can be
 disabled using the `--unsafe` and `--nossl` options, e.g.:
 
 ```shell
-$ ldp load --source folio --target ldpdemo --unsafe --nossl
+$ ldp load --source folio --unsafe --nossl
 ```
 
 
@@ -420,7 +416,7 @@ configuration, for example:
 
 ```
 {
-    "sources": {
+    "dataSources": {
         "folio": {
 
             ( . . . )
@@ -450,5 +446,5 @@ database, which may be protected by a firewall.
 Further reading
 ---------------
 
-[**Learn about using the LDP database in the User Guide > > >**](USER_GUIDE.md)
+[__Learn about using the LDP database in the User Guide > > >__](USER_GUIDE.md)
 

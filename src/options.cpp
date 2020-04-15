@@ -16,8 +16,6 @@ static void validate(const Options& opt)
     if (opt.command == "load") {
         if (opt.source == "" && opt.loadFromDir == "")
             throw runtime_error("load requires --source or --sourcedir");
-        if (opt.target == "")
-            throw runtime_error("load requires --target");
     }
 
     if (opt.nossl && !opt.unsafe)
@@ -145,18 +143,18 @@ void debugOptions(const Options& opt)
             opt.okapiUser.c_str());
     fprintf(stderr, "%s: option: extractDir = %s\n", opt.prog,
             opt.extractDir.c_str());
-    fprintf(stderr, "%s: option: target = %s\n", opt.prog,
-            opt.target.c_str());
-    fprintf(stderr, "%s: option: databaseName = %s\n", opt.prog,
-            opt.databaseName.c_str());
-    fprintf(stderr, "%s: option: databaseType = %s\n", opt.prog,
-            opt.databaseType.c_str());
-    fprintf(stderr, "%s: option: databaseHost = %s\n", opt.prog,
-            opt.databaseHost.c_str());
-    fprintf(stderr, "%s: option: databasePort = %s\n", opt.prog,
-            opt.databasePort.c_str());
-    fprintf(stderr, "%s: option: ldpAdmin = %s\n", opt.prog,
-            opt.ldpAdmin.c_str());
+    //fprintf(stderr, "%s: option: target = %s\n", opt.prog,
+    //        opt.target.c_str());
+    //fprintf(stderr, "%s: option: databaseName = %s\n", opt.prog,
+    //        opt.databaseName.c_str());
+    //fprintf(stderr, "%s: option: databaseType = %s\n", opt.prog,
+    //        opt.databaseType.c_str());
+    //fprintf(stderr, "%s: option: databaseHost = %s\n", opt.prog,
+    //        opt.databaseHost.c_str());
+    //fprintf(stderr, "%s: option: databasePort = %s\n", opt.prog,
+    //        opt.databasePort.c_str());
+    //fprintf(stderr, "%s: option: ldpAdmin = %s\n", opt.prog,
+    //        opt.ldpAdmin.c_str());
     fprintf(stderr, "%s: option: ldpUser = %s\n", opt.prog,
             opt.ldpUser.c_str());
     fprintf(stderr, "%s: option: dbtype = %s\n", opt.prog, opt.dbtype.dbType());

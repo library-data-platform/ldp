@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <vector>
 
+#include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/postgres.h"
 #include "config_json.h"
 #include "extract.h"
@@ -23,7 +24,7 @@
 
 static const char* optionHelp =
 "Usage:  ldp <command> <options>\n"
-"  e.g.  ldp load --source folio --target ldp\n"
+"  e.g.  ldp load --source folio\n"
 "Commands:\n"
 "  load                - Load data into the LDP database\n"
 "  help                - Display help information\n"
@@ -32,10 +33,6 @@ static const char* optionHelp =
 "                        the name of an object under \"sources\" in the\n"
 "                        configuration file that describes connection\n"
 "                        parameters for an Okapi instance\n"
-"  --target <name>     - Load data into target <name>, which refers to\n"
-"                        the name of an object under \"targets\" in the\n"
-"                        configuration file that describes connection\n"
-"                        parameters for a database\n"
 "  --config <path>     - Specify the location of the configuration file,\n"
 "                        overriding the LDPCONFIG environment variable\n"
 "  --unsafe            - Enable functions used for testing/debugging\n"
@@ -174,10 +171,31 @@ void rollbackTxn(const Options& opt, etymon::Postgres* db)
 
 // Check for obvious problems that could show up later in the loading
 // process.
-static void runPreloadTests(const Options& opt)
+static void runPreloadTests(const Options& opt, const etymon::OdbcEnv& odbcEnv)
 {
     //print(Print::verbose, opt, "running pre-load checks");
 
+    // Check database connection.
+    etymon::OdbcDbc dbc(odbcEnv, opt.odbcDataSourceName);
+    // TODO Check if a time-out is used here, for example if the client
+    // connection hangs due to a firewall.  Non-verbose output does not
+    // communicate any problem while frozen.
+
+    // Check that ldpUser is a valid user.
+    string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
+        opt.ldpUser + ";";
+    printSQL(Print::debug, opt, sql);
+    {
+        etymon::OdbcStmt stmt(dbc);
+        SQLRETURN r = SQLExecDirect(stmt.stmt, (SQLCHAR *) sql.c_str(),
+                SQL_NTS);
+        if (!SQL_SUCCEEDED(r))
+            throw runtime_error("error testing LDP user in database: " +
+                    dbc.dataSourceName);
+    }
+    dbc.rollback();
+
+    /*
     // Check database connection.
     etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
             opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
@@ -194,6 +212,7 @@ static void runPreloadTests(const Options& opt)
     { etymon::PostgresResult result(&db, sql); }
 
     rollbackTxn(opt, &db);
+    */
 }
 
 void runLoad(const Options& opt)
@@ -203,7 +222,9 @@ void runLoad(const Options& opt)
     if (opt.verbose)
         fprintf(opt.err, "%s: start time: %s\n", opt.prog, ct.c_str());
 
-    runPreloadTests(opt);
+    etymon::OdbcEnv odbcEnv;
+
+    runPreloadTests(opt, odbcEnv);
 
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
@@ -351,30 +372,30 @@ void fillDirectOptions(const Config& config, const string& base, Options* opt)
             &(opt->direct.databasePassword));
 }
 
-void checkForOldParameters(const Options& opt, const Config& config,
-        const string& target)
-{
-    string s;
-    if (!config.get(target + "ldpAdmin", &s) &&
-            config.get(target + "databaseUser", &s))
-        fprintf(opt.err, "\n"
-                "The target configuration parameter \"databaseUser\" "
-                "is no longer supported;\n"
-                "it has been renamed to \"ldpAdmin\".\n"
-                "Please make this change in your configuration file.\n\n");
-    if (!config.get(target + "ldpAdminPassword", &s) &&
-            config.get(target + "databasePassword", &s))
-        fprintf(opt.err, "\n"
-                "The target configuration parameter \"databasePassword\" "
-                "is no longer supported;\n"
-                "it has been renamed to \"ldpAdminPassword\".\n"
-                "Please make this change in your configuration file.\n\n");
-}
+//void checkForOldParameters(const Options& opt, const Config& config,
+//        const string& target)
+//{
+//    string s;
+//    if (!config.get(target + "ldpAdmin", &s) &&
+//            config.get(target + "databaseUser", &s))
+//        fprintf(opt.err, "\n"
+//                "The target configuration parameter \"databaseUser\" "
+//                "is no longer supported;\n"
+//                "it has been renamed to \"ldpAdmin\".\n"
+//                "Please make this change in your configuration file.\n\n");
+//    if (!config.get(target + "ldpAdminPassword", &s) &&
+//            config.get(target + "databasePassword", &s))
+//        fprintf(opt.err, "\n"
+//                "The target configuration parameter \"databasePassword\" "
+//                "is no longer supported;\n"
+//                "it has been renamed to \"ldpAdminPassword\".\n"
+//                "Please make this change in your configuration file.\n\n");
+//}
 
 void fillOptions(const Config& config, Options* opt)
 {
     if (opt->loadFromDir == "") {
-        string source = "/sources/";
+        string source = "/dataSources/";
         source += opt->source;
         source += "/";
         config.getRequired(source + "okapiURL", &(opt->okapiURL));
@@ -385,18 +406,18 @@ void fillOptions(const Config& config, Options* opt)
         fillDirectOptions(config, source, opt);
     }
 
-    string target = "/targets/";
-    target += opt->target;
-    target += "/";
-    config.getRequired(target + "databaseName", &(opt->databaseName));
-    config.getRequired(target + "databaseType", &(opt->databaseType));
-    config.getRequired(target + "databaseHost", &(opt->databaseHost));
-    config.getRequired(target + "databasePort", &(opt->databasePort));
-    checkForOldParameters(*opt, config, target);
-    config.getRequired(target + "ldpAdmin", &(opt->ldpAdmin));
-    config.getRequired(target + "ldpAdminPassword", &(opt->ldpAdminPassword));
-    config.get(target + "ldpUser", &(opt->ldpUser));
-    opt->dbtype.setType(opt->databaseType);
+    string target = "/ldpDatabase/";
+    config.getRequired(target + "odbcDataSourceName",
+            &(opt->odbcDataSourceName));
+    //config.getRequired(target + "databaseType", &(opt->databaseType));
+    //config.getRequired(target + "databaseHost", &(opt->databaseHost));
+    //config.getRequired(target + "databasePort", &(opt->databasePort));
+    //checkForOldParameters(*opt, config, target);
+    //config.getRequired(target + "ldpAdmin", &(opt->ldpAdmin));
+    //config.getRequired(target + "ldpAdminPassword", &(opt->ldpAdminPassword));
+    //config.get(target + "ldpUser", &(opt->ldpUser));
+    //opt->dbtype.setType(opt->databaseType);
+    opt->dbtype.setType("postgresql"); ////////////////// Set DBType
 }
 
 void run(const etymon::CommandArgs& cargs)

@@ -22,6 +22,8 @@ ENDIF(OPTIMIZE)
 find_package(CURL REQUIRED) 
 include_directories(${CURL_INCLUDE_DIR})
 
+find_package(ODBC REQUIRED)
+
 find_package(PostgreSQL REQUIRED)
 include_directories(${PostgreSQL_INCLUDE_DIR})
 #set(LIBS ${LIBS} ${PostgreSQL_LIBRARY})
@@ -30,6 +32,7 @@ find_package(RapidJSON)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 add_executable(ldp
+    ../etymoncpp/src/odbc.cpp
     ../etymoncpp/src/postgres.cpp
     ../etymoncpp/src/util.cpp
     anonymize.cpp
@@ -49,6 +52,7 @@ add_executable(ldp
 )
 target_link_libraries(ldp
     ${CURL_LIBRARIES}
+    ${ODBC_LIBRARY}
     ${PostgreSQL_LIBRARY}
 )
 

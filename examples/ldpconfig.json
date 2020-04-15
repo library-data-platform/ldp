@@ -1,0 +1,15 @@
+{
+    "ldpDatabase": {
+        "odbcDataSourceName": "ldpdemo"
+    },
+    "dataSources": {
+        "folio": {
+            "okapiURL": "https://folio-release-okapi.aws.indexdata.com",
+            "okapiTenant": "diku",
+            "okapiUser": "diku_admin",
+            "okapiPassword": "(Okapi password here)",
+            "extractDir": "/var/lib/ldp/extract/"
+        }
+    }
+}
+
