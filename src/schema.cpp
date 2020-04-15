@@ -111,6 +111,17 @@ void Schema::MakeDefaultSchema(Schema* schema)
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
+    table.moduleName = "mod-feesfines";
+
+    table.sourcePath = "/lost-item-fees-policies";
+    table.tableName = "feesfines_lost_item_fees_policies";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/overdue-fines-policies";
+    table.tableName = "feesfines_overdue_fines_policies";
+    schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
 /*
     table.moduleName = "mod-courses";
 
