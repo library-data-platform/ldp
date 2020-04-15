@@ -4,6 +4,28 @@
 
 namespace etymon {
 
+const char* odbcStrError(SQLRETURN rc)
+{
+    switch (rc) {
+        case SQL_SUCCESS:
+            return "SQL_SUCCESS";
+        case SQL_SUCCESS_WITH_INFO:
+            return "SQL_SUCCESS_WITH_INFO";
+        case SQL_ERROR:
+            return "SQL_ERROR";
+        case SQL_INVALID_HANDLE:
+            return "SQL_INVALID_HANDLE";
+        case SQL_NO_DATA:
+            return "SQL_NO_DATA";
+        case SQL_NEED_DATA:
+            return "SQL_NEED_DATA";
+        case SQL_STILL_EXECUTING:
+            return "SQL_STILL_EXECUTING";
+        default:
+            return "(unknown return code)";
+    }
+}
+
 OdbcEnv::OdbcEnv()
 {
     SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env);
@@ -32,7 +54,7 @@ OdbcDbc::OdbcDbc(const OdbcEnv& odbcEnv, const string& dataSourceName)
     this->dataSourceName = dataSourceName;
 }
 
-void OdbcDbc::getDbmsName(string* dbmsName) const
+void OdbcDbc::getDbmsName(string* dbmsName)
 {
     SQLCHAR dn[256];
     SQLGetInfo(dbc, SQL_DBMS_NAME, (SQLPOINTER) dn, sizeof(dn), NULL);
@@ -42,11 +64,14 @@ void OdbcDbc::getDbmsName(string* dbmsName) const
 void OdbcDbc::execDirect(const string& sql)
 {
     etymon::OdbcStmt stmt(*this);
-    SQLRETURN r = SQLExecDirect(stmt.stmt, (SQLCHAR *) sql.c_str(),
+    SQLRETURN rc = SQLExecDirect(stmt.stmt, (SQLCHAR *) sql.c_str(),
             SQL_NTS);
-    if (!SQL_SUCCEEDED(r))
+    if (!SQL_SUCCEEDED(rc) && rc != SQL_NO_DATA) {
+        fprintf(stderr, "ERROR: %s\n", odbcStrError(rc));
+        //odbcStrErrorDetail(stmt.stmt, SQL_HANDLE_STMT);
         throw runtime_error("error executing statement in database: " +
                 dataSourceName + ":\n" + sql);
+    }
 }
 
 void OdbcDbc::commit()
@@ -67,6 +92,7 @@ void OdbcDbc::rollback()
 
 OdbcDbc::~OdbcDbc()
 {
+    rollback();
     SQLDisconnect(dbc);
     SQLFreeHandle(SQL_HANDLE_DBC, dbc);
 }

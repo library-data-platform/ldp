@@ -157,7 +157,7 @@ void debugOptions(const Options& opt)
     //        opt.ldpAdmin.c_str());
     fprintf(stderr, "%s: option: ldpUser = %s\n", opt.prog,
             opt.ldpUser.c_str());
-    fprintf(stderr, "%s: option: dbtype = %s\n", opt.prog, opt.dbtype.dbType());
+    //fprintf(stderr, "%s: option: dbtype = %s\n", opt.prog, opt.dbtype.dbType());
     //fprintf(stderr, "%s: option: err = ", opt.prog);
     //if (opt.err == stdout)
     //    fprintf(stderr, "stdout\n");

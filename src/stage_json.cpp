@@ -147,13 +147,15 @@ public:
     // Collection of statistics
     map<string,Counts>* stats;
     // Loading to database
-    etymon::Postgres* db;
+    etymon::OdbcDbc* dbc;
+    const DBType& dbt;
     size_t recordCount = 0;
     string insertBuffer;
     JSONHandler(int pass, const Options& options, const TableSchema& table,
-            etymon::Postgres* database, map<string,Counts>* statistics) :
+            etymon::OdbcDbc* dbc, const DBType& dbt,
+            map<string,Counts>* statistics) :
         pass(pass), opt(options), tableSchema(table), stats(statistics),
-        db(database) { }
+        dbc(dbc), dbt(dbt) { }
     bool StartObject();
     bool EndObject(json::SizeType memberCount);
     bool StartArray();
@@ -188,17 +190,18 @@ static void beginInserts(const string& table, string* buffer)
     *buffer = "INSERT INTO " + loadingTable + " VALUES ";
 }
 
-static void endInserts(const Options& opt, string* buffer, etymon::Postgres* db)
+static void endInserts(const Options& opt, string* buffer, etymon::OdbcDbc* dbc)
 {
     *buffer += ";\n";
     printSQL(Print::debug, opt, *buffer);
-    { etymon::PostgresResult result(db, *buffer); }
+    dbc->execDirect(*buffer);
     buffer->clear();
 }
 
-static void writeTuple(const Options& opt, const TableSchema& table,
-        const json::Document& doc, const json::StringBuffer& jsondata,
-        size_t* recordCount, string* insertBuffer)
+static void writeTuple(const Options& opt, const DBType& dbt,
+        const TableSchema& table, const json::Document& doc,
+        const json::StringBuffer& jsondata, size_t* recordCount,
+        string* insertBuffer)
 {
     if (*recordCount > 0)
         *insertBuffer += ',';
@@ -206,7 +209,7 @@ static void writeTuple(const Options& opt, const TableSchema& table,
 
     const char* id = doc["id"].GetString();
     string idenc;
-    opt.dbtype.encodeStringConst(id, &idenc);
+    dbt.encodeStringConst(id, &idenc);
     *insertBuffer += idenc;
     *insertBuffer += ",";
 
@@ -236,7 +239,7 @@ static void writeTuple(const Options& opt, const TableSchema& table,
             break;
         case ColumnType::timestamptz:
         case ColumnType::varchar:
-            opt.dbtype.encodeStringConst(jsonValue.GetString(), &s);
+            dbt.encodeStringConst(jsonValue.GetString(), &s);
             // Check if varchar exceeds maximum string length (65535).
             if (s.length() >= 65535) {
                 print(Print::warning, opt,
@@ -252,7 +255,7 @@ static void writeTuple(const Options& opt, const TableSchema& table,
     }
 
     string data;
-    opt.dbtype.encodeStringConst(jsondata.GetString(), &data);
+    dbt.encodeStringConst(jsondata.GetString(), &data);
     // Check if JSON object exceeds maximum string length (65535).
     if (data.length() >= 65535) {
         print(Print::warning, opt,
@@ -321,12 +324,12 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
 
             //if (insertBuffer.length() > 16500000) {
             if (insertBuffer.length() > 10000000) {
-                endInserts(opt, &insertBuffer, db);
+                endInserts(opt, &insertBuffer, dbc);
                 beginInserts(tableSchema.tableName, &insertBuffer);
                 recordCount = 0;
             }
 
-            writeTuple(opt, tableSchema, doc, jsondata, &recordCount,
+            writeTuple(opt, dbt, tableSchema, doc, jsondata, &recordCount,
                     &insertBuffer);
 
         }
@@ -361,7 +364,7 @@ bool JSONHandler::EndArray(json::SizeType elementCount)
         active = false;
         if (recordCount > 0)
             if (pass == 2)
-                endInserts(opt, &insertBuffer, db);
+                endInserts(opt, &insertBuffer, dbc);
     } else {
         if (level > 2)
             record += "],";
@@ -509,14 +512,14 @@ size_t readPageCount(const Options& opt, const string& loadDir,
 }
 
 static void stagePage(const Options& opt, int pass,
-        const TableSchema& tableSchema, etymon::Postgres* db,
-        map<string,Counts>* stats, const string& filename, char* readBuffer,
-        size_t readBufferSize)
+        const TableSchema& tableSchema, etymon::OdbcDbc* dbc,
+        const DBType &dbt, map<string,Counts>* stats, const string& filename,
+        char* readBuffer, size_t readBufferSize)
 {
     json::Reader reader;
     etymon::File f(filename, "r");
     json::FileReadStream is(f.file, readBuffer, readBufferSize);
-    JSONHandler handler(pass, opt, tableSchema, db, stats);
+    JSONHandler handler(pass, opt, tableSchema, dbc, dbt, stats);
     reader.Parse(is, handler);
 }
 
@@ -529,13 +532,13 @@ static void composeDataFilePath(const string& loadDir,
 }
 
 static void createLoadingTable(const Options& opt, const TableSchema& table,
-        etymon::Postgres* db)
+        etymon::OdbcDbc* dbc, const DBType& dbt)
 {
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
 
     string rskeys;
-    opt.dbtype.redshiftKeys("id", "id", &rskeys);
+    dbt.redshiftKeys("id", "id", &rskeys);
     string sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
@@ -552,13 +555,13 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
         }
     }
     sql += "    data ";
-    sql += opt.dbtype.jsonType();
+    sql += dbt.jsonType();
     sql += ",\n"
         "    tenant_id SMALLINT NOT NULL,\n"
         "    PRIMARY KEY (id)\n"
         ")" + rskeys + ";";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     // Add comment on table.
     if (table.moduleName != "mod-agreements") {
@@ -571,13 +574,13 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
         sql += table.moduleName;
         sql += "';";
         printSQL(Print::debug, opt, sql);
-        { etymon::PostgresResult result(db, sql); }
+        dbc->execDirect(sql);
     }
 
 }
 
-void stageTable(const Options& opt, TableSchema* table, etymon::Postgres* db,
-        const string& loadDir)
+void stageTable(const Options& opt, TableSchema* table, etymon::OdbcDbc* dbc,
+        const DBType& dbt, const string& loadDir)
 {
     size_t pageCount = readPageCount(opt, loadDir, table->tableName);
 
@@ -603,7 +606,7 @@ void stageTable(const Options& opt, TableSchema* table, etymon::Postgres* db,
             print(Print::debug, opt, "staging: " + table->tableName +
                     (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                     to_string(page));
-            stagePage(opt, pass, *table, db, &stats, path, readBuffer,
+            stagePage(opt, pass, *table, dbc, dbt, &stats, path, readBuffer,
                     sizeof readBuffer);
         }
 
@@ -614,7 +617,7 @@ void stageTable(const Options& opt, TableSchema* table, etymon::Postgres* db,
                 print(Print::debug, opt, "staging: " + table->tableName +
                         (pass == 1 ?  ": analyze" : ": load") +
                         ": test file");
-                stagePage(opt, pass, *table, db, &stats, path, readBuffer,
+                stagePage(opt, pass, *table, dbc, dbt, &stats, path, readBuffer,
                         sizeof readBuffer);
             }
         }
@@ -654,7 +657,7 @@ void stageTable(const Options& opt, TableSchema* table, etymon::Postgres* db,
                 column.sourceColumnName = field;
                 table->columns.push_back(column);
             }
-            createLoadingTable(opt, *table, db);
+            createLoadingTable(opt, *table, dbc, dbt);
         }
 
     }

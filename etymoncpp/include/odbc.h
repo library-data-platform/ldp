@@ -9,6 +9,8 @@ using namespace std;
 
 namespace etymon {
 
+const char* odbcStrError(SQLRETURN rc);
+
 class OdbcEnv {
 public:
     SQLHENV env;
@@ -21,7 +23,7 @@ public:
     SQLHDBC dbc;
     string dataSourceName;
     OdbcDbc(const OdbcEnv& odbcEnv, const string& dataSourceName);
-    void getDbmsName(string* dbmsName) const;
+    void getDbmsName(string* dbmsName);
     void execDirect(const string& sql);
     void commit();
     void rollback();

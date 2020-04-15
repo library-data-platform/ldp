@@ -2,15 +2,15 @@
 
 #include "dbtype.h"
 
-DBType::DBType()
-{
-    dbt = DBT::unknown;
-}
+//DBType::DBType()
+//{
+//    dbt = DBT::unknown;
+//}
 
-DBType::DBType(const etymon::OdbcDbc& dbc)
+DBType::DBType(etymon::OdbcDbc* dbc)
 {
     string dbmsName;
-    dbc.getDbmsName(&dbmsName);
+    dbc->getDbmsName(&dbmsName);
     setType(dbmsName);
 }
 

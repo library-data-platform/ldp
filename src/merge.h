@@ -10,14 +10,14 @@
 using namespace std;
 
 void mergeTable(const Options& opt, const TableSchema& table,
-        etymon::Postgres* db);
+        etymon::OdbcDbc* dbc, const DBType& dbt);
 void dropTable(const Options& opt, const string& tableName,
-        etymon::Postgres* db);
+        etymon::OdbcDbc* dbc);
 void placeTable(const Options& opt, const TableSchema& table,
-        etymon::Postgres* db);
+        etymon::OdbcDbc* dbc);
 void updateStatus(const Options& opt, const TableSchema& table,
-        etymon::Postgres* db);
-void dropOldTables(const Options& opt, etymon::Postgres* db);
+        etymon::OdbcDbc* dbc);
+void dropOldTables(const Options& opt, etymon::OdbcDbc* dbc);
 
 //void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db);
 

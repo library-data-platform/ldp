@@ -51,13 +51,13 @@ void debugNoticeProcessor(void *arg, const char *message)
             string("database response: ") + string(message));
 }
 
-static void initDB(const Options& opt, etymon::Postgres* db)
+static void initDB(const Options& opt, etymon::OdbcDbc* dbc)
 {
     string sql;
 
     sql = "CREATE SCHEMA IF NOT EXISTS ldp_catalog;";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     //sql =
     //    "CREATE TABLE IF NOT EXISTS ldp_catalog.table_updates (\n"
@@ -71,43 +71,43 @@ static void initDB(const Options& opt, etymon::Postgres* db)
 
     sql = "CREATE SCHEMA IF NOT EXISTS history;";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     sql = "CREATE SCHEMA IF NOT EXISTS local;";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 }
 
-static void updateDBPermissions(const Options& opt, etymon::Postgres* db)
+static void updateDBPermissions(const Options& opt, etymon::OdbcDbc* dbc)
 {
     string sql;
 
     sql = "GRANT USAGE ON SCHEMA ldp_catalog TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldp_catalog TO " +
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     sql = "GRANT USAGE ON SCHEMA history TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA history TO " +
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 }
 
 void makeTmpDir(const Options& opt, string* loaddir)
@@ -148,25 +148,25 @@ void vacuumAnalyzeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
     }
 }
 
-void beginTxn(const Options& opt, etymon::Postgres* db)
-{
-    string sql = "BEGIN ISOLATION LEVEL READ COMMITTED;";
-    printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
-}
+//void beginTxn(const Options& opt, etymon::Postgres* db)
+//{
+//    string sql = "BEGIN ISOLATION LEVEL READ COMMITTED;";
+//    printSQL(Print::debug, opt, sql);
+//    { etymon::PostgresResult result(db, sql); }
+//}
 
-void commitTxn(const Options& opt, etymon::Postgres* db)
+void commitTxn(const Options& opt, etymon::OdbcDbc* dbc)
 {
     string sql = "COMMIT;";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->commit();
 }
 
-void rollbackTxn(const Options& opt, etymon::Postgres* db)
+void rollbackTxn(const Options& opt, etymon::OdbcDbc* dbc)
 {
     string sql = "ROLLBACK;";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->commit();
 }
 
 // Check for obvious problems that could show up later in the loading
@@ -186,7 +186,7 @@ static void runPreloadTests(const Options& opt, const etymon::OdbcEnv& odbc)
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     dbc.execDirect(sql);
-    dbc.rollback();
+    rollbackTxn(opt, &dbc);
 
     /*
     // Check database connection.
@@ -219,8 +219,6 @@ void runLoad(const Options& opt)
 
     runPreloadTests(opt, odbc);
 
-    //////////////////////////////
-
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
 
@@ -230,14 +228,12 @@ void runLoad(const Options& opt)
 
     {
         print(Print::debug, opt, "connecting to database");
-        etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
-                opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
-        PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+        etymon::OdbcDbc dbc(odbc, opt.db);
+        //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
         print(Print::debug, opt, "initializing database");
-        beginTxn(opt, &db);
-        initDB(opt, &db);
-        commitTxn(opt, &db);
+        initDB(opt, &dbc);
+        commitTxn(opt, &dbc);
     }
 
     Curl c;
@@ -297,30 +293,28 @@ void runLoad(const Options& opt)
             continue;
 
         print(Print::debug, opt, "connecting to database");
-        etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
-                opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
-        PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
-
-        beginTxn(opt, &db);
+        etymon::OdbcDbc dbc(odbc, opt.db);
+        //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+        DBType dbt(&dbc);
 
         print(Print::debug, opt, "staging table: " + table.tableName);
-        stageTable(opt, &table, &db, loadDir);
+        stageTable(opt, &table, &dbc, dbt, loadDir);
 
         print(Print::debug, opt, "merging table: " + table.tableName);
-        mergeTable(opt, table, &db);
+        mergeTable(opt, table, &dbc, dbt);
 
         print(Print::debug, opt, "replacing table: " + table.tableName);
-        dropTable(opt, table.tableName, &db);
-        placeTable(opt, table, &db);
-        //updateStatus(opt, table, &db);
+        dropTable(opt, table.tableName, &dbc);
+        placeTable(opt, table, &dbc);
+        //updateStatus(opt, table, &dbc);
 
         if (opt.debug)
             fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
-        updateDBPermissions(opt, &db);
+        updateDBPermissions(opt, &dbc);
 
-        commitTxn(opt, &db);
+        commitTxn(opt, &dbc);
 
-        //vacuumAnalyzeTable(opt, table, &db);
+        //vacuumAnalyzeTable(opt, table, &dbc);
 
         if (opt.verbose)
             loadTimer.print("load time");
@@ -328,13 +322,11 @@ void runLoad(const Options& opt)
 
     {
         print(Print::debug, opt, "connecting to database");
-        etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
-                opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
-        PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+        etymon::OdbcDbc dbc(odbc, opt.db);
+        //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
-        beginTxn(opt, &db);
-        dropOldTables(opt, &db);
-        commitTxn(opt, &db);
+        dropOldTables(opt, &dbc);
+        commitTxn(opt, &dbc);
     }
 
     // TODO Check if needed for history tables; if so, move into loop above.
@@ -412,7 +404,7 @@ void fillOptions(const Config& config, Options* opt)
     //config.getRequired(target + "ldpAdminPassword", &(opt->ldpAdminPassword));
     //config.get(target + "ldpUser", &(opt->ldpUser));
     //opt->dbtype.setType(opt->databaseType);
-    opt->dbtype.setType("PostgreSQL"); ////////////////// Set DBType
+    //opt->dbtype.setType("PostgreSQL"); ////////////////// Set DBType
 }
 
 void run(const etymon::CommandArgs& cargs)

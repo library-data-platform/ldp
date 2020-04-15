@@ -46,7 +46,7 @@ public:
     //string ldpAdmin;
     //string ldpAdminPassword;
     string ldpUser = "ldp";
-    DBType dbtype;
+    //DBType dbtype;
     bool unsafe = false;
     bool nossl = false;
     //string disableAnonymization;
