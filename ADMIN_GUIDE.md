@@ -220,20 +220,20 @@ __odbcinst.ini__
 ```
 [PostgreSQL]
 Description = PostgreSQL
-Driver      = /usr/lib/x86_64-linux-gnu/odbc/psqlodbcw.so
-FileUsage   = 1
+Driver = /usr/lib/x86_64-linux-gnu/odbc/psqlodbcw.so
+FileUsage = 1
 ```
 
 __odbc.ini__
 ```
 [ldpdemo]
 Description = ldp
-Driver      = PostgreSQL
-Database    = ldp
-Servername  = ldp.indexdata.com
-UserName    = ldpadmin
-Password    = (ldpadmin password here)
-Port        = 5432
+Driver = PostgreSQL
+Database = ldp
+Servername = ldp.indexdata.com
+UserName = ldpadmin
+Password = (ldpadmin password here)
+Port = 5432
 ```
 
 
