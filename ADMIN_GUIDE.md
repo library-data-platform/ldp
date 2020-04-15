@@ -47,14 +47,14 @@ following minimum requirements:
   * Storage: 160 GB HDD
 * LDP software (data loader)
   * Memory: 100 MB
-  * Storage: 80 GB HDD
+  * Storage: 160 GB HDD
 
 For large libraries, or if very high performance is desired, the
 database CPU and memory can be increased as needed.  Alternatively,
 Amazon Redshift can be used instead of PostgreSQL for significantly
-higher performance and scalability.  (See below for notes on configuring
-Redshift.)  The database storage capacity also can be increased as
-needed.
+higher performance and scalability.  (See below for notes on
+configuring Redshift.)  The database storage capacity also can be
+increased as needed.
 
 
 2\. Installing the software
