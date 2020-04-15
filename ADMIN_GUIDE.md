@@ -47,7 +47,7 @@ following minimum requirements:
   * Storage: 160 GB HDD
 * LDP software (data loader)
   * Memory: 100 MB
-  * Storage: 160 GB HDD
+  * Storage: 80 GB HDD
 
 For large libraries, or if very high performance is desired, the
 database CPU and memory can be increased as needed.  Alternatively,
@@ -126,9 +126,9 @@ For PostgreSQL, the ODBC driver can be installed with:
 ```shell
 $ sudo dnf install postgresql-odbc
 ```
+
 RapidJSON can be [installed from
 source](https://rapidjson.org/index.html#autotoc_md5).
-```
 
 #### macOS
 
@@ -164,43 +164,11 @@ $ cd src/
 $ ./ldp help
 ```
 
-### Configuring ODBC
-
-This software uses unixODBC to connect to the LDP database.  To
-configure ODBC, install the ODBC driver for the database system being
-used (PostgreSQL or Redshift), and create the files
-`$HOME/.odbcinst.ini` and `$HOME/.odbc.ini` as described in this
-[guide](http://www.unixodbc.org/odbcinst.html).
-
-The provided example files
-[odbcinst.ini](https://raw.githubusercontent.com/folio-org/ldp/master/examples/odbcinst.ini)
-and
-[odbc.ini](https://raw.githubusercontent.com/folio-org/ldp/master/examples/odbc.ini)
-can be used as templates.
-
-__odbcinst.ini__
-```
-[PostgreSQL]
-Description = PostgreSQL
-Driver      = /usr/lib/x86_64-linux-gnu/odbc/psqlodbcw.so
-FileUsage   = 1
-```
-
-__odbc.ini__
-```
-[ldpdemo]
-Description = ldp
-Driver      = PostgreSQL
-Database    = ldp
-Servername  = ldp.indexdata.com
-UserName    = ldpadmin
-Password    = (ldpadmin password here)
-Port        = 5432
-```
-
 
 3\. Preparing the LDP database
 ------------------------------
+
+### Configuring the database
 
 Before using the LDP software, we need a database to load data into.
 Two database users are also required: `ldpadmin`, an administrator
@@ -232,6 +200,40 @@ ALTER DATABASE ldp OWNER TO ldpadmin;
 REVOKE ALL ON SCHEMA public FROM public;
 GRANT ALL ON SCHEMA public TO ldpadmin;
 GRANT USAGE ON SCHEMA public TO ldp;
+```
+
+### Configuring ODBC
+
+The LDP software uses unixODBC to connect to the LDP database.  To
+configure ODBC, install the ODBC driver for the database system being
+used (PostgreSQL or Redshift), and create the files
+`$HOME/.odbcinst.ini` and `$HOME/.odbc.ini` as described in this
+[guide](http://www.unixodbc.org/odbcinst.html).
+
+The provided example files
+[odbcinst.ini](https://raw.githubusercontent.com/folio-org/ldp/master/examples/odbcinst.ini)
+and
+[odbc.ini](https://raw.githubusercontent.com/folio-org/ldp/master/examples/odbc.ini)
+can be used as templates.
+
+__odbcinst.ini__
+```
+[PostgreSQL]
+Description = PostgreSQL
+Driver      = /usr/lib/x86_64-linux-gnu/odbc/psqlodbcw.so
+FileUsage   = 1
+```
+
+__odbc.ini__
+```
+[ldpdemo]
+Description = ldp
+Driver      = PostgreSQL
+Database    = ldp
+Servername  = ldp.indexdata.com
+UserName    = ldpadmin
+Password    = (ldpadmin password here)
+Port        = 5432
 ```
 
 

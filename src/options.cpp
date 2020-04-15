@@ -76,7 +76,7 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
     static struct option longopts[] = {
         { "sourcedir", required_argument, NULL, 0   },
         { "source",    required_argument, NULL, 0   },
-        { "target",    required_argument, NULL, 0   },
+        //{ "target",    required_argument, NULL, 0   },
         { "config",    required_argument, NULL, 0   },
         { "verbose",   no_argument,       NULL, 'v' },
         { "debug",     no_argument,       NULL, 0   },
