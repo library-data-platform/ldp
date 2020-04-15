@@ -22,6 +22,7 @@ public:
     string dataSourceName;
     OdbcDbc(const OdbcEnv& odbcEnv, const string& dataSourceName);
     void getDbmsName(string* dbmsName) const;
+    void execDirect(const string& sql);
     void commit();
     void rollback();
     ~OdbcDbc();

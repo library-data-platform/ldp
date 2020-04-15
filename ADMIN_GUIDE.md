@@ -25,7 +25,7 @@ LDP Admin Guide
   * [PostgreSQL](https://www.postgresql.org/) 11.5 or later
   * [Amazon Redshift](https://aws.amazon.com/redshift/) 1.0.12094 or later
 * Runtime dependencies
-  * ODBC driver for PostgreSQL or Redshift
+  * ODBC driver for [PostgreSQL](https://odbc.postgresql.org/) or [Redshift](https://docs.aws.amazon.com/redshift/latest/mgmt/configure-odbc-connection.html#install-odbc-driver-linux)
 * Required to build from source code:
   * C++ compilers supported:
     * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later

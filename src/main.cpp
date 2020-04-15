@@ -171,12 +171,12 @@ void rollbackTxn(const Options& opt, etymon::Postgres* db)
 
 // Check for obvious problems that could show up later in the loading
 // process.
-static void runPreloadTests(const Options& opt, const etymon::OdbcEnv& odbcEnv)
+static void runPreloadTests(const Options& opt, const etymon::OdbcEnv& odbc)
 {
     //print(Print::verbose, opt, "running pre-load checks");
 
     // Check database connection.
-    etymon::OdbcDbc dbc(odbcEnv, opt.odbcDataSourceName);
+    etymon::OdbcDbc dbc(odbc, opt.db);
     // TODO Check if a time-out is used here, for example if the client
     // connection hangs due to a firewall.  Non-verbose output does not
     // communicate any problem while frozen.
@@ -185,14 +185,7 @@ static void runPreloadTests(const Options& opt, const etymon::OdbcEnv& odbcEnv)
     string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    {
-        etymon::OdbcStmt stmt(dbc);
-        SQLRETURN r = SQLExecDirect(stmt.stmt, (SQLCHAR *) sql.c_str(),
-                SQL_NTS);
-        if (!SQL_SUCCEEDED(r))
-            throw runtime_error("error testing LDP user in database: " +
-                    dbc.dataSourceName);
-    }
+    dbc.execDirect(sql);
     dbc.rollback();
 
     /*
@@ -222,9 +215,9 @@ void runLoad(const Options& opt)
     if (opt.verbose)
         fprintf(opt.err, "%s: start time: %s\n", opt.prog, ct.c_str());
 
-    etymon::OdbcEnv odbcEnv;
+    etymon::OdbcEnv odbc;
 
-    runPreloadTests(opt, odbcEnv);
+    runPreloadTests(opt, odbc);
 
     //////////////////////////////
 
@@ -410,7 +403,7 @@ void fillOptions(const Config& config, Options* opt)
 
     string target = "/ldpDatabase/";
     config.getRequired(target + "odbcDataSourceName",
-            &(opt->odbcDataSourceName));
+            &(opt->db));
     //config.getRequired(target + "databaseType", &(opt->databaseType));
     //config.getRequired(target + "databaseHost", &(opt->databaseHost));
     //config.getRequired(target + "databasePort", &(opt->databasePort));

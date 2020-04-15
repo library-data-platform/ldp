@@ -29,7 +29,7 @@ public:
     string okapiPassword;
     string extractDir;
     DirectExtraction direct;
-    string odbcDataSourceName;
+    string db;
     // Temporary
     string target = "(ldp database)";
     string databaseName = "ldpdev";
