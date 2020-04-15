@@ -226,6 +226,8 @@ void runLoad(const Options& opt)
 
     runPreloadTests(opt, odbcEnv);
 
+    //////////////////////////////
+
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
 
@@ -417,7 +419,7 @@ void fillOptions(const Config& config, Options* opt)
     //config.getRequired(target + "ldpAdminPassword", &(opt->ldpAdminPassword));
     //config.get(target + "ldpUser", &(opt->ldpUser));
     //opt->dbtype.setType(opt->databaseType);
-    opt->dbtype.setType("postgresql"); ////////////////// Set DBType
+    opt->dbtype.setType("PostgreSQL"); ////////////////// Set DBType
 }
 
 void run(const etymon::CommandArgs& cargs)

@@ -62,7 +62,7 @@ public:
     const char* prog = "ldp";
 };
 
-int evalopt(const etymon::CommandArgs& cargs, Options *opt);
+int evalopt(const etymon::CommandArgs& cargs, Options* opt);
 void debugOptions(const Options& o);
 
 #endif

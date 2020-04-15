@@ -30,7 +30,7 @@ static void validate(const Options& opt)
                 "--source and --sourcedir cannot both be specified");
 }
 
-static void evaloptlong(char *name, char *arg, Options *opt)
+static void evaloptlong(char *name, char *arg, Options* opt)
 {
     if (!strcmp(name, "sourcedir")) {
         opt->loadFromDir = arg;

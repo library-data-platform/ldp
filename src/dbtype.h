@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "../etymoncpp/include/odbc.h"
+
 using namespace std;
 
 enum class DBT {
@@ -14,6 +16,7 @@ enum class DBT {
 class DBType {
 public:
     DBType();
+    DBType(const etymon::OdbcDbc& dbc);
     void setType(const string& dbtype);
     const char* jsonType() const;
     void encodeStringConst(const char* str, string* newstr) const;

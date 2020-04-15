@@ -21,6 +21,7 @@ public:
     SQLHDBC dbc;
     string dataSourceName;
     OdbcDbc(const OdbcEnv& odbcEnv, const string& dataSourceName);
+    void getDbmsName(string* dbmsName) const;
     void commit();
     void rollback();
     ~OdbcDbc();

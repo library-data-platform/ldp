@@ -30,12 +30,13 @@ OdbcDbc::OdbcDbc(const OdbcEnv& odbcEnv, const string& dataSourceName)
         throw runtime_error("error setting AUTOCOMMIT_OFF in database: " +
                 dataSourceName);
     this->dataSourceName = dataSourceName;
-    ///////////////////////////////////////////////////////////////////////////
-    //SQLCHAR dbms_name[256];
-    //SQLGetInfo(this->dbc, SQL_DBMS_NAME, (SQLPOINTER) dbms_name,
-    //        sizeof(dbms_name), NULL);
-    //fprintf(stderr, "DBMS_NAME: %s\n", dbms_name);
-    ///////////////////////////////////////////////////////////////////////////
+}
+
+void OdbcDbc::getDbmsName(string* dbmsName) const
+{
+    SQLCHAR dn[256];
+    SQLGetInfo(this->dbc, SQL_DBMS_NAME, (SQLPOINTER) dn, sizeof(dn), NULL);
+    *dbmsName = (char*) dn;
 }
 
 void OdbcDbc::commit()
