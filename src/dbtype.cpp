@@ -2,21 +2,28 @@
 
 #include "dbtype.h"
 
-DBType::DBType()
+//DBType::DBType()
+//{
+//    dbt = DBT::unknown;
+//}
+
+DBType::DBType(etymon::OdbcDbc* dbc)
 {
-    dbt = DBT::unknown;
+    string dbmsName;
+    dbc->getDbmsName(&dbmsName);
+    setType(dbmsName);
 }
 
-void DBType::setType(const string& dbtype)
+void DBType::setType(const string& dbms)
 {
-    if (dbtype == "postgresql" || dbtype == "postgres") {
+    if (dbms == "PostgreSQL") {
         dbt = DBT::postgresql;
     } else {
-        if (dbtype == "redshift") {
+        if (dbms == "Redshift") {
             dbt = DBT::redshift;
         } else {
-            string err = "Unknown database type \"";
-            err += dbtype;
+            string err = "Unknown database system: \"";
+            err += dbms;
             err += "\"";
             throw runtime_error(err);
         }
@@ -39,9 +46,9 @@ const char* DBType::dbType() const
 {
     switch (dbt) {
         case DBT::postgresql:
-            return "postgresql";
+            return "PostgreSQL";
         case DBT::redshift:
-            return "redshift";
+            return "Redshift";
         default:
             return "(unknown)";
     }

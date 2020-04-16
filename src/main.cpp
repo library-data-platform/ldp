@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <vector>
 
+#include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/postgres.h"
 #include "config_json.h"
 #include "extract.h"
@@ -23,7 +24,7 @@
 
 static const char* optionHelp =
 "Usage:  ldp <command> <options>\n"
-"  e.g.  ldp load --source folio --target ldp\n"
+"  e.g.  ldp load --source folio\n"
 "Commands:\n"
 "  load                - Load data into the LDP database\n"
 "  help                - Display help information\n"
@@ -32,10 +33,6 @@ static const char* optionHelp =
 "                        the name of an object under \"sources\" in the\n"
 "                        configuration file that describes connection\n"
 "                        parameters for an Okapi instance\n"
-"  --target <name>     - Load data into target <name>, which refers to\n"
-"                        the name of an object under \"targets\" in the\n"
-"                        configuration file that describes connection\n"
-"                        parameters for a database\n"
 "  --config <path>     - Specify the location of the configuration file,\n"
 "                        overriding the LDPCONFIG environment variable\n"
 "  --unsafe            - Enable functions used for testing/debugging\n"
@@ -54,13 +51,13 @@ void debugNoticeProcessor(void *arg, const char *message)
             string("database response: ") + string(message));
 }
 
-static void initDB(const Options& opt, etymon::Postgres* db)
+static void initDB(const Options& opt, etymon::OdbcDbc* dbc)
 {
     string sql;
 
     sql = "CREATE SCHEMA IF NOT EXISTS ldp_catalog;";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     //sql =
     //    "CREATE TABLE IF NOT EXISTS ldp_catalog.table_updates (\n"
@@ -74,43 +71,43 @@ static void initDB(const Options& opt, etymon::Postgres* db)
 
     sql = "CREATE SCHEMA IF NOT EXISTS history;";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     sql = "CREATE SCHEMA IF NOT EXISTS local;";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 }
 
-static void updateDBPermissions(const Options& opt, etymon::Postgres* db)
+static void updateDBPermissions(const Options& opt, etymon::OdbcDbc* dbc)
 {
     string sql;
 
     sql = "GRANT USAGE ON SCHEMA ldp_catalog TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldp_catalog TO " +
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     sql = "GRANT USAGE ON SCHEMA history TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA history TO " +
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 
     sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->execDirect(sql);
 }
 
 void makeTmpDir(const Options& opt, string* loaddir)
@@ -151,33 +148,47 @@ void vacuumAnalyzeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
     }
 }
 
-void beginTxn(const Options& opt, etymon::Postgres* db)
-{
-    string sql = "BEGIN ISOLATION LEVEL READ COMMITTED;";
-    printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
-}
+//void beginTxn(const Options& opt, etymon::Postgres* db)
+//{
+//    string sql = "BEGIN ISOLATION LEVEL READ COMMITTED;";
+//    printSQL(Print::debug, opt, sql);
+//    { etymon::PostgresResult result(db, sql); }
+//}
 
-void commitTxn(const Options& opt, etymon::Postgres* db)
+void commitTxn(const Options& opt, etymon::OdbcDbc* dbc)
 {
     string sql = "COMMIT;";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->commit();
 }
 
-void rollbackTxn(const Options& opt, etymon::Postgres* db)
+void rollbackTxn(const Options& opt, etymon::OdbcDbc* dbc)
 {
     string sql = "ROLLBACK;";
     printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
+    dbc->commit();
 }
 
 // Check for obvious problems that could show up later in the loading
 // process.
-static void runPreloadTests(const Options& opt)
+static void runPreloadTests(const Options& opt, const etymon::OdbcEnv& odbc)
 {
     //print(Print::verbose, opt, "running pre-load checks");
 
+    // Check database connection.
+    etymon::OdbcDbc dbc(odbc, opt.db);
+    // TODO Check if a time-out is used here, for example if the client
+    // connection hangs due to a firewall.  Non-verbose output does not
+    // communicate any problem while frozen.
+
+    // Check that ldpUser is a valid user.
+    string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
+        opt.ldpUser + ";";
+    printSQL(Print::debug, opt, sql);
+    dbc.execDirect(sql);
+    rollbackTxn(opt, &dbc);
+
+    /*
     // Check database connection.
     etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
             opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
@@ -194,6 +205,7 @@ static void runPreloadTests(const Options& opt)
     { etymon::PostgresResult result(&db, sql); }
 
     rollbackTxn(opt, &db);
+    */
 }
 
 void runLoad(const Options& opt)
@@ -203,7 +215,9 @@ void runLoad(const Options& opt)
     if (opt.verbose)
         fprintf(opt.err, "%s: start time: %s\n", opt.prog, ct.c_str());
 
-    runPreloadTests(opt);
+    etymon::OdbcEnv odbc;
+
+    runPreloadTests(opt, odbc);
 
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
@@ -214,14 +228,12 @@ void runLoad(const Options& opt)
 
     {
         print(Print::debug, opt, "connecting to database");
-        etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
-                opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
-        PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+        etymon::OdbcDbc dbc(odbc, opt.db);
+        //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
         print(Print::debug, opt, "initializing database");
-        beginTxn(opt, &db);
-        initDB(opt, &db);
-        commitTxn(opt, &db);
+        initDB(opt, &dbc);
+        commitTxn(opt, &dbc);
     }
 
     Curl c;
@@ -281,30 +293,28 @@ void runLoad(const Options& opt)
             continue;
 
         print(Print::debug, opt, "connecting to database");
-        etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
-                opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
-        PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
-
-        beginTxn(opt, &db);
+        etymon::OdbcDbc dbc(odbc, opt.db);
+        //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+        DBType dbt(&dbc);
 
         print(Print::debug, opt, "staging table: " + table.tableName);
-        stageTable(opt, &table, &db, loadDir);
+        stageTable(opt, &table, &dbc, dbt, loadDir);
 
         print(Print::debug, opt, "merging table: " + table.tableName);
-        mergeTable(opt, table, &db);
+        mergeTable(opt, table, &dbc, dbt);
 
         print(Print::debug, opt, "replacing table: " + table.tableName);
-        dropTable(opt, table.tableName, &db);
-        placeTable(opt, table, &db);
-        //updateStatus(opt, table, &db);
+        dropTable(opt, table.tableName, &dbc);
+        placeTable(opt, table, &dbc);
+        //updateStatus(opt, table, &dbc);
 
         if (opt.debug)
             fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
-        updateDBPermissions(opt, &db);
+        updateDBPermissions(opt, &dbc);
 
-        commitTxn(opt, &db);
+        commitTxn(opt, &dbc);
 
-        //vacuumAnalyzeTable(opt, table, &db);
+        //vacuumAnalyzeTable(opt, table, &dbc);
 
         if (opt.verbose)
             loadTimer.print("load time");
@@ -312,13 +322,11 @@ void runLoad(const Options& opt)
 
     {
         print(Print::debug, opt, "connecting to database");
-        etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
-                opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
-        PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+        etymon::OdbcDbc dbc(odbc, opt.db);
+        //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
-        beginTxn(opt, &db);
-        dropOldTables(opt, &db);
-        commitTxn(opt, &db);
+        dropOldTables(opt, &dbc);
+        commitTxn(opt, &dbc);
     }
 
     // TODO Check if needed for history tables; if so, move into loop above.
@@ -351,30 +359,30 @@ void fillDirectOptions(const Config& config, const string& base, Options* opt)
             &(opt->direct.databasePassword));
 }
 
-void checkForOldParameters(const Options& opt, const Config& config,
-        const string& target)
-{
-    string s;
-    if (!config.get(target + "ldpAdmin", &s) &&
-            config.get(target + "databaseUser", &s))
-        fprintf(opt.err, "\n"
-                "The target configuration parameter \"databaseUser\" "
-                "is no longer supported;\n"
-                "it has been renamed to \"ldpAdmin\".\n"
-                "Please make this change in your configuration file.\n\n");
-    if (!config.get(target + "ldpAdminPassword", &s) &&
-            config.get(target + "databasePassword", &s))
-        fprintf(opt.err, "\n"
-                "The target configuration parameter \"databasePassword\" "
-                "is no longer supported;\n"
-                "it has been renamed to \"ldpAdminPassword\".\n"
-                "Please make this change in your configuration file.\n\n");
-}
+//void checkForOldParameters(const Options& opt, const Config& config,
+//        const string& target)
+//{
+//    string s;
+//    if (!config.get(target + "ldpAdmin", &s) &&
+//            config.get(target + "databaseUser", &s))
+//        fprintf(opt.err, "\n"
+//                "The target configuration parameter \"databaseUser\" "
+//                "is no longer supported;\n"
+//                "it has been renamed to \"ldpAdmin\".\n"
+//                "Please make this change in your configuration file.\n\n");
+//    if (!config.get(target + "ldpAdminPassword", &s) &&
+//            config.get(target + "databasePassword", &s))
+//        fprintf(opt.err, "\n"
+//                "The target configuration parameter \"databasePassword\" "
+//                "is no longer supported;\n"
+//                "it has been renamed to \"ldpAdminPassword\".\n"
+//                "Please make this change in your configuration file.\n\n");
+//}
 
 void fillOptions(const Config& config, Options* opt)
 {
     if (opt->loadFromDir == "") {
-        string source = "/sources/";
+        string source = "/dataSources/";
         source += opt->source;
         source += "/";
         config.getRequired(source + "okapiURL", &(opt->okapiURL));
@@ -385,18 +393,18 @@ void fillOptions(const Config& config, Options* opt)
         fillDirectOptions(config, source, opt);
     }
 
-    string target = "/targets/";
-    target += opt->target;
-    target += "/";
-    config.getRequired(target + "databaseName", &(opt->databaseName));
-    config.getRequired(target + "databaseType", &(opt->databaseType));
-    config.getRequired(target + "databaseHost", &(opt->databaseHost));
-    config.getRequired(target + "databasePort", &(opt->databasePort));
-    checkForOldParameters(*opt, config, target);
-    config.getRequired(target + "ldpAdmin", &(opt->ldpAdmin));
-    config.getRequired(target + "ldpAdminPassword", &(opt->ldpAdminPassword));
-    config.get(target + "ldpUser", &(opt->ldpUser));
-    opt->dbtype.setType(opt->databaseType);
+    string target = "/ldpDatabase/";
+    config.getRequired(target + "odbcDataSourceName",
+            &(opt->db));
+    //config.getRequired(target + "databaseType", &(opt->databaseType));
+    //config.getRequired(target + "databaseHost", &(opt->databaseHost));
+    //config.getRequired(target + "databasePort", &(opt->databasePort));
+    //checkForOldParameters(*opt, config, target);
+    //config.getRequired(target + "ldpAdmin", &(opt->ldpAdmin));
+    //config.getRequired(target + "ldpAdminPassword", &(opt->ldpAdminPassword));
+    //config.get(target + "ldpUser", &(opt->ldpUser));
+    //opt->dbtype.setType(opt->databaseType);
+    //opt->dbtype.setType("PostgreSQL"); ////////////////// Set DBType
 }
 
 void run(const etymon::CommandArgs& cargs)

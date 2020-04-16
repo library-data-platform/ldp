@@ -176,43 +176,6 @@ SELECT users.id AS user_id,
 ```
 
 
-<!--
-
-4\. Sample report query
------------------------
-
-This is an example of a report query that is based on relational attributes
-and does not require the use of JSON data.  The query retrieves the number of
-loans in subtotals by location and patron group.
-
-```sql
-SELECT t.temp_location AS location,
-       g.group AS group,
-       count(l.id) AS count
-    FROM ( SELECT id,
-                  user_id
-               FROM loans
-               WHERE loan_date BETWEEN '2017-01-01' AND '2019-12-31'
-         ) AS l
-        LEFT JOIN temp_loans AS t
-	    ON l.id = t.id
-        LEFT JOIN users AS u
-	    ON l.user_id = u.id
-        LEFT JOIN groups AS g
-	    ON u.patron_group = g.id
-    GROUP BY t.temp_location, g.group
-    ORDER BY t.temp_location, g.group;
-```
-
-Note that this query makes use of a join with the `temp_loans` table and
-its attribute `temp_location`, which are a temporary workaround for the
-lack of a check-out-time "effective location" field.  We expect that the
-needed field will be included later in the `loans` table, and the
-temporary join table will no longer be required.
-
--->
-
-
 4\. Local schemas
 -----------------
 
@@ -362,16 +325,6 @@ to be able to update queries and to prepare to recreate local result
 sets if needed.
 
 
-<!--
-6\. Schema documentation
-------------------------
-
-The LDP project plans to include documentation on mappings between LDP tables
-and the FOLIO module interfaces defined by the [FOLIO API
-documentation](https://dev.folio.org/reference/api/).
--->
-
-
 7\. Community
 -------------
 
@@ -415,5 +368,5 @@ repository.
 Further reading
 ---------------
 
-[**Learn about installing and administering the LDP in the Admin Guide > > >**](ADMIN_GUIDE.md)
+[__Learn about installing and administering the LDP in the Admin Guide > > >__](ADMIN_GUIDE.md)
 

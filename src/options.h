@@ -29,15 +29,24 @@ public:
     string okapiPassword;
     string extractDir;
     DirectExtraction direct;
-    string target;
-    string databaseName;
-    string databaseType;
-    string databaseHost;
-    string databasePort;
-    string ldpAdmin;
-    string ldpAdminPassword;
+    string db;
+    // Temporary
+    string target = "(ldp database)";
+    string databaseName = "ldpdev";
+    string databaseType = "postgresql";
+    string databaseHost = "localhost";
+    string databasePort = "5432";
+    string ldpAdmin = "ldpadmin";
+    string ldpAdminPassword = "nassargres";
+    //string target;
+    //string databaseName;
+    //string databaseType;
+    //string databaseHost;
+    //string databasePort;
+    //string ldpAdmin;
+    //string ldpAdminPassword;
     string ldpUser = "ldp";
-    DBType dbtype;
+    //DBType dbtype;
     bool unsafe = false;
     bool nossl = false;
     //string disableAnonymization;
@@ -53,7 +62,7 @@ public:
     const char* prog = "ldp";
 };
 
-int evalopt(const etymon::CommandArgs& cargs, Options *opt);
+int evalopt(const etymon::CommandArgs& cargs, Options* opt);
 void debugOptions(const Options& o);
 
 #endif

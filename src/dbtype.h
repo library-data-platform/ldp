@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "../etymoncpp/include/odbc.h"
+
 using namespace std;
 
 enum class DBT {
@@ -13,14 +15,15 @@ enum class DBT {
 
 class DBType {
 public:
-    DBType();
-    void setType(const string& dbtype);
+    //DBType();
+    DBType(etymon::OdbcDbc* dbc);
     const char* jsonType() const;
     void encodeStringConst(const char* str, string* newstr) const;
     const char* dbType() const;
     void redshiftKeys(const char* distkey, const char* sortkey,
             string* sql) const;
 private:
+    void setType(const string& dbtype);
     DBT dbt;
 };
 
