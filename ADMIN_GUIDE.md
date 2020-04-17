@@ -249,7 +249,8 @@ __ldpconfig.json__
 ```
 {
     "ldpDatabase": {
-        "odbcDataSourceName": "ldpdemo"
+        "odbcDataSourceName": "ldpdemo",
+        "profiles": [ "FOLIO" ]
     },
     "dataSources": {
         "folio": {
