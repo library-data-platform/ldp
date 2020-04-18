@@ -20,11 +20,11 @@ LDP Admin Guide
 
 * Operating systems supported:
   * Linux 4.18.0 or later
-  * macOS 10.15.2 or later (non-production use only)
+  * macOS 10.15.3 or later (non-production use only)
 * Database systems supported:
   * [PostgreSQL](https://www.postgresql.org/) 11.5 or later
   * [Amazon Redshift](https://aws.amazon.com/redshift/) 1.0.12094 or later
-* Software dependencies
+* Software dependencies:
   * ODBC driver for [PostgreSQL](https://odbc.postgresql.org/) or [Redshift](https://docs.aws.amazon.com/redshift/latest/mgmt/configure-odbc-connection.html#install-odbc-driver-linux)
   * [unixODBC](http://www.unixodbc.org/) 2.3.4 or later
   * [libpq](https://www.postgresql.org/) 11.5 or later
@@ -42,10 +42,10 @@ The LDP software and database are designed to be performant on low
 cost hardware, and in most cases they should run well with the
 following minimum requirements:
 
-* Database
+* Database:
   * Memory: 1 GB
   * Storage: 160 GB HDD
-* LDP software (data loader)
+* LDP software:
   * Memory: 100 MB
   * Storage: 160 GB HDD
 
