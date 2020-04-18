@@ -24,17 +24,17 @@ LDP Admin Guide
 * Database systems supported:
   * [PostgreSQL](https://www.postgresql.org/) 11.5 or later
   * [Amazon Redshift](https://aws.amazon.com/redshift/) 1.0.12094 or later
-* Runtime dependencies
+* Software dependencies
   * ODBC driver for [PostgreSQL](https://odbc.postgresql.org/) or [Redshift](https://docs.aws.amazon.com/redshift/latest/mgmt/configure-odbc-connection.html#install-odbc-driver-linux)
+  * [unixODBC](http://www.unixodbc.org/) 2.3.4 or later
+  * [libpq](https://www.postgresql.org/) 11.5 or later
+  * [libcurl](https://curl.haxx.se/) 7.64.0 or later
+  * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
 * Required to build from source code:
   * C++ compilers supported:
     * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
     * [Clang](https://clang.llvm.org/) 8.0.1 or later
   * [CMake](https://cmake.org/) 3.16.2 or later
-  * [unixODBC](http://www.unixodbc.org/) 2.3.4 or later
-  * [libpq](https://www.postgresql.org/) 11.5 or later
-  * [libcurl](https://curl.haxx.se/) 7.64.0 or later
-  * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
 
 ### Hardware
 
@@ -104,8 +104,8 @@ a package manager on some platforms.
 #### Debian Linux
 
 ```shell
-$ sudo apt install cmake g++ libcurl4-openssl-dev unixodbc unixodbc-dev \
-      libpq-dev postgresql-server-dev-all rapidjson-dev
+$ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
+      postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
@@ -117,8 +117,8 @@ $ sudo apt install odbc-postgresql
 #### RHEL/CentOS Linux
 
 ```shell
-$ sudo dnf install make cmake gcc-c++ libcurl-devel unixODBC-devel \
-      libpq-devel postgresql-server-devel
+$ sudo dnf install cmake gcc-c++ libcurl-devel libpq-devel make \
+      postgresql-server-devel unixODBC-devel
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
@@ -135,7 +135,7 @@ source](https://rapidjson.org/index.html#autotoc_md5).
 Using [Homebrew](https://brew.sh/):
 
 ```shell
-$ brew install cmake unixodbc psqlodbc postgresql rapidjson
+$ brew install cmake postgresql psqlodbc rapidjson unixodbc
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
@@ -250,7 +250,7 @@ __ldpconfig.json__
 {
     "ldpDatabase": {
         "odbcDataSourceName": "ldpdemo",
-        "profiles": [ "FOLIO" ]
+        "profiles": [ "folio" ]
     },
     "dataSources": {
         "folio": {

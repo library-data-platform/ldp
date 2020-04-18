@@ -1,7 +1,7 @@
 {
     "ldpDatabase": {
         "odbcDataSourceName": "ldpdemo",
-        "profiles": [ "FOLIO" ]
+        "profiles": [ "folio" ]
     },
     "dataSources": {
         "folio": {
