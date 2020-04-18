@@ -4,7 +4,7 @@
         "profiles": [ "folio" ]
     },
     "dataSources": {
-        "folio": {
+        "okapi": {
             "okapiURL": "https://folio-release-okapi.aws.indexdata.com",
             "okapiTenant": "diku",
             "okapiUser": "diku_admin",

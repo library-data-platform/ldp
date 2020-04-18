@@ -253,7 +253,7 @@ __ldpconfig.json__
         "profiles": [ "folio" ]
     },
     "dataSources": {
-        "folio": {
+        "okapi": {
             "okapiURL": "https://folio-release-okapi.aws.indexdata.com",
             "okapiTenant": "diku",
             "okapiUser": "diku_admin",
@@ -291,7 +291,7 @@ usage is low, in order to refresh the database with new data from Okapi.
 
 To extract data from Okapi and load them into the LDP database:
 ```shell
-$ ldp load --source folio -v
+$ ldp load --source okapi -v
 ```
 
 The `load` command is used to load data.  The data are extracted from a
@@ -401,7 +401,7 @@ and library data transmitted to the database.  However, TLS/SSL can be
 disabled using the `--unsafe` and `--nossl` options, e.g.:
 
 ```shell
-$ ldp load --source folio --unsafe --nossl
+$ ldp load --source okapi --unsafe --nossl
 ```
 
 
@@ -415,7 +415,7 @@ implemented in the LDP software that allows some data to be extracted
 directly from a module's internal database, bypassing the module API.
 Direct extraction is currently supported for holdings, instances, and
 items.  It can be enabled by adding database connection parameters to
-the source configuration, for example:
+a data source configuration, for example:
 
 ```
 {
@@ -423,7 +423,7 @@ the source configuration, for example:
     ( . . . )
 
     "dataSources": {
-        "folio": {
+        "okapi": {
 
             ( . . . )
 
