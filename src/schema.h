@@ -34,12 +34,17 @@ public:
     static ColumnType selectColumnType(const Counts& counts);
 };
 
+enum class SourceType {
+    rmb,
+    rmbMarc
+};
+
 class TableSchema {
 public:
     bool skip = false;
     string tableName;
     string sourcePath;
-    int sourceType;
+    SourceType sourceType;
     vector<ColumnSchema> columns;
     string moduleName;
     string directSourceTable;

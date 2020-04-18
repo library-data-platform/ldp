@@ -200,8 +200,7 @@ static void endInserts(const Options& opt, string* buffer, etymon::OdbcDbc* dbc)
 
 static void writeTuple(const Options& opt, const DBType& dbt,
         const TableSchema& table, const json::Document& doc,
-        const json::StringBuffer& jsondata, size_t* recordCount,
-        string* insertBuffer)
+        size_t* recordCount, string* insertBuffer)
 {
     if (*recordCount > 0)
         *insertBuffer += ',';
@@ -255,14 +254,30 @@ static void writeTuple(const Options& opt, const DBType& dbt,
     }
 
     string data;
-    dbt.encodeStringConst(jsondata.GetString(), &data);
-    // Check if JSON object exceeds maximum string length (65535).
-    if (data.length() >= 65535) {
+    json::StringBuffer jsonText;
+    json::PrettyWriter<json::StringBuffer> writer(jsonText);
+    doc.Accept(writer);
+    dbt.encodeStringConst(jsonText.GetString(), &data);
+    // Check if pretty-printed JSON exceeds maximum string length (65535).
+    if (data.length() > 65535) {
         print(Print::warning, opt,
-                "json object size exceeds database limit: " +
-                table.sourcePath + ": " + id);
-        data = "NULL";
+                "formatted JSON object size exceeds database limit, "
+                "compacting: " + table.sourcePath + ": " + id);
+        // Try compact-printed JSON.
+        json::StringBuffer jsonText;
+        json::Writer<json::StringBuffer> writer(jsonText);
+        doc.Accept(writer);
+        dbt.encodeStringConst(jsonText.GetString(), &data);
+        if (data.length() > 65535) {
+            print(Print::warning, opt,
+                    "compacted JSON object size exceeds database limit: " +
+                    table.sourcePath + ": " + id);
+            data = "NULL";
+        }
     }
+
+    //print(Print::warning, opt, "storing record as:\n" + data + "\n");
+
     *insertBuffer += data;
     *insertBuffer += ",1)";
     (*recordCount)++;
@@ -286,18 +301,6 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
         json::Document doc;
         doc.ParseInsitu<pflags>(buffer);
 
-        // See:  https://rapidjson.org/md_doc_pointer.html
-        // https://stackoverflow.com/questions/40833243/rapidjson-pretty-print-using-json-string-as-input-to-the-writer
-        //if (Value* id = Pointer("/id").Get(d))
-        //    printf("id = %s\n", id->GetString());
-
-        //printf("id = %s\n", d["id"].GetString());
-        //Pointer("/id").Set(d, "ANONYMIZED");
-        //printf("id = %s\n", d["id"].GetString());
-
-        //Pointer("/personal/lastName").Set(d, "ANONYMIZED");
-        //Pointer("/personal/firstName").Set(d, "ANONYMIZED");
-
         string path;
         bool collectStats = (pass == 1);
         bool anonymizeTable;
@@ -307,20 +310,11 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
             anonymizeTable =
                 (strcmp(tableSchema.tableName.c_str(), "user_users") == 0);
         }
-        // Collect statistics and anonimize data
+        // Collect statistics and anonymize data.
         processJSONRecord(&doc, &doc, collectStats, anonymizeTable, path, 0,
                 stats);
 
         if (pass == 2) {
-
-            // Normalize JSON format
-            json::StringBuffer jsondata;
-            json::PrettyWriter<json::StringBuffer> writer(jsondata);
-            doc.Accept(writer);
-
-            //if (opt.debug)
-            //    fprintf(opt.err, "Record ready for staging:\n%s\n",
-            //            jsondata.GetString());
 
             //if (insertBuffer.length() > 16500000) {
             if (insertBuffer.length() > 10000000) {
@@ -329,9 +323,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
                 recordCount = 0;
             }
 
-            writeTuple(opt, dbt, tableSchema, doc, jsondata, &recordCount,
-                    &insertBuffer);
-
+            writeTuple(opt, dbt, tableSchema, doc, &recordCount, &insertBuffer);
         }
 
         free(buffer);
