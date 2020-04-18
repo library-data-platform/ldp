@@ -30,7 +30,7 @@ void Schema::MakeDefaultSchema(Schema* schema)
 
     TableSchema table;
 
-    table.sourceType = 1;
+    table.sourceType = SourceType::rmb;
 
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-circulation-storage";
@@ -454,6 +454,15 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.sourcePath = "/organizations-storage/urls";
     table.tableName = "organization_urls";
     schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
+    //table.moduleName = "mod-source-record-storage";
+
+    //table.sourceType = SourceType::rmbMarc;
+    //table.sourcePath = "/source-storage/records";
+    //table.tableName = "source_records";
+    //schema->tables.push_back(table);
+    //table.sourceType = SourceType::rmb;
 
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-users";
