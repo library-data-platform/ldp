@@ -20,21 +20,21 @@ LDP Admin Guide
 
 * Operating systems supported:
   * Linux 4.18.0 or later
-  * macOS 10.15.2 or later (non-production use only)
+  * macOS 10.15.3 or later (non-production use only)
 * Database systems supported:
   * [PostgreSQL](https://www.postgresql.org/) 11.5 or later
   * [Amazon Redshift](https://aws.amazon.com/redshift/) 1.0.12094 or later
-* Runtime dependencies
+* Software dependencies:
   * ODBC driver for [PostgreSQL](https://odbc.postgresql.org/) or [Redshift](https://docs.aws.amazon.com/redshift/latest/mgmt/configure-odbc-connection.html#install-odbc-driver-linux)
+  * [unixODBC](http://www.unixodbc.org/) 2.3.4 or later
+  * [libpq](https://www.postgresql.org/) 11.5 or later
+  * [libcurl](https://curl.haxx.se/) 7.64.0 or later
+  * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
 * Required to build from source code:
   * C++ compilers supported:
     * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
     * [Clang](https://clang.llvm.org/) 8.0.1 or later
   * [CMake](https://cmake.org/) 3.16.2 or later
-  * [unixODBC](http://www.unixodbc.org/) 2.3.4 or later
-  * [libpq](https://www.postgresql.org/) 11.5 or later
-  * [libcurl](https://curl.haxx.se/) 7.64.0 or later
-  * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
 
 ### Hardware
 
@@ -42,10 +42,10 @@ The LDP software and database are designed to be performant on low
 cost hardware, and in most cases they should run well with the
 following minimum requirements:
 
-* Database
+* Database:
   * Memory: 1 GB
   * Storage: 160 GB HDD
-* LDP software (data loader)
+* LDP software:
   * Memory: 100 MB
   * Storage: 160 GB HDD
 
@@ -104,8 +104,8 @@ a package manager on some platforms.
 #### Debian Linux
 
 ```shell
-$ sudo apt install cmake g++ libcurl4-openssl-dev unixodbc unixodbc-dev \
-      libpq-dev postgresql-server-dev-all rapidjson-dev
+$ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
+      postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
@@ -117,8 +117,8 @@ $ sudo apt install odbc-postgresql
 #### RHEL/CentOS Linux
 
 ```shell
-$ sudo dnf install make cmake gcc-c++ libcurl-devel unixODBC-devel \
-      libpq-devel postgresql-server-devel
+$ sudo dnf install cmake gcc-c++ libcurl-devel libpq-devel make \
+      postgresql-server-devel unixODBC-devel
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
@@ -135,7 +135,7 @@ source](https://rapidjson.org/index.html#autotoc_md5).
 Using [Homebrew](https://brew.sh/):
 
 ```shell
-$ brew install cmake unixodbc psqlodbc postgresql rapidjson
+$ brew install cmake postgresql psqlodbc rapidjson unixodbc
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
@@ -250,10 +250,10 @@ __ldpconfig.json__
 {
     "ldpDatabase": {
         "odbcDataSourceName": "ldpdemo",
-        "profiles": [ "FOLIO" ]
+        "profiles": [ "folio" ]
     },
     "dataSources": {
-        "folio": {
+        "okapi": {
             "okapiURL": "https://folio-release-okapi.aws.indexdata.com",
             "okapiTenant": "diku",
             "okapiUser": "diku_admin",
@@ -264,8 +264,9 @@ __ldpconfig.json__
 }
 ```
 
-This file defines parameters for connecting to Okapi and to the LDP
-database.  Please see the next section for how the parameters are used.
+This file defines parameters for connecting to data sources and to the
+LDP database.  Please see the next section for how the parameters are
+used.
 
 The LDP software looks for the configuration file in a location
 specified by the `LDPCONFIG` environment variable, e.g. using the Bash
@@ -287,20 +288,20 @@ $ ldp load --config /etc/ldp/ldpconfig.json  ( etc. )
 ----------------------------------
 
 The LDP loader is intended to be run once per day, at a time of day when
-usage is low, in order to refresh the database with new data from Okapi.
+usage is low, in order to refresh the database with new data.
 
-To extract data from Okapi and load them into the LDP database:
+To extract data and load them into the LDP database:
 ```shell
-$ ldp load --source folio -v
+$ ldp load --source okapi -v
 ```
 
 The `load` command is used to load data.  The data are extracted from a
 data "source" and loaded into the LDP database.
 
-The `--source` option specifies the name of a section under `sources` in
-the LDP configuration file.  This section should provide connection
-details for Okapi, as well as a directory (`extractDir`) where temporary
-extracted files can be written.
+The `--source` option specifies the name of a section under `sources`
+in the LDP configuration file.  This section should provide connection
+details for a data source, as well as a directory (`extractDir`) where
+temporary extracted files can be written.
 
 The `-v` option enables verbose output.  For even more verbose output,
 the `--debug` option can be used to see commands that are sent to the
@@ -401,7 +402,7 @@ and library data transmitted to the database.  However, TLS/SSL can be
 disabled using the `--unsafe` and `--nossl` options, e.g.:
 
 ```shell
-$ ldp load --source folio --unsafe --nossl
+$ ldp load --source okapi --unsafe --nossl
 ```
 
 
@@ -415,7 +416,7 @@ implemented in the LDP software that allows some data to be extracted
 directly from a module's internal database, bypassing the module API.
 Direct extraction is currently supported for holdings, instances, and
 items.  It can be enabled by adding database connection parameters to
-the source configuration, for example:
+a data source configuration, for example:
 
 ```
 {
@@ -423,7 +424,7 @@ the source configuration, for example:
     ( . . . )
 
     "dataSources": {
-        "folio": {
+        "okapi": {
 
             ( . . . )
 
