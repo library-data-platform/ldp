@@ -456,13 +456,13 @@ void Schema::MakeDefaultSchema(Schema* schema)
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
-    //table.moduleName = "mod-source-record-storage";
+    table.moduleName = "mod-source-record-storage";
 
-    //table.sourceType = SourceType::rmbMarc;
-    //table.sourcePath = "/source-storage/records";
-    //table.tableName = "source_records";
-    //schema->tables.push_back(table);
-    //table.sourceType = SourceType::rmb;
+    table.sourceType = SourceType::rmbMarc;
+    table.sourcePath = "/source-storage/records";
+    table.tableName = "testing_source_records";
+    schema->tables.push_back(table);
+    table.sourceType = SourceType::rmb;
 
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-users";
