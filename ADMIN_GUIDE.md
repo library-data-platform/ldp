@@ -264,8 +264,9 @@ __ldpconfig.json__
 }
 ```
 
-This file defines parameters for connecting to Okapi and to the LDP
-database.  Please see the next section for how the parameters are used.
+This file defines parameters for connecting to data sources and to the
+LDP database.  Please see the next section for how the parameters are
+used.
 
 The LDP software looks for the configuration file in a location
 specified by the `LDPCONFIG` environment variable, e.g. using the Bash
@@ -287,9 +288,9 @@ $ ldp load --config /etc/ldp/ldpconfig.json  ( etc. )
 ----------------------------------
 
 The LDP loader is intended to be run once per day, at a time of day when
-usage is low, in order to refresh the database with new data from Okapi.
+usage is low, in order to refresh the database with new data.
 
-To extract data from Okapi and load them into the LDP database:
+To extract data and load them into the LDP database:
 ```shell
 $ ldp load --source okapi -v
 ```
@@ -297,10 +298,10 @@ $ ldp load --source okapi -v
 The `load` command is used to load data.  The data are extracted from a
 data "source" and loaded into the LDP database.
 
-The `--source` option specifies the name of a section under `sources` in
-the LDP configuration file.  This section should provide connection
-details for Okapi, as well as a directory (`extractDir`) where temporary
-extracted files can be written.
+The `--source` option specifies the name of a section under `sources`
+in the LDP configuration file.  This section should provide connection
+details for a data source, as well as a directory (`extractDir`) where
+temporary extracted files can be written.
 
 The `-v` option enables verbose output.  For even more verbose output,
 the `--debug` option can be used to see commands that are sent to the
