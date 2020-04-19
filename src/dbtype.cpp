@@ -42,6 +42,18 @@ const char* DBType::jsonType() const
     }
 }
 
+const char* DBType::currentTimestamp() const
+{
+    switch (dbt) {
+        case DBT::postgresql:
+            return "CURRENT_TIMESTAMP";
+        case DBT::redshift:
+            return "SYSDATE";
+        default:
+            return "(unknown)";
+    }
+}
+
 const char* DBType::dbType() const
 {
     switch (dbt) {
