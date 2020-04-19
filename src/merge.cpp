@@ -59,7 +59,7 @@ void mergeTable(const Options& opt, const TableSchema& table,
 
     sql =
         "INSERT INTO " + historyTable + "\n"
-        "SELECT s.id, s.data, 'now', s.tenant_id\n"
+        "SELECT s.id, s.data, " + dbt.currentTimestamp() + ", s.tenant_id\n"
         "    FROM " + loadingTable + " AS s\n"
         "        LEFT JOIN " + latestHistoryTable + " AS h\n"
         "            ON s.tenant_id = h.tenant_id AND\n"
@@ -90,22 +90,23 @@ void placeTable(const Options& opt, const TableSchema& table,
     dbc->execDirect(sql);
 }
 
-void updateStatus(const Options& opt, const TableSchema& table,
-        etymon::OdbcDbc* dbc)
-{
-    string sql =
-        "DELETE FROM ldp_catalog.table_updates WHERE table_name = '" +
-        table.tableName + "' AND tenant_id = 1;";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+//void updateStatus(const Options& opt, const TableSchema& table,
+//        etymon::OdbcDbc* dbc)
+//{
+//    string sql =
+//        "DELETE FROM ldp_catalog.table_updates WHERE table_name = '" +
+//        table.tableName + "' AND tenant_id = 1;";
+//    printSQL(Print::debug, opt, sql);
+//    dbc->execDirect(sql);
 
-    sql =
-        "INSERT INTO ldp_catalog.table_updates\n"
-        "    (table_name, updated, tenant_id)\n"
-        "    VALUES ('" + table.tableName + "', 'now', 1);";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
-}
+//    sql =
+//        "INSERT INTO ldp_catalog.table_updates\n"
+//        "    (table_name, updated, tenant_id)\n"
+//        "    VALUES ('" +
+//        table.tableName + "', " + dbt.currentTimestamp() + ", 1);";
+//    printSQL(Print::debug, opt, sql);
+//    dbc->execDirect(sql);
+//}
 
 static void dropTablePair(const Options& opt, const string& tableName,
         etymon::OdbcDbc* dbc)
