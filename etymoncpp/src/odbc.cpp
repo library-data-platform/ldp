@@ -41,17 +41,27 @@ OdbcDbc::OdbcDbc(const OdbcEnv& odbcEnv, const string& dataSourceName)
 {
     SQLAllocHandle(SQL_HANDLE_DBC, odbcEnv.env, &dbc);
     string connStr = "DSN=" + dataSourceName + ";";
-    SQLRETURN r = SQLDriverConnect(dbc, NULL, (SQLCHAR *) connStr.c_str(),
+    SQLRETURN rc = SQLDriverConnect(dbc, NULL, (SQLCHAR *) connStr.c_str(),
             SQL_NTS, NULL, 0, NULL, SQL_DRIVER_COMPLETE);
-    if (!SQL_SUCCEEDED(r))
+    if (!SQL_SUCCEEDED(rc))
         throw runtime_error("failed to connect to database: " + dataSourceName);
-    // Set AUTOCOMMIT_OFF.
-    r = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT,
-            (SQLPOINTER)SQL_AUTOCOMMIT_OFF, SQL_IS_UINTEGER);
-    if (!SQL_SUCCEEDED(r))
-        throw runtime_error("error setting AUTOCOMMIT_OFF in database: " +
+
+    // Set isolation level to serializable.
+    rc = SQLSetConnectAttr(dbc, SQL_ATTR_TXN_ISOLATION,
+            (SQLPOINTER) SQL_TXN_SERIALIZABLE, SQL_IS_UINTEGER);
+    if (!SQL_SUCCEEDED(rc))
+        throw runtime_error(
+                "error setting transaction isolation level in database: " +
                 dataSourceName);
+
     this->dataSourceName = dataSourceName;
+}
+
+OdbcDbc::~OdbcDbc()
+{
+    rollback();
+    SQLDisconnect(dbc);
+    SQLFreeHandle(SQL_HANDLE_DBC, dbc);
 }
 
 void OdbcDbc::getDbmsName(string* dbmsName)
@@ -74,27 +84,42 @@ void OdbcDbc::execDirect(const string& sql)
     }
 }
 
+void OdbcDbc::startTransaction()
+{
+    setAutoCommit(false);
+}
+
 void OdbcDbc::commit()
 {
-    SQLRETURN r = SQLEndTran(SQL_HANDLE_DBC, dbc, SQL_COMMIT);
-    if (!SQL_SUCCEEDED(r))
+    SQLRETURN rc = SQLEndTran(SQL_HANDLE_DBC, dbc, SQL_COMMIT);
+    try {
+        setAutoCommit(true);
+    } catch (runtime_error& e) {}
+    if (!SQL_SUCCEEDED(rc))
         throw runtime_error("error committing transaction in database: " +
                 dataSourceName);
 }
 
 void OdbcDbc::rollback()
 {
-    SQLRETURN r = SQLEndTran(SQL_HANDLE_DBC, dbc, SQL_ROLLBACK);
-    if (!SQL_SUCCEEDED(r))
+    SQLRETURN rc = SQLEndTran(SQL_HANDLE_DBC, dbc, SQL_ROLLBACK);
+    try {
+        setAutoCommit(true);
+    } catch (runtime_error& e) {}
+    if (!SQL_SUCCEEDED(rc))
         throw runtime_error("error rolling back transaction in database: " +
                 dataSourceName);
 }
 
-OdbcDbc::~OdbcDbc()
+void OdbcDbc::setAutoCommit(bool autoCommit)
 {
-    rollback();
-    SQLDisconnect(dbc);
-    SQLFreeHandle(SQL_HANDLE_DBC, dbc);
+    SQLRETURN rc = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT,
+            autoCommit ?
+            (SQLPOINTER) SQL_AUTOCOMMIT_ON : (SQLPOINTER) SQL_AUTOCOMMIT_OFF,
+            SQL_IS_UINTEGER);
+    if (!SQL_SUCCEEDED(rc))
+        throw runtime_error("error setting autocommit in database: " +
+                dataSourceName);
 }
 
 OdbcStmt::OdbcStmt(const OdbcDbc& odbcDbc)
