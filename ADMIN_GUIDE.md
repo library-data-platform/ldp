@@ -233,6 +233,7 @@ Servername = ldp.indexdata.com
 UserName = ldpadmin
 Password = (ldpadmin password here)
 Port = 5432
+SSLMode = require
 ```
 
 
