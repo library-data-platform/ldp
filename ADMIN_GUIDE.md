@@ -249,8 +249,7 @@ __ldpconfig.json__
 ```
 {
     "ldpDatabase": {
-        "odbcDataSourceName": "ldpdemo",
-        "profiles": [ "folio" ]
+        "odbcDataSourceName": "ldpdemo"
     },
     "dataSources": {
         "okapi": {

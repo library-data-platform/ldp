@@ -148,27 +148,6 @@ void vacuumAnalyzeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
     }
 }
 
-//void beginTxn(const Options& opt, etymon::Postgres* db)
-//{
-//    string sql = "BEGIN ISOLATION LEVEL READ COMMITTED;";
-//    printSQL(Print::debug, opt, sql);
-//    { etymon::PostgresResult result(db, sql); }
-//}
-
-void commitTxn(const Options& opt, etymon::OdbcDbc* dbc)
-{
-    string sql = "COMMIT;";
-    printSQL(Print::debug, opt, sql);
-    dbc->commit();
-}
-
-void rollbackTxn(const Options& opt, etymon::OdbcDbc* dbc)
-{
-    string sql = "ROLLBACK;";
-    printSQL(Print::debug, opt, sql);
-    dbc->commit();
-}
-
 // Check for obvious problems that could show up later in the loading
 // process.
 static void runPreloadTests(const Options& opt, const etymon::OdbcEnv& odbc)
@@ -181,12 +160,13 @@ static void runPreloadTests(const Options& opt, const etymon::OdbcEnv& odbc)
     // connection hangs due to a firewall.  Non-verbose output does not
     // communicate any problem while frozen.
 
+    dbc.startTransaction();
     // Check that ldpUser is a valid user.
     string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     dbc.execDirect(sql);
-    rollbackTxn(opt, &dbc);
+    dbc.rollback();
 
     /*
     // Check database connection.
@@ -231,9 +211,10 @@ void runLoad(const Options& opt)
         etymon::OdbcDbc dbc(odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
+        dbc.startTransaction();
         print(Print::debug, opt, "initializing database");
         initDB(opt, &dbc);
-        commitTxn(opt, &dbc);
+        dbc.commit();
     }
 
     Curl c;
@@ -297,6 +278,8 @@ void runLoad(const Options& opt)
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
         DBType dbt(&dbc);
 
+        dbc.startTransaction();
+
         print(Print::debug, opt, "staging table: " + table.tableName);
         stageTable(opt, &table, &dbc, dbt, loadDir);
 
@@ -312,7 +295,7 @@ void runLoad(const Options& opt)
             fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
         updateDBPermissions(opt, &dbc);
 
-        commitTxn(opt, &dbc);
+        dbc.commit();
 
         //vacuumAnalyzeTable(opt, table, &dbc);
 
@@ -325,8 +308,9 @@ void runLoad(const Options& opt)
         etymon::OdbcDbc dbc(odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
+        dbc.startTransaction();
         dropOldTables(opt, &dbc);
-        commitTxn(opt, &dbc);
+        dbc.commit();
     }
 
     // TODO Check if needed for history tables; if so, move into loop above.

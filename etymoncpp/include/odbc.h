@@ -23,11 +23,14 @@ public:
     SQLHDBC dbc;
     string dataSourceName;
     OdbcDbc(const OdbcEnv& odbcEnv, const string& dataSourceName);
+    ~OdbcDbc();
     void getDbmsName(string* dbmsName);
     void execDirect(const string& sql);
+    void startTransaction();
     void commit();
     void rollback();
-    ~OdbcDbc();
+private:
+    void setAutoCommit(bool autoCommit);
 };
 
 class OdbcStmt {
