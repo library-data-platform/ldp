@@ -9,8 +9,7 @@ LDP Admin Guide
 5\. Loading data into the database  
 6\. Running the LDP in production  
 7\. Loading data from files (for testing only)  
-8\. Disabling database TLS/SSL (for testing only)  
-9\. "Direct extraction" of large data
+8\. "Direct extraction" of large data
 
 
 1\. System requirements
@@ -380,21 +379,7 @@ development to combine extracted test data with additional static test
 data.
 
 
-8\. Disabling database TLS/SSL (for testing only)
--------------------------------------------------
-
-For very preliminary testing with a database running on `localhost`, one
-may desire to connect to the database without TLS/SSL.  Disabling
-TLS/SSL is generally not recommended, because it may expose passwords
-and library data transmitted to the database.  However, TLS/SSL can be
-disabled using the `--unsafe` and `--nossl` options, e.g.:
-
-```shell
-$ ldp update --config ldpconf.json --source okapi --unsafe --nossl
-```
-
-
-9\. "Direct extraction" of large data
+8\. "Direct extraction" of large data
 --------------------------------------
 
 At the time of writing (LDP 0.5), FOLIO modules do not generally offer
