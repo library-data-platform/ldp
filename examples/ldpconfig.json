@@ -1,7 +1,6 @@
 {
     "ldpDatabase": {
-        "odbcDataSourceName": "ldpdemo",
-        "profiles": [ "folio" ]
+        "odbcDataSourceName": "ldpdemo"
     },
     "dataSources": {
         "okapi": {
