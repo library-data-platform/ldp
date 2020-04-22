@@ -36,7 +36,7 @@ static const char* optionHelp =
 "  --config <path>     - Specify the location of the configuration file,\n"
 "                        overriding the LDPCONFIG environment variable\n"
 "  --unsafe            - Enable functions used for testing/debugging\n"
-"  --nossl             - Disable SSL in the database connection (unsafe)\n"
+//"  --nossl             - Disable SSL in the database connection (unsafe)\n"
 "  --savetemps         - Disable deletion of temporary files containing\n"
 "                        extracted data (unsafe)\n"
 "  --sourcedir <path>  - Load data from a directory instead of extracting\n"
@@ -121,10 +121,10 @@ void makeTmpDir(const Options& opt, string* loaddir)
             S_IROTH | S_IXOTH);
 }
 
-const char* sslmode(bool nossl)
-{
-    return nossl ? "disable" : "require";
-}
+//const char* sslmode(bool nossl)
+//{
+//    return nossl ? "disable" : "require";
+//}
 
 static void vacuumAnalyzeTable(const Options& opt, const TableSchema& table,
         etymon::Postgres* db)

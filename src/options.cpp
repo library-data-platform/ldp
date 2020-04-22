@@ -18,8 +18,8 @@ static void validate(const Options& opt)
             throw runtime_error("update requires --source or --sourcedir");
     }
 
-    if (opt.nossl && !opt.unsafe)
-        throw runtime_error("--nossl requires --unsafe");
+    //if (opt.nossl && !opt.unsafe)
+    //    throw runtime_error("--nossl requires --unsafe");
     if (opt.savetemps && !opt.unsafe)
         throw runtime_error("--savetemps requires --unsafe");
     if (opt.loadFromDir != "" && !opt.unsafe)
@@ -52,10 +52,10 @@ static void evaloptlong(char *name, char *arg, Options* opt)
         opt->unsafe = true;
         return;
     }
-    if (!strcmp(name, "nossl")) {
-        opt->nossl = true;
-        return;
-    }
+    //if (!strcmp(name, "nossl")) {
+    //    opt->nossl = true;
+    //    return;
+    //}
     if (!strcmp(name, "savetemps")) {
         opt->savetemps = true;
         return;
@@ -81,7 +81,7 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
         { "verbose",   no_argument,       NULL, 'v' },
         { "debug",     no_argument,       NULL, 0   },
         { "unsafe",    no_argument,       NULL, 0   },
-        { "nossl",     no_argument,       NULL, 0   },
+        //{ "nossl",     no_argument,       NULL, 0   },
         { "savetemps", no_argument,       NULL, 0   },
         //{ "version",   no_argument,       NULL, 0   },
         { 0,           0,                 0,    0   }
@@ -168,7 +168,7 @@ void debugOptions(const Options& opt)
     //else
     //    fprintf(stderr, "%p\n", opt.err);
     fprintf(stderr, "%s: option: unsafe = %d\n", opt.prog, opt.unsafe);
-    fprintf(stderr, "%s: option: nossl = %d\n", opt.prog, opt.nossl);
+    //fprintf(stderr, "%s: option: nossl = %d\n", opt.prog, opt.nossl);
     fprintf(stderr, "%s: option: savetemps = %d\n", opt.prog, opt.savetemps);
     fprintf(stderr, "%s: option: config = %s\n", opt.prog, opt.config.c_str());
     fprintf(stderr, "%s: option: verbose = %d\n", opt.prog, opt.verbose);
