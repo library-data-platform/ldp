@@ -265,10 +265,10 @@ __ldpconfig.json__
 ```
 
 The path to this file is specified using the command line option
-`--config`:
+`--config`, e.g.:
 
 ```shell
-$ ldp load --config /etc/ldp/ldpconfig.json  ( etc. )
+$ ldp update --config /etc/ldp/ldpconfig.json  ( etc. )
 ```
 
 
@@ -280,11 +280,11 @@ usage is low, in order to refresh the database with new data.
 
 To extract data and load them into the LDP database:
 ```shell
-$ ldp load --config ldpconf.json --source okapi -v
+$ ldp update --config ldpconf.json --source okapi -v
 ```
 
-The `load` command is used to load data.  The data are extracted from a
-data "source" and loaded into the LDP database.
+The `update` command is used to load data.  The data are extracted
+from a data "source" and loaded into the LDP database.
 
 The `--source` option specifies the name of a section under `sources`
 in the LDP configuration file.  This section should provide connection
@@ -368,7 +368,7 @@ data can be loaded directly from the file system for testing purposes,
 using the `--unsafe` and `--sourcedir` options, e.g.:
 
 ```shell
-$ ldp load --config ldpconf.json --unsafe --sourcedir ldp-analytics/testdata/
+$ ldp update --config ldpconf.json --unsafe --sourcedir ldp-analytics/testdata/
 ```
 
 The loader expects the data files to have particular names, e.g.
@@ -390,7 +390,7 @@ and library data transmitted to the database.  However, TLS/SSL can be
 disabled using the `--unsafe` and `--nossl` options, e.g.:
 
 ```shell
-$ ldp load --config ldpconf.json --source okapi --unsafe --nossl
+$ ldp update --config ldpconf.json --source okapi --unsafe --nossl
 ```
 
 

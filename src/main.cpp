@@ -24,9 +24,9 @@
 
 static const char* optionHelp =
 "Usage:  ldp <command> <options>\n"
-"  e.g.  ldp load --source folio\n"
+"  e.g.  ldp update --source folio\n"
 "Commands:\n"
-"  load                - Load data into the LDP database\n"
+"  update              - Load data into the LDP database\n"
 "  help                - Display help information\n"
 "Options:\n"
 "  --source <name>     - Extract data from source <name>, which refers to\n"
@@ -409,7 +409,7 @@ void run(const etymon::CommandArgs& cargs)
     if (opt.debug)
         debugOptions(opt);
 
-    if (opt.command == "load") {
+    if (opt.command == "update") {
         Timer t(opt);
         runLoad(opt);
         if (opt.verbose)

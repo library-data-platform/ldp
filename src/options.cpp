@@ -8,14 +8,14 @@
 
 static void validate(const Options& opt)
 {
-    if (opt.command != "load" &&
+    if (opt.command != "update" &&
             opt.command != "help" &&
             opt.command != "")
         throw runtime_error("unknown command: " + opt.command);
 
-    if (opt.command == "load") {
+    if (opt.command == "update") {
         if (opt.source == "" && opt.loadFromDir == "")
-            throw runtime_error("load requires --source or --sourcedir");
+            throw runtime_error("update requires --source or --sourcedir");
     }
 
     if (opt.nossl && !opt.unsafe)
@@ -89,6 +89,8 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
     int g, x;
 
     opt->command = cargs.command;
+    if (opt->command == "load")
+        opt->command = "update";
 
     while (1) {
         int longindex = 0;
