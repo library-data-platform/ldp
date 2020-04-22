@@ -240,7 +240,8 @@ Port = 5432
 4\. Configuring the LDP software
 --------------------------------
 
-The LDP software needs a configuration file.  The provided example
+The LDP software reads a configuration file that describes
+administrative settings for an LDP database.  The provided example
 file
 [ldpconfig.json](https://raw.githubusercontent.com/folio-org/ldp/master/examples/ldpconfig.json)
 can be used as a template.
@@ -263,19 +264,7 @@ __ldpconfig.json__
 }
 ```
 
-This file defines parameters for connecting to data sources and to the
-LDP database.  Please see the next section for how the parameters are
-used.
-
-The LDP software looks for the configuration file in a location
-specified by the `LDPCONFIG` environment variable, e.g. using the Bash
-shell:
-
-```shell
-$ export LDPCONFIG=/etc/ldp/ldpconfig.json
-```
-
-The location also can be specified using the command line option
+The path to this file is specified using the command line option
 `--config`:
 
 ```shell
@@ -291,7 +280,7 @@ usage is low, in order to refresh the database with new data.
 
 To extract data and load them into the LDP database:
 ```shell
-$ ldp load --source okapi -v
+$ ldp load --config ldpconf.json --source okapi -v
 ```
 
 The `load` command is used to load data.  The data are extracted from a
@@ -379,7 +368,7 @@ data can be loaded directly from the file system for testing purposes,
 using the `--unsafe` and `--sourcedir` options, e.g.:
 
 ```shell
-$ ldp load --unsafe --sourcedir ldp-analytics/testdata/
+$ ldp load --config ldpconf.json --unsafe --sourcedir ldp-analytics/testdata/
 ```
 
 The loader expects the data files to have particular names, e.g.
@@ -401,7 +390,7 @@ and library data transmitted to the database.  However, TLS/SSL can be
 disabled using the `--unsafe` and `--nossl` options, e.g.:
 
 ```shell
-$ ldp load --source okapi --unsafe --nossl
+$ ldp load --config ldpconf.json --source okapi --unsafe --nossl
 ```
 
 
