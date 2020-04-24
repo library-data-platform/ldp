@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -7,6 +8,7 @@
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <thread>
 #include <vector>
 
 #include "../etymoncpp/include/odbc.h"
@@ -24,17 +26,18 @@
 
 static const char* optionHelp =
 "Usage:  ldp <command> <options>\n"
-"  e.g.  ldp update --source folio\n"
+"  e.g.  ldp update --config ldpconf.json --source folio\n"
+//"  e.g.  ldp server --config ldpconfig.json\n"
 "Commands:\n"
+//"  server              - Run LDP server\n"
 "  update              - Load data into the LDP database\n"
 "  help                - Display help information\n"
 "Options:\n"
+"  --config <path>     - Specify the path to the configuration file\n"
 "  --source <name>     - Extract data from source <name>, which refers to\n"
 "                        the name of an object under \"sources\" in the\n"
 "                        configuration file that describes connection\n"
 "                        parameters for an Okapi instance\n"
-"  --config <path>     - Specify the location of the configuration file,\n"
-"                        overriding the LDPCONFIG environment variable\n"
 "  --unsafe            - Enable functions used for testing/debugging\n"
 //"  --nossl             - Disable SSL in the database connection (unsafe)\n"
 "  --savetemps         - Disable deletion of temporary files containing\n"
@@ -408,6 +411,11 @@ void run(const etymon::CommandArgs& cargs)
 
     if (opt.debug)
         debugOptions(opt);
+
+    //if (opt.command == "server") {
+    //    runServer(opt);
+    //    return;
+    //}
 
     if (opt.command == "update") {
         Timer t(opt);

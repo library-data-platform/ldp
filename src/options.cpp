@@ -8,7 +8,8 @@
 
 static void validate(const Options& opt)
 {
-    if (opt.command != "update" &&
+    if (opt.command != "server" &&
+            opt.command != "update" &&
             opt.command != "help" &&
             opt.command != "")
         throw runtime_error("unknown command: " + opt.command);
