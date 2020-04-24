@@ -48,7 +48,7 @@ public:
     string ldpUser = "ldp";
     //DBType dbtype;
     bool unsafe = false;
-    bool nossl = false;
+    //bool nossl = false;
     //string disableAnonymization;
     bool savetemps = false;
     FILE* err = stderr;
