@@ -10,30 +10,23 @@ void mergeTable(const Options& opt, const TableSchema& table,
     string historyTable;
     historyTableName(table.tableName, &historyTable);
 
+    // Temporarily drop history tables before recreating them.
+    dropTable(opt, historyTable, dbc);
+
     string rskeys;
     dbt.redshiftKeys("id", "id, updated", &rskeys);
     string sql =
         "CREATE TABLE IF NOT EXISTS " + historyTable + " (\n"
+        "    sk " + string(dbt.autoIncrement()) + " NOT NULL,\n"
         "    id VARCHAR(65535) NOT NULL,\n"
         "    data " + dbt.jsonType() + " NOT NULL,\n"
-        "    updated TIMESTAMPTZ NOT NULL,\n"
+        //"    updated TIMESTAMPTZ NOT NULL,\n"
+        "    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"
-        "    CONSTRAINT ldp_history_" + table.tableName + "_pkey\n"
-        "        PRIMARY KEY (id, updated)\n"
+        "    PRIMARY KEY (sk),\n"
+        "    CONSTRAINT history_" + table.tableName + "_id_updated_key\n"
+        "        UNIQUE (id, updated)\n"
         ")" + rskeys + ";";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
-
-    // Temporary: recreate primary key.
-    sql =
-        "ALTER TABLE " + historyTable + "\n"
-        "    DROP CONSTRAINT ldp_history_" + table.tableName + "_pkey;\n";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
-    sql =
-        "ALTER TABLE " + historyTable + "\n"
-        "    ADD CONSTRAINT ldp_history_" + table.tableName + "_pkey\n"
-        "        PRIMARY KEY (id, updated);";
     printSQL(Print::debug, opt, sql);
     dbc->execDirect(sql);
 
@@ -58,8 +51,11 @@ void mergeTable(const Options& opt, const TableSchema& table,
     loadingTableName(table.tableName, &loadingTable);
 
     sql =
-        "INSERT INTO " + historyTable + "\n"
-        "SELECT s.id, s.data, " + dbt.currentTimestamp() + ", s.tenant_id\n"
+        "INSERT INTO " + historyTable + " (id, data, updated, tenant_id)\n"
+        "SELECT s.id,\n"
+        "       s.data,\n" +
+        "       " + dbt.currentTimestamp() + ",\n"
+        "       s.tenant_id\n"
         "    FROM " + loadingTable + " AS s\n"
         "        LEFT JOIN " + latestHistoryTable + " AS h\n"
         "            ON s.tenant_id = h.tenant_id AND\n"

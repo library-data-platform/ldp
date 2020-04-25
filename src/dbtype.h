@@ -19,6 +19,8 @@ public:
     DBType(etymon::OdbcDbc* dbc);
     const char* jsonType() const;
     const char* currentTimestamp() const;
+    const char* timestamp0() const;
+    const char* autoIncrement() const;
     void encodeStringConst(const char* str, string* newstr) const;
     const char* dbType() const;
     void redshiftKeys(const char* distkey, const char* sortkey,
