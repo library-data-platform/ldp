@@ -537,7 +537,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     string sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
-        "    sk " + string(dbt.autoIncrement()) + " NOT NULL,\n"
+        "    row_id " + string(dbt.autoIncrement()) + " NOT NULL,\n"
         "    id VARCHAR(65535) NOT NULL,\n";
     string columnType;
     for (const auto& column : table.columns) {
@@ -556,7 +556,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
         "    updated TIMESTAMPTZ NOT NULL,\n"
         //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"
-        "    PRIMARY KEY (sk),\n"
+        "    PRIMARY KEY (row_id),\n"
         "    UNIQUE (id)\n"
         ")" + rskeys + ";";
     printSQL(Print::debug, opt, sql);

@@ -17,13 +17,13 @@ void mergeTable(const Options& opt, const TableSchema& table,
     dbt.redshiftKeys("id", "id, updated", &rskeys);
     string sql =
         "CREATE TABLE IF NOT EXISTS " + historyTable + " (\n"
-        "    sk " + string(dbt.autoIncrement()) + " NOT NULL,\n"
+        "    row_id " + string(dbt.autoIncrement()) + " NOT NULL,\n"
         "    id VARCHAR(65535) NOT NULL,\n"
         "    data " + dbt.jsonType() + " NOT NULL,\n"
         "    updated TIMESTAMPTZ NOT NULL,\n"
         //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"
-        "    PRIMARY KEY (sk),\n"
+        "    PRIMARY KEY (row_id),\n"
         "    CONSTRAINT history_" + table.tableName + "_id_updated_key\n"
         "        UNIQUE (id, updated)\n"
         ")" + rskeys + ";";
