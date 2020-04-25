@@ -56,17 +56,17 @@ const char* DBType::currentTimestamp() const
     }
 }
 
-const char* DBType::timestamp0() const
-{
-    switch (dbt) {
-        case DBT::postgresql:
-            return "TIMESTAMP(0)";
-        case DBT::redshift:
-            return "TIMESTAMP";
-        default:
-            return "(unknown)";
-    }
-}
+//const char* DBType::timestamp0() const
+//{
+//    switch (dbt) {
+//        case DBT::postgresql:
+//            return "TIMESTAMP(0)";
+//        case DBT::redshift:
+//            return "TIMESTAMP";
+//        default:
+//            return "(unknown)";
+//    }
+//}
 
 const char* DBType::autoIncrement() const
 {

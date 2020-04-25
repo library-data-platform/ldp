@@ -553,8 +553,8 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     sql += "    data ";
     sql += dbt.jsonType();
     sql += ",\n"
-        //"    updated TIMESTAMPTZ NOT NULL,\n"
-        "    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
+        "    updated TIMESTAMPTZ NOT NULL,\n"
+        //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"
         "    PRIMARY KEY (sk),\n"
         "    UNIQUE (id)\n"
