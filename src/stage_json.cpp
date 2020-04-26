@@ -206,6 +206,8 @@ static void writeTuple(const Options& opt, const DBType& dbt,
         *insertBuffer += ',';
     *insertBuffer += '(';
 
+    *insertBuffer += "DEFAULT,";
+
     const char* id = doc["id"].GetString();
     string idenc;
     dbt.encodeStringConst(id, &idenc);
@@ -279,6 +281,7 @@ static void writeTuple(const Options& opt, const DBType& dbt,
     //print(Print::warning, opt, "storing record as:\n" + data + "\n");
 
     *insertBuffer += data;
+    //*insertBuffer += string(",") + dbt.currentTimestamp();
     *insertBuffer += ",1)";
     (*recordCount)++;
 }
@@ -534,6 +537,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     string sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
+        "    row_id " + string(dbt.autoIncrement()) + " NOT NULL,\n"
         "    id VARCHAR(65535) NOT NULL,\n";
     string columnType;
     for (const auto& column : table.columns) {
@@ -549,8 +553,11 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     sql += "    data ";
     sql += dbt.jsonType();
     sql += ",\n"
+        //"    updated TIMESTAMPTZ NOT NULL,\n"
+        //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"
-        "    PRIMARY KEY (id)\n"
+        "    PRIMARY KEY (row_id),\n"
+        "    UNIQUE (id)\n"
         ")" + rskeys + ";";
     printSQL(Print::debug, opt, sql);
     dbc->execDirect(sql);

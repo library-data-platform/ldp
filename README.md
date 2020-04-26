@@ -10,10 +10,11 @@ Version 2.0.  See the file
 [LICENSE](https://github.com/folio-org/ldp/blob/master/LICENSE) for more
 information.
 
-**The Library Data Platform (LDP) is an open source platform for
-reporting and analytics in libraries.**
+__The Library Data Platform (LDP) is an open source platform for
+reporting and analytics in libraries.__
 
 ```
+row_id        | 5326
 id            | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
 action        | checkedin
 due_date      | 2017-02-17 08:43:15+00
@@ -42,6 +43,6 @@ data          | {
 tenant_id     | 1
 ```
 
-[**Learn about using the LDP database in the User Guide > > >**](USER_GUIDE.md)
+[__Learn about using the LDP database in the User Guide > > >__](USER_GUIDE.md)
 
-[**Learn about installing and administering the LDP in the Admin Guide > > >**](ADMIN_GUIDE.md)
+[__Learn about installing and administering the LDP in the Admin Guide > > >__](ADMIN_GUIDE.md)
