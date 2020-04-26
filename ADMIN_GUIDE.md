@@ -156,7 +156,7 @@ $ ./all.sh
 The compiled executable file `ldp` should appear in `ldp/build/src/`:
 
 ```shell
-$ ./build/src/ldp help
+$ ./build/src/ldp
 ```
 
 
