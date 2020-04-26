@@ -9,7 +9,8 @@ Overview
 4\. Local schemas  
 5\. Historical data  
 6\. Important note on database views  
-7\. Community
+7\. Connecting to LDP  
+8\. Community
 
 
 Overview
@@ -22,8 +23,7 @@ and analytics in libraries, offering a number of features:
   automatically extracted from Okapi-based microservices
 
 * Compatibility:  Designed to work with popular graphical database
-  clients like Tableau, Microsoft Access, and DBeaver, as well as data
-  analysis software such as R
+  clients as well as data analysis software
 
 * Data integration:  Offers a robust platform for combining data from
   beyond library systems
@@ -343,7 +343,15 @@ to be able to update queries and to prepare to recreate local result
 sets if needed.
 
 
-7\. Community
+7\. Connecting to LDP  
+---------------------
+
+Many database tools can connect to an LDP database.  See [Database
+Tools Compatibility](Database_Tools_Compatibility.md) for information
+on specific software.
+
+
+8\. Community
 -------------
 
 ### Mailing lists
@@ -388,5 +396,5 @@ repository.
 Further reading
 ---------------
 
-[__Learn about installing and administering the LDP in the Admin Guide > > >__](ADMIN_GUIDE.md)
+[__Learn about installing and administering the LDP in the Admin Guide > > >__](Admin_Guide.md)
 

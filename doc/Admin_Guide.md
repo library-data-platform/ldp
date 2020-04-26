@@ -420,5 +420,5 @@ database, which may be protected by a firewall.
 Further reading
 ---------------
 
-[__Learn about using the LDP database in the User Guide > > >__](USER_GUIDE.md)
+[__Learn about using the LDP database in the User Guide > > >__](User_Guide.md)
 
