@@ -17,8 +17,8 @@ analysis.
 
 ### Summary
 
-DBeaver is used extensively by LDP query writers and is believed to be
-compatible with LDP.
+[DBeaver](https://dbeaver.io/) is used extensively by LDP query
+writers and is believed to be compatible with LDP.
 
 ### DBeaver 6.3.0 timezone problems with Redshift
 
@@ -56,7 +56,8 @@ timezone = . . . ;` command with your timezone.
 
 ### Summary
 
-Tableau Desktop is believed to be compatible with LDP.
+[Tableau Desktop](https://www.tableau.com/products/desktop) is
+believed to be compatible with LDP.
 
 
 3\. Microsoft Access
@@ -64,9 +65,9 @@ Tableau Desktop is believed to be compatible with LDP.
 
 ### Summary
 
-LDP with PostgreSQL has been tested and is believed to be compatible
-with Access 2019.  LDP with Redshift does not appear to support Access
-at the present time.
+LDP with PostgreSQL is believed to be compatible with [Microsoft
+Access](http://office.microsoft.com/access) 2019.  LDP with Redshift
+does not appear to support Access at the present time.
 
 ### Background and additional issues
 
@@ -87,6 +88,3 @@ would like to modify via Access are required to contain a column
 having a specific timestamp data type, which in PostgreSQL is
 `TIMESTAMP(0)`.
  
-If possible, Access users may wish to consider alternatives that might
-offer better support for external databases.
-
