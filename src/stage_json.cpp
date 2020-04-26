@@ -532,12 +532,21 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
 
+    string sql;
+    dbt.autoIncrementBegin(loadingTable, "row_id", 2000, &sql);
+    if (sql != "") {
+        printSQL(Print::debug, opt, sql);
+        dbc->execDirect(sql);
+    }
+
     string rskeys;
     dbt.redshiftKeys("id", "id", &rskeys);
-    string sql = "CREATE TABLE ";
+    string autoInc;
+    dbt.autoIncrementType(loadingTable, "row_id", 2000, &autoInc);
+    sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
-        "    row_id " + string(dbt.autoIncrement()) + " NOT NULL,\n"
+        "    row_id " + autoInc + ",\n"
         "    id VARCHAR(65535) NOT NULL,\n";
     string columnType;
     for (const auto& column : table.columns) {
@@ -559,6 +568,12 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
         ")" + rskeys + ";";
     printSQL(Print::debug, opt, sql);
     dbc->execDirect(sql);
+
+    dbt.autoIncrementEnd(loadingTable, "row_id", 2000, &sql);
+    if (sql != "") {
+        printSQL(Print::debug, opt, sql);
+        dbc->execDirect(sql);
+    }
 
     // Add comment on table.
     if (table.moduleName != "mod-agreements") {
