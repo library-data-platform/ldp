@@ -43,6 +43,6 @@ data          | {
 tenant_id     | 1
 ```
 
-[__Learn about using the LDP database in the User Guide > > >__](USER_GUIDE.md)
+[__Learn about using the LDP database in the User Guide > > >__](doc/User_Guide.md)
 
-[__Learn about installing and administering the LDP in the Admin Guide > > >__](ADMIN_GUIDE.md)
+[__Learn about installing and administering the LDP in the Admin Guide > > >__](doc/Admin_Guide.md)
