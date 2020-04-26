@@ -281,7 +281,7 @@ static void writeTuple(const Options& opt, const DBType& dbt,
     //print(Print::warning, opt, "storing record as:\n" + data + "\n");
 
     *insertBuffer += data;
-    *insertBuffer += string(",") + dbt.currentTimestamp();
+    //*insertBuffer += string(",") + dbt.currentTimestamp();
     *insertBuffer += ",1)";
     (*recordCount)++;
 }

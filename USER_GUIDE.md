@@ -20,13 +20,17 @@ and analytics in libraries, offering a number of features:
 
 * Query capability:  Ad hoc, cross-domain querying of data which are
   automatically extracted from Okapi-based microservices
+
 * Compatibility:  Designed to work with popular graphical database
   clients like Tableau, Microsoft Access, and DBeaver, as well as data
   analysis software such as R
+
 * Data integration:  Offers a robust platform for combining data from
   beyond library systems
+
 * Historical data:  Enables analyzing trends over time to gain strategic
   insights about your library
+
 * Scalability:  Provides an upgrade path that scales to virtually any
   amount of data that libraries can collect
 
@@ -44,9 +48,10 @@ and a subset of the JSON fields is also stored in individual relational
 attributes:
 
 ```sql
-SELECT * FROM loans LIMIT 1;
+SELECT * FROM circulation_loans LIMIT 1;
 ```
 ```
+row_id        | 5326
 id            | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
 action        | checkedin
 due_date      | 2017-02-17 08:43:15+00
@@ -79,8 +84,8 @@ The relational attributes are provided to simplify writing queries and to
 improve query performance.  The JSON fields offer access to the complete
 extracted source data.
 
-An additional attribute, `tenant_id`, is reserved for future use in
-consortial reporting.
+In addition, the attribute `row_id` is an LDP-specific key, and
+`tenant_id` is reserved for future use in consortial reporting.
 
 The data in these tables are extracted from Okapi-based APIs and loaded
 into the database by the LDP data loader.  The data loader typically
@@ -101,7 +106,7 @@ To access the JSON fields, it is recommended to use the built in function
 JSON fields, for example:
 
 ```sql
-SELECT data FROM loans LIMIT 1;
+SELECT data FROM circulation_loans LIMIT 1;
 ```
 
 ```
@@ -123,7 +128,7 @@ SELECT data FROM loans LIMIT 1;
 ```sql
 SELECT json_extract_path_text(data, 'status', 'name') AS status,
        count(*)
-    FROM loans
+    FROM circulation_loans
     GROUP BY status;
 ```
 
@@ -146,8 +151,8 @@ An example of a query written entirely using JSON data:
 ```sql
 SELECT json_extract_path_text(users.data, 'id') AS user_id,
        json_extract_path_text(groups.data, 'group') AS group
-    FROM users
-        LEFT JOIN groups
+    FROM user_users
+        LEFT JOIN user_groups
             ON json_extract_path_text(users.data, 'patronGroup') =
                json_extract_path_text(groups.data, 'id')
     LIMIT 5;
@@ -159,8 +164,8 @@ rather than JSON fields:
 ```sql
 SELECT users.id AS user_id,
        groups.group
-    FROM users
-        LEFT JOIN groups
+    FROM user_users
+        LEFT JOIN user_groups
 	    ON users.patron_group = groups.id
     LIMIT 5;
 ```
@@ -187,7 +192,7 @@ including storing the results of queries, e.g.:
 CREATE TABLE local.loan_status AS
 SELECT json_extract_path_text(data, 'status', 'name') AS status,
        count(*)
-    FROM loans
+    FROM circulation_loans
     GROUP BY status;
 ```
 
@@ -204,24 +209,36 @@ collisions with the LDP.
 
 ### Overview
 
-As mentioned earlier, the LDP database reflects the state of the source
-data as of the last time the LDP data loader was run.  The loader also
-maintains another schema called `history` which stores all data that
-have been loaded in the past, including data that no longer exist in the
-source database.  Each table normally has a corresponding history table,
-e.g. the history table for `loans` is `history.loans`.
+As mentioned earlier, the LDP database reflects the state of the
+source data as of the last time the LDP data loader was run.  The
+loader also maintains another schema called `history` which stores all
+data that have been loaded in the past, including data that no longer
+exist in the source database.  Each table normally has a corresponding
+history table, e.g. the history table for `circulation_loans` is
+`history.circulation_loans`.
 
 This historical data capability is designed for gaining insights about
 the library by analyzing trends over time.
 
-History tables include four attributes: the record ID (`id`), the JSON
-data (`data`), the date and time when the data were loaded (`updated`),
-and a tenant ID (`tenant_id`):
+History tables contain these attributes:
+
+* `row_id` is an LDP-specific key.
+
+* `id` is the record ID.
+
+* `data` is the source data, usually a JSON object.
+
+* `updated` is the date and time when the data were loaded.
+
+* `tenant_id` is reserved for future use in consortial reporting.
+
+For example:
 
 ```sql
-SELECT * FROM history.loans LIMIT 1;
+SELECT * FROM history.circulation_loans LIMIT 1;
 ```
 ```
+row_id    | 29201
 id        | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
 data      | {                                                          
           |     "id": "0bab56e5-1ab6-4ac2-afdf-8b2df0434378",          
@@ -242,22 +259,23 @@ updated   | 2019-09-06 03:46:49.362606+00
 tenant_id | 1
 ```
 
-Unlike the main LDP tables in which IDs are unique, the history tables
-accumulate many records with the same ID.  Note also that if a value
-in the source database changes more than once during the interval
-between any two runs of the LDP loader, the LDP history will only
-reflect the last of those changes.
+Unlike the main LDP tables in which `id` is unique, the history tables
+can accumulate many records with the same value for `id`.  Note also
+that if a value in the source database changes more than once during
+the interval between any two runs of the LDP loader, the LDP history
+will only reflect the last of those changes.
 
 ### Querying historical data
 
 These are some basic examples that show data evolving over time.
 
-For a high level view of all updated records, for example, in loans:
+For a high level view of all updated records, for example, in
+circulation_loans:
 
 ```sql
 SELECT updated,
        count(*)
-    FROM history.loans
+    FROM history.circulation_loans
     GROUP BY updated
     ORDER BY updated;
 ```
@@ -267,7 +285,7 @@ above:
 
 ```sql
 SELECT *
-    FROM history.loans
+    FROM history.circulation_loans
     WHERE id = '0bab56e5-1ab6-4ac2-afdf-8b2df0434378'
     ORDER BY updated;
 ```
@@ -279,7 +297,7 @@ specific fields, e.g.:
 SELECT json_extract_path_text(data, 'action'),
        json_extract_path_text(data, 'returnDate'),
        updated
-    FROM history.loans
+    FROM history.circulation_loans
     WHERE id = '0bab56e5-1ab6-4ac2-afdf-8b2df0434378'
     ORDER BY updated;
 ```
@@ -300,7 +318,7 @@ CREATE TABLE local.loan_status_history AS
 SELECT id,
        json_extract_path_text(data, 'itemStatus') AS item_status,
        updated
-    FROM history.loans
+    FROM history.circulation_loans
     WHERE updated BETWEEN '2019-01-01' AND '2019-12-31';
 ```
 
@@ -334,11 +352,13 @@ Mailing lists for the LDP software are hosted on FOLIO's discussion
 site:
 
 * [`ldp-announce`](https://discuss.folio.org/c/ldp) is a low volume
-  announcement list
+  announcement list.
+
 * [`ldp-users`](https://discuss.folio.org/c/ldp/ldp-users) is for
-  general usage and querying of the LDP database
+  general usage and querying of the LDP database.
+
 * [`ldp-sysadmin`](https://discuss.folio.org/c/ldp/ldp-sysadmin) is
-  for system administration of the LDP software
+  for system administration of the LDP software.
 
 FOLIO's [Slack organization](https://slack-invitation.folio.org/) also
 contains LDP-related channels.
