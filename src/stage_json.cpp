@@ -533,7 +533,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     loadingTableName(table.tableName, &loadingTable);
 
     string sql;
-    dbt.autoIncrementBegin(loadingTable, "row_id", 2000, &sql);
+    dbt.autoIncrementBegin(loadingTable, "row_id", 3000, &sql);
     if (sql != "") {
         printSQL(Print::debug, opt, sql);
         dbc->execDirect(sql);
@@ -542,7 +542,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     string rskeys;
     dbt.redshiftKeys("id", "id", &rskeys);
     string autoInc;
-    dbt.autoIncrementType(loadingTable, "row_id", 2000, &autoInc);
+    dbt.autoIncrementType(loadingTable, "row_id", 3000, true, &autoInc);
     sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
@@ -569,7 +569,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     printSQL(Print::debug, opt, sql);
     dbc->execDirect(sql);
 
-    dbt.autoIncrementEnd(loadingTable, "row_id", 2000, &sql);
+    dbt.autoIncrementEnd(loadingTable, "row_id", 3000, &sql);
     if (sql != "") {
         printSQL(Print::debug, opt, sql);
         dbc->execDirect(sql);

@@ -13,18 +13,11 @@ void mergeTable(const Options& opt, const TableSchema& table,
     // Temporarily drop history tables before recreating them.
     dropTable(opt, historyTable, dbc);
 
-    string sql;
-    dbt.autoIncrementBegin(historyTable, "row_id", 2000, &sql);
-    if (sql != "") {
-        printSQL(Print::debug, opt, sql);
-        dbc->execDirect(sql);
-    }
-
     string rskeys;
     dbt.redshiftKeys("id", "id, updated", &rskeys);
     string autoInc;
-    dbt.autoIncrementType(historyTable, "row_id", 2000, &autoInc);
-    sql =
+    dbt.autoIncrementType(historyTable, "row_id", 1, false, &autoInc);
+    string sql =
         "CREATE TABLE IF NOT EXISTS " + historyTable + " (\n"
         "    row_id " + autoInc + ",\n"
         "    id VARCHAR(65535) NOT NULL,\n"
@@ -38,12 +31,6 @@ void mergeTable(const Options& opt, const TableSchema& table,
         ")" + rskeys + ";";
     printSQL(Print::debug, opt, sql);
     dbc->execDirect(sql);
-
-    dbt.autoIncrementEnd(historyTable, "row_id", 2000, &sql);
-    if (sql != "") {
-        printSQL(Print::debug, opt, sql);
-        dbc->execDirect(sql);
-    }
 
     string latestHistoryTable;
     latestHistoryTableName(table.tableName, &latestHistoryTable);

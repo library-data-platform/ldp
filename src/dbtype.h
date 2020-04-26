@@ -23,7 +23,7 @@ public:
     void autoIncrementBegin(const string& tableName, const string& columnName,
             int64_t start, string* sql) const;
     void autoIncrementType(const string& tableName, const string& columnName,
-            int64_t start, string* sql) const;
+            int64_t start, bool namedSequence, string* sql) const;
     void autoIncrementEnd(const string& tableName, const string& columnName,
             int64_t start, string* sql) const;
     void encodeStringConst(const char* str, string* newstr) const;
