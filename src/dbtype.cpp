@@ -59,7 +59,7 @@ void DBType::createSequence(const string& sequenceName, int64_t start,
 {
     switch (dbt) {
         case DBT::postgresql:
-            *sql = "CREATE SEQUENCE " + sequenceName + " AS BIGINT START " +
+            *sql = "CREATE SEQUENCE " + sequenceName + " START " +
                 to_string(start) + ";";
             return;
         case DBT::redshift:

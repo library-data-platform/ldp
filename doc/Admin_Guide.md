@@ -21,7 +21,7 @@ LDP Admin Guide
   * Linux 4.18.0 or later
   * macOS 10.15.3 or later (non-production use only)
 * Database systems supported:
-  * [PostgreSQL](https://www.postgresql.org/) 11.5 or later
+  * [PostgreSQL](https://www.postgresql.org/) 11 or later
   * [Amazon Redshift](https://aws.amazon.com/redshift/) 1.0.12094 or later
 * Other software dependencies:
   * ODBC driver for [PostgreSQL](https://odbc.postgresql.org/) or [Redshift](https://docs.aws.amazon.com/redshift/latest/mgmt/configure-odbc-connection.html#install-odbc-driver-linux)
