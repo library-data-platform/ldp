@@ -17,7 +17,7 @@ class DBType {
 public:
     //DBType();
     DBType(etymon::OdbcDbc* dbc);
-    const char* jsonType() const;
+    //const char* jsonType() const;
     const char* currentTimestamp() const;
     //const char* timestamp0() const;
     const char* autoIncrement() const;
