@@ -30,19 +30,18 @@ void DBType::setType(const string& dbms)
     }
 }
 
-// TODO DBType::jsonType() is no longer needed.
-const char* DBType::jsonType() const
-{
-    switch (dbt) {
-        case DBT::postgresql:
-            //return "JSON";
-            return "VARCHAR(65535)";
-        case DBT::redshift:
-            return "VARCHAR(65535)";
-        default:
-            return "(unknown)";
-    }
-}
+//const char* DBType::jsonType() const
+//{
+//    switch (dbt) {
+//        case DBT::postgresql:
+//            //return "JSON";
+//            return "VARCHAR(65535)";
+//        case DBT::redshift:
+//            return "VARCHAR(65535)";
+//        default:
+//            return "(unknown)";
+//    }
+//}
 
 const char* DBType::currentTimestamp() const
 {
