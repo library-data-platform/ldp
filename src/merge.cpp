@@ -16,7 +16,7 @@ void mergeTable(const Options& opt, const TableSchema& table,
     string rskeys;
     dbt.redshiftKeys("id", "id, updated", &rskeys);
     string autoInc;
-    dbt.autoIncrementType(historyTable, "row_id", 1, false, &autoInc);
+    dbt.autoIncrementType(1, false, "", &autoInc);
     string sql =
         "CREATE TABLE IF NOT EXISTS " + historyTable + " (\n"
         "    row_id " + autoInc + ",\n"
@@ -30,7 +30,7 @@ void mergeTable(const Options& opt, const TableSchema& table,
         "        UNIQUE (id, updated)\n"
         ")" + rskeys + ";";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 
     string latestHistoryTable;
     latestHistoryTableName(table.tableName, &latestHistoryTable);
@@ -47,7 +47,7 @@ void mergeTable(const Options& opt, const TableSchema& table,
         "                  h1.updated < h2.updated\n"
         "      );";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
@@ -66,7 +66,7 @@ void mergeTable(const Options& opt, const TableSchema& table,
         "          ( h.id IS NULL OR\n"
         "            (s.data)::VARCHAR <> (h.data)::VARCHAR );\n";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 }
 
 void dropTable(const Options& opt, const string& tableName,
@@ -74,7 +74,7 @@ void dropTable(const Options& opt, const string& tableName,
 {
     string sql = "DROP TABLE IF EXISTS " + tableName + ";";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 }
 
 void placeTable(const Options& opt, const TableSchema& table,
@@ -85,7 +85,7 @@ void placeTable(const Options& opt, const TableSchema& table,
     string sql =
         "ALTER TABLE " + loadingTable + " RENAME TO " + table.tableName + ";";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 }
 
 //void updateStatus(const Options& opt, const TableSchema& table,
@@ -95,7 +95,7 @@ void placeTable(const Options& opt, const TableSchema& table,
 //        "DELETE FROM ldp_catalog.table_updates WHERE table_name = '" +
 //        table.tableName + "' AND tenant_id = 1;";
 //    printSQL(Print::debug, opt, sql);
-//    dbc->execDirect(sql);
+//    dbc->execDirect(nullptr, sql);
 
 //    sql =
 //        "INSERT INTO ldp_catalog.table_updates\n"
@@ -103,7 +103,7 @@ void placeTable(const Options& opt, const TableSchema& table,
 //        "    VALUES ('" +
 //        table.tableName + "', " + dbt.currentTimestamp() + ", 1);";
 //    printSQL(Print::debug, opt, sql);
-//    dbc->execDirect(sql);
+//    dbc->execDirect(nullptr, sql);
 //}
 
 static void dropTablePair(const Options& opt, const string& tableName,

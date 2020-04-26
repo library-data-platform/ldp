@@ -71,17 +71,49 @@ void OdbcDbc::getDbmsName(string* dbmsName)
     *dbmsName = (char*) dn;
 }
 
-void OdbcDbc::execDirect(const string& sql)
+void OdbcDbc::execDirectStmt(OdbcStmt* stmt, const string& sql)
 {
-    etymon::OdbcStmt stmt(*this);
-    SQLRETURN rc = SQLExecDirect(stmt.stmt, (SQLCHAR *) sql.c_str(),
+    SQLRETURN rc = SQLExecDirect(stmt->stmt, (SQLCHAR *) sql.c_str(),
             SQL_NTS);
     if (!SQL_SUCCEEDED(rc) && rc != SQL_NO_DATA) {
-        fprintf(stderr, "ERROR: %s\n", odbcStrError(rc));
-        //odbcStrErrorDetail(stmt.stmt, SQL_HANDLE_STMT);
+        //fprintf(stderr, "ERROR: %s\n", odbcStrError(rc));
+        //odbcStrErrorDetail(stmt->stmt, SQL_HANDLE_STMT);
         throw runtime_error("error executing statement in database: " +
                 dataSourceName + ":\n" + sql);
     }
+}
+
+void OdbcDbc::execDirect(OdbcStmt* stmt, const string& sql)
+{
+    if (stmt == nullptr) {
+        OdbcStmt st(*this);
+        execDirectStmt(&st, sql);
+    } else {
+        execDirectStmt(stmt, sql);
+    }
+}
+
+void OdbcDbc::fetch(OdbcStmt* stmt)
+{
+    SQLRETURN rc = SQLFetch(stmt->stmt);
+    if (!SQL_SUCCEEDED(rc) && rc != SQL_NO_DATA)
+        throw runtime_error("Error fetching data in database: " +
+                dataSourceName);
+}
+
+void OdbcDbc::getData(OdbcStmt* stmt, uint16_t column, string* data)
+{
+    SQLLEN indicator;
+    char buffer[65535];
+    SQLRETURN rc = SQLGetData(stmt->stmt, column, SQL_C_CHAR, buffer,
+            sizeof buffer, &indicator);
+    if (!SQL_SUCCEEDED(rc) && rc != SQL_NO_DATA)
+        throw runtime_error("Error getting data in database: " +
+                dataSourceName);
+    if (indicator == SQL_NULL_DATA)
+        *data = "NULL";
+    else
+        *data = buffer;
 }
 
 void OdbcDbc::startTransaction()

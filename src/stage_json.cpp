@@ -194,7 +194,7 @@ static void endInserts(const Options& opt, string* buffer, etymon::OdbcDbc* dbc)
 {
     *buffer += ";\n";
     printSQL(Print::debug, opt, *buffer);
-    dbc->execDirect(*buffer);
+    dbc->execDirect(nullptr, *buffer);
     buffer->clear();
 }
 
@@ -529,20 +529,48 @@ static void composeDataFilePath(const string& loadDir,
 static void createLoadingTable(const Options& opt, const TableSchema& table,
         etymon::OdbcDbc* dbc, const DBType& dbt)
 {
+    string sequenceName = table.tableName + "_row_id_seq";
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
-
     string sql;
-    dbt.autoIncrementBegin(loadingTable, "row_id", 3000, &sql);
+
+    sql = "CREATE TABLE IF NOT EXISTS " + table.tableName + " (row_id BIGINT);";
+    printSQL(Print::debug, opt, sql);
+    dbc->execDirect(nullptr, sql);
+
+    // Start auto-increment after max(row_id) to avoid reusing values.
+    int64_t autoIncStart = 1;  // Default to 1 if no data available.
+    sql = "SELECT max(row_id) FROM " + table.tableName + ";";
+    printSQL(Print::debug, opt, sql);
+    try {
+        etymon::OdbcStmt stmt(*dbc);
+        dbc->execDirect(&stmt, sql);
+        dbc->fetch(&stmt);
+        string maxRowId;
+        dbc->getData(&stmt, 1, &maxRowId);
+        if (maxRowId != "NULL") {
+            int64_t start = stol(maxRowId) + 1;
+            if (start < 1000000000000000000)
+                autoIncStart = start;
+        }
+    } catch (runtime_error& e) {}
+
+    dbt.renameSequence(sequenceName, sequenceName + "_old", &sql);
     if (sql != "") {
         printSQL(Print::debug, opt, sql);
-        dbc->execDirect(sql);
+        dbc->execDirect(nullptr, sql);
+    }
+
+    dbt.createSequence(sequenceName, autoIncStart, &sql);
+    if (sql != "") {
+        printSQL(Print::debug, opt, sql);
+        dbc->execDirect(nullptr, sql);
     }
 
     string rskeys;
     dbt.redshiftKeys("id", "id", &rskeys);
     string autoInc;
-    dbt.autoIncrementType(loadingTable, "row_id", 3000, true, &autoInc);
+    dbt.autoIncrementType(autoIncStart, true, sequenceName, &autoInc);
     sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
@@ -567,12 +595,12 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
         "    UNIQUE (id)\n"
         ")" + rskeys + ";";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 
-    dbt.autoIncrementEnd(loadingTable, "row_id", 3000, &sql);
+    dbt.alterSequenceOwnedBy(sequenceName, loadingTable + ".row_id", &sql);
     if (sql != "") {
         printSQL(Print::debug, opt, sql);
-        dbc->execDirect(sql);
+        dbc->execDirect(nullptr, sql);
     }
 
     // Add comment on table.
@@ -586,7 +614,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
         sql += table.moduleName;
         sql += "';";
         printSQL(Print::debug, opt, sql);
-        dbc->execDirect(sql);
+        dbc->execDirect(nullptr, sql);
     }
 
 }

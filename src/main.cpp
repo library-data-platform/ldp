@@ -60,7 +60,7 @@ static void initDB(const Options& opt, etymon::OdbcDbc* dbc)
 
     sql = "CREATE SCHEMA IF NOT EXISTS ldp_catalog;";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 
     //sql =
     //    "CREATE TABLE IF NOT EXISTS ldp_catalog.table_updates (\n"
@@ -74,11 +74,11 @@ static void initDB(const Options& opt, etymon::OdbcDbc* dbc)
 
     sql = "CREATE SCHEMA IF NOT EXISTS history;";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 
     sql = "CREATE SCHEMA IF NOT EXISTS local;";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 }
 
 static void updateDBPermissions(const Options& opt, etymon::OdbcDbc* dbc)
@@ -87,30 +87,30 @@ static void updateDBPermissions(const Options& opt, etymon::OdbcDbc* dbc)
 
     sql = "GRANT USAGE ON SCHEMA ldp_catalog TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldp_catalog TO " +
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA history TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA history TO " +
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 
     sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    dbc->execDirect(sql);
+    dbc->execDirect(nullptr, sql);
 }
 
 void makeTmpDir(const Options& opt, string* loaddir)
@@ -168,7 +168,7 @@ static void runPreloadTests(const Options& opt, const etymon::OdbcEnv& odbc)
     string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
-    dbc.execDirect(sql);
+    dbc.execDirect(nullptr, sql);
     dbc.rollback();
 
     /*
