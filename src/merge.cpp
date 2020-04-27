@@ -21,7 +21,7 @@ void mergeTable(const Options& opt, const TableSchema& table,
         "CREATE TABLE IF NOT EXISTS " + historyTable + " (\n"
         "    row_id " + autoInc + ",\n"
         "    id VARCHAR(65535) NOT NULL,\n"
-        "    data VARCHAR(65535) NOT NULL,\n"
+        "    data " + dbt.jsonType() + " NOT NULL,\n"
         "    updated TIMESTAMPTZ NOT NULL,\n"
         //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"

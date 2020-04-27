@@ -587,7 +587,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
             sql += ",\n";
         }
     }
-    sql += "    data VARCHAR(65535),\n"
+    sql += string("    data ") + dbt.jsonType() + ",\n"
         //"    updated TIMESTAMPTZ NOT NULL,\n"
         //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"

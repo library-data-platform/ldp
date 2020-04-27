@@ -16,6 +16,7 @@ enum class DBT {
 class DBType {
 public:
     DBType(etymon::OdbcDbc* dbc);
+    const char* jsonType() const;
     const char* currentTimestamp() const;
     void renameSequence(const string& sequenceName,
         const string& newSequenceName, string* sql) const;
