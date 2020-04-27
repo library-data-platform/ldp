@@ -9,8 +9,7 @@ Overview
 4\. Local schemas  
 5\. Historical data  
 6\. Important note on database views  
-7\. Connecting to LDP  
-8\. Community
+7\. Community
 
 
 Overview
@@ -343,6 +342,8 @@ to be able to update queries and to prepare to recreate local result
 sets if needed.
 
 
+<!--
+
 7\. Connecting to LDP  
 ---------------------
 
@@ -350,8 +351,10 @@ Many database tools can connect to an LDP database.  See [Database
 Tools Compatibility](Database_Tools_Compatibility.md) for information
 on specific software.
 
+-->
 
-8\. Community
+
+7\. Community
 -------------
 
 ### Mailing lists
