@@ -25,6 +25,18 @@ void DBType::setType(const string& dbms)
     }
 }
 
+const char* DBType::jsonType() const
+{
+    switch (dbt) {
+    case DBT::postgresql:
+	return "JSON";
+    case DBT::redshift:
+	return "VARCHAR(65535)";
+    default:
+	return "(unknown)";
+    }
+}
+
 const char* DBType::currentTimestamp() const
 {
     switch (dbt) {
