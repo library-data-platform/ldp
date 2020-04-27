@@ -65,9 +65,15 @@ believed to be compatible with LDP.
 
 ### Summary
 
+We are currently investigating compatibility of PostgreSQL-based LDP
+with [Microsoft Access](http://office.microsoft.com/access) 2019.  LDP
+with Redshift does not appear to support Access at the present time.
+
+<!--
 LDP with PostgreSQL is believed to be compatible with [Microsoft
 Access](http://office.microsoft.com/access) 2019.  LDP with Redshift
 does not appear to support Access at the present time.
+-->
 
 ### Background and additional issues
 
