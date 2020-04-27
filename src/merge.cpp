@@ -210,6 +210,7 @@ void dropOldTables(const Options& opt, etymon::OdbcDbc* dbc)
     dropTablePair(opt, "users", dbc);
 
     dropTablePair(opt, "testing_source_records", dbc);
+    dropTablePair(opt, "srs_source_records", dbc);
 }
 
 //void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
