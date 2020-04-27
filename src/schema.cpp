@@ -456,13 +456,15 @@ void Schema::MakeDefaultSchema(Schema* schema)
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-source-record-storage";
+    //table.moduleName = "mod-source-record-storage";
 
-    table.sourceType = SourceType::rmbMarc;
-    table.sourcePath = "/source-storage/records";
-    table.tableName = "srs_source_records";
-    schema->tables.push_back(table);
-    table.sourceType = SourceType::rmb;
+    // TODO Disable deletion of table.
+
+    //table.sourceType = SourceType::rmbMarc;
+    //table.sourcePath = "/source-storage/records";
+    //table.tableName = "srs_source_records";
+    //schema->tables.push_back(table);
+    //table.sourceType = SourceType::rmb;
 
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-users";
