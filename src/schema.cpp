@@ -396,9 +396,9 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.moduleName = "mod-invoice-storage";
 
     // okapi returns 400 Bad Request
-    table.sourcePath = "/invoice-storage/invoice-line-number";
-    //table.tableName = "";
-    // schema->tables.push_back(table);
+    //table.sourcePath = "/invoice-storage/invoice-line-number";
+    //table.tableName = "invoice_line_number";
+    //schema->tables.push_back(table);
 
     table.sourcePath = "/invoice-storage/invoice-lines";
     table.tableName = "invoice_lines";
@@ -444,9 +444,9 @@ void Schema::MakeDefaultSchema(Schema* schema)
     schema->tables.push_back(table);
 
     // okapi returns 400 Bad Request
-    table.sourcePath = "/orders-storage/po-line-number";
+    //table.sourcePath = "/orders-storage/po-line-number";
     //table.tableName = "";
-    // schema->tables.push_back(table);
+    //schema->tables.push_back(table);
 
     table.sourcePath = "/orders-storage/po-lines";
     table.tableName = "po_lines";
