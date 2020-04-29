@@ -113,12 +113,56 @@ void Schema::MakeDefaultSchema(Schema* schema)
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-feesfines";
 
+    table.sourcePath = "/accounts";
+    table.tableName = "feesfines_accounts";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/comments";
+    table.tableName = "feesfines_comments";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/feefines";
+    table.tableName = "feesfines_feefines";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/feefineactions";
+    table.tableName = "feesfines_feefineactions";
+    schema->tables.push_back(table);
+
     table.sourcePath = "/lost-item-fees-policies";
     table.tableName = "feesfines_lost_item_fees_policies";
     schema->tables.push_back(table);
 
+    table.sourcePath = "/manualblocks";
+    table.tableName = "feesfines_manualblocks";
+    schema->tables.push_back(table);
+
     table.sourcePath = "/overdue-fines-policies";
     table.tableName = "feesfines_overdue_fines_policies";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/owners";
+    table.tableName = "feesfines_owners";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/payments";
+    table.tableName = "feesfines_payments";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/refunds";
+    table.tableName = "feesfines_refunds";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/transfer-criterias";
+    table.tableName = "feesfines_transfer_criterias";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/transfers";
+    table.tableName = "feesfines_transfers";
+    schema->tables.push_back(table);
+
+    table.sourcePath = "/waives";
+    table.tableName = "feesfines_waives";
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
