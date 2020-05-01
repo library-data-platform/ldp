@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <chrono>
+
 #include "options.h"
 
 using namespace std;
@@ -14,7 +15,8 @@ public:
     const char* prog;
     Timer(const Options& options);
     void restart();
-    void print(const char* str);
+    double elapsedTime() const;
+    void print(const char* str) const;
 };
 
 void getCurrentTime(string* str);
