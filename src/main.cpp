@@ -58,7 +58,36 @@ static void initDB(const Options& opt, etymon::OdbcDbc* dbc)
 {
     string sql;
 
-    sql = "CREATE SCHEMA IF NOT EXISTS ldp_catalog;";
+    sql = "DROP SCHEMA IF EXISTS ldp_catalog;";
+    printSQL(Print::debug, opt, sql);
+    dbc->execDirect(nullptr, sql);
+
+    sql = "CREATE SCHEMA IF NOT EXISTS ldp_system;";
+    printSQL(Print::debug, opt, sql);
+    dbc->execDirect(nullptr, sql);
+
+    //sql =
+    //    "CREATE TABLE IF NOT EXISTS ldp_system.main (\n"
+    //    "    ldp_schema_version BIGINT NOT NULL\n"
+    //    ");";
+    //printSQL(Print::debug, opt, sql);
+    //dbc->execDirect(nullptr, sql);
+    //sql = "DELETE FROM ldp_system.main;";
+    //printSQL(Print::debug, opt, sql);
+    //dbc->execDirect(nullptr, sql);
+    //sql = "INSERT INTO ldp_system.main (ldp_schema_version) VALUES (0);";
+    //printSQL(Print::debug, opt, sql);
+    //dbc->execDirect(nullptr, sql);
+
+    sql =
+        "CREATE TABLE IF NOT EXISTS ldp_system.log (\n"
+        "    log_time TIMESTAMPTZ NOT NULL,\n"
+        "    level VARCHAR(5) NOT NULL,\n"
+        "    event VARCHAR(63) NOT NULL,\n"
+        "    table_name VARCHAR(63) NOT NULL,\n"
+        "    message VARCHAR(65535) NOT NULL,\n"
+        "    elapsed_time REAL\n"
+        ");";
     printSQL(Print::debug, opt, sql);
     dbc->execDirect(nullptr, sql);
 
@@ -85,11 +114,11 @@ static void updateDBPermissions(const Options& opt, etymon::OdbcDbc* dbc)
 {
     string sql;
 
-    sql = "GRANT USAGE ON SCHEMA ldp_catalog TO " + opt.ldpUser + ";";
+    sql = "GRANT USAGE ON SCHEMA ldp_system TO " + opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     dbc->execDirect(nullptr, sql);
 
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldp_catalog TO " +
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldp_system TO " +
         opt.ldpUser + ";";
     printSQL(Print::debug, opt, sql);
     dbc->execDirect(nullptr, sql);
@@ -202,6 +231,9 @@ void runLoad(const Options& opt)
 
     runPreloadTests(opt, odbc);
 
+    etymon::OdbcDbc logDbc(odbc, opt.db);
+    Log log(&logDbc, Level::debug, opt.prog);
+
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
 
@@ -302,8 +334,12 @@ void runLoad(const Options& opt)
 
         //vacuumAnalyzeTable(opt, table, &dbc);
 
-        if (opt.verbose)
-            loadTimer.print("load time");
+        log.logEvent(Level::debug, "update", table.tableName,
+                "Updated table: " + table.tableName,
+                loadTimer.elapsedTime());
+
+        //if (opt.verbose)
+        //    loadTimer.print("load time");
     }
 
     {

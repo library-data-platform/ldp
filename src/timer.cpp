@@ -12,7 +12,13 @@ void Timer::restart()
     startTime = chrono::steady_clock::now();
 }
 
-void Timer::print(const char* str)
+double Timer::elapsedTime() const
+{
+    chrono::duration<double> elapsed = chrono::steady_clock::now() - startTime;
+    return elapsed.count();
+}
+
+void Timer::print(const char* str) const
 {
     chrono::duration<double> elapsed =
         chrono::steady_clock::now() - startTime;
