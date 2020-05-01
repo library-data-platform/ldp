@@ -344,10 +344,21 @@ In a production context it is a good idea to take additional steps to
 ensure that any temporary directories under the `extractDir` directory
 are removed after each run of the data loader.
 
+### RDS/PostgreSQL configuration
+
+For libraries that deploy the LDP database in PostgreSQL using Amazon
+Relational Database Service (RDS), these configuration settings are
+suggested as a starting point:
+
+* Instance type:  `db.m5.large`
+* Number of instances:  `1`
+* Storage:  `General Purpose SSD`
+* Snapshots:  Automated snapshots enabled
+
 ### Redshift configuration
 
 For libraries that deploy the LDP database in Redshift, these
-configuration settings are recommended as a starting point:
+configuration settings are suggested as a starting point:
 
 * Node type:  `dc2.large`
 * Cluster type:  `Single Node`
