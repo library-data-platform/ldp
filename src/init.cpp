@@ -7,7 +7,7 @@ static void selectSchemaVersion(DBContext* db, string* version)
 {
     string sql = "SELECT ldp_schema_version FROM ldp_system.main;";
     db->log->log(Level::trace, "", "", sql, -1);
-    etymon::OdbcStmt stmt(*(db->dbc));
+    etymon::OdbcStmt stmt(db->dbc);
     try {
         db->dbc->execDirect(&stmt, sql);
     } catch (runtime_error& e) {

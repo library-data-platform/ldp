@@ -185,7 +185,7 @@ void vacuumAnalyzeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
 
 // Check for obvious problems that could show up later in the loading
 // process.
-static void runPreloadTests(const Options& opt, const etymon::OdbcEnv& odbc)
+static void runPreloadTests(const Options& opt, etymon::OdbcEnv* odbc)
 {
     //print(Print::verbose, opt, "running pre-load checks");
 
@@ -232,13 +232,13 @@ void runLoad(const Options& opt)
 
     etymon::OdbcEnv odbc;
 
-    runPreloadTests(opt, odbc);
+    runPreloadTests(opt, &odbc);
 
-    etymon::OdbcDbc logDbc(odbc, opt.db);
+    etymon::OdbcDbc logDbc(&odbc, opt.db);
     Log log(&logDbc, opt.logLevel, opt.prog);
 
     {
-        etymon::OdbcDbc dbc(odbc, opt.db);
+        etymon::OdbcDbc dbc(&odbc, opt.db);
         DBType dbt(&dbc);
         DBContext db(&dbc, &dbt, &log);
         init(&db);
@@ -253,7 +253,7 @@ void runLoad(const Options& opt)
 
     {
         print(Print::debug, opt, "connecting to database");
-        etymon::OdbcDbc dbc(odbc, opt.db);
+        etymon::OdbcDbc dbc(&odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
         dbc.startTransaction();
@@ -319,7 +319,7 @@ void runLoad(const Options& opt)
             continue;
 
         print(Print::debug, opt, "connecting to database");
-        etymon::OdbcDbc dbc(odbc, opt.db);
+        etymon::OdbcDbc dbc(&odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
         DBType dbt(&dbc);
 
@@ -354,7 +354,7 @@ void runLoad(const Options& opt)
 
     {
         print(Print::debug, opt, "connecting to database");
-        etymon::OdbcDbc dbc(odbc, opt.db);
+        etymon::OdbcDbc dbc(&odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
         dbc.startTransaction();

@@ -544,7 +544,7 @@ static void createLoadingTable(const Options& opt, const TableSchema& table,
     sql = "SELECT max(row_id) FROM " + table.tableName + ";";
     printSQL(Print::debug, opt, sql);
     try {
-        etymon::OdbcStmt stmt(*dbc);
+        etymon::OdbcStmt stmt(dbc);
         dbc->execDirect(&stmt, sql);
         dbc->fetch(&stmt);
         string maxRowId;

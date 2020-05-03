@@ -37,9 +37,9 @@ OdbcEnv::~OdbcEnv()
     SQLFreeHandle(SQL_HANDLE_ENV, env);
 }
 
-OdbcDbc::OdbcDbc(const OdbcEnv& odbcEnv, const string& dataSourceName)
+OdbcDbc::OdbcDbc(OdbcEnv* odbcEnv, const string& dataSourceName)
 {
-    SQLAllocHandle(SQL_HANDLE_DBC, odbcEnv.env, &dbc);
+    SQLAllocHandle(SQL_HANDLE_DBC, odbcEnv->env, &dbc);
     string connStr = "DSN=" + dataSourceName + ";";
     SQLRETURN rc = SQLDriverConnect(dbc, NULL, (SQLCHAR *) connStr.c_str(),
             SQL_NTS, NULL, 0, NULL, SQL_DRIVER_COMPLETE);
@@ -54,7 +54,7 @@ OdbcDbc::OdbcDbc(const OdbcEnv& odbcEnv, const string& dataSourceName)
                 "error setting transaction isolation level in database: " +
                 dataSourceName);
 
-    this->dataSourceName = dataSourceName;
+    dsn = dataSourceName;
 }
 
 OdbcDbc::~OdbcDbc()
@@ -78,15 +78,15 @@ void OdbcDbc::execDirectStmt(OdbcStmt* stmt, const string& sql)
     if (!SQL_SUCCEEDED(rc) && rc != SQL_NO_DATA) {
         //fprintf(stderr, "ERROR: %s\n", odbcStrError(rc));
         //odbcStrErrorDetail(stmt->stmt, SQL_HANDLE_STMT);
-        throw runtime_error("Error executing statement in database: " +
-                dataSourceName + ": " + odbcStrError(rc) + ":\n" + sql);
+        throw runtime_error("Error executing statement in database: " + dsn +
+                ": " + odbcStrError(rc) + ":\n" + sql);
     }
 }
 
 void OdbcDbc::execDirect(OdbcStmt* stmt, const string& sql)
 {
     if (stmt == nullptr) {
-        OdbcStmt st(*this);
+        OdbcStmt st(this);
         execDirectStmt(&st, sql);
     } else {
         execDirectStmt(stmt, sql);
@@ -99,8 +99,8 @@ bool OdbcDbc::fetch(OdbcStmt* stmt)
     if (rc == SQL_NO_DATA)
         return false;
     if (!SQL_SUCCEEDED(rc))
-        throw runtime_error("Error fetching data in database: " +
-                dataSourceName + ": " + odbcStrError(rc));
+        throw runtime_error("Error fetching data in database: " + dsn + ": " +
+                odbcStrError(rc));
     return true;
 }
 
@@ -111,8 +111,7 @@ void OdbcDbc::getData(OdbcStmt* stmt, uint16_t column, string* data)
     SQLRETURN rc = SQLGetData(stmt->stmt, column, SQL_C_CHAR, buffer,
             sizeof buffer, &indicator);
     if (!SQL_SUCCEEDED(rc) && rc != SQL_NO_DATA)
-        throw runtime_error("Error getting data in database: " +
-                dataSourceName);
+        throw runtime_error("Error getting data in database: " + dsn);
     if (indicator == SQL_NULL_DATA)
         *data = "NULL";
     else
@@ -131,8 +130,7 @@ void OdbcDbc::commit()
         setAutoCommit(true);
     } catch (runtime_error& e) {}
     if (!SQL_SUCCEEDED(rc))
-        throw runtime_error("error committing transaction in database: " +
-                dataSourceName);
+        throw runtime_error("error committing transaction in database: " + dsn);
 }
 
 void OdbcDbc::rollback()
@@ -143,7 +141,7 @@ void OdbcDbc::rollback()
     } catch (runtime_error& e) {}
     if (!SQL_SUCCEEDED(rc))
         throw runtime_error("error rolling back transaction in database: " +
-                dataSourceName);
+                dsn);
 }
 
 void OdbcDbc::setAutoCommit(bool autoCommit)
@@ -153,13 +151,12 @@ void OdbcDbc::setAutoCommit(bool autoCommit)
             (SQLPOINTER) SQL_AUTOCOMMIT_ON : (SQLPOINTER) SQL_AUTOCOMMIT_OFF,
             SQL_IS_UINTEGER);
     if (!SQL_SUCCEEDED(rc))
-        throw runtime_error("error setting autocommit in database: " +
-                dataSourceName);
+        throw runtime_error("error setting autocommit in database: " + dsn);
 }
 
-OdbcStmt::OdbcStmt(const OdbcDbc& odbcDbc)
+OdbcStmt::OdbcStmt(OdbcDbc* odbcDbc)
 {
-    SQLAllocHandle(SQL_HANDLE_STMT, odbcDbc.dbc, &stmt);
+    SQLAllocHandle(SQL_HANDLE_STMT, odbcDbc->dbc, &stmt);
 }
 
 OdbcStmt::~OdbcStmt()

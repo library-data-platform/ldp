@@ -23,8 +23,8 @@ class OdbcStmt;
 class OdbcDbc {
 public:
     SQLHDBC dbc;
-    string dataSourceName;
-    OdbcDbc(const OdbcEnv& odbcEnv, const string& dataSourceName);
+    string dsn;
+    OdbcDbc(OdbcEnv* odbcEnv, const string& dataSourceName);
     ~OdbcDbc();
     void getDbmsName(string* dbmsName);
     void execDirect(OdbcStmt* stmt, const string& sql);
@@ -41,7 +41,7 @@ private:
 class OdbcStmt {
 public:
     SQLHSTMT stmt;
-    OdbcStmt(const OdbcDbc& odbcDbc);
+    OdbcStmt(OdbcDbc* odbcDbc);
     ~OdbcStmt();
 };
 
