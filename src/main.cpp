@@ -14,7 +14,11 @@
 #include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/postgres.h"
 #include "config_json.h"
+#include "dbcontext.h"
+#include "dbtype.h"
 #include "extract.h"
+#include "init.h"
+#include "log.h"
 #include "merge.h"
 #include "options.h"
 #include "stage_json.h"
@@ -44,8 +48,7 @@ static const char* optionHelp =
 "                        extracted data (unsafe)\n"
 "  --sourcedir <path>  - Load data from a directory instead of extracting\n"
 "                        from Okapi (unsafe)\n"
-"  --verbose, -v       - Enable verbose output\n"
-"  --debug             - Enable extremely verbose debugging output\n";
+"  --trace             - Enable very detailed logging\n";
 
 void debugNoticeProcessor(void *arg, const char *message)
 {
@@ -54,7 +57,7 @@ void debugNoticeProcessor(void *arg, const char *message)
             string("database response: ") + string(message));
 }
 
-static void initDB(const Options& opt, etymon::OdbcDbc* dbc)
+static void oldInit(const Options& opt, etymon::OdbcDbc* dbc)
 {
     string sql;
 
@@ -75,7 +78,7 @@ static void initDB(const Options& opt, etymon::OdbcDbc* dbc)
     //sql = "DELETE FROM ldp_system.main;";
     //printSQL(Print::debug, opt, sql);
     //dbc->execDirect(nullptr, sql);
-    //sql = "INSERT INTO ldp_system.main (ldp_schema_version) VALUES (0);";
+    //sql = "INSERT INTO ldp_system.main (ldp_schema_version) VALUES (157);";
     //printSQL(Print::debug, opt, sql);
     //dbc->execDirect(nullptr, sql);
 
@@ -224,7 +227,7 @@ void runLoad(const Options& opt)
 {
     string ct;
     getCurrentTime(&ct);
-    if (opt.verbose)
+    if (opt.logLevel == Level::trace)
         fprintf(opt.err, "%s: start time: %s\n", opt.prog, ct.c_str());
 
     etymon::OdbcEnv odbc;
@@ -232,7 +235,14 @@ void runLoad(const Options& opt)
     runPreloadTests(opt, odbc);
 
     etymon::OdbcDbc logDbc(odbc, opt.db);
-    Log log(&logDbc, Level::debug, opt.prog);
+    Log log(&logDbc, opt.logLevel, opt.prog);
+
+    {
+        etymon::OdbcDbc dbc(odbc, opt.db);
+        DBType dbt(&dbc);
+        DBContext db(&dbc, &dbt, &log);
+        init(&db);
+    }
 
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
@@ -248,7 +258,7 @@ void runLoad(const Options& opt)
 
         dbc.startTransaction();
         print(Print::debug, opt, "initializing database");
-        initDB(opt, &dbc);
+        oldInit(opt, &dbc);
         dbc.commit();
     }
 
@@ -259,7 +269,7 @@ void runLoad(const Options& opt)
     string token, tenantHeader, tokenHeader;
 
     if (opt.loadFromDir != "") {
-        if (opt.verbose)
+        if (opt.logLevel == Level::trace)
             fprintf(opt.err, "%s: reading data from directory: %s\n",
                     opt.prog, opt.loadFromDir.c_str());
         loadDir = opt.loadFromDir;
@@ -292,7 +302,7 @@ void runLoad(const Options& opt)
 
         ExtractionFiles extractionFiles(opt);
 
-        print(Print::verbose, opt, "loading table: " + table.tableName);
+        //print(Print::verbose, opt, "loading table: " + table.tableName);
 
         Timer loadTimer(opt);
 
@@ -326,7 +336,7 @@ void runLoad(const Options& opt)
         placeTable(opt, table, &dbc);
         //updateStatus(opt, table, &dbc);
 
-        if (opt.debug)
+        if (opt.logLevel == Level::trace)
             fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
         updateDBPermissions(opt, &dbc);
 
@@ -334,11 +344,11 @@ void runLoad(const Options& opt)
 
         //vacuumAnalyzeTable(opt, table, &dbc);
 
-        log.logEvent(Level::debug, "update", table.tableName,
+        log.log(Level::debug, "update", table.tableName,
                 "Updated table: " + table.tableName,
                 loadTimer.elapsedTime());
 
-        //if (opt.verbose)
+        //if (opt.logLevel == Level::trace)
         //    loadTimer.print("load time");
     }
 
@@ -356,7 +366,7 @@ void runLoad(const Options& opt)
     //vacuumAnalyzeAll(opt, &schema, &db);
 
     getCurrentTime(&ct);
-    if (opt.verbose)
+    if (opt.logLevel == Level::trace)
         fprintf(opt.err, "%s: end time: %s\n", opt.prog, ct.c_str());
 
     curl_global_cleanup();  // Clean-up after curl_global_init().
@@ -445,7 +455,7 @@ void run(const etymon::CommandArgs& cargs)
     Config config(opt.config);
     fillOptions(config, &opt);
 
-    if (opt.debug)
+    if (opt.logLevel == Level::trace)
         debugOptions(opt);
 
     //if (opt.command == "server") {
@@ -456,7 +466,7 @@ void run(const etymon::CommandArgs& cargs)
     if (opt.command == "update") {
         Timer t(opt);
         runLoad(opt);
-        if (opt.verbose)
+        if (opt.logLevel == Level::trace)
             t.print("total time");
         return;
     }

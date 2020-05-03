@@ -193,7 +193,7 @@ static void beginInserts(const string& table, string* buffer)
 static void endInserts(const Options& opt, string* buffer, etymon::OdbcDbc* dbc)
 {
     *buffer += ";\n";
-    printSQL(Print::debug, opt, *buffer);
+    //printSQL(Print::debug, opt, *buffer);
     dbc->execDirect(nullptr, *buffer);
     buffer->clear();
 }
@@ -292,7 +292,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
 
         record += '}';
 
-        //if (opt.debug)
+        //if (opt.logLevel == Level::trace)
         //    fprintf(opt.err, 
         //            "New record parsed for \"%s\":\n%s\n",
         //            tableSchema.tableName.c_str(),
@@ -662,7 +662,7 @@ void stageTable(const Options& opt, TableSchema* table, etymon::OdbcDbc* dbc,
             }
         }
 
-        if (pass == 1 && opt.debug) {
+        if (pass == 1 && opt.logLevel == Level::trace) {
             for (const auto& [field, counts] : stats) {
                 fprintf(opt.err, "%s: stats: in field:  %s\n", opt.prog,
                         field.c_str());

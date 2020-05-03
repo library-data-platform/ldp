@@ -78,8 +78,8 @@ void OdbcDbc::execDirectStmt(OdbcStmt* stmt, const string& sql)
     if (!SQL_SUCCEEDED(rc) && rc != SQL_NO_DATA) {
         //fprintf(stderr, "ERROR: %s\n", odbcStrError(rc));
         //odbcStrErrorDetail(stmt->stmt, SQL_HANDLE_STMT);
-        throw runtime_error("error executing statement in database: " +
-                dataSourceName + ":\n" + sql);
+        throw runtime_error("Error executing statement in database: " +
+                dataSourceName + ": " + odbcStrError(rc) + ":\n" + sql);
     }
 }
 
@@ -93,12 +93,15 @@ void OdbcDbc::execDirect(OdbcStmt* stmt, const string& sql)
     }
 }
 
-void OdbcDbc::fetch(OdbcStmt* stmt)
+bool OdbcDbc::fetch(OdbcStmt* stmt)
 {
     SQLRETURN rc = SQLFetch(stmt->stmt);
-    if (!SQL_SUCCEEDED(rc) && rc != SQL_NO_DATA)
+    if (rc == SQL_NO_DATA)
+        return false;
+    if (!SQL_SUCCEEDED(rc))
         throw runtime_error("Error fetching data in database: " +
-                dataSourceName);
+                dataSourceName + ": " + odbcStrError(rc));
+    return true;
 }
 
 void OdbcDbc::getData(OdbcStmt* stmt, uint16_t column, string* data)

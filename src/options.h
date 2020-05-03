@@ -5,6 +5,7 @@
 
 #include "../etymoncpp/include/util.h"
 #include "dbtype.h"
+#include "log.h"
 
 using namespace std;
 
@@ -52,8 +53,9 @@ public:
     //string disableAnonymization;
     bool savetemps = false;
     FILE* err = stderr;
-    bool verbose = false;
-    bool debug = false;
+    bool verbose = false;  // Deprecated.
+    bool debug = false;  // Deprecated.
+    Level logLevel = Level::debug;
     //bool version = false;
     size_t pageSize = 1000;
     string config;

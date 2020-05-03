@@ -28,7 +28,7 @@ public:
     ~OdbcDbc();
     void getDbmsName(string* dbmsName);
     void execDirect(OdbcStmt* stmt, const string& sql);
-    void fetch(OdbcStmt* stmt);
+    bool fetch(OdbcStmt* stmt);
     void getData(OdbcStmt* stmt, uint16_t column, string* data);
     void startTransaction();
     void commit();

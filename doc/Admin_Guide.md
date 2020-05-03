@@ -276,7 +276,7 @@ usage is low, in order to refresh the database with new data.
 
 To extract data and load them into the LDP database:
 ```shell
-$ ldp update --config ldpconf.json --source okapi -v
+$ ldp update --config ldpconf.json --source okapi
 ```
 
 The `update` command is used to load data.  The data are extracted
@@ -287,11 +287,9 @@ in the LDP configuration file.  This section should provide connection
 details for a data source, as well as a directory (`extractDir`) where
 temporary extracted files can be written.
 
-The `-v` option enables verbose output.  For even more verbose output,
-the `--debug` option can be used to see commands that are sent to the
-database when loading data, among other details.  The `--debug` option
-can generate extremely large output, and for this reason it is best used
-when loading relatively small data sets.
+The LDP software logs its activities to the table `ldp_system.log`.
+For debugging purposes, the `--trace` option can be used to enable
+very detailed logging.
 
 Another option that is available to assist with debugging problems is
 `--savetemps` (used together with `--unsafe`), which tells the loader

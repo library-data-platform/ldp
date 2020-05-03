@@ -8,6 +8,18 @@
 
 static void validate(const Options& opt)
 {
+    if (opt.verbose)
+        throw runtime_error(
+                "\nVerbose output (-v) is no longer supported.  "
+                "Logs are now recorded\n"
+                "in table: ldp_system.log");
+    if (opt.debug)
+        throw runtime_error(
+                "\nDebugging output (--debug) is no longer supported.  "
+                "Logs are now recorded\n"
+                "in table: ldp_system.log\n"
+                "The \"--trace\" option enables detailed logging.");
+
     if (opt.command != "server" &&
             opt.command != "update" &&
             opt.command != "help" &&
@@ -63,7 +75,10 @@ static void evaloptlong(char *name, char *arg, Options* opt)
     }
     if (!strcmp(name, "debug")) {
         opt->debug = true;
-        opt->verbose = true;
+        return;
+    }
+    if (!strcmp(name, "trace")) {
+        opt->logLevel = Level::trace;
         return;
     }
     //if (!strcmp(name, "version")) {
@@ -81,6 +96,7 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
         { "config",    required_argument, NULL, 0   },
         { "verbose",   no_argument,       NULL, 'v' },
         { "debug",     no_argument,       NULL, 0   },
+        { "trace",     no_argument,       NULL, 0   },
         { "unsafe",    no_argument,       NULL, 0   },
         //{ "nossl",     no_argument,       NULL, 0   },
         { "savetemps", no_argument,       NULL, 0   },
@@ -172,8 +188,9 @@ void debugOptions(const Options& opt)
     //fprintf(stderr, "%s: option: nossl = %d\n", opt.prog, opt.nossl);
     fprintf(stderr, "%s: option: savetemps = %d\n", opt.prog, opt.savetemps);
     fprintf(stderr, "%s: option: config = %s\n", opt.prog, opt.config.c_str());
-    fprintf(stderr, "%s: option: verbose = %d\n", opt.prog, opt.verbose);
-    fprintf(stderr, "%s: option: debug = %d\n", opt.prog, opt.debug);
+    //fprintf(stderr, "%s: option: verbose = %d\n", opt.prog, opt.verbose);
+    //fprintf(stderr, "%s: option: debug = %d\n", opt.prog, opt.debug);
+    fprintf(stderr, "%s: option: logLevel = %d\n", opt.prog, opt.logLevel);
     //fprintf(stderr, "%s: option: version = %d\n", opt.prog, opt.version);
 }
 
