@@ -11,7 +11,7 @@
  * \retval true The version number was retrieved.
  * \retval false The version number was not present in the database.
  */
-bool selectSchemaVersion(DBContext* db, string* version)
+bool selectSchemaVersion(DBContext* db, int64_t* version)
 {
     string sql = "SELECT ldp_schema_version FROM ldp_system.main;";
     db->log->log(Level::trace, "", "", sql, -1);
@@ -38,7 +38,7 @@ bool selectSchemaVersion(DBContext* db, string* version)
         db->log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
-    *version = ldpSchemaVersion;
+    *version = stol(ldpSchemaVersion);
     return true;
 }
 
@@ -117,17 +117,19 @@ void initUpgrade(DBContext* db)
 {
     db->log->log(Level::trace, "", "", "Initializing database", -1);
 
-    string version;
-    selectSchemaVersion(db, &version);
-    db->log->log(Level::trace, "", "", "ldp_schema_version: " + version, -1);
+    int64_t version;
+    bool versionFound = selectSchemaVersion(db, &version);
+    db->log->log(Level::trace, "", "", "ldp_schema_version: " +
+            (versionFound ? to_string(version) : "(not found)"),
+            -1);
 
-    if (version != "" && version != "0") {
-        string e = "Unknown LDP schema version: " + version;
+    if (versionFound && version != 0) {
+        string e = "Unknown LDP schema version: " + to_string(version);
         db->log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
 
-    if (version == "") {
+    if (!versionFound) {
         db->log->log(Level::trace, "", "", "Creating schema", -1);
         initSchema(db);
     }
