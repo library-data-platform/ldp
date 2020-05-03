@@ -5,6 +5,6 @@
 
 #include "dbcontext.h"
 
-void init(DBContext* db);
+void initUpgrade(DBContext* db);
 
 #endif

@@ -73,8 +73,8 @@ size_t header_callback(char* buffer, size_t size, size_t nitems,
 /**
  * \brief Performs the equivalent of a login to Okapi.
  *
- * \param[in] o Options specifying okapiURL, okapiUser, okapiPassword,
- * and okapiTenant.
+ * \param[in] opt Options specifying okapiURL, okapiUser,
+ * okapiPassword, and okapiTenant.
  * \param[out] token The authentication token received from Okapi.
  */
 void okapiLogin(const Options& opt, string* token)

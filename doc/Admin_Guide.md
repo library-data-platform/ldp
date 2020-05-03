@@ -197,6 +197,11 @@ GRANT ALL ON SCHEMA public TO ldpadmin;
 GRANT USAGE ON SCHEMA public TO ldp;
 ```
 
+Assuming this preliminary set up has been done, the LDP software will
+automatically attempt to initialize the schema in an empty database,
+or to upgrade the schema in a database previously initialized with an
+earlier version of LDP.
+
 ### Configuring ODBC
 
 The LDP software uses unixODBC to connect to the LDP database.  To

@@ -69,19 +69,6 @@ static void oldInit(const Options& opt, etymon::OdbcDbc* dbc)
     printSQL(Print::debug, opt, sql);
     dbc->execDirect(nullptr, sql);
 
-    //sql =
-    //    "CREATE TABLE IF NOT EXISTS ldp_system.main (\n"
-    //    "    ldp_schema_version BIGINT NOT NULL\n"
-    //    ");";
-    //printSQL(Print::debug, opt, sql);
-    //dbc->execDirect(nullptr, sql);
-    //sql = "DELETE FROM ldp_system.main;";
-    //printSQL(Print::debug, opt, sql);
-    //dbc->execDirect(nullptr, sql);
-    //sql = "INSERT INTO ldp_system.main (ldp_schema_version) VALUES (157);";
-    //printSQL(Print::debug, opt, sql);
-    //dbc->execDirect(nullptr, sql);
-
     sql =
         "CREATE TABLE IF NOT EXISTS ldp_system.log (\n"
         "    log_time TIMESTAMPTZ NOT NULL,\n"
@@ -241,7 +228,7 @@ void runLoad(const Options& opt)
         etymon::OdbcDbc dbc(&odbc, opt.db);
         DBType dbt(&dbc);
         DBContext db(&dbc, &dbt, &log);
-        init(&db);
+        initUpgrade(&db);
     }
 
     Schema schema;
