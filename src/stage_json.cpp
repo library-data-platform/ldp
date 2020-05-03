@@ -194,6 +194,7 @@ static void endInserts(const Options& opt, string* buffer, etymon::OdbcDbc* dbc)
 {
     *buffer += ";\n";
     //printSQL(Print::debug, opt, *buffer);
+    print(Print::debug, opt, "inserting data");
     dbc->execDirect(nullptr, *buffer);
     buffer->clear();
 }
