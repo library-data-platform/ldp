@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/util.h"
 #include "dbtype.h"
