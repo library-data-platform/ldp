@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include <string.h>
 
 #include "../etymoncpp/include/odbc.h"
