@@ -211,6 +211,10 @@ void dropOldTables(const Options& opt, etymon::OdbcDbc* dbc)
 
     dropTablePair(opt, "testing_source_records", dbc);
     dropTablePair(opt, "srs_source_records", dbc);
+
+    string sql = "DROP SCHEMA IF EXISTS ldp_catalog;";
+    printSQL(Print::debug, opt, sql);
+    dbc->execDirect(nullptr, sql);
 }
 
 //void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db)

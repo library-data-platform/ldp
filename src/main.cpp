@@ -57,15 +57,6 @@ void debugNoticeProcessor(void *arg, const char *message)
             string("database response: ") + string(message));
 }
 
-static void oldInit(const Options& opt, etymon::OdbcDbc* dbc)
-{
-    string sql;
-
-    sql = "DROP SCHEMA IF EXISTS ldp_catalog;";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-}
-
 static void updateDBPermissions(const Options& opt, etymon::OdbcDbc* dbc)
 {
     string sql;
@@ -190,6 +181,9 @@ void runLoad(const Options& opt)
     etymon::OdbcDbc logDbc(&odbc, opt.db);
     Log log(&logDbc, opt.logLevel, opt.prog);
 
+    Schema schema;
+    Schema::MakeDefaultSchema(&schema);
+
     {
         etymon::OdbcDbc dbc(&odbc, opt.db);
         DBType dbt(&dbc);
@@ -197,23 +191,20 @@ void runLoad(const Options& opt)
         initUpgrade(&db);
     }
 
-    Schema schema;
-    Schema::MakeDefaultSchema(&schema);
-
     ExtractionFiles extractionDir(opt);
 
     string loadDir;
 
-    {
-        print(Print::debug, opt, "connecting to database");
-        etymon::OdbcDbc dbc(&odbc, opt.db);
-        //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+    //{
+    //    print(Print::debug, opt, "connecting to database");
+    //    etymon::OdbcDbc dbc(&odbc, opt.db);
+    //    //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
-        dbc.startTransaction();
-        print(Print::debug, opt, "initializing database");
-        oldInit(opt, &dbc);
-        dbc.commit();
-    }
+    //    dbc.startTransaction();
+    //    print(Print::debug, opt, "initializing database");
+    //    oldInit(opt, &dbc);
+    //    dbc.commit();
+    //}
 
     Curl c;
     //if (!c.curl) {

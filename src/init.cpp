@@ -59,6 +59,8 @@ void initSchema(DBContext* db)
     // NOT EXISTS" will no longer be used because we will want to
     // throw an exception in such cases.
 
+    db->dbc->startTransaction();
+
     string sql = "CREATE SCHEMA IF NOT EXISTS ldp_system;";
     db->log->log(Level::trace, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
@@ -95,6 +97,8 @@ void initSchema(DBContext* db)
     sql = "CREATE SCHEMA IF NOT EXISTS local;";
     db->log->log(Level::trace, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
+
+    db->dbc->commit();
 }
 
 /**
