@@ -47,23 +47,52 @@ bool selectSchemaVersion(DBContext* db, string* version)
  *
  * This function assumes that the database is empty, or at least
  * contains no tables etc. that would conflict with the new schema
- * that is to be created.
+ * that is to be created.  In case of conflicts, this function will
+ * throw an exception rather than continue by making assumptions about
+ * the state or version of the database schema.
  *
  * \param[in] db Database context.
  */
 void initSchema(DBContext* db)
 {
-    // Create the first table and assume it does not exist.  If this
-    // fails, do not try to recover automatically, because the
-    // database may have a corrupted schema with unknown version
-    // number.
+    // Create the schema.  Beginning around the time of LDP 1.0, "IF
+    // NOT EXISTS" will no longer be used because we will want to
+    // throw an exception in such cases.
+
+    string sql = "CREATE SCHEMA IF NOT EXISTS ldp_system;";
+    db->log->log(Level::trace, "", "", sql, -1);
+    db->dbc->execDirect(nullptr, sql);
+
     sql =
-        "CREATE TABLE ldp_system.main (\n"
+        "CREATE TABLE IF NOT EXISTS ldp_system.main (\n"
         "    ldp_schema_version BIGINT NOT NULL\n"
         ");";
     db->log->log(Level::trace, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
+    sql = "DELETE FROM ldp_system.main;";  // Temporary: pre-LDP-1.0
+    db->log->log(Level::trace, "", "", sql, -1);
+    db->dbc->execDirect(nullptr, sql);
     sql = "INSERT INTO ldp_system.main (ldp_schema_version) VALUES (0);";
+    db->log->log(Level::trace, "", "", sql, -1);
+    db->dbc->execDirect(nullptr, sql);
+
+    sql =
+        "CREATE TABLE IF NOT EXISTS ldp_system.log (\n"
+        "    log_time TIMESTAMPTZ NOT NULL,\n"
+        "    level VARCHAR(5) NOT NULL,\n"
+        "    event VARCHAR(63) NOT NULL,\n"
+        "    table_name VARCHAR(63) NOT NULL,\n"
+        "    message VARCHAR(65535) NOT NULL,\n"
+        "    elapsed_time REAL\n"
+        ");";
+    db->log->log(Level::trace, "", "", sql, -1);
+    db->dbc->execDirect(nullptr, sql);
+
+    sql = "CREATE SCHEMA IF NOT EXISTS history;";
+    db->log->log(Level::trace, "", "", sql, -1);
+    db->dbc->execDirect(nullptr, sql);
+
+    sql = "CREATE SCHEMA IF NOT EXISTS local;";
     db->log->log(Level::trace, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 }
@@ -86,6 +115,8 @@ void initSchema(DBContext* db)
  */
 void initUpgrade(DBContext* db)
 {
+    db->log->log(Level::trace, "", "", "Initializing database", -1);
+
     string version;
     selectSchemaVersion(db, &version);
     db->log->log(Level::trace, "", "", "ldp_schema_version: " + version, -1);
@@ -97,7 +128,7 @@ void initUpgrade(DBContext* db)
     }
 
     if (version == "") {
-        db->log->log(Level::trace, "", "", "Initializing schema", -1);
+        db->log->log(Level::trace, "", "", "Creating schema", -1);
         initSchema(db);
     }
 }

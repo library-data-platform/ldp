@@ -64,40 +64,6 @@ static void oldInit(const Options& opt, etymon::OdbcDbc* dbc)
     sql = "DROP SCHEMA IF EXISTS ldp_catalog;";
     printSQL(Print::debug, opt, sql);
     dbc->execDirect(nullptr, sql);
-
-    sql = "CREATE SCHEMA IF NOT EXISTS ldp_system;";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-
-    sql =
-        "CREATE TABLE IF NOT EXISTS ldp_system.log (\n"
-        "    log_time TIMESTAMPTZ NOT NULL,\n"
-        "    level VARCHAR(5) NOT NULL,\n"
-        "    event VARCHAR(63) NOT NULL,\n"
-        "    table_name VARCHAR(63) NOT NULL,\n"
-        "    message VARCHAR(65535) NOT NULL,\n"
-        "    elapsed_time REAL\n"
-        ");";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-
-    //sql =
-    //    "CREATE TABLE IF NOT EXISTS ldp_catalog.table_updates (\n"
-    //    "    table_name VARCHAR(65535) NOT NULL,\n"
-    //    "    updated TIMESTAMPTZ NOT NULL,\n"
-    //    "    tenant_id SMALLINT NOT NULL,\n"
-    //    "    PRIMARY KEY (table_name, tenant_id)\n"
-    //    ");";
-    //printSQL(Print::debug, opt, sql);
-    //{ etymon::PostgresResult result(db, sql); }
-
-    sql = "CREATE SCHEMA IF NOT EXISTS history;";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-
-    sql = "CREATE SCHEMA IF NOT EXISTS local;";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
 }
 
 static void updateDBPermissions(const Options& opt, etymon::OdbcDbc* dbc)
