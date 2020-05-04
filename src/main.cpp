@@ -129,6 +129,7 @@ void vacuumAnalyzeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
 
 // Check for obvious problems that could show up later in the loading
 // process.
+/*
 static void runPreloadTests(const Options& opt, etymon::OdbcEnv* odbc)
 {
     //print(Print::verbose, opt, "running pre-load checks");
@@ -148,26 +149,8 @@ static void runPreloadTests(const Options& opt, etymon::OdbcEnv* odbc)
         dbc.execDirect(nullptr, sql);
         tx.rollback();
     }
-
-    /*
-    // Check database connection.
-    etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
-            opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
-    // TODO Check if a time-out is used here, for example if the client
-    // connection hangs due to a firewall.  Non-verbose output does not
-    // communicate any problem while frozen.
-
-    beginTxn(opt, &db);
-
-    // Check that ldpUser is a valid user.
-    string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
-        opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(&db, sql); }
-
-    rollbackTxn(opt, &db);
-    */
 }
+*/
 
 void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
 {
@@ -197,7 +180,7 @@ void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
                     opt.prog, opt.loadFromDir.c_str());
         loadDir = opt.loadFromDir;
     } else {
-        print(Print::debug, opt, "logging in to okapi service");
+        log->log(Level::trace, "", "", "Logging in to Okapi service", -1);
 
         okapiLogin(opt, &token);
 
@@ -219,15 +202,18 @@ void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
 
         ExtractionFiles extractionFiles(opt);
 
-        //print(Print::verbose, opt, "loading table: " + table.tableName);
+        log->log(Level::trace, "", "",
+                "Updating table: " + table.tableName, -1);
 
         Timer loadTimer(opt);
 
         if (opt.loadFromDir == "") {
-            print(Print::debug, opt, "extracting: " + table.sourcePath);
+            log->log(Level::trace, "", "",
+                    "Extracting: " + table.sourcePath, -1);
             bool foundData = directOverride(opt, table.sourcePath) ?
-                retrieveDirect(opt, table, loadDir, &extractionFiles) :
-                retrievePages(c, opt, token, table, loadDir, &extractionFiles);
+                retrieveDirect(opt, log, table, loadDir, &extractionFiles) :
+                retrievePages(c, opt, log, token, table, loadDir,
+                        &extractionFiles);
             if (!foundData)
                 table.skip = true;
         }
@@ -235,7 +221,6 @@ void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
         if (table.skip)
             continue;
 
-        print(Print::debug, opt, "connecting to database");
         etymon::OdbcDbc dbc(odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
         DBType dbt(&dbc);
@@ -243,20 +228,22 @@ void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
         {
             etymon::OdbcTx tx(&dbc);
 
-            print(Print::debug, opt, "staging table: " + table.tableName);
-            stageTable(opt, &table, &dbc, dbt, loadDir);
+            log->log(Level::trace, "", "",
+                    "Staging table: " + table.tableName, -1);
+            stageTable(opt, log, &table, &dbc, dbt, loadDir);
 
-            print(Print::debug, opt, "merging table: " + table.tableName);
+            log->log(Level::trace, "", "",
+                    "Merging table: " + table.tableName, -1);
             mergeTable(opt, table, &dbc, dbt);
 
-            print(Print::debug, opt, "replacing table: " + table.tableName);
+            log->log(Level::trace, "", "",
+                    "Replacing table: " + table.tableName, -1);
             dropTable(opt, table.tableName, &dbc);
             placeTable(opt, table, &dbc);
             //updateStatus(opt, table, &dbc);
 
-            if (opt.logLevel == Level::trace)
-                fprintf(opt.err, "%s: updating database permissions\n",
-                        opt.prog);
+            log->log(Level::trace, "", "",
+                    "Updating database permissions", -1);
             updateDBPermissions(opt, &dbc);
 
             tx.commit();
@@ -273,7 +260,6 @@ void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
     }
 
     {
-        print(Print::debug, opt, "connecting to database");
         etymon::OdbcDbc dbc(odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
@@ -410,8 +396,8 @@ void run(const etymon::CommandArgs& cargs)
     Config config(opt.config);
     fillOptions(config, &opt);
 
-    if (opt.logLevel == Level::trace)
-        debugOptions(opt);
+    //if (opt.logLevel == Level::trace)
+    //    debugOptions(opt);
 
     if (opt.command == "server" || opt.command == "update") {
         runServer(opt);

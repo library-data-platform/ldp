@@ -4,8 +4,8 @@
 #include "options.h"
 #include "../etymoncpp/include/postgres.h"
 
-void stageTable(const Options& opt, TableSchema* table, etymon::OdbcDbc* dbc,
-        const DBType& dbt, const string& loadDir);
+void stageTable(const Options& opt, Log* log, TableSchema* table,
+        etymon::OdbcDbc* dbc, const DBType& dbt, const string& loadDir);
 
 //void stageAll(const Options& o, Schema* schema, etymon::Postgres* db,
 //        const string& loadDir);

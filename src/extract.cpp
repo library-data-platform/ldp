@@ -227,19 +227,20 @@ static void writeCountFile(const string& loadDir, const string& tableName,
     fputs(pageStr.c_str(), f.file);
 }
 
-bool retrievePages(const Curl& c, const Options& opt, const string& token,
-        const TableSchema& table, const string& loadDir,
+bool retrievePages(const Curl& c, const Options& opt, Log* log,
+        const string& token, const TableSchema& table, const string& loadDir,
         ExtractionFiles* extractionFiles)
 {
     size_t page = 0;
     while (true) {
-        print(Print::debug, opt, "page: " + to_string(page));
+        log->log(Level::trace, "", "",
+                "Extracting page: " + to_string(page), -1);
         PageStatus status = retrieve(c, opt, token, table, loadDir,
                 extractionFiles, page);
         switch (status) {
         case PageStatus::interfaceNotAvailable:
-            print(Print::verbose, opt,
-                    "interface not available: " + table.sourcePath);
+            log->log(Level::trace, "", "",
+                    "Interface not available: " + table.sourcePath, -1);
             return false;
         case PageStatus::pageEmpty:
             writeCountFile(loadDir, table.tableName, extractionFiles, page);
@@ -260,13 +261,14 @@ bool directOverride(const Options& opt, const string& sourcePath)
     return false;
 }
 
-bool retrieveDirect(const Options& opt, const TableSchema& table,
+bool retrieveDirect(const Options& opt, Log* log, const TableSchema& table,
         const string& loadDir, ExtractionFiles* extractionFiles)
 {
-    print(Print::verbose, opt, "direct from database: " + table.sourcePath);
+    log->log(Level::trace, "", "",
+            "Direct from database: " + table.sourcePath, -1);
     if (table.directSourceTable == "") {
-        print(Print::warning, opt,
-                "direct source table undefined: " + table.sourcePath);
+        log->log(Level::warning, "", "",
+                "Direct source table undefined: " + table.sourcePath, -1);
         return false;
     }
 
@@ -276,7 +278,7 @@ bool retrieveDirect(const Options& opt, const TableSchema& table,
             opt.direct.databaseName, "require");
     string sql = "SELECT jsonb FROM " +
         opt.okapiTenant + "_" + table.directSourceTable + ";";
-    printSQL(Print::debug, opt, sql);
+    log->log(Level::trace, "", "", sql, -1);
 
     if (PQsendQuery(db.conn, sql.c_str()) == 0) {
         string err = PQerrorMessage(db.conn);
