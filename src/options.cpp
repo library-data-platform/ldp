@@ -108,6 +108,8 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
     opt->command = cargs.command;
     if (opt->command == "load")
         opt->command = "update";
+    if (opt->command != "server")
+        opt->singleTask = true;
 
     while (1) {
         int longindex = 0;

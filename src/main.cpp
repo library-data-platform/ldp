@@ -409,6 +409,8 @@ void run(const etymon::CommandArgs& cargs)
     if (opt.logLevel == Level::trace)
         debugOptions(opt);
 
+    fprintf(stderr, "singleTask: %s\n", opt.singleTask ? "true" : "false");
+
     //if (opt.command == "server") {
     //    runServer(opt);
     //    return;
