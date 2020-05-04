@@ -45,6 +45,17 @@ public:
     ~OdbcStmt();
 };
 
+class OdbcTx {
+public:
+    OdbcDbc* dbc;
+    OdbcTx(OdbcDbc* odbcDbc);
+    ~OdbcTx();
+    void commit();
+    void rollback();
+private:
+    bool completed;
+};
+
 }
 
 #endif

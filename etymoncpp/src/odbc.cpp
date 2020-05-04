@@ -164,5 +164,30 @@ OdbcStmt::~OdbcStmt()
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 }
 
+OdbcTx::OdbcTx(OdbcDbc* odbcDbc)
+{
+    dbc = odbcDbc;
+    completed = false;
+    dbc->startTransaction();
+}
+
+OdbcTx::~OdbcTx()
+{
+    if (!completed)
+        dbc->rollback();
+}
+
+void OdbcTx::commit()
+{
+    dbc->commit();
+    completed = true;
+}
+
+void OdbcTx::rollback()
+{
+    dbc->rollback();
+    completed = true;
+}
+
 }
 

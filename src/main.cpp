@@ -139,13 +139,15 @@ static void runPreloadTests(const Options& opt, etymon::OdbcEnv* odbc)
     // connection hangs due to a firewall.  Non-verbose output does not
     // communicate any problem while frozen.
 
-    dbc.startTransaction();
-    // Check that ldpUser is a valid user.
-    string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
-        opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
-    dbc.execDirect(nullptr, sql);
-    dbc.rollback();
+    {
+        etymon::OdbcTx tx(&dbc);
+        // Check that ldpUser is a valid user.
+        string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
+            opt.ldpUser + ";";
+        printSQL(Print::debug, opt, sql);
+        dbc.execDirect(nullptr, sql);
+        tx.rollback();
+    }
 
     /*
     // Check database connection.
@@ -267,24 +269,27 @@ void runLoad(const Options& opt)
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
         DBType dbt(&dbc);
 
-        dbc.startTransaction();
+        {
+            etymon::OdbcTx tx(&dbc);
 
-        print(Print::debug, opt, "staging table: " + table.tableName);
-        stageTable(opt, &table, &dbc, dbt, loadDir);
+            print(Print::debug, opt, "staging table: " + table.tableName);
+            stageTable(opt, &table, &dbc, dbt, loadDir);
 
-        print(Print::debug, opt, "merging table: " + table.tableName);
-        mergeTable(opt, table, &dbc, dbt);
+            print(Print::debug, opt, "merging table: " + table.tableName);
+            mergeTable(opt, table, &dbc, dbt);
 
-        print(Print::debug, opt, "replacing table: " + table.tableName);
-        dropTable(opt, table.tableName, &dbc);
-        placeTable(opt, table, &dbc);
-        //updateStatus(opt, table, &dbc);
+            print(Print::debug, opt, "replacing table: " + table.tableName);
+            dropTable(opt, table.tableName, &dbc);
+            placeTable(opt, table, &dbc);
+            //updateStatus(opt, table, &dbc);
 
-        if (opt.logLevel == Level::trace)
-            fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
-        updateDBPermissions(opt, &dbc);
+            if (opt.logLevel == Level::trace)
+                fprintf(opt.err, "%s: updating database permissions\n",
+                        opt.prog);
+            updateDBPermissions(opt, &dbc);
 
-        dbc.commit();
+            tx.commit();
+        }
 
         //vacuumAnalyzeTable(opt, table, &dbc);
 
@@ -301,9 +306,11 @@ void runLoad(const Options& opt)
         etymon::OdbcDbc dbc(&odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
-        dbc.startTransaction();
-        dropOldTables(opt, &dbc);
-        dbc.commit();
+        {
+            etymon::OdbcTx tx(&dbc);
+            dropOldTables(opt, &dbc);
+            tx.commit();
+        }
     }
 
     // TODO Check if needed for history tables; if so, move into loop above.
