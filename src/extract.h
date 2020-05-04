@@ -24,7 +24,7 @@ public:
     ~Curl();
 };
 
-void okapiLogin(const Options& o, string* token);
+void okapiLogin(const Options& o, Log* log, string* token);
 
 bool directOverride(const Options& opt, const string& sourcePath);
 bool retrieveDirect(const Options& opt, Log* log, const TableSchema& table,

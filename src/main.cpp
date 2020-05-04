@@ -57,35 +57,36 @@ void debugNoticeProcessor(void *arg, const char *message)
             string("database response: ") + string(message));
 }
 
-static void updateDBPermissions(const Options& opt, etymon::OdbcDbc* dbc)
+static void updateDBPermissions(const Options& opt, Log* log,
+        etymon::OdbcDbc* dbc)
 {
     string sql;
 
     sql = "GRANT USAGE ON SCHEMA ldp_system TO " + opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
+    log->log(Level::trace, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldp_system TO " +
         opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
+    log->log(Level::trace, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
         opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
+    log->log(Level::trace, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA history TO " + opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
+    log->log(Level::trace, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA history TO " +
         opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
+    log->log(Level::trace, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
+    log->log(Level::trace, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 }
 
@@ -94,8 +95,9 @@ void makeTmpDir(const Options& opt, string* loaddir)
     *loaddir = opt.extractDir;
     string filename = "tmp_ldp_" + to_string(time(nullptr));
     etymon::join(loaddir, filename);
-    print(Print::debug, opt,
-            string("creating directory: ") + *loaddir);
+    //if (opt.logLevel == Level::trace)
+    //    fprintf(opt.err, "%s: Creating directory: %s\n",
+    //            opt.prog, loaddir->c_str());
     mkdir(loaddir->c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP |
             S_IROTH | S_IXOTH);
 }
@@ -175,14 +177,14 @@ void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
     string token, tenantHeader, tokenHeader;
 
     if (opt.loadFromDir != "") {
-        if (opt.logLevel == Level::trace)
-            fprintf(opt.err, "%s: reading data from directory: %s\n",
-                    opt.prog, opt.loadFromDir.c_str());
+        //if (opt.logLevel == Level::trace)
+        //    fprintf(opt.err, "%s: Reading data from directory: %s\n",
+        //            opt.prog, opt.loadFromDir.c_str());
         loadDir = opt.loadFromDir;
     } else {
         log->log(Level::trace, "", "", "Logging in to Okapi service", -1);
 
-        okapiLogin(opt, &token);
+        okapiLogin(opt, log, &token);
 
         makeTmpDir(opt, &loadDir);
         extractionDir.dir = loadDir;
@@ -234,17 +236,17 @@ void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
 
             log->log(Level::trace, "", "",
                     "Merging table: " + table.tableName, -1);
-            mergeTable(opt, table, &dbc, dbt);
+            mergeTable(opt, log, table, &dbc, dbt);
 
             log->log(Level::trace, "", "",
                     "Replacing table: " + table.tableName, -1);
-            dropTable(opt, table.tableName, &dbc);
-            placeTable(opt, table, &dbc);
+            dropTable(opt, log, table.tableName, &dbc);
+            placeTable(opt, log, table, &dbc);
             //updateStatus(opt, table, &dbc);
 
             log->log(Level::trace, "", "",
                     "Updating database permissions", -1);
-            updateDBPermissions(opt, &dbc);
+            updateDBPermissions(opt, log, &dbc);
 
             tx.commit();
         }
@@ -265,7 +267,7 @@ void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
 
         {
             etymon::OdbcTx tx(&dbc);
-            dropOldTables(opt, &dbc);
+            dropOldTables(opt, log, &dbc);
             tx.commit();
         }
     }
@@ -292,24 +294,32 @@ void runServer(const Options& opt)
 
     string currentTime;
     getCurrentTime(&currentTime);
+    //log.log(Level::info, "server", "",
+    //        "Server started at " + currentTime +
+    //        (opt.cliMode ? " in CLI mode" : ""), -1);
     log.log(Level::info, "server", "",
-            "Server started at " + currentTime +
-            (opt.singleTask ? " in single task mode" : ""), -1);
+            "Server started at " + currentTime, -1);
+
+    if (opt.cliMode)
+        log.log(Level::info, "server", "", "CLI mode enabled", -1);
 
     do {
         runUpdate(opt, &odbc, &log);
 
-        if (!opt.singleTask) {
+        if (!opt.cliMode) {
             int s = 1000000;
             log.log(Level::trace, "", "",
                     "Sleeping for " + to_string(s) + " seconds", -1);
             std::this_thread::sleep_for(std::chrono::seconds(s));
         }
-    } while (!opt.singleTask);
+    } while (!opt.cliMode);
 
     getCurrentTime(&currentTime);
     log.log(Level::info, "server", "",
             "Server stopped at " + currentTime, -1);
+
+    if (opt.cliMode)
+        fprintf(opt.err, "%s: Update completed\n", opt.prog);
 
     curl_global_cleanup();  // Clean-up after curl_global_init().
 }

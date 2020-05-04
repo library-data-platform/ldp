@@ -54,7 +54,8 @@ void DBType::renameSequence(const string& sequenceName,
 {
     switch (dbt) {
         case DBT::postgresql:
-            *sql = "ALTER SEQUENCE IF EXISTS " + sequenceName + "\n"
+            *sql = "ALTER SEQUENCE IF EXISTS\n"
+                "    " + sequenceName + "\n"
                 "    RENAME TO " + newSequenceName + ";";
             return;
         case DBT::redshift:
@@ -90,7 +91,8 @@ void DBType::autoIncrementType(int64_t start, bool namedSequence,
         case DBT::postgresql:
             if (namedSequence)
                 *sql = "BIGINT NOT NULL\n"
-                    "        DEFAULT nextval('" + sequenceName +
+                    "        DEFAULT\n"
+                    "        nextval('" + sequenceName +
                     "')";
             else
                 *sql = "BIGSERIAL";

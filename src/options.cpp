@@ -8,17 +8,27 @@
 
 static void validate(const Options& opt)
 {
-    if (opt.verbose)
-        throw runtime_error(
-                "\nVerbose output (-v) is no longer supported.  "
+    if (opt.verbose) {
+        fprintf(stderr, "ldp:    ---------------------------------------------"
+                "-----------------------\n");
+        fprintf(stderr,
+                "ldp:    Verbose output (--verbose or -v) is deprecated.  "
+                "Logs are now\n"
+                "ldp:    recorded in table: ldp_system.log\n");
+        fprintf(stderr, "ldp:    ---------------------------------------------"
+                "-----------------------\n");
+    }
+    if (opt.debug) {
+        fprintf(stderr, "ldp:    ---------------------------------------------"
+                "-----------------------\n");
+        fprintf(stderr,
+                "ldp:    Debugging output (--debug) is deprecated.  "
                 "Logs are now recorded\n"
-                "in table: ldp_system.log");
-    if (opt.debug)
-        throw runtime_error(
-                "\nDebugging output (--debug) is no longer supported.  "
-                "Logs are now recorded\n"
-                "in table: ldp_system.log\n"
-                "The \"--trace\" option enables detailed logging.");
+                "ldp:    in table: ldp_system.log\n"
+                "ldp:    The \"--trace\" option enables detailed logging.\n");
+        fprintf(stderr, "ldp:    ---------------------------------------------"
+                "-----------------------\n");
+    }
 
     if (opt.command != "server" &&
             opt.command != "update" &&
@@ -109,7 +119,7 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
     if (opt->command == "load")
         opt->command = "update";
     if (opt->command != "server")
-        opt->singleTask = true;
+        opt->cliMode = true;
 
     while (1) {
         int longindex = 0;

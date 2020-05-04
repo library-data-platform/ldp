@@ -22,7 +22,7 @@ public:
 class Options {
 public:
     string command;
-    bool singleTask = false;
+    bool cliMode = false;
     string loadFromDir;
     string source;
     string okapiURL;

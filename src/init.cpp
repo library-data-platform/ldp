@@ -141,6 +141,7 @@ void initUpgrade(DBContext* db)
             etymon::OdbcTx tx(db->dbc);
             initSchema(db);
             tx.commit();
+            fprintf(stderr, "ldp: Logging enabled in table: ldp_system.log\n");
         }
     }
 }

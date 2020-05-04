@@ -2,7 +2,7 @@
 #include "names.h"
 #include "util.h"
 
-void mergeTable(const Options& opt, const TableSchema& table,
+void mergeTable(const Options& opt, Log* log, const TableSchema& table,
         etymon::OdbcDbc* dbc, const DBType& dbt)
 {
     // Update history tables.
@@ -11,14 +11,15 @@ void mergeTable(const Options& opt, const TableSchema& table,
     historyTableName(table.tableName, &historyTable);
 
     // Temporarily drop history tables before recreating them.
-    dropTable(opt, historyTable, dbc);
+    dropTable(opt, log, historyTable, dbc);
 
     string rskeys;
     dbt.redshiftKeys("id", "id, updated", &rskeys);
     string autoInc;
     dbt.autoIncrementType(1, false, "", &autoInc);
     string sql =
-        "CREATE TABLE IF NOT EXISTS " + historyTable + " (\n"
+        "CREATE TABLE IF NOT EXISTS\n"
+        "    " + historyTable + " (\n"
         "    row_id " + autoInc + ",\n"
         "    id VARCHAR(65535) NOT NULL,\n"
         "    data " + dbt.jsonType() + " NOT NULL,\n"
@@ -26,17 +27,20 @@ void mergeTable(const Options& opt, const TableSchema& table,
         //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"
         "    PRIMARY KEY (row_id),\n"
-        "    CONSTRAINT history_" + table.tableName + "_id_updated_key\n"
+        "    CONSTRAINT\n"
+        "        history_" + table.tableName + "_id_updated_key\n"
         "        UNIQUE (id, updated)\n"
         ")" + rskeys + ";";
-    printSQL(Print::debug, opt, sql);
+    log->log(Level::trace, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     string latestHistoryTable;
     latestHistoryTableName(table.tableName, &latestHistoryTable);
 
     sql =
-        "CREATE TEMPORARY TABLE " + latestHistoryTable + " AS\n"
+        "CREATE TEMPORARY TABLE\n"
+        "    " + latestHistoryTable + "\n"
+        "    AS\n"
         "SELECT id, data, tenant_id\n"
         "    FROM " + historyTable + " AS h1\n"
         "    WHERE NOT EXISTS\n"
@@ -46,45 +50,48 @@ void mergeTable(const Options& opt, const TableSchema& table,
         "                  h1.id = h2.id AND\n"
         "                  h1.updated < h2.updated\n"
         "      );";
-    printSQL(Print::debug, opt, sql);
+    log->log(Level::trace, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
 
     sql =
-        "INSERT INTO " + historyTable + " (id, data, updated, tenant_id)\n"
+        "INSERT INTO " + historyTable + "\n"
+        "    (id, data, updated, tenant_id)\n"
         "SELECT s.id,\n"
         "       s.data,\n" +
         "       " + dbt.currentTimestamp() + ",\n"
         "       s.tenant_id\n"
         "    FROM " + loadingTable + " AS s\n"
-        "        LEFT JOIN " + latestHistoryTable + " AS h\n"
+        "        LEFT JOIN " + latestHistoryTable + "\n"
+        "            AS h\n"
         "            ON s.tenant_id = h.tenant_id AND\n"
         "               s.id = h.id\n"
         "    WHERE s.data IS NOT NULL AND\n"
         "          ( h.id IS NULL OR\n"
         "            (s.data)::VARCHAR <> (h.data)::VARCHAR );\n";
-    printSQL(Print::debug, opt, sql);
+    log->log(Level::trace, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 }
 
-void dropTable(const Options& opt, const string& tableName,
+void dropTable(const Options& opt, Log* log, const string& tableName,
         etymon::OdbcDbc* dbc)
 {
     string sql = "DROP TABLE IF EXISTS " + tableName + ";";
-    printSQL(Print::debug, opt, sql);
+    log->log(Level::trace, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 }
 
-void placeTable(const Options& opt, const TableSchema& table,
+void placeTable(const Options& opt, Log* log, const TableSchema& table,
         etymon::OdbcDbc* dbc)
 {
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
     string sql =
-        "ALTER TABLE " + loadingTable + " RENAME TO " + table.tableName + ";";
-    printSQL(Print::debug, opt, sql);
+        "ALTER TABLE " + loadingTable + "\n"
+        "    RENAME TO " + table.tableName + ";";
+    log->log(Level::trace, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 }
 
@@ -106,114 +113,114 @@ void placeTable(const Options& opt, const TableSchema& table,
 //    dbc->execDirect(nullptr, sql);
 //}
 
-static void dropTablePair(const Options& opt, const string& tableName,
+static void dropTablePair(const Options& opt, Log* log, const string& tableName,
         etymon::OdbcDbc* dbc)
 {
-    dropTable(opt, tableName, dbc);
-    dropTable(opt, "history." + tableName, dbc);
+    dropTable(opt, log, tableName, dbc);
+    dropTable(opt, log, "history." + tableName, dbc);
 }
 
-void dropOldTables(const Options& opt, etymon::OdbcDbc* dbc)
+void dropOldTables(const Options& opt, Log* log, etymon::OdbcDbc* dbc)
 {
-    dropTable(opt, "ldp_catalog.table_updates", dbc);
+    dropTable(opt, log, "ldp_catalog.table_updates", dbc);
 
-    dropTablePair(opt, "circulation_request_preference", dbc);
-    dropTablePair(opt, "finance_ledger_fiscal_years", dbc);
-    dropTablePair(opt, "user_addresstypes", dbc);
-    dropTablePair(opt, "user_proxiesfor", dbc);
-    dropTablePair(opt, "finance_fund_distributions", dbc);
+    dropTablePair(opt, log, "circulation_request_preference", dbc);
+    dropTablePair(opt, log, "finance_ledger_fiscal_years", dbc);
+    dropTablePair(opt, log, "user_addresstypes", dbc);
+    dropTablePair(opt, log, "user_proxiesfor", dbc);
+    dropTablePair(opt, log, "finance_fund_distributions", dbc);
 
-    dropTablePair(opt, "order_lines", dbc);
-    dropTablePair(opt, "orders", dbc);
-    dropTablePair(opt, "invoice_number", dbc);
-    dropTablePair(opt, "voucher_number", dbc);
-    dropTablePair(opt, "po_number", dbc);
-    dropTablePair(opt, "finance_group_budgets", dbc);
-    dropTablePair(opt, "shelf_locations", dbc);
+    dropTablePair(opt, log, "order_lines", dbc);
+    dropTablePair(opt, log, "orders", dbc);
+    dropTablePair(opt, log, "invoice_number", dbc);
+    dropTablePair(opt, log, "voucher_number", dbc);
+    dropTablePair(opt, log, "po_number", dbc);
+    dropTablePair(opt, log, "finance_group_budgets", dbc);
+    dropTablePair(opt, log, "shelf_locations", dbc);
 
-    dropTablePair(opt, "cancellation_reasons", dbc);
-    dropTablePair(opt, "fixed_due_date_schedules", dbc);
-    dropTablePair(opt, "loan_policies", dbc);
-    dropTablePair(opt, "loans", dbc);
-    dropTablePair(opt, "loan_history", dbc);
-    dropTablePair(opt, "patron_action_sessions", dbc);
-    dropTablePair(opt, "patron_notice_policies", dbc);
-    dropTablePair(opt, "request_policies", dbc);
-    dropTablePair(opt, "request_preference", dbc);
-    dropTablePair(opt, "requests", dbc);
-    dropTablePair(opt, "scheduled_notices", dbc);
-    dropTablePair(opt, "staff_slips", dbc);
-    dropTablePair(opt, "budgets", dbc);
-    dropTablePair(opt, "fiscal_years", dbc);
-    dropTablePair(opt, "fund_distributions", dbc);
-    dropTablePair(opt, "fund_types", dbc);
-    dropTablePair(opt, "funds", dbc);
-    dropTablePair(opt, "ledger_fiscal_years", dbc);
-    dropTablePair(opt, "ledgers", dbc);
-    dropTablePair(opt, "transactions", dbc);
-    dropTablePair(opt, "alternative_title_types", dbc);
-    dropTablePair(opt, "call_number_types", dbc);
-    dropTablePair(opt, "classification_types", dbc);
-    dropTablePair(opt, "contributor_name_types", dbc);
-    dropTablePair(opt, "contributor_types", dbc);
-    dropTablePair(opt, "electronic_access_relationships", dbc);
-    dropTablePair(opt, "holdings_note_types", dbc);
-    dropTablePair(opt, "holdings", dbc);
-    dropTablePair(opt, "holdings_types", dbc);
-    dropTablePair(opt, "identifier_types", dbc);
-    dropTablePair(opt, "ill_policies", dbc);
-    dropTablePair(opt, "instance_formats", dbc);
-    dropTablePair(opt, "instance_note_types", dbc);
-    dropTablePair(opt, "instance_relationship_types", dbc);
-    dropTablePair(opt, "instance_statuses", dbc);
-    dropTablePair(opt, "instance_relationships", dbc);
-    dropTablePair(opt, "instances", dbc);
-    dropTablePair(opt, "instance_types", dbc);
-    dropTablePair(opt, "item_damaged_statuses", dbc);
-    dropTablePair(opt, "item_note_types", dbc);
-    dropTablePair(opt, "items", dbc);
-    dropTablePair(opt, "campuses", dbc);
-    dropTablePair(opt, "institutions", dbc);
-    dropTablePair(opt, "libraries", dbc);
-    dropTablePair(opt, "loan_types", dbc);
-    dropTablePair(opt, "locations", dbc);
-    dropTablePair(opt, "material_types", dbc);
-    dropTablePair(opt, "modes_of_issuance", dbc);
-    dropTablePair(opt, "nature_of_content_terms", dbc);
-    dropTablePair(opt, "service_points", dbc);
-    dropTablePair(opt, "service_points_users", dbc);
-    dropTablePair(opt, "statistical_code_types", dbc);
-    dropTablePair(opt, "statistical_codes", dbc);
-    dropTablePair(opt, "invoices", dbc);
-    dropTablePair(opt, "voucher_lines", dbc);
-    dropTablePair(opt, "vouchers", dbc);
-    dropTablePair(opt, "memberships", dbc);
-    dropTablePair(opt, "units", dbc);
-    dropTablePair(opt, "alerts", dbc);
-    dropTablePair(opt, "order_invoice_relns", dbc);
-    dropTablePair(opt, "order_templates", dbc);
-    dropTablePair(opt, "pieces", dbc);
-    dropTablePair(opt, "purchase_orders", dbc);
-    dropTablePair(opt, "receiving_history", dbc);
-    dropTablePair(opt, "reporting_codes", dbc);
-    dropTablePair(opt, "addresses", dbc);
-    dropTablePair(opt, "categories", dbc);
-    dropTablePair(opt, "contacts", dbc);
-    dropTablePair(opt, "emails", dbc);
-    dropTablePair(opt, "interfaces", dbc);
-    dropTablePair(opt, "organizations", dbc);
-    dropTablePair(opt, "phone_numbers", dbc);
-    dropTablePair(opt, "urls", dbc);
-    dropTablePair(opt, "addresstypes", dbc);
-    dropTablePair(opt, "groups", dbc);
-    dropTablePair(opt, "proxiesfor", dbc);
-    dropTablePair(opt, "users", dbc);
+    dropTablePair(opt, log, "cancellation_reasons", dbc);
+    dropTablePair(opt, log, "fixed_due_date_schedules", dbc);
+    dropTablePair(opt, log, "loan_policies", dbc);
+    dropTablePair(opt, log, "loans", dbc);
+    dropTablePair(opt, log, "loan_history", dbc);
+    dropTablePair(opt, log, "patron_action_sessions", dbc);
+    dropTablePair(opt, log, "patron_notice_policies", dbc);
+    dropTablePair(opt, log, "request_policies", dbc);
+    dropTablePair(opt, log, "request_preference", dbc);
+    dropTablePair(opt, log, "requests", dbc);
+    dropTablePair(opt, log, "scheduled_notices", dbc);
+    dropTablePair(opt, log, "staff_slips", dbc);
+    dropTablePair(opt, log, "budgets", dbc);
+    dropTablePair(opt, log, "fiscal_years", dbc);
+    dropTablePair(opt, log, "fund_distributions", dbc);
+    dropTablePair(opt, log, "fund_types", dbc);
+    dropTablePair(opt, log, "funds", dbc);
+    dropTablePair(opt, log, "ledger_fiscal_years", dbc);
+    dropTablePair(opt, log, "ledgers", dbc);
+    dropTablePair(opt, log, "transactions", dbc);
+    dropTablePair(opt, log, "alternative_title_types", dbc);
+    dropTablePair(opt, log, "call_number_types", dbc);
+    dropTablePair(opt, log, "classification_types", dbc);
+    dropTablePair(opt, log, "contributor_name_types", dbc);
+    dropTablePair(opt, log, "contributor_types", dbc);
+    dropTablePair(opt, log, "electronic_access_relationships", dbc);
+    dropTablePair(opt, log, "holdings_note_types", dbc);
+    dropTablePair(opt, log, "holdings", dbc);
+    dropTablePair(opt, log, "holdings_types", dbc);
+    dropTablePair(opt, log, "identifier_types", dbc);
+    dropTablePair(opt, log, "ill_policies", dbc);
+    dropTablePair(opt, log, "instance_formats", dbc);
+    dropTablePair(opt, log, "instance_note_types", dbc);
+    dropTablePair(opt, log, "instance_relationship_types", dbc);
+    dropTablePair(opt, log, "instance_statuses", dbc);
+    dropTablePair(opt, log, "instance_relationships", dbc);
+    dropTablePair(opt, log, "instances", dbc);
+    dropTablePair(opt, log, "instance_types", dbc);
+    dropTablePair(opt, log, "item_damaged_statuses", dbc);
+    dropTablePair(opt, log, "item_note_types", dbc);
+    dropTablePair(opt, log, "items", dbc);
+    dropTablePair(opt, log, "campuses", dbc);
+    dropTablePair(opt, log, "institutions", dbc);
+    dropTablePair(opt, log, "libraries", dbc);
+    dropTablePair(opt, log, "loan_types", dbc);
+    dropTablePair(opt, log, "locations", dbc);
+    dropTablePair(opt, log, "material_types", dbc);
+    dropTablePair(opt, log, "modes_of_issuance", dbc);
+    dropTablePair(opt, log, "nature_of_content_terms", dbc);
+    dropTablePair(opt, log, "service_points", dbc);
+    dropTablePair(opt, log, "service_points_users", dbc);
+    dropTablePair(opt, log, "statistical_code_types", dbc);
+    dropTablePair(opt, log, "statistical_codes", dbc);
+    dropTablePair(opt, log, "invoices", dbc);
+    dropTablePair(opt, log, "voucher_lines", dbc);
+    dropTablePair(opt, log, "vouchers", dbc);
+    dropTablePair(opt, log, "memberships", dbc);
+    dropTablePair(opt, log, "units", dbc);
+    dropTablePair(opt, log, "alerts", dbc);
+    dropTablePair(opt, log, "order_invoice_relns", dbc);
+    dropTablePair(opt, log, "order_templates", dbc);
+    dropTablePair(opt, log, "pieces", dbc);
+    dropTablePair(opt, log, "purchase_orders", dbc);
+    dropTablePair(opt, log, "receiving_history", dbc);
+    dropTablePair(opt, log, "reporting_codes", dbc);
+    dropTablePair(opt, log, "addresses", dbc);
+    dropTablePair(opt, log, "categories", dbc);
+    dropTablePair(opt, log, "contacts", dbc);
+    dropTablePair(opt, log, "emails", dbc);
+    dropTablePair(opt, log, "interfaces", dbc);
+    dropTablePair(opt, log, "organizations", dbc);
+    dropTablePair(opt, log, "phone_numbers", dbc);
+    dropTablePair(opt, log, "urls", dbc);
+    dropTablePair(opt, log, "addresstypes", dbc);
+    dropTablePair(opt, log, "groups", dbc);
+    dropTablePair(opt, log, "proxiesfor", dbc);
+    dropTablePair(opt, log, "users", dbc);
 
-    dropTablePair(opt, "testing_source_records", dbc);
-    dropTablePair(opt, "srs_source_records", dbc);
+    dropTablePair(opt, log, "testing_source_records", dbc);
+    dropTablePair(opt, log, "srs_source_records", dbc);
 
     string sql = "DROP SCHEMA IF EXISTS ldp_catalog;";
-    printSQL(Print::debug, opt, sql);
+    log->log(Level::trace, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 }
 
