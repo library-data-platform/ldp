@@ -87,7 +87,7 @@ void Log::log(Level level, const char* event, const string& table,
     // Log the message, and print if the log is not available.
     string sql =
         "INSERT INTO ldp_system.log\n"
-        "    (log_time, pid, level, event, table_name, message, elapsed_time)\n"
+        "    (log_time, pid, level, type, table_name, message, elapsed_time)\n"
         "  VALUES\n"
         "    (" + string(dbt->currentTimestamp()) + ", " + to_string(getpid()) +
         ", '" + levelStr + "', '" + event + "', '" + table + "', '" + logmsg +

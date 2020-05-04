@@ -169,44 +169,21 @@ static void runPreloadTests(const Options& opt, etymon::OdbcEnv* odbc)
     */
 }
 
-void runLoad(const Options& opt)
+void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
 {
-    string ct;
-    getCurrentTime(&ct);
-    if (opt.logLevel == Level::trace)
-        fprintf(opt.err, "%s: start time: %s\n", opt.prog, ct.c_str());
-
-    etymon::OdbcEnv odbc;
-
-    runPreloadTests(opt, &odbc);
-
-    etymon::OdbcDbc logDbc(&odbc, opt.db);
-    Log log(&logDbc, opt.logLevel, opt.prog);
-
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
 
     {
-        etymon::OdbcDbc dbc(&odbc, opt.db);
+        etymon::OdbcDbc dbc(odbc, opt.db);
         DBType dbt(&dbc);
-        DBContext db(&dbc, &dbt, &log);
+        DBContext db(&dbc, &dbt, log);
         initUpgrade(&db);
     }
 
     ExtractionFiles extractionDir(opt);
 
     string loadDir;
-
-    //{
-    //    print(Print::debug, opt, "connecting to database");
-    //    etymon::OdbcDbc dbc(&odbc, opt.db);
-    //    //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
-
-    //    dbc.startTransaction();
-    //    print(Print::debug, opt, "initializing database");
-    //    oldInit(opt, &dbc);
-    //    dbc.commit();
-    //}
 
     Curl c;
     //if (!c.curl) {
@@ -220,12 +197,6 @@ void runLoad(const Options& opt)
                     opt.prog, opt.loadFromDir.c_str());
         loadDir = opt.loadFromDir;
     } else {
-        CURLcode cc = curl_global_init(CURL_GLOBAL_ALL);
-        if (cc) {
-            throw runtime_error(string("initializing curl: ") +
-                    curl_easy_strerror(cc));
-        }
-
         print(Print::debug, opt, "logging in to okapi service");
 
         okapiLogin(opt, &token);
@@ -265,7 +236,7 @@ void runLoad(const Options& opt)
             continue;
 
         print(Print::debug, opt, "connecting to database");
-        etymon::OdbcDbc dbc(&odbc, opt.db);
+        etymon::OdbcDbc dbc(odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
         DBType dbt(&dbc);
 
@@ -293,7 +264,7 @@ void runLoad(const Options& opt)
 
         //vacuumAnalyzeTable(opt, table, &dbc);
 
-        log.log(Level::debug, "update", table.tableName,
+        log->log(Level::debug, "update", table.tableName,
                 "Updated table: " + table.tableName,
                 loadTimer.elapsedTime());
 
@@ -303,7 +274,7 @@ void runLoad(const Options& opt)
 
     {
         print(Print::debug, opt, "connecting to database");
-        etymon::OdbcDbc dbc(&odbc, opt.db);
+        etymon::OdbcDbc dbc(odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
         {
@@ -315,13 +286,46 @@ void runLoad(const Options& opt)
 
     // TODO Check if needed for history tables; if so, move into loop above.
     //vacuumAnalyzeAll(opt, &schema, &db);
+}
 
-    getCurrentTime(&ct);
-    if (opt.logLevel == Level::trace)
-        fprintf(opt.err, "%s: end time: %s\n", opt.prog, ct.c_str());
+void runServer(const Options& opt)
+{
+    // TODO Wrap curl_global_init() in a class.
+    CURLcode cc = curl_global_init(CURL_GLOBAL_ALL);
+    if (cc) {
+        throw runtime_error(string("Error initializing curl: ") +
+                curl_easy_strerror(cc));
+    }
+
+    etymon::OdbcEnv odbc;
+
+    //runPreloadTests(opt, &odbc);
+
+    etymon::OdbcDbc logDbc(&odbc, opt.db);
+    Log log(&logDbc, opt.logLevel, opt.prog);
+
+    string currentTime;
+    getCurrentTime(&currentTime);
+    log.log(Level::info, "server", "",
+            "Server started at " + currentTime +
+            (opt.singleTask ? " in single task mode" : ""), -1);
+
+    do {
+        runUpdate(opt, &odbc, &log);
+
+        if (!opt.singleTask) {
+            int s = 1000000;
+            log.log(Level::trace, "", "",
+                    "Sleeping for " + to_string(s) + " seconds", -1);
+            std::this_thread::sleep_for(std::chrono::seconds(s));
+        }
+    } while (!opt.singleTask);
+
+    getCurrentTime(&currentTime);
+    log.log(Level::info, "server", "",
+            "Server stopped at " + currentTime, -1);
 
     curl_global_cleanup();  // Clean-up after curl_global_init().
-    // TODO Wrap curl_global_init() in a class.
 }
 
 void fillDirectOptions(const Config& config, const string& base, Options* opt)
@@ -409,20 +413,18 @@ void run(const etymon::CommandArgs& cargs)
     if (opt.logLevel == Level::trace)
         debugOptions(opt);
 
-    fprintf(stderr, "singleTask: %s\n", opt.singleTask ? "true" : "false");
-
-    //if (opt.command == "server") {
-    //    runServer(opt);
-    //    return;
-    //}
-
-    if (opt.command == "update") {
-        Timer t(opt);
-        runLoad(opt);
-        if (opt.logLevel == Level::trace)
-            t.print("total time");
+    if (opt.command == "server" || opt.command == "update") {
+        runServer(opt);
         return;
     }
+
+    //if (opt.command == "update") {
+    //    Timer t(opt);
+    //    runLoad(opt);
+    //    if (opt.logLevel == Level::trace)
+    //        t.print("total time");
+    //    return;
+    //}
 }
 
 int main(int argc, char* argv[])

@@ -86,7 +86,7 @@ void initSchema(DBContext* db)
         "    log_time TIMESTAMPTZ NOT NULL,\n"
         "    pid BIGINT NOT NULL,\n"
         "    level VARCHAR(5) NOT NULL,\n"
-        "    event VARCHAR(63) NOT NULL,\n"
+        "    type VARCHAR(63) NOT NULL,\n"
         "    table_name VARCHAR(63) NOT NULL,\n"
         "    message VARCHAR(65535) NOT NULL,\n"
         "    elapsed_time REAL\n"
