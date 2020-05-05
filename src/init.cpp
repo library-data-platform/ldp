@@ -14,7 +14,7 @@
 bool selectSchemaVersion(DBContext* db, int64_t* version)
 {
     string sql = "SELECT ldp_schema_version FROM ldp_system.main;";
-    db->log->log(Level::trace, "", "", sql, -1);
+    db->log->log(Level::detail, "", "", sql, -1);
     etymon::OdbcStmt stmt(db->dbc);
     try {
         db->dbc->execDirect(&stmt, sql);
@@ -60,68 +60,68 @@ void initSchema(DBContext* db)
     // throw an exception in such cases.
 
     string sql = "CREATE SCHEMA IF NOT EXISTS ldp_system;";
-    db->log->log(Level::trace, "", "", sql, -1);
+    db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
     sql =
         "CREATE TABLE IF NOT EXISTS ldp_system.main (\n"
         "    ldp_schema_version BIGINT NOT NULL\n"
         ");";
-    db->log->log(Level::trace, "", "", sql, -1);
+    db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
     sql = "DELETE FROM ldp_system.main;";  // Temporary: pre-LDP-1.0
-    db->log->log(Level::trace, "", "", sql, -1);
+    db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
     sql = "INSERT INTO ldp_system.main (ldp_schema_version) VALUES (0);";
-    db->log->log(Level::trace, "", "", sql, -1);
+    db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
     // Temporary: pre-LDP-1.0
     sql = "DROP TABLE IF EXISTS ldp_system.log;";
-    db->log->log(Level::trace, "", "", sql, -1);
+    db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
     sql =
         "CREATE TABLE IF NOT EXISTS ldp_system.log (\n"
         "    log_time TIMESTAMPTZ NOT NULL,\n"
         "    pid BIGINT NOT NULL,\n"
-        "    level VARCHAR(5) NOT NULL,\n"
+        "    level VARCHAR(6) NOT NULL,\n"
         "    type VARCHAR(63) NOT NULL,\n"
         "    table_name VARCHAR(63) NOT NULL,\n"
         "    message VARCHAR(65535) NOT NULL,\n"
         "    elapsed_time REAL\n"
         ");";
     db->dbc->execDirect(nullptr, sql);
-    db->log->log(Level::trace, "", "", sql, -1);
+    db->log->log(Level::detail, "", "", sql, -1);
 
     sql = "CREATE SCHEMA IF NOT EXISTS ldp_config;";
-    db->log->log(Level::trace, "", "", sql, -1);
+    db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
     sql =
         "CREATE TABLE IF NOT EXISTS ldp_config.general (\n"
-        "    daily_update_enabled BOOLEAN NOT NULL,\n"
-        "    next_daily_update TIMESTAMPTZ NOT NULL\n"
+        "    full_update_enabled BOOLEAN NOT NULL,\n"
+        "    next_full_update TIMESTAMPTZ NOT NULL\n"
         ");";
     db->dbc->execDirect(nullptr, sql);
-    db->log->log(Level::trace, "", "", sql, -1);
+    db->log->log(Level::detail, "", "", sql, -1);
     sql = "DELETE FROM ldp_config.general;";  // Temporary: pre-LDP-1.0
-    db->log->log(Level::trace, "", "", sql, -1);
+    db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
     sql =
         "INSERT INTO ldp_config.general\n"
-        "    (daily_update_enabled, next_daily_update)\n"
+        "    (full_update_enabled, next_full_update)\n"
         "    VALUES\n"
         "    (TRUE, " + string(db->dbt->currentTimestamp()) + ");";
-    db->log->log(Level::trace, "", "", sql, -1);
+    db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
     sql = "CREATE SCHEMA IF NOT EXISTS history;";
-    db->log->log(Level::trace, "", "", sql, -1);
+    db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
     sql = "CREATE SCHEMA IF NOT EXISTS local;";
-    db->log->log(Level::trace, "", "", sql, -1);
+    db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 }
 
@@ -147,7 +147,7 @@ void initUpgrade(DBContext* db)
 
     int64_t version;
     bool versionFound = selectSchemaVersion(db, &version);
-    db->log->log(Level::trace, "", "", "ldp_schema_version: " +
+    db->log->log(Level::detail, "", "", "ldp_schema_version: " +
             (versionFound ? to_string(version) : "(not found)"),
             -1);
 
@@ -158,7 +158,7 @@ void initUpgrade(DBContext* db)
     }
 
     if (!versionFound) {
-        db->log->log(Level::trace, "", "", "Creating schema", -1);
+        db->log->log(Level::detail, "", "", "Creating schema", -1);
         {
             etymon::OdbcTx tx(db->dbc);
             initSchema(db);

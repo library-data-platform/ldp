@@ -16,14 +16,15 @@ enum class Level {
     warning,
     info,
     debug,
-    trace
+    trace,
+    detail
 };
 
 class Log {
 public:
     Log(etymon::OdbcDbc* dbc, Level level, const char* program);
     ~Log();
-    void log(Level level, const char* event, const string& table,
+    void log(Level level, const char* type, const string& table,
             const string& message, double elapsed_time);
 private:
     Level level;

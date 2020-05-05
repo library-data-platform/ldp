@@ -31,7 +31,7 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
         "        history_" + table.tableName + "_id_updated_key\n"
         "        UNIQUE (id, updated)\n"
         ")" + rskeys + ";";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     string latestHistoryTable;
@@ -50,7 +50,7 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
         "                  h1.id = h2.id AND\n"
         "                  h1.updated < h2.updated\n"
         "      );";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     string loadingTable;
@@ -71,7 +71,7 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
         "    WHERE s.data IS NOT NULL AND\n"
         "          ( h.id IS NULL OR\n"
         "            (s.data)::VARCHAR <> (h.data)::VARCHAR );\n";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 }
 
@@ -79,7 +79,7 @@ void dropTable(const Options& opt, Log* log, const string& tableName,
         etymon::OdbcDbc* dbc)
 {
     string sql = "DROP TABLE IF EXISTS " + tableName + ";";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 }
 
@@ -91,7 +91,7 @@ void placeTable(const Options& opt, Log* log, const TableSchema& table,
     string sql =
         "ALTER TABLE " + loadingTable + "\n"
         "    RENAME TO " + table.tableName + ";";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 }
 

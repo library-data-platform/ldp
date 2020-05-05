@@ -30,30 +30,30 @@ static void updateDBPermissions(const Options& opt, Log* log,
     string sql;
 
     sql = "GRANT USAGE ON SCHEMA ldp_system TO " + opt.ldpUser + ";";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldp_system TO " +
         opt.ldpUser + ";";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
         opt.ldpUser + ";";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA history TO " + opt.ldpUser + ";";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA history TO " +
         opt.ldpUser + ";";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + opt.ldpUser + ";";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 }
 

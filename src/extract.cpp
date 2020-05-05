@@ -86,7 +86,7 @@ void okapiLogin(const Options& opt, Log* log, string* token)
     string path = opt.okapiURL;
     etymon::join(&path, "/authn/login");
 
-    log->log(Level::trace, "", "", "Retrieving: " + path, -1);
+    log->log(Level::detail, "", "", "Retrieving: " + path, -1);
 
     string tenantHeader = "X-Okapi-Tenant: ";
     tenantHeader += opt.okapiTenant;
@@ -188,7 +188,7 @@ static PageStatus retrieve(const Curl& c, const Options& opt, Log* log,
         curl_easy_setopt(c.curl, CURLOPT_URL, path.c_str());
         curl_easy_setopt(c.curl, CURLOPT_WRITEDATA, f.file);
 
-        log->log(Level::trace, "", "",
+        log->log(Level::detail, "", "",
                 "Retrieving from:\n"
                 "    Path: " + table.sourcePath + "\n"
                 "    Query: " + query, -1);
@@ -240,7 +240,7 @@ bool retrievePages(const Curl& c, const Options& opt, Log* log,
 {
     size_t page = 0;
     while (true) {
-        log->log(Level::trace, "", "",
+        log->log(Level::detail, "", "",
                 "Extracting page: " + to_string(page), -1);
         PageStatus status = retrieve(c, opt, log, token, table, loadDir,
                 extractionFiles, page);
@@ -285,7 +285,7 @@ bool retrieveDirect(const Options& opt, Log* log, const TableSchema& table,
             opt.direct.databaseName, "require");
     string sql = "SELECT jsonb FROM " +
         opt.okapiTenant + "_" + table.directSourceTable + ";";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
 
     if (PQsendQuery(db.conn, sql.c_str()) == 0) {
         string err = PQerrorMessage(db.conn);

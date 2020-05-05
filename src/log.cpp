@@ -20,7 +20,7 @@ Log::~Log()
     delete dbt;
 }
 
-void Log::log(Level level, const char* event, const string& table,
+void Log::log(Level level, const char* type, const string& table,
         const string& message, double elapsed_time)
 {
     // Add a prefix to highlight error states.
@@ -66,14 +66,20 @@ void Log::log(Level level, const char* event, const string& table,
         levelStr = "info";
         break;
     case Level::debug:
-        if (this->level != Level::debug && this->level != Level::trace)
+        if (this->level != Level::debug && this->level != Level::trace &&
+                this->level != Level::detail)
             return;
         levelStr = "debug";
         break;
     case Level::trace:
-        if (this->level != Level::trace)
+        if (this->level != Level::trace && this->level != Level::detail)
             return;
         levelStr = "trace";
+        break;
+    case Level::detail:
+        if (this->level != Level::detail)
+            return;
+        levelStr = "detail";
         break;
     }
 
@@ -92,12 +98,13 @@ void Log::log(Level level, const char* event, const string& table,
         "    (log_time, pid, level, type, table_name, message, elapsed_time)\n"
         "  VALUES\n"
         "    (" + string(dbt->currentTimestamp()) + ", " + to_string(getpid()) +
-        ", '" + levelStr + "', '" + event + "', '" + table + "', " +
+        ", '" + levelStr + "', '" + type + "', '" + table + "', " +
         logmsgEncoded + ", " + elapsed_time_str + ");";
     try {
         dbc->execDirect(nullptr, sql);
     } catch (runtime_error& e) {
-        if (level == Level::debug || level == Level::trace)
+        if (level == Level::debug || level == Level::trace ||
+                level == Level::detail)
             fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
     }
 }

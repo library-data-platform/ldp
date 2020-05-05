@@ -105,24 +105,24 @@ static void runPreloadTests(const Options& opt, etymon::OdbcEnv* odbc)
 
 /**
  * \brief Check configuration in the LDP database to determine if it
- * is time to run a daily update.
+ * is time to run a full update.
  *
  * \param[in] opt
  * \param[in] dbc
  * \param[in] dbt
  * \param[in] log
- * \retval true The daily update should be run as soon as possible.
- * \retval false The daily update should not be run at this time.
+ * \retval true The full update should be run as soon as possible.
+ * \retval false The full update should not be run at this time.
  */
-bool timeForDailyUpdate(const Options& opt, etymon::OdbcDbc* dbc, DBType* dbt,
+bool timeForFullUpdate(const Options& opt, etymon::OdbcDbc* dbc, DBType* dbt,
         Log* log)
 {
     string sql =
-        "SELECT daily_update_enabled,\n"
-        "       (next_daily_update <= " +
+        "SELECT full_update_enabled,\n"
+        "       (next_full_update <= " +
         string(dbt->currentTimestamp()) + ") AS update_now\n"
         "    FROM ldp_config.general;";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     etymon::OdbcStmt stmt(dbc);
     dbc->execDirect(&stmt, sql);
     if (dbc->fetch(&stmt) == false) {
@@ -130,19 +130,19 @@ bool timeForDailyUpdate(const Options& opt, etymon::OdbcDbc* dbc, DBType* dbt,
         log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
-    string dailyUpdateEnabled, updateNow;
-    dbc->getData(&stmt, 1, &dailyUpdateEnabled);
+    string fullUpdateEnabled, updateNow;
+    dbc->getData(&stmt, 1, &fullUpdateEnabled);
     dbc->getData(&stmt, 2, &updateNow);
     if (dbc->fetch(&stmt)) {
         string e = "Too many rows in table: ldp_config.general";
         log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
-    return dailyUpdateEnabled == "1" && updateNow == "1";
+    return fullUpdateEnabled == "1" && updateNow == "1";
 }
 
 /**
- * \brief Reschedule the configured daily load time to the next day,
+ * \brief Reschedule the configured full load time to the next day,
  * retaining the same time.
  *
  * \param[in] opt
@@ -155,18 +155,18 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
 {
     string updateInFuture;
     do {
-        // Increment next_daily_update.
+        // Increment next_full_update.
         string sql =
-            "UPDATE ldp_config.general SET next_daily_update =\n"
-            "    next_daily_update + INTERVAL '1 day';";
-        log->log(Level::trace, "", "", sql, -1);
+            "UPDATE ldp_config.general SET next_full_update =\n"
+            "    next_full_update + INTERVAL '1 day';";
+        log->log(Level::detail, "", "", sql, -1);
         dbc->execDirect(nullptr, sql);
-        // Check if next_daily_update is now in the future.
+        // Check if next_full_update is now in the future.
         sql =
-            "SELECT (next_daily_update > " + string(dbt->currentTimestamp()) +
+            "SELECT (next_full_update > " + string(dbt->currentTimestamp()) +
             ") AS update_in_future\n"
             "    FROM ldp_config.general;";
-        log->log(Level::trace, "", "", sql, -1);
+        log->log(Level::detail, "", "", sql, -1);
         etymon::OdbcStmt stmt(dbc);
         dbc->execDirect(&stmt, sql);
         if (dbc->fetch(&stmt) == false) {
@@ -199,12 +199,16 @@ void runServer(const Options& opt)
     DBType dbt(&dbc);
 
     do {
-        if (opt.cliMode || timeForDailyUpdate(opt, &dbc, &dbt, &log) ) {
+        if (opt.cliMode || timeForFullUpdate(opt, &dbc, &dbt, &log) ) {
+            log.log(Level::trace, "", "", "Starting full update", -1);
             pid_t pid = fork();
             if (pid == 0)
                 runUpdate(opt);
             if (pid > 0) {
-                waitpid(pid, nullptr, 0);
+                int stat;
+                waitpid(pid, &stat, 0);
+                log.log(Level::trace, "", "",
+                        "Status code of full update: " + to_string(stat), -1);
                 rescheduleNextDailyLoad(opt, &dbc, &dbt, &log);
             }
             if (pid < 0)
@@ -213,7 +217,7 @@ void runServer(const Options& opt)
 
         if (!opt.cliMode) {
             int s = 60;
-            log.log(Level::trace, "", "",
+            log.log(Level::detail, "", "",
                     "Sleeping for " + to_string(s) + " seconds", -1);
             std::this_thread::sleep_for(std::chrono::seconds(s));
         }

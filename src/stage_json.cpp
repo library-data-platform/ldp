@@ -195,7 +195,7 @@ static void endInserts(const Options& opt, Log* log, const string& table,
         string* buffer, etymon::OdbcDbc* dbc)
 {
     *buffer += ";\n";
-    log->log(Level::trace, "", "", "Staging data for table: " + table, -1);
+    log->log(Level::detail, "", "", "Loading data for table: " + table, -1);
     dbc->execDirect(nullptr, *buffer);
     buffer->clear();
 }
@@ -540,13 +540,13 @@ static void createLoadingTable(const Options& opt, Log* log,
     sql = "CREATE TABLE IF NOT EXISTS " + table.tableName + " (\n"
         "    row_id BIGINT\n"
         ");";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     // Start auto-increment after max(row_id) to avoid reusing values.
     int64_t autoIncStart = 1;  // Default to 1 if no data available.
     sql = "SELECT max(row_id) FROM " + table.tableName + ";";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     try {
         etymon::OdbcStmt stmt(dbc);
         dbc->execDirect(&stmt, sql);
@@ -562,13 +562,13 @@ static void createLoadingTable(const Options& opt, Log* log,
 
     dbt.renameSequence(sequenceName, sequenceName + "_old", &sql);
     if (sql != "") {
-        log->log(Level::trace, "", "", sql, -1);
+        log->log(Level::detail, "", "", sql, -1);
         dbc->execDirect(nullptr, sql);
     }
 
     dbt.createSequence(sequenceName, autoIncStart, &sql);
     if (sql != "") {
-        log->log(Level::trace, "", "", sql, -1);
+        log->log(Level::detail, "", "", sql, -1);
         dbc->execDirect(nullptr, sql);
     }
 
@@ -599,12 +599,12 @@ static void createLoadingTable(const Options& opt, Log* log,
         "    PRIMARY KEY (row_id),\n"
         "    UNIQUE (id)\n"
         ")" + rskeys + ";";
-    log->log(Level::trace, "", "", sql, -1);
+    log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
     dbt.alterSequenceOwnedBy(sequenceName, loadingTable + ".row_id", &sql);
     if (sql != "") {
-        log->log(Level::trace, "", "", sql, -1);
+        log->log(Level::detail, "", "", sql, -1);
         dbc->execDirect(nullptr, sql);
     }
 
@@ -619,7 +619,7 @@ static void createLoadingTable(const Options& opt, Log* log,
         sql += "https://dev.folio.org/reference/api/#";
         sql += table.moduleName;
         sql += "';";
-        log->log(Level::trace, "", "",
+        log->log(Level::detail, "", "",
                 "Setting comment on table: " + table.tableName, -1);
         dbc->execDirect(nullptr, sql);
     }
@@ -630,7 +630,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
 {
     size_t pageCount = readPageCount(opt, log, loadDir, table->tableName);
 
-    log->log(Level::trace, "", "",
+    log->log(Level::detail, "", "",
             "Staging: " + table->tableName + ": page count: " +
             to_string(pageCount), -1);
 
@@ -643,7 +643,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
 
     for (int pass = 1; pass <= 2; pass++) {
 
-        log->log(Level::trace, "", "",
+        log->log(Level::detail, "", "",
                 "Staging: " + table->tableName +
                 (pass == 1 ?  ": analyze" : ": load"), -1);
 
@@ -651,7 +651,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
             string path;
             composeDataFilePath(loadDir, *table,
                     "_" + to_string(page) + ".json", &path);
-            log->log(Level::trace, "", "",
+            log->log(Level::detail, "", "",
                     "Staging: " + table->tableName +
                     (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                     to_string(page), -1);
@@ -663,7 +663,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
             string path;
             composeDataFilePath(loadDir, *table, "_test.json", &path);
             if (etymon::fileExists(path)) {
-                log->log(Level::trace, "", "",
+                log->log(Level::detail, "", "",
                         "Staging: " + table->tableName +
                         (pass == 1 ?  ": analyze" : ": load") +
                         ": test file", -1);
@@ -674,21 +674,21 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
 
         if (pass == 1) {
             for (const auto& [field, counts] : stats) {
-                log->log(Level::trace, "", "",
+                log->log(Level::detail, "", "",
                         "Stats: in field: " + field, -1);
-                log->log(Level::trace, "", "",
+                log->log(Level::detail, "", "",
                         "Stats: string: " + to_string(counts.string), -1);
-                log->log(Level::trace, "", "",
+                log->log(Level::detail, "", "",
                         "Stats: datetime: " + to_string(counts.dateTime), -1);
-                log->log(Level::trace, "", "",
+                log->log(Level::detail, "", "",
                         "Stats: bool: " + to_string(counts.boolean), -1);
-                log->log(Level::trace, "", "",
+                log->log(Level::detail, "", "",
                         "Stats: number: " + to_string(counts.number), -1);
-                log->log(Level::trace, "", "",
+                log->log(Level::detail, "", "",
                         "Stats: int: " + to_string(counts.integer), -1);
-                log->log(Level::trace, "", "",
+                log->log(Level::detail, "", "",
                         "Stats: float: " + to_string(counts.floating), -1);
-                log->log(Level::trace, "", "",
+                log->log(Level::detail, "", "",
                         "Stats: null: " + to_string(counts.null), -1);
             }
         }
@@ -701,7 +701,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                 ColumnSchema::columnTypeToString(column.columnType, &typeStr);
                 string newattr;
                 decodeCamelCase(field.c_str(), &newattr);
-                log->log(Level::trace, "", "",
+                log->log(Level::detail, "", "",
                         string("Column: ") + newattr + string(" ") + typeStr,
                         -1);
                 column.columnName = newattr;
