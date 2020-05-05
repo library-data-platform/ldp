@@ -25,7 +25,7 @@ bool selectSchemaVersion(DBContext* db, int64_t* version)
     if (db->dbc->fetch(&stmt) == false) {
         // This means there are no rows.  Do not try to recover
         // automatically from this problem.
-        string e = "Table ldp_system.main contains no rows";
+        string e = "No rows could be read from table: ldp_system.main";
         db->log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
@@ -34,7 +34,7 @@ bool selectSchemaVersion(DBContext* db, int64_t* version)
     if (db->dbc->fetch(&stmt)) {
         // This means there is more than one row.  Do not try to
         // recover automatically from this problem.
-        string e = "Table ldp_system.main contains too many rows";
+        string e = "Too many rows in table: ldp_system.main";
         db->log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }

@@ -8,7 +8,9 @@
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <thread>
+#include <unistd.h>
 #include <vector>
 
 #include "../etymoncpp/include/odbc.h"
@@ -154,15 +156,27 @@ static void runPreloadTests(const Options& opt, etymon::OdbcEnv* odbc)
 }
 */
 
-void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
+void runUpdate(const Options& opt)
 {
+    // TODO Wrap curl_global_init() in a class.
+    CURLcode cc = curl_global_init(CURL_GLOBAL_ALL);
+    if (cc) {
+        throw runtime_error(string("Error initializing curl: ") +
+                curl_easy_strerror(cc));
+    }
+
+    etymon::OdbcEnv odbc;
+
+    etymon::OdbcDbc logDbc(&odbc, opt.db);
+    Log log(&logDbc, opt.logLevel, opt.prog);
+
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
 
     {
-        etymon::OdbcDbc dbc(odbc, opt.db);
+        etymon::OdbcDbc dbc(&odbc, opt.db);
         DBType dbt(&dbc);
-        DBContext db(&dbc, &dbt, log);
+        DBContext db(&dbc, &dbt, &log);
         initUpgrade(&db);
     }
 
@@ -182,9 +196,9 @@ void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
         //            opt.prog, opt.loadFromDir.c_str());
         loadDir = opt.loadFromDir;
     } else {
-        log->log(Level::trace, "", "", "Logging in to Okapi service", -1);
+        log.log(Level::trace, "", "", "Logging in to Okapi service", -1);
 
-        okapiLogin(opt, log, &token);
+        okapiLogin(opt, &log, &token);
 
         makeTmpDir(opt, &loadDir);
         extractionDir.dir = loadDir;
@@ -204,17 +218,17 @@ void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
 
         ExtractionFiles extractionFiles(opt);
 
-        log->log(Level::trace, "", "",
+        log.log(Level::trace, "", "",
                 "Updating table: " + table.tableName, -1);
 
         Timer loadTimer(opt);
 
         if (opt.loadFromDir == "") {
-            log->log(Level::trace, "", "",
+            log.log(Level::trace, "", "",
                     "Extracting: " + table.sourcePath, -1);
             bool foundData = directOverride(opt, table.sourcePath) ?
-                retrieveDirect(opt, log, table, loadDir, &extractionFiles) :
-                retrievePages(c, opt, log, token, table, loadDir,
+                retrieveDirect(opt, &log, table, loadDir, &extractionFiles) :
+                retrievePages(c, opt, &log, token, table, loadDir,
                         &extractionFiles);
             if (!foundData)
                 table.skip = true;
@@ -223,37 +237,37 @@ void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
         if (table.skip)
             continue;
 
-        etymon::OdbcDbc dbc(odbc, opt.db);
+        etymon::OdbcDbc dbc(&odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
         DBType dbt(&dbc);
 
         {
             etymon::OdbcTx tx(&dbc);
 
-            log->log(Level::trace, "", "",
+            log.log(Level::trace, "", "",
                     "Staging table: " + table.tableName, -1);
-            stageTable(opt, log, &table, &dbc, dbt, loadDir);
+            stageTable(opt, &log, &table, &dbc, dbt, loadDir);
 
-            log->log(Level::trace, "", "",
+            log.log(Level::trace, "", "",
                     "Merging table: " + table.tableName, -1);
-            mergeTable(opt, log, table, &dbc, dbt);
+            mergeTable(opt, &log, table, &dbc, dbt);
 
-            log->log(Level::trace, "", "",
+            log.log(Level::trace, "", "",
                     "Replacing table: " + table.tableName, -1);
-            dropTable(opt, log, table.tableName, &dbc);
-            placeTable(opt, log, table, &dbc);
+            dropTable(opt, &log, table.tableName, &dbc);
+            placeTable(opt, &log, table, &dbc);
             //updateStatus(opt, table, &dbc);
 
-            log->log(Level::trace, "", "",
+            log.log(Level::trace, "", "",
                     "Updating database permissions", -1);
-            updateDBPermissions(opt, log, &dbc);
+            updateDBPermissions(opt, &log, &dbc);
 
             tx.commit();
         }
 
         //vacuumAnalyzeTable(opt, table, &dbc);
 
-        log->log(Level::debug, "update", table.tableName,
+        log.log(Level::debug, "update", table.tableName,
                 "Updated table: " + table.tableName,
                 loadTimer.elapsedTime());
 
@@ -262,29 +276,106 @@ void runUpdate(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
     }
 
     {
-        etymon::OdbcDbc dbc(odbc, opt.db);
+        etymon::OdbcDbc dbc(&odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
 
         {
             etymon::OdbcTx tx(&dbc);
-            dropOldTables(opt, log, &dbc);
+            dropOldTables(opt, &log, &dbc);
             tx.commit();
         }
     }
 
     // TODO Check if needed for history tables; if so, move into loop above.
     //vacuumAnalyzeAll(opt, &schema, &db);
+
+    curl_global_cleanup();  // Clean-up after curl_global_init().
+
+    exit(0);
+}
+
+/**
+ * \brief Check configuration in the LDP database to determine if it
+ * is time to run a daily update.
+ *
+ * \param[in] opt
+ * \param[in] dbc
+ * \param[in] dbt
+ * \param[in] log
+ * \retval true The daily update should be run as soon as possible.
+ * \retval false The daily update should not be run at this time.
+ */
+bool timeForDailyUpdate(const Options& opt, etymon::OdbcDbc* dbc, DBType* dbt,
+        Log* log)
+{
+    string sql =
+        "SELECT daily_update_enabled,\n"
+        "       (next_daily_update <= " +
+        string(dbt->currentTimestamp()) + ") AS update_now\n"
+        "    FROM ldp_config.general;";
+    log->log(Level::trace, "", "", sql, -1);
+    etymon::OdbcStmt stmt(dbc);
+    dbc->execDirect(&stmt, sql);
+    if (dbc->fetch(&stmt) == false) {
+        string e = "No rows could be read from table: ldp_config.general";
+        log->log(Level::error, "", "", e, -1);
+        throw runtime_error(e);
+    }
+    string dailyUpdateEnabled, updateNow;
+    dbc->getData(&stmt, 1, &dailyUpdateEnabled);
+    dbc->getData(&stmt, 2, &updateNow);
+    if (dbc->fetch(&stmt)) {
+        string e = "Too many rows in table: ldp_config.general";
+        log->log(Level::error, "", "", e, -1);
+        throw runtime_error(e);
+    }
+    return dailyUpdateEnabled == "1" && updateNow == "1";
+}
+
+/**
+ * \brief Reschedule the configured daily load time to the next day,
+ * retaining the same time.
+ *
+ * \param[in] opt
+ * \param[in] dbc
+ * \param[in] dbt
+ * \param[in] log
+ */
+void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
+        DBType* dbt, Log* log)
+{
+    string updateInFuture;
+    do {
+        // Increment next_daily_update.
+        string sql =
+            "UPDATE ldp_config.general SET next_daily_update =\n"
+            "    next_daily_update + INTERVAL '1 day';";
+        log->log(Level::trace, "", "", sql, -1);
+        dbc->execDirect(nullptr, sql);
+        // Check if next_daily_update is now in the future.
+        sql =
+            "SELECT (next_daily_update > " + string(dbt->currentTimestamp()) +
+            ") AS update_in_future\n"
+            "    FROM ldp_config.general;";
+        log->log(Level::trace, "", "", sql, -1);
+        etymon::OdbcStmt stmt(dbc);
+        dbc->execDirect(&stmt, sql);
+        if (dbc->fetch(&stmt) == false) {
+            string e = "No rows could be read from table: ldp_config.general";
+            log->log(Level::error, "", "", e, -1);
+            throw runtime_error(e);
+        }
+        dbc->getData(&stmt, 1, &updateInFuture);
+        if (dbc->fetch(&stmt)) {
+            string e = "Too many rows in table: ldp_config.general";
+            log->log(Level::error, "", "", e, -1);
+            throw runtime_error(e);
+        }
+    } while (updateInFuture == "0");
 }
 
 void runServer(const Options& opt)
 {
-    // TODO Wrap curl_global_init() in a class.
-    CURLcode cc = curl_global_init(CURL_GLOBAL_ALL);
-    if (cc) {
-        throw runtime_error(string("Error initializing curl: ") +
-                curl_easy_strerror(cc));
-    }
-
     etymon::OdbcEnv odbc;
 
     //runPreloadTests(opt, &odbc);
@@ -295,11 +386,24 @@ void runServer(const Options& opt)
     log.log(Level::info, "server", "",
             string("Server started") + (opt.cliMode ? " (CLI mode)" : ""), -1);
 
+    etymon::OdbcDbc dbc(&odbc, opt.db);
+    DBType dbt(&dbc);
+
     do {
-        runUpdate(opt, &odbc, &log);
+        if (opt.cliMode || timeForDailyUpdate(opt, &dbc, &dbt, &log) ) {
+            pid_t pid = fork();
+            if (pid == 0)
+                runUpdate(opt);
+            if (pid > 0) {
+                waitpid(pid, nullptr, 0);
+                rescheduleNextDailyLoad(opt, &dbc, &dbt, &log);
+            }
+            if (pid < 0)
+                throw runtime_error("Error starting child process");
+        }
 
         if (!opt.cliMode) {
-            int s = 1000000;
+            int s = 60;
             log.log(Level::trace, "", "",
                     "Sleeping for " + to_string(s) + " seconds", -1);
             std::this_thread::sleep_for(std::chrono::seconds(s));
@@ -310,8 +414,6 @@ void runServer(const Options& opt)
 
     if (opt.cliMode)
         fprintf(opt.err, "%s: Update completed\n", opt.prog);
-
-    curl_global_cleanup();  // Clean-up after curl_global_init().
 }
 
 void fillDirectOptions(const Config& config, const string& base, Options* opt)
