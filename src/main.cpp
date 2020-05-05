@@ -121,12 +121,12 @@ bool timeForFullUpdate(const Options& opt, etymon::OdbcDbc* dbc, DBType* dbt,
         "SELECT full_update_enabled,\n"
         "       (next_full_update <= " +
         string(dbt->currentTimestamp()) + ") AS update_now\n"
-        "    FROM ldp_config.general;";
+        "    FROM ldpconfig.general;";
     log->log(Level::detail, "", "", sql, -1);
     etymon::OdbcStmt stmt(dbc);
     dbc->execDirect(&stmt, sql);
     if (dbc->fetch(&stmt) == false) {
-        string e = "No rows could be read from table: ldp_config.general";
+        string e = "No rows could be read from table: ldpconfig.general";
         log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
@@ -134,7 +134,7 @@ bool timeForFullUpdate(const Options& opt, etymon::OdbcDbc* dbc, DBType* dbt,
     dbc->getData(&stmt, 1, &fullUpdateEnabled);
     dbc->getData(&stmt, 2, &updateNow);
     if (dbc->fetch(&stmt)) {
-        string e = "Too many rows in table: ldp_config.general";
+        string e = "Too many rows in table: ldpconfig.general";
         log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
@@ -157,7 +157,7 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
     do {
         // Increment next_full_update.
         string sql =
-            "UPDATE ldp_config.general SET next_full_update =\n"
+            "UPDATE ldpconfig.general SET next_full_update =\n"
             "    next_full_update + INTERVAL '1 day';";
         log->log(Level::detail, "", "", sql, -1);
         dbc->execDirect(nullptr, sql);
@@ -165,18 +165,18 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
         sql =
             "SELECT (next_full_update > " + string(dbt->currentTimestamp()) +
             ") AS update_in_future\n"
-            "    FROM ldp_config.general;";
+            "    FROM ldpconfig.general;";
         log->log(Level::detail, "", "", sql, -1);
         etymon::OdbcStmt stmt(dbc);
         dbc->execDirect(&stmt, sql);
         if (dbc->fetch(&stmt) == false) {
-            string e = "No rows could be read from table: ldp_config.general";
+            string e = "No rows could be read from table: ldpconfig.general";
             log->log(Level::error, "", "", e, -1);
             throw runtime_error(e);
         }
         dbc->getData(&stmt, 1, &updateInFuture);
         if (dbc->fetch(&stmt)) {
-            string e = "Too many rows in table: ldp_config.general";
+            string e = "Too many rows in table: ldpconfig.general";
             log->log(Level::error, "", "", e, -1);
             throw runtime_error(e);
         }

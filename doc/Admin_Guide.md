@@ -292,7 +292,7 @@ in the LDP configuration file.  This section should provide connection
 details for a data source, as well as a directory (`extractDir`) where
 temporary extracted files can be written.
 
-The LDP software logs its activities to the table `ldp_system.log`.
+The LDP software logs its activities to the table `ldpsystem.log`.
 For debugging purposes, the `--trace` option can be used to enable
 very detailed logging.
 

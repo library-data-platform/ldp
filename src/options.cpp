@@ -14,7 +14,7 @@ static void validate(const Options& opt)
         fprintf(stderr,
                 "ldp:    Verbose output (--verbose or -v) is deprecated.  "
                 "Logs are now\n"
-                "ldp:    recorded in table: ldp_system.log\n");
+                "ldp:    recorded in table: ldpsystem.log\n");
         fprintf(stderr, "ldp:    ---------------------------------------------"
                 "-----------------------\n");
     }
@@ -24,7 +24,7 @@ static void validate(const Options& opt)
         fprintf(stderr,
                 "ldp:    Debugging output (--debug) is deprecated.  "
                 "Logs are now recorded\n"
-                "ldp:    in table: ldp_system.log\n"
+                "ldp:    in table: ldpsystem.log\n"
                 "ldp:    The \"--trace\" option enables detailed logging.\n");
         fprintf(stderr, "ldp:    ---------------------------------------------"
                 "-----------------------\n");

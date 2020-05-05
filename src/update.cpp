@@ -29,11 +29,11 @@ static void updateDBPermissions(const Options& opt, Log* log,
 {
     string sql;
 
-    sql = "GRANT USAGE ON SCHEMA ldp_system TO " + opt.ldpUser + ";";
+    sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + opt.ldpUser + ";";
     log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldp_system TO " +
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " +
         opt.ldpUser + ";";
     log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);

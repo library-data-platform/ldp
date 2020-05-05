@@ -13,7 +13,7 @@
  */
 bool selectSchemaVersion(DBContext* db, int64_t* version)
 {
-    string sql = "SELECT ldp_schema_version FROM ldp_system.main;";
+    string sql = "SELECT ldp_schema_version FROM ldpsystem.main;";
     db->log->log(Level::detail, "", "", sql, -1);
     etymon::OdbcStmt stmt(db->dbc);
     try {
@@ -25,7 +25,7 @@ bool selectSchemaVersion(DBContext* db, int64_t* version)
     if (db->dbc->fetch(&stmt) == false) {
         // This means there are no rows.  Do not try to recover
         // automatically from this problem.
-        string e = "No rows could be read from table: ldp_system.main";
+        string e = "No rows could be read from table: ldpsystem.main";
         db->log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
@@ -34,7 +34,7 @@ bool selectSchemaVersion(DBContext* db, int64_t* version)
     if (db->dbc->fetch(&stmt)) {
         // This means there is more than one row.  Do not try to
         // recover automatically from this problem.
-        string e = "Too many rows in table: ldp_system.main";
+        string e = "Too many rows in table: ldpsystem.main";
         db->log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
@@ -59,30 +59,30 @@ void initSchema(DBContext* db)
     // NOT EXISTS" will no longer be used because we will want to
     // throw an exception in such cases.
 
-    string sql = "CREATE SCHEMA IF NOT EXISTS ldp_system;";
+    string sql = "CREATE SCHEMA IF NOT EXISTS ldpsystem;";
     db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
     sql =
-        "CREATE TABLE IF NOT EXISTS ldp_system.main (\n"
+        "CREATE TABLE IF NOT EXISTS ldpsystem.main (\n"
         "    ldp_schema_version BIGINT NOT NULL\n"
         ");";
     db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
-    sql = "DELETE FROM ldp_system.main;";  // Temporary: pre-LDP-1.0
+    sql = "DELETE FROM ldpsystem.main;";  // Temporary: pre-LDP-1.0
     db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
-    sql = "INSERT INTO ldp_system.main (ldp_schema_version) VALUES (0);";
+    sql = "INSERT INTO ldpsystem.main (ldp_schema_version) VALUES (0);";
     db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
     // Temporary: pre-LDP-1.0
-    sql = "DROP TABLE IF EXISTS ldp_system.log;";
+    sql = "DROP TABLE IF EXISTS ldpsystem.log;";
     db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
     sql =
-        "CREATE TABLE IF NOT EXISTS ldp_system.log (\n"
+        "CREATE TABLE IF NOT EXISTS ldpsystem.log (\n"
         "    log_time TIMESTAMPTZ NOT NULL,\n"
         "    pid BIGINT NOT NULL,\n"
         "    level VARCHAR(6) NOT NULL,\n"
@@ -94,22 +94,22 @@ void initSchema(DBContext* db)
     db->dbc->execDirect(nullptr, sql);
     db->log->log(Level::detail, "", "", sql, -1);
 
-    sql = "CREATE SCHEMA IF NOT EXISTS ldp_config;";
+    sql = "CREATE SCHEMA IF NOT EXISTS ldpconfig;";
     db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
     sql =
-        "CREATE TABLE IF NOT EXISTS ldp_config.general (\n"
+        "CREATE TABLE IF NOT EXISTS ldpconfig.general (\n"
         "    full_update_enabled BOOLEAN NOT NULL,\n"
         "    next_full_update TIMESTAMPTZ NOT NULL\n"
         ");";
     db->dbc->execDirect(nullptr, sql);
     db->log->log(Level::detail, "", "", sql, -1);
-    sql = "DELETE FROM ldp_config.general;";  // Temporary: pre-LDP-1.0
+    sql = "DELETE FROM ldpconfig.general;";  // Temporary: pre-LDP-1.0
     db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
     sql =
-        "INSERT INTO ldp_config.general\n"
+        "INSERT INTO ldpconfig.general\n"
         "    (full_update_enabled, next_full_update)\n"
         "    VALUES\n"
         "    (TRUE, " + string(db->dbt->currentTimestamp()) + ");";
@@ -163,7 +163,7 @@ void initUpgrade(DBContext* db)
             etymon::OdbcTx tx(db->dbc);
             initSchema(db);
             tx.commit();
-            fprintf(stderr, "ldp: Logging enabled in table: ldp_system.log\n");
+            fprintf(stderr, "ldp: Logging enabled in table: ldpsystem.log\n");
         }
     }
 }
