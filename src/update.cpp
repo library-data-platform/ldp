@@ -59,6 +59,8 @@ static void updateDBPermissions(const Options& opt, Log* log,
 
 void runUpdate(const Options& opt)
 {
+    //throw runtime_error("TESTING ERROR");
+
     // TODO Wrap curl_global_init() in a class.
     CURLcode cc = curl_global_init(CURL_GLOBAL_ALL);
     if (cc) {
