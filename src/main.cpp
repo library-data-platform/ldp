@@ -419,6 +419,7 @@ void fillOptions(const Config& config, Options* opt)
     string target = "/ldpDatabase/";
     config.getRequired(target + "odbcDataSourceName",
             &(opt->db));
+    config.get(target + "ldpUser", &(opt->ldpUser));
     //config.getRequired(target + "databaseType", &(opt->databaseType));
     //config.getRequired(target + "databaseHost", &(opt->databaseHost));
     //config.getRequired(target + "databasePort", &(opt->databasePort));
