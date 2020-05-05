@@ -1,4 +1,5 @@
 #include <curl/curl.h>
+#include <stdexcept>
 #include <sys/stat.h>
 #include <sys/types.h>
 
