@@ -1,7 +1,6 @@
 #include <cassert>
 #include <cstring>
 #include <ctype.h>
-#include <curl/curl.h>
 #include <iostream>
 #include <stdio.h>
 

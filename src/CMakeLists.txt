@@ -51,6 +51,7 @@ add_executable(ldp
     schema.cpp
     stage_json.cpp
     timer.cpp
+    update.cpp
     util.cpp
 )
 target_link_libraries(ldp

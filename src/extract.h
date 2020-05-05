@@ -1,6 +1,7 @@
 #ifndef LDP_EXTRACT_H
 #define LDP_EXTRACT_H
 
+#include <curl/curl.h>
 #include <string>
 #include <unistd.h>
 
