@@ -122,8 +122,6 @@ static void dropTablePair(const Options& opt, Log* log, const string& tableName,
 
 void dropOldTables(const Options& opt, Log* log, etymon::OdbcDbc* dbc)
 {
-    dropTable(opt, log, "ldp_catalog.table_updates", dbc);
-
     dropTablePair(opt, log, "circulation_request_preference", dbc);
     dropTablePair(opt, log, "finance_ledger_fiscal_years", dbc);
     dropTablePair(opt, log, "user_addresstypes", dbc);
@@ -218,10 +216,6 @@ void dropOldTables(const Options& opt, Log* log, etymon::OdbcDbc* dbc)
 
     dropTablePair(opt, log, "testing_source_records", dbc);
     dropTablePair(opt, log, "srs_source_records", dbc);
-
-    string sql = "DROP SCHEMA IF EXISTS ldp_catalog;";
-    log->log(Level::trace, "", "", sql, -1);
-    dbc->execDirect(nullptr, sql);
 }
 
 //void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db)

@@ -292,16 +292,8 @@ void runServer(const Options& opt)
     etymon::OdbcDbc logDbc(&odbc, opt.db);
     Log log(&logDbc, opt.logLevel, opt.prog);
 
-    string currentTime;
-    getCurrentTime(&currentTime);
-    //log.log(Level::info, "server", "",
-    //        "Server started at " + currentTime +
-    //        (opt.cliMode ? " in CLI mode" : ""), -1);
     log.log(Level::info, "server", "",
-            "Server started at " + currentTime, -1);
-
-    if (opt.cliMode)
-        log.log(Level::info, "server", "", "CLI mode enabled", -1);
+            string("Server started") + (opt.cliMode ? " (CLI mode)" : ""), -1);
 
     do {
         runUpdate(opt, &odbc, &log);
@@ -314,9 +306,7 @@ void runServer(const Options& opt)
         }
     } while (!opt.cliMode);
 
-    getCurrentTime(&currentTime);
-    log.log(Level::info, "server", "",
-            "Server stopped at " + currentTime, -1);
+    log.log(Level::info, "server", "", "Server stopped", -1);
 
     if (opt.cliMode)
         fprintf(opt.err, "%s: Update completed\n", opt.prog);

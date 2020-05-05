@@ -94,6 +94,28 @@ void initSchema(DBContext* db)
     db->dbc->execDirect(nullptr, sql);
     db->log->log(Level::trace, "", "", sql, -1);
 
+    sql = "CREATE SCHEMA IF NOT EXISTS ldp_config;";
+    db->log->log(Level::trace, "", "", sql, -1);
+    db->dbc->execDirect(nullptr, sql);
+
+    sql =
+        "CREATE TABLE IF NOT EXISTS ldp_config.general (\n"
+        "    daily_update_enabled BOOLEAN NOT NULL,\n"
+        "    next_daily_update TIMESTAMPTZ NOT NULL\n"
+        ");";
+    db->dbc->execDirect(nullptr, sql);
+    db->log->log(Level::trace, "", "", sql, -1);
+    sql = "DELETE FROM ldp_config.general;";  // Temporary: pre-LDP-1.0
+    db->log->log(Level::trace, "", "", sql, -1);
+    db->dbc->execDirect(nullptr, sql);
+    sql =
+        "INSERT INTO ldp_config.general\n"
+        "    (daily_update_enabled, next_daily_update)\n"
+        "    VALUES\n"
+        "    (TRUE, " + string(db->dbt->currentTimestamp()) + ");";
+    db->log->log(Level::trace, "", "", sql, -1);
+    db->dbc->execDirect(nullptr, sql);
+
     sql = "CREATE SCHEMA IF NOT EXISTS history;";
     db->log->log(Level::trace, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
