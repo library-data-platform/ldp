@@ -9,7 +9,8 @@ LDP Admin Guide
 5\. Loading data into the database  
 6\. Running the LDP in production  
 7\. Loading data from files (for testing only)  
-8\. "Direct extraction" of large data
+8\. Direct extraction of large data  
+9\. Server mode
 
 
 1\. System requirements
@@ -280,6 +281,7 @@ The LDP loader is intended to be run once per day, at a time of day when
 usage is low, in order to refresh the database with new data.
 
 To extract data and load them into the LDP database:
+
 ```shell
 $ ldp update --config ldpconf.json --source okapi
 ```
@@ -389,17 +391,17 @@ development to combine extracted test data with additional static test
 data.
 
 
-8\. "Direct extraction" of large data
---------------------------------------
+8\. Direct extraction of large data
+-----------------------------------
 
-At the time of writing (LDP 0.5), FOLIO modules do not generally offer
-a performant method of extracting a large number of records.  For this
-reason, a workaround referred to as "direct extraction" has been
-implemented in the LDP software that allows some data to be extracted
-directly from a module's internal database, bypassing the module API.
-Direct extraction is currently supported for holdings, instances, and
-items.  It can be enabled by adding database connection parameters to
-a data source configuration, for example:
+At the present time, FOLIO modules do not generally offer a performant
+method of extracting a large number of records.  For this reason, a
+workaround referred to as "direct extraction" has been implemented in
+the LDP software that allows some data to be extracted directly from a
+module's internal database, bypassing the module API.  Direct
+extraction is currently supported for holdings, instances, and items.
+It can be enabled by adding database connection parameters to a data
+source configuration, for example:
 
 ```
 {
@@ -428,6 +430,29 @@ a data source configuration, for example:
 
 Note that this requires the client host to be able to connect to the
 database, which may be protected by a firewall.
+
+
+9\. Server mode
+---------------
+
+LDP 0.7 provides a new "server mode" which does not require Cron for
+scheduling data updates.  To test this mode, start `ldp` as a
+background process with `nohup`, and use the `server` command in place
+of the `update` command, e.g.:
+
+```shell
+$ nohup ldp server --config ldpconf.json --source okapi &
+```
+
+Data updates can be scheduled by setting `next_full_update` in table
+`ldpconfig.general`.  For example:
+
+```sql
+UPDATE ldpconfig.general
+    SET next_full_update = '2020-05-07 22:00:00Z';
+```
+
+Also ensure that `full_update_enabled` is set to `TRUE`.
 
 
 Further reading
