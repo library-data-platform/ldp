@@ -59,8 +59,6 @@ static void updateDBPermissions(const Options& opt, Log* log,
 
 void runUpdate(const Options& opt)
 {
-    //throw runtime_error("TESTING ERROR");
-
     // TODO Wrap curl_global_init() in a class.
     CURLcode cc = curl_global_init(CURL_GLOBAL_ALL);
     if (cc) {
@@ -193,7 +191,22 @@ void runUpdate(const Options& opt)
     //vacuumAnalyzeAll(opt, &schema, &db);
 
     curl_global_cleanup();  // Clean-up after curl_global_init().
+}
 
-    exit(0);
+void runUpdateProcess(const Options& opt)
+{
+    try {
+        runUpdate(opt);
+        exit(0);
+    } catch (runtime_error& e) {
+        string s = e.what();
+        if ( !(s.empty()) && s.back() == '\n' )
+            s.pop_back();
+        etymon::OdbcEnv odbc;
+        etymon::OdbcDbc logDbc(&odbc, opt.db);
+        Log log(&logDbc, opt.logLevel, opt.prog);
+        log.log(Level::error, "server", "", s, -1);
+        exit(1);
+    }
 }
 

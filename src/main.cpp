@@ -212,12 +212,17 @@ void runServer(const Options& opt)
             log.log(Level::trace, "", "", "Starting full update", -1);
             pid_t pid = fork();
             if (pid == 0)
-                runUpdate(opt);
+                runUpdateProcess(opt);
             if (pid > 0) {
                 int stat;
                 waitpid(pid, &stat, 0);
-                log.log(Level::trace, "", "",
-                        "Status code of full update: " + to_string(stat), -1);
+                if (WIFEXITED(stat))
+                    log.log(Level::trace, "", "",
+                            "Status code of full update: " +
+                            to_string(WEXITSTATUS(stat)), -1);
+                else
+                    log.log(Level::trace, "", "",
+                            "Full update did not terminate normally", -1);
                 rescheduleNextDailyLoad(opt, &dbc, &dbt, &log);
             }
             if (pid < 0)
@@ -232,7 +237,8 @@ void runServer(const Options& opt)
         }
     } while (!opt.cliMode);
 
-    log.log(Level::info, "server", "", "Server stopped", -1);
+    log.log(Level::info, "server", "",
+            string("Server stopped") + (opt.cliMode ? " (CLI mode)" : ""), -1);
 
     if (opt.cliMode)
         fprintf(opt.err, "%s: Update completed\n", opt.prog);
