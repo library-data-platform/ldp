@@ -394,14 +394,14 @@ data.
 8\. Direct extraction of large data
 -----------------------------------
 
-At the time of writing (LDP 0.5), FOLIO modules do not generally offer
-a performant method of extracting a large number of records.  For this
-reason, a workaround referred to as "direct extraction" has been
-implemented in the LDP software that allows some data to be extracted
-directly from a module's internal database, bypassing the module API.
-Direct extraction is currently supported for holdings, instances, and
-items.  It can be enabled by adding database connection parameters to
-a data source configuration, for example:
+At the present time, FOLIO modules do not generally offer a performant
+method of extracting a large number of records.  For this reason, a
+workaround referred to as "direct extraction" has been implemented in
+the LDP software that allows some data to be extracted directly from a
+module's internal database, bypassing the module API.  Direct
+extraction is currently supported for holdings, instances, and items.
+It can be enabled by adding database connection parameters to a data
+source configuration, for example:
 
 ```
 {
