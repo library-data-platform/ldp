@@ -149,7 +149,7 @@ void runUpdate(const Options& opt)
 
             log.log(Level::trace, "", "",
                     "Staging table: " + table.tableName, -1);
-            stageTable(opt, &log, &table, &dbc, dbt, loadDir);
+            stageTable(opt, &log, &table, &odbc, &dbc, dbt, loadDir);
 
             log.log(Level::trace, "", "",
                     "Merging table: " + table.tableName, -1);

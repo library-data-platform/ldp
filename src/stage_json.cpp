@@ -530,35 +530,40 @@ static void composeDataFilePath(const string& loadDir,
 }
 
 static void createLoadingTable(const Options& opt, Log* log,
-        const TableSchema& table, etymon::OdbcDbc* dbc, const DBType& dbt)
+        const TableSchema& table, etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc,
+        const DBType& dbt)
 {
     string sequenceName = table.tableName + "_row_id_seq";
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
     string sql;
 
-    sql = "CREATE TABLE IF NOT EXISTS " + table.tableName + " (\n"
-        "    row_id BIGINT\n"
-        ");";
-    log->log(Level::detail, "", "", sql, -1);
-    dbc->execDirect(nullptr, sql);
+    //sql = "CREATE TABLE IF NOT EXISTS " + table.tableName + " (\n"
+    //    "    row_id BIGINT\n"
+    //    ");";
+    //log->log(Level::detail, "", "", sql, -1);
+    //dbc->execDirect(nullptr, sql);
 
     // Start auto-increment after max(row_id) to avoid reusing values.
     int64_t autoIncStart = 1;  // Default to 1 if no data available.
-    sql = "SELECT max(row_id) FROM " + table.tableName + ";";
-    log->log(Level::detail, "", "", sql, -1);
-    try {
-        etymon::OdbcStmt stmt(dbc);
-        dbc->execDirect(&stmt, sql);
-        dbc->fetch(&stmt);
-        string maxRowId;
-        dbc->getData(&stmt, 1, &maxRowId);
-        if (maxRowId != "NULL") {
-            int64_t start = stol(maxRowId) + 1;
-            if (start < 1000000000000000000)
-                autoIncStart = start;
-        }
-    } catch (runtime_error& e) {}
+
+    {
+        etymon::OdbcDbc dbc1(odbc, opt.db);
+        sql = "SELECT max(row_id) FROM " + table.tableName + ";";
+        log->log(Level::detail, "", "", sql, -1);
+        try {
+            etymon::OdbcStmt stmt(&dbc1);
+            dbc1.execDirect(&stmt, sql);
+            dbc1.fetch(&stmt);
+            string maxRowId;
+            dbc1.getData(&stmt, 1, &maxRowId);
+            if (maxRowId != "NULL") {
+                int64_t start = stol(maxRowId) + 1;
+                if (start < 1000000000000000000)
+                    autoIncStart = start;
+            }
+        } catch (runtime_error& e) {}
+    }
 
     dbt.renameSequence(sequenceName, sequenceName + "_old", &sql);
     if (sql != "") {
@@ -626,7 +631,8 @@ static void createLoadingTable(const Options& opt, Log* log,
 }
 
 void stageTable(const Options& opt, Log* log, TableSchema* table,
-        etymon::OdbcDbc* dbc, const DBType& dbt, const string& loadDir)
+        etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, const DBType& dbt,
+        const string& loadDir)
 {
     size_t pageCount = readPageCount(opt, log, loadDir, table->tableName);
 
@@ -708,7 +714,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                 column.sourceColumnName = field;
                 table->columns.push_back(column);
             }
-            createLoadingTable(opt, log, *table, dbc, dbt);
+            createLoadingTable(opt, log, *table, odbc, dbc, dbt);
         }
 
     }

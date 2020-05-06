@@ -95,24 +95,6 @@ void placeTable(const Options& opt, Log* log, const TableSchema& table,
     dbc->execDirect(nullptr, sql);
 }
 
-//void updateStatus(const Options& opt, const TableSchema& table,
-//        etymon::OdbcDbc* dbc)
-//{
-//    string sql =
-//        "DELETE FROM ldp_catalog.table_updates WHERE table_name = '" +
-//        table.tableName + "' AND tenant_id = 1;";
-//    printSQL(Print::debug, opt, sql);
-//    dbc->execDirect(nullptr, sql);
-
-//    sql =
-//        "INSERT INTO ldp_catalog.table_updates\n"
-//        "    (table_name, updated, tenant_id)\n"
-//        "    VALUES ('" +
-//        table.tableName + "', " + dbt.currentTimestamp() + ", 1);";
-//    printSQL(Print::debug, opt, sql);
-//    dbc->execDirect(nullptr, sql);
-//}
-
 static void dropTablePair(const Options& opt, Log* log, const string& tableName,
         etymon::OdbcDbc* dbc)
 {

@@ -13,7 +13,9 @@
 #include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/postgres.h"
 #include "config_json.h"
+#include "dbcontext.h"
 #include "dbtype.h"
+#include "init.h"
 #include "log.h"
 #include "options.h"
 #include "update.h"
@@ -191,6 +193,13 @@ void runServer(const Options& opt)
 
     etymon::OdbcDbc logDbc(&odbc, opt.db);
     Log log(&logDbc, opt.logLevel, opt.prog);
+
+    {
+        etymon::OdbcDbc dbc(&odbc, opt.db);
+        DBType dbt(&dbc);
+        DBContext db(&dbc, &dbt, &log);
+        initUpgrade(&db);
+    }
 
     log.log(Level::info, "server", "",
             string("Server started") + (opt.cliMode ? " (CLI mode)" : ""), -1);

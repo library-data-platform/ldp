@@ -76,11 +76,6 @@ void initSchema(DBContext* db)
     db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
-    // Temporary: pre-LDP-1.0
-    sql = "DROP TABLE IF EXISTS ldpsystem.log;";
-    db->log->log(Level::detail, "", "", sql, -1);
-    db->dbc->execDirect(nullptr, sql);
-
     sql =
         "CREATE TABLE IF NOT EXISTS ldpsystem.log (\n"
         "    log_time TIMESTAMPTZ NOT NULL,\n"
