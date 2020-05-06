@@ -38,8 +38,11 @@ add_executable(ldp
     anonymize.cpp
     camelcase.cpp
     config_json.cpp
+    dbcontext.cpp
     dbtype.cpp
     extract.cpp
+    init.cpp
+    log.cpp
     main.cpp
     merge.cpp
     names.cpp
@@ -48,6 +51,7 @@ add_executable(ldp
     schema.cpp
     stage_json.cpp
     timer.cpp
+    update.cpp
     util.cpp
 )
 target_link_libraries(ldp

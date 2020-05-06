@@ -1,6 +1,7 @@
 #ifndef LDP_EXTRACT_H
 #define LDP_EXTRACT_H
 
+#include <curl/curl.h>
 #include <string>
 #include <unistd.h>
 
@@ -24,13 +25,13 @@ public:
     ~Curl();
 };
 
-void okapiLogin(const Options& o, string* token);
+void okapiLogin(const Options& o, Log* log, string* token);
 
 bool directOverride(const Options& opt, const string& sourcePath);
-bool retrieveDirect(const Options& opt, const TableSchema& table,
+bool retrieveDirect(const Options& opt, Log* log, const TableSchema& table,
         const string& loadDir, ExtractionFiles* extractionFiles);
-bool retrievePages(const Curl& c, const Options& opt, const string& token,
-        const TableSchema& table, const string& loadDir,
+bool retrievePages(const Curl& c, const Options& opt, Log* log,
+        const string& token, const TableSchema& table, const string& loadDir,
         ExtractionFiles* extractionFiles);
 
 //void extract(const Options& o, Schema* spec, const string& token,

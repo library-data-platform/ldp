@@ -23,12 +23,12 @@ class OdbcStmt;
 class OdbcDbc {
 public:
     SQLHDBC dbc;
-    string dataSourceName;
-    OdbcDbc(const OdbcEnv& odbcEnv, const string& dataSourceName);
+    string dsn;
+    OdbcDbc(OdbcEnv* odbcEnv, const string& dataSourceName);
     ~OdbcDbc();
     void getDbmsName(string* dbmsName);
     void execDirect(OdbcStmt* stmt, const string& sql);
-    void fetch(OdbcStmt* stmt);
+    bool fetch(OdbcStmt* stmt);
     void getData(OdbcStmt* stmt, uint16_t column, string* data);
     void startTransaction();
     void commit();
@@ -41,8 +41,19 @@ private:
 class OdbcStmt {
 public:
     SQLHSTMT stmt;
-    OdbcStmt(const OdbcDbc& odbcDbc);
+    OdbcStmt(OdbcDbc* odbcDbc);
     ~OdbcStmt();
+};
+
+class OdbcTx {
+public:
+    OdbcDbc* dbc;
+    OdbcTx(OdbcDbc* odbcDbc);
+    ~OdbcTx();
+    void commit();
+    void rollback();
+private:
+    bool completed;
 };
 
 }

@@ -197,6 +197,11 @@ GRANT ALL ON SCHEMA public TO ldpadmin;
 GRANT USAGE ON SCHEMA public TO ldp;
 ```
 
+Assuming this preliminary set up has been done, the LDP software will
+automatically attempt to initialize the schema in an empty database,
+or to upgrade the schema in a database previously initialized with an
+earlier version of LDP.
+
 ### Configuring ODBC
 
 The LDP software uses unixODBC to connect to the LDP database.  To
@@ -276,7 +281,7 @@ usage is low, in order to refresh the database with new data.
 
 To extract data and load them into the LDP database:
 ```shell
-$ ldp update --config ldpconf.json --source okapi -v
+$ ldp update --config ldpconf.json --source okapi
 ```
 
 The `update` command is used to load data.  The data are extracted
@@ -287,11 +292,9 @@ in the LDP configuration file.  This section should provide connection
 details for a data source, as well as a directory (`extractDir`) where
 temporary extracted files can be written.
 
-The `-v` option enables verbose output.  For even more verbose output,
-the `--debug` option can be used to see commands that are sent to the
-database when loading data, among other details.  The `--debug` option
-can generate extremely large output, and for this reason it is best used
-when loading relatively small data sets.
+The LDP software logs its activities to the table `ldpsystem.log`.
+For debugging purposes, the `--trace` option can be used to enable
+very detailed logging.
 
 Another option that is available to assist with debugging problems is
 `--savetemps` (used together with `--unsafe`), which tells the loader

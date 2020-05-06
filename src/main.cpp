@@ -2,23 +2,23 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <curl/curl.h>
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <sys/stat.h>
-#include <sys/types.h>
+#include <sys/wait.h>
 #include <thread>
+#include <unistd.h>
 #include <vector>
 
 #include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/postgres.h"
 #include "config_json.h"
-#include "extract.h"
-#include "merge.h"
+#include "dbcontext.h"
+#include "dbtype.h"
+#include "init.h"
+#include "log.h"
 #include "options.h"
-#include "stage_json.h"
-#include "timer.h"
+#include "update.h"
 #include "util.h"
 
 // Temporary
@@ -44,113 +44,13 @@ static const char* optionHelp =
 "                        extracted data (unsafe)\n"
 "  --sourcedir <path>  - Load data from a directory instead of extracting\n"
 "                        from Okapi (unsafe)\n"
-"  --verbose, -v       - Enable verbose output\n"
-"  --debug             - Enable extremely verbose debugging output\n";
+"  --trace             - Enable very detailed logging\n";
 
 void debugNoticeProcessor(void *arg, const char *message)
 {
     const Options* opt = (const Options*) arg;
     print(Print::debug, *opt,
             string("database response: ") + string(message));
-}
-
-static void initDB(const Options& opt, etymon::OdbcDbc* dbc)
-{
-    string sql;
-
-    sql = "DROP SCHEMA IF EXISTS ldp_catalog;";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-
-    sql = "CREATE SCHEMA IF NOT EXISTS ldp_system;";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-
-    //sql =
-    //    "CREATE TABLE IF NOT EXISTS ldp_system.main (\n"
-    //    "    ldp_schema_version BIGINT NOT NULL\n"
-    //    ");";
-    //printSQL(Print::debug, opt, sql);
-    //dbc->execDirect(nullptr, sql);
-    //sql = "DELETE FROM ldp_system.main;";
-    //printSQL(Print::debug, opt, sql);
-    //dbc->execDirect(nullptr, sql);
-    //sql = "INSERT INTO ldp_system.main (ldp_schema_version) VALUES (0);";
-    //printSQL(Print::debug, opt, sql);
-    //dbc->execDirect(nullptr, sql);
-
-    sql =
-        "CREATE TABLE IF NOT EXISTS ldp_system.log (\n"
-        "    log_time TIMESTAMPTZ NOT NULL,\n"
-        "    level VARCHAR(5) NOT NULL,\n"
-        "    event VARCHAR(63) NOT NULL,\n"
-        "    table_name VARCHAR(63) NOT NULL,\n"
-        "    message VARCHAR(65535) NOT NULL,\n"
-        "    elapsed_time REAL\n"
-        ");";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-
-    //sql =
-    //    "CREATE TABLE IF NOT EXISTS ldp_catalog.table_updates (\n"
-    //    "    table_name VARCHAR(65535) NOT NULL,\n"
-    //    "    updated TIMESTAMPTZ NOT NULL,\n"
-    //    "    tenant_id SMALLINT NOT NULL,\n"
-    //    "    PRIMARY KEY (table_name, tenant_id)\n"
-    //    ");";
-    //printSQL(Print::debug, opt, sql);
-    //{ etymon::PostgresResult result(db, sql); }
-
-    sql = "CREATE SCHEMA IF NOT EXISTS history;";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-
-    sql = "CREATE SCHEMA IF NOT EXISTS local;";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-}
-
-static void updateDBPermissions(const Options& opt, etymon::OdbcDbc* dbc)
-{
-    string sql;
-
-    sql = "GRANT USAGE ON SCHEMA ldp_system TO " + opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldp_system TO " +
-        opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
-        opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-
-    sql = "GRANT USAGE ON SCHEMA history TO " + opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA history TO " +
-        opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-
-    sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
-    dbc->execDirect(nullptr, sql);
-}
-
-void makeTmpDir(const Options& opt, string* loaddir)
-{
-    *loaddir = opt.extractDir;
-    string filename = "tmp_ldp_" + to_string(time(nullptr));
-    etymon::join(loaddir, filename);
-    print(Print::debug, opt,
-            string("creating directory: ") + *loaddir);
-    mkdir(loaddir->c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP |
-            S_IROTH | S_IXOTH);
 }
 
 //const char* sslmode(bool nossl)
@@ -182,7 +82,8 @@ void vacuumAnalyzeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
 
 // Check for obvious problems that could show up later in the loading
 // process.
-static void runPreloadTests(const Options& opt, const etymon::OdbcEnv& odbc)
+/*
+static void runPreloadTests(const Options& opt, etymon::OdbcEnv* odbc)
 {
     //print(Print::verbose, opt, "running pre-load checks");
 
@@ -192,175 +93,155 @@ static void runPreloadTests(const Options& opt, const etymon::OdbcEnv& odbc)
     // connection hangs due to a firewall.  Non-verbose output does not
     // communicate any problem while frozen.
 
-    dbc.startTransaction();
-    // Check that ldpUser is a valid user.
-    string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
-        opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
-    dbc.execDirect(nullptr, sql);
-    dbc.rollback();
+    {
+        etymon::OdbcTx tx(&dbc);
+        // Check that ldpUser is a valid user.
+        string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
+            opt.ldpUser + ";";
+        printSQL(Print::debug, opt, sql);
+        dbc.execDirect(nullptr, sql);
+        tx.rollback();
+    }
+}
+*/
 
-    /*
-    // Check database connection.
-    etymon::Postgres db(opt.databaseHost, opt.databasePort, opt.ldpAdmin,
-            opt.ldpAdminPassword, opt.databaseName, sslmode(opt.nossl));
-    // TODO Check if a time-out is used here, for example if the client
-    // connection hangs due to a firewall.  Non-verbose output does not
-    // communicate any problem while frozen.
-
-    beginTxn(opt, &db);
-
-    // Check that ldpUser is a valid user.
-    string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
-        opt.ldpUser + ";";
-    printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(&db, sql); }
-
-    rollbackTxn(opt, &db);
-    */
+/**
+ * \brief Check configuration in the LDP database to determine if it
+ * is time to run a full update.
+ *
+ * \param[in] opt
+ * \param[in] dbc
+ * \param[in] dbt
+ * \param[in] log
+ * \retval true The full update should be run as soon as possible.
+ * \retval false The full update should not be run at this time.
+ */
+bool timeForFullUpdate(const Options& opt, etymon::OdbcDbc* dbc, DBType* dbt,
+        Log* log)
+{
+    string sql =
+        "SELECT full_update_enabled,\n"
+        "       (next_full_update <= " +
+        string(dbt->currentTimestamp()) + ") AS update_now\n"
+        "    FROM ldpconfig.general;";
+    log->log(Level::detail, "", "", sql, -1);
+    etymon::OdbcStmt stmt(dbc);
+    dbc->execDirect(&stmt, sql);
+    if (dbc->fetch(&stmt) == false) {
+        string e = "No rows could be read from table: ldpconfig.general";
+        log->log(Level::error, "", "", e, -1);
+        throw runtime_error(e);
+    }
+    string fullUpdateEnabled, updateNow;
+    dbc->getData(&stmt, 1, &fullUpdateEnabled);
+    dbc->getData(&stmt, 2, &updateNow);
+    if (dbc->fetch(&stmt)) {
+        string e = "Too many rows in table: ldpconfig.general";
+        log->log(Level::error, "", "", e, -1);
+        throw runtime_error(e);
+    }
+    return fullUpdateEnabled == "1" && updateNow == "1";
 }
 
-void runLoad(const Options& opt)
+/**
+ * \brief Reschedule the configured full load time to the next day,
+ * retaining the same time.
+ *
+ * \param[in] opt
+ * \param[in] dbc
+ * \param[in] dbt
+ * \param[in] log
+ */
+void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
+        DBType* dbt, Log* log)
 {
-    string ct;
-    getCurrentTime(&ct);
-    if (opt.verbose)
-        fprintf(opt.err, "%s: start time: %s\n", opt.prog, ct.c_str());
+    string updateInFuture;
+    do {
+        // Increment next_full_update.
+        string sql =
+            "UPDATE ldpconfig.general SET next_full_update =\n"
+            "    next_full_update + INTERVAL '1 day';";
+        log->log(Level::detail, "", "", sql, -1);
+        dbc->execDirect(nullptr, sql);
+        // Check if next_full_update is now in the future.
+        sql =
+            "SELECT (next_full_update > " + string(dbt->currentTimestamp()) +
+            ") AS update_in_future\n"
+            "    FROM ldpconfig.general;";
+        log->log(Level::detail, "", "", sql, -1);
+        etymon::OdbcStmt stmt(dbc);
+        dbc->execDirect(&stmt, sql);
+        if (dbc->fetch(&stmt) == false) {
+            string e = "No rows could be read from table: ldpconfig.general";
+            log->log(Level::error, "", "", e, -1);
+            throw runtime_error(e);
+        }
+        dbc->getData(&stmt, 1, &updateInFuture);
+        if (dbc->fetch(&stmt)) {
+            string e = "Too many rows in table: ldpconfig.general";
+            log->log(Level::error, "", "", e, -1);
+            throw runtime_error(e);
+        }
+    } while (updateInFuture == "0");
+}
 
+void runServer(const Options& opt)
+{
     etymon::OdbcEnv odbc;
 
-    runPreloadTests(opt, odbc);
+    //runPreloadTests(opt, &odbc);
 
-    etymon::OdbcDbc logDbc(odbc, opt.db);
-    Log log(&logDbc, Level::debug, opt.prog);
-
-    Schema schema;
-    Schema::MakeDefaultSchema(&schema);
-
-    ExtractionFiles extractionDir(opt);
-
-    string loadDir;
+    etymon::OdbcDbc logDbc(&odbc, opt.db);
+    Log log(&logDbc, opt.logLevel, opt.prog);
 
     {
-        print(Print::debug, opt, "connecting to database");
-        etymon::OdbcDbc dbc(odbc, opt.db);
-        //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
-
-        dbc.startTransaction();
-        print(Print::debug, opt, "initializing database");
-        initDB(opt, &dbc);
-        dbc.commit();
-    }
-
-    Curl c;
-    //if (!c.curl) {
-    //    // throw?
-    //}
-    string token, tenantHeader, tokenHeader;
-
-    if (opt.loadFromDir != "") {
-        if (opt.verbose)
-            fprintf(opt.err, "%s: reading data from directory: %s\n",
-                    opt.prog, opt.loadFromDir.c_str());
-        loadDir = opt.loadFromDir;
-    } else {
-        CURLcode cc = curl_global_init(CURL_GLOBAL_ALL);
-        if (cc) {
-            throw runtime_error(string("initializing curl: ") +
-                    curl_easy_strerror(cc));
-        }
-
-        print(Print::debug, opt, "logging in to okapi service");
-
-        okapiLogin(opt, &token);
-
-        makeTmpDir(opt, &loadDir);
-        extractionDir.dir = loadDir;
-
-        tenantHeader = "X-Okapi-Tenant: ";
-        tenantHeader + opt.okapiTenant;
-        tokenHeader = "X-Okapi-Token: ";
-        tokenHeader += token;
-        c.headers = curl_slist_append(c.headers, tenantHeader.c_str());
-        c.headers = curl_slist_append(c.headers, tokenHeader.c_str());
-        c.headers = curl_slist_append(c.headers,
-                "Accept: application/json,text/plain");
-        curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
-    }
-
-    for (auto& table : schema.tables) {
-
-        ExtractionFiles extractionFiles(opt);
-
-        print(Print::verbose, opt, "loading table: " + table.tableName);
-
-        Timer loadTimer(opt);
-
-        if (opt.loadFromDir == "") {
-            print(Print::debug, opt, "extracting: " + table.sourcePath);
-            bool foundData = directOverride(opt, table.sourcePath) ?
-                retrieveDirect(opt, table, loadDir, &extractionFiles) :
-                retrievePages(c, opt, token, table, loadDir, &extractionFiles);
-            if (!foundData)
-                table.skip = true;
-        }
-
-        if (table.skip)
-            continue;
-
-        print(Print::debug, opt, "connecting to database");
-        etymon::OdbcDbc dbc(odbc, opt.db);
-        //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+        etymon::OdbcDbc dbc(&odbc, opt.db);
         DBType dbt(&dbc);
-
-        dbc.startTransaction();
-
-        print(Print::debug, opt, "staging table: " + table.tableName);
-        stageTable(opt, &table, &dbc, dbt, loadDir);
-
-        print(Print::debug, opt, "merging table: " + table.tableName);
-        mergeTable(opt, table, &dbc, dbt);
-
-        print(Print::debug, opt, "replacing table: " + table.tableName);
-        dropTable(opt, table.tableName, &dbc);
-        placeTable(opt, table, &dbc);
-        //updateStatus(opt, table, &dbc);
-
-        if (opt.debug)
-            fprintf(opt.err, "%s: updating database permissions\n", opt.prog);
-        updateDBPermissions(opt, &dbc);
-
-        dbc.commit();
-
-        //vacuumAnalyzeTable(opt, table, &dbc);
-
-        log.logEvent(Level::debug, "update", table.tableName,
-                "Updated table: " + table.tableName,
-                loadTimer.elapsedTime());
-
-        //if (opt.verbose)
-        //    loadTimer.print("load time");
+        DBContext db(&dbc, &dbt, &log);
+        initUpgrade(&db);
     }
 
-    {
-        print(Print::debug, opt, "connecting to database");
-        etymon::OdbcDbc dbc(odbc, opt.db);
-        //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+    log.log(Level::info, "server", "",
+            string("Server started") + (opt.cliMode ? " (CLI mode)" : ""), -1);
 
-        dbc.startTransaction();
-        dropOldTables(opt, &dbc);
-        dbc.commit();
-    }
+    etymon::OdbcDbc dbc(&odbc, opt.db);
+    DBType dbt(&dbc);
 
-    // TODO Check if needed for history tables; if so, move into loop above.
-    //vacuumAnalyzeAll(opt, &schema, &db);
+    do {
+        if (opt.cliMode || timeForFullUpdate(opt, &dbc, &dbt, &log) ) {
+            log.log(Level::trace, "", "", "Starting full update", -1);
+            pid_t pid = fork();
+            if (pid == 0)
+                runUpdateProcess(opt);
+            if (pid > 0) {
+                int stat;
+                waitpid(pid, &stat, 0);
+                if (WIFEXITED(stat))
+                    log.log(Level::trace, "", "",
+                            "Status code of full update: " +
+                            to_string(WEXITSTATUS(stat)), -1);
+                else
+                    log.log(Level::trace, "", "",
+                            "Full update did not terminate normally", -1);
+                rescheduleNextDailyLoad(opt, &dbc, &dbt, &log);
+            }
+            if (pid < 0)
+                throw runtime_error("Error starting child process");
+        }
 
-    getCurrentTime(&ct);
-    if (opt.verbose)
-        fprintf(opt.err, "%s: end time: %s\n", opt.prog, ct.c_str());
+        if (!opt.cliMode) {
+            int s = 60;
+            log.log(Level::detail, "", "",
+                    "Sleeping for " + to_string(s) + " seconds", -1);
+            std::this_thread::sleep_for(std::chrono::seconds(s));
+        }
+    } while (!opt.cliMode);
 
-    curl_global_cleanup();  // Clean-up after curl_global_init().
-    // TODO Wrap curl_global_init() in a class.
+    log.log(Level::info, "server", "",
+            string("Server stopped") + (opt.cliMode ? " (CLI mode)" : ""), -1);
+
+    if (opt.cliMode)
+        fprintf(opt.err, "%s: Update completed\n", opt.prog);
 }
 
 void fillDirectOptions(const Config& config, const string& base, Options* opt)
@@ -446,21 +327,21 @@ void run(const etymon::CommandArgs& cargs)
     Config config(opt.config);
     fillOptions(config, &opt);
 
-    if (opt.debug)
-        debugOptions(opt);
+    //if (opt.logLevel == Level::trace)
+    //    debugOptions(opt);
 
-    //if (opt.command == "server") {
-    //    runServer(opt);
-    //    return;
-    //}
-
-    if (opt.command == "update") {
-        Timer t(opt);
-        runLoad(opt);
-        if (opt.verbose)
-            t.print("total time");
+    if (opt.command == "server" || opt.command == "update") {
+        runServer(opt);
         return;
     }
+
+    //if (opt.command == "update") {
+    //    Timer t(opt);
+    //    runLoad(opt);
+    //    if (opt.logLevel == Level::trace)
+    //        t.print("total time");
+    //    return;
+    //}
 }
 
 int main(int argc, char* argv[])

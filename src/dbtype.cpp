@@ -54,8 +54,9 @@ void DBType::renameSequence(const string& sequenceName,
 {
     switch (dbt) {
         case DBT::postgresql:
-            *sql = "ALTER SEQUENCE IF EXISTS " + sequenceName + " RENAME TO " +
-                newSequenceName + ";";
+            *sql = "ALTER SEQUENCE IF EXISTS\n"
+                "    " + sequenceName + "\n"
+                "    RENAME TO " + newSequenceName + ";";
             return;
         case DBT::redshift:
             *sql = "";
@@ -71,8 +72,8 @@ void DBType::createSequence(const string& sequenceName, int64_t start,
 {
     switch (dbt) {
         case DBT::postgresql:
-            *sql = "CREATE SEQUENCE " + sequenceName + " START " +
-                to_string(start) + ";";
+            *sql = "CREATE SEQUENCE " + sequenceName + "\n"
+                "    START " + to_string(start) + ";";
             return;
         case DBT::redshift:
             *sql = "";
@@ -89,7 +90,9 @@ void DBType::autoIncrementType(int64_t start, bool namedSequence,
     switch (dbt) {
         case DBT::postgresql:
             if (namedSequence)
-                *sql = "BIGINT NOT NULL DEFAULT nextval('" + sequenceName +
+                *sql = "BIGINT NOT NULL\n"
+                    "        DEFAULT\n"
+                    "        nextval('" + sequenceName +
                     "')";
             else
                 *sql = "BIGSERIAL";
@@ -109,8 +112,8 @@ void DBType::alterSequenceOwnedBy(const string& sequenceName,
 {
     switch (dbt) {
         case DBT::postgresql:
-            *sql = "ALTER SEQUENCE " + sequenceName + " OWNED BY " +
-                tableColumnName + ";";
+            *sql = "ALTER SEQUENCE " + sequenceName + "\n"
+                "    OWNED BY " + tableColumnName + ";";
             return;
         case DBT::redshift:
             *sql = "";

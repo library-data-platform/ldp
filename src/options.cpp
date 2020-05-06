@@ -8,6 +8,28 @@
 
 static void validate(const Options& opt)
 {
+    if (opt.verbose) {
+        fprintf(stderr, "ldp:    ---------------------------------------------"
+                "-----------------------\n");
+        fprintf(stderr,
+                "ldp:    Verbose output (--verbose or -v) is deprecated.  "
+                "Logs are now\n"
+                "ldp:    recorded in table: ldpsystem.log\n");
+        fprintf(stderr, "ldp:    ---------------------------------------------"
+                "-----------------------\n");
+    }
+    if (opt.debug) {
+        fprintf(stderr, "ldp:    ---------------------------------------------"
+                "-----------------------\n");
+        fprintf(stderr,
+                "ldp:    Debugging output (--debug) is deprecated.  "
+                "Logs are now recorded\n"
+                "ldp:    in table: ldpsystem.log\n"
+                "ldp:    The \"--trace\" option enables detailed logging.\n");
+        fprintf(stderr, "ldp:    ---------------------------------------------"
+                "-----------------------\n");
+    }
+
     if (opt.command != "server" &&
             opt.command != "update" &&
             opt.command != "help" &&
@@ -63,7 +85,14 @@ static void evaloptlong(char *name, char *arg, Options* opt)
     }
     if (!strcmp(name, "debug")) {
         opt->debug = true;
-        opt->verbose = true;
+        return;
+    }
+    if (!strcmp(name, "trace")) {
+        opt->logLevel = Level::trace;
+        return;
+    }
+    if (!strcmp(name, "trace-detail")) {
+        opt->logLevel = Level::detail;
         return;
     }
     //if (!strcmp(name, "version")) {
@@ -81,6 +110,8 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
         { "config",    required_argument, NULL, 0   },
         { "verbose",   no_argument,       NULL, 'v' },
         { "debug",     no_argument,       NULL, 0   },
+        { "trace",     no_argument,       NULL, 0   },
+        { "trace-detail",     no_argument,       NULL, 0   },
         { "unsafe",    no_argument,       NULL, 0   },
         //{ "nossl",     no_argument,       NULL, 0   },
         { "savetemps", no_argument,       NULL, 0   },
@@ -92,6 +123,8 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
     opt->command = cargs.command;
     if (opt->command == "load")
         opt->command = "update";
+    if (opt->command != "server")
+        opt->cliMode = true;
 
     while (1) {
         int longindex = 0;
@@ -172,8 +205,9 @@ void debugOptions(const Options& opt)
     //fprintf(stderr, "%s: option: nossl = %d\n", opt.prog, opt.nossl);
     fprintf(stderr, "%s: option: savetemps = %d\n", opt.prog, opt.savetemps);
     fprintf(stderr, "%s: option: config = %s\n", opt.prog, opt.config.c_str());
-    fprintf(stderr, "%s: option: verbose = %d\n", opt.prog, opt.verbose);
-    fprintf(stderr, "%s: option: debug = %d\n", opt.prog, opt.debug);
+    //fprintf(stderr, "%s: option: verbose = %d\n", opt.prog, opt.verbose);
+    //fprintf(stderr, "%s: option: debug = %d\n", opt.prog, opt.debug);
+    fprintf(stderr, "%s: option: logLevel = %d\n", opt.prog, opt.logLevel);
     //fprintf(stderr, "%s: option: version = %d\n", opt.prog, opt.version);
 }
 

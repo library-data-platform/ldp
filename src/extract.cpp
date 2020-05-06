@@ -1,7 +1,6 @@
 #include <cassert>
 #include <cstring>
 #include <ctype.h>
-#include <curl/curl.h>
 #include <iostream>
 #include <stdio.h>
 
@@ -73,11 +72,11 @@ size_t header_callback(char* buffer, size_t size, size_t nitems,
 /**
  * \brief Performs the equivalent of a login to Okapi.
  *
- * \param[in] o Options specifying okapiURL, okapiUser, okapiPassword,
- * and okapiTenant.
+ * \param[in] opt Options specifying okapiURL, okapiUser,
+ * okapiPassword, and okapiTenant.
  * \param[out] token The authentication token received from Okapi.
  */
-void okapiLogin(const Options& opt, string* token)
+void okapiLogin(const Options& opt, Log* log, string* token)
 {
     Timer timer(opt);
 
@@ -87,7 +86,7 @@ void okapiLogin(const Options& opt, string* token)
     string path = opt.okapiURL;
     etymon::join(&path, "/authn/login");
 
-    print(Print::debug, opt, string("retrieving: ") + path);
+    log->log(Level::detail, "", "", "Retrieving: " + path, -1);
 
     string tenantHeader = "X-Okapi-Tenant: ";
     tenantHeader += opt.okapiTenant;
@@ -151,7 +150,7 @@ enum class PageStatus {
     containsRecords
 };
 
-static PageStatus retrieve(const Curl& c, const Options& opt,
+static PageStatus retrieve(const Curl& c, const Options& opt, Log* log,
         const string& token, const TableSchema& table, const string& loadDir,
         ExtractionFiles* extractionFiles, size_t page)
 {
@@ -161,9 +160,14 @@ static PageStatus retrieve(const Curl& c, const Options& opt,
     string path = opt.okapiURL;
     etymon::join(&path, table.sourcePath);
 
-    path += "?offset=" + to_string(page * opt.pageSize) +
+    //path += "?offset=" + to_string(page * opt.pageSize) +
+    //    "&limit=" + to_string(opt.pageSize) +
+    //    "&query=cql.allRecords%3d1%20sortby%20id";
+
+    string query = "?offset=" + to_string(page * opt.pageSize) +
         "&limit=" + to_string(opt.pageSize) +
         "&query=cql.allRecords%3d1%20sortby%20id";
+    path += query;
 
     //path += "?offset=0&limit=1000&query=id==*%20sortby%20id";
     //if (table.sourcePath.find("/erm/") == 0)
@@ -184,7 +188,10 @@ static PageStatus retrieve(const Curl& c, const Options& opt,
         curl_easy_setopt(c.curl, CURLOPT_URL, path.c_str());
         curl_easy_setopt(c.curl, CURLOPT_WRITEDATA, f.file);
 
-        print(Print::debug, opt, string("retrieving: ") + path);
+        log->log(Level::detail, "", "",
+                "Retrieving from:\n"
+                "    Path: " + table.sourcePath + "\n"
+                "    Query: " + query, -1);
 
         CURLcode code = curl_easy_perform(c.curl);
 
@@ -227,19 +234,20 @@ static void writeCountFile(const string& loadDir, const string& tableName,
     fputs(pageStr.c_str(), f.file);
 }
 
-bool retrievePages(const Curl& c, const Options& opt, const string& token,
-        const TableSchema& table, const string& loadDir,
+bool retrievePages(const Curl& c, const Options& opt, Log* log,
+        const string& token, const TableSchema& table, const string& loadDir,
         ExtractionFiles* extractionFiles)
 {
     size_t page = 0;
     while (true) {
-        print(Print::debug, opt, "page: " + to_string(page));
-        PageStatus status = retrieve(c, opt, token, table, loadDir,
+        log->log(Level::detail, "", "",
+                "Extracting page: " + to_string(page), -1);
+        PageStatus status = retrieve(c, opt, log, token, table, loadDir,
                 extractionFiles, page);
         switch (status) {
         case PageStatus::interfaceNotAvailable:
-            print(Print::verbose, opt,
-                    "interface not available: " + table.sourcePath);
+            log->log(Level::trace, "", "",
+                    "Interface not available: " + table.sourcePath, -1);
             return false;
         case PageStatus::pageEmpty:
             writeCountFile(loadDir, table.tableName, extractionFiles, page);
@@ -260,13 +268,14 @@ bool directOverride(const Options& opt, const string& sourcePath)
     return false;
 }
 
-bool retrieveDirect(const Options& opt, const TableSchema& table,
+bool retrieveDirect(const Options& opt, Log* log, const TableSchema& table,
         const string& loadDir, ExtractionFiles* extractionFiles)
 {
-    print(Print::verbose, opt, "direct from database: " + table.sourcePath);
+    log->log(Level::trace, "", "",
+            "Direct from database: " + table.sourcePath, -1);
     if (table.directSourceTable == "") {
-        print(Print::warning, opt,
-                "direct source table undefined: " + table.sourcePath);
+        log->log(Level::warning, "", "",
+                "Direct source table undefined: " + table.sourcePath, -1);
         return false;
     }
 
@@ -276,7 +285,7 @@ bool retrieveDirect(const Options& opt, const TableSchema& table,
             opt.direct.databaseName, "require");
     string sql = "SELECT jsonb FROM " +
         opt.okapiTenant + "_" + table.directSourceTable + ";";
-    printSQL(Print::debug, opt, sql);
+    log->log(Level::detail, "", "", sql, -1);
 
     if (PQsendQuery(db.conn, sql.c_str()) == 0) {
         string err = PQerrorMessage(db.conn);
