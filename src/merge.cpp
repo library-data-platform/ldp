@@ -12,43 +12,38 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
     string historyTable;
     historyTableName(table.tableName, &historyTable);
 
-    string rskeys;
-    dbt.redshiftKeys("sk", "sk, updated", &rskeys);
-    //string autoInc;
-    //dbt.autoIncrementType(1, false, "", &autoInc);
-    string sql =
-        "CREATE TABLE IF NOT EXISTS\n"
-        "    " + historyTable + " (\n"
-        //"    row_id " + autoInc + ",\n"
-        "    sk BIGINT NOT NULL,\n"
-        "    id VARCHAR(65535) NOT NULL,\n"
-        "    data " + dbt.jsonType() + " NOT NULL,\n"
-        "    updated TIMESTAMPTZ NOT NULL,\n"
-        //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
-        "    tenant_id SMALLINT NOT NULL,\n"
-        "    CONSTRAINT\n"
-        "        history_" + table.tableName + "_sk_updated_pkey\n"
-        "        PRIMARY KEY (sk, updated)\n"
-        ")" + rskeys + ";";
-    log->log(Level::detail, "", "", sql, -1);
-    dbc->execDirect(nullptr, sql);
+    //string rskeys;
+    //dbt.redshiftKeys("sk", "sk, updated", &rskeys);
+    //string sql =
+    //    "CREATE TABLE IF NOT EXISTS\n"
+    //    "    " + historyTable + " (\n"
+    //    "    sk BIGINT NOT NULL,\n"
+    //    "    id VARCHAR(65535) NOT NULL,\n"
+    //    "    data " + dbt.jsonType() + " NOT NULL,\n"
+    //    "    updated TIMESTAMPTZ NOT NULL,\n"
+    //    "    tenant_id SMALLINT NOT NULL,\n"
+    //    "    CONSTRAINT\n"
+    //    "        history_" + table.tableName + "_sk_updated_pkey\n"
+    //    "        PRIMARY KEY (sk, updated)\n"
+    //    ")" + rskeys + ";";
+    //log->log(Level::detail, "", "", sql, -1);
+    //dbc->execDirect(nullptr, sql);
 
-    // bootstrap: add column in separate connection
-    {
-        etymon::OdbcDbc dbc(odbc, opt.db);
-        try {
-            sql =
-                "ALTER TABLE " + historyTable + "\n"
-                "    ADD COLUMN sk BIGINT;";
-            log->log(Level::detail, "", "", sql, -1);
-            dbc.execDirect(nullptr, sql);
-        } catch (runtime_error& e) {}
-    }
+    //{
+    //    etymon::OdbcDbc dbc(odbc, opt.db);
+    //    try {
+    //        sql =
+    //            "ALTER TABLE " + historyTable + "\n"
+    //            "    ADD COLUMN sk BIGINT;";
+    //        log->log(Level::detail, "", "", sql, -1);
+    //        dbc.execDirect(nullptr, sql);
+    //    } catch (runtime_error& e) {}
+    //}
 
     string latestHistoryTable;
     latestHistoryTableName(table.tableName, &latestHistoryTable);
 
-    sql =
+    string sql =
         "CREATE TEMPORARY TABLE\n"
         "    " + latestHistoryTable + "\n"
         "    AS\n"

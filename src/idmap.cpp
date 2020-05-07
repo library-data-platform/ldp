@@ -23,7 +23,8 @@ void IDMap::makeSK(const char* id, string* sk)
     string encodedID;
     dbt->encodeStringConst(lowerID.c_str(), &encodedID);
     string selectSQL =
-        "SELECT sk FROM ldpsystem.idmap WHERE id = " + encodedID + ";";
+        "SELECT sk FROM ldpsystem.idmap\n"
+        "    WHERE id = " + encodedID + ";";
     log->log(Level::detail, "", "", selectSQL, -1);
     {
         etymon::OdbcStmt stmt(dbc);
@@ -35,7 +36,8 @@ void IDMap::makeSK(const char* id, string* sk)
     }
     // The sk was not found; so we add it.
     string insertSQL =
-        "INSERT INTO ldpsystem.idmap (id) VALUES (" + encodedID + ");";
+        "INSERT INTO ldpsystem.idmap (id)\n"
+        "    VALUES (" + encodedID + ");";
     log->log(Level::detail, "", "", insertSQL, -1);
     dbc->execDirect(nullptr, insertSQL);
     log->log(Level::detail, "", "", selectSQL, -1);

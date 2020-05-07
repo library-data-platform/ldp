@@ -198,7 +198,7 @@ void runServer(const Options& opt)
         etymon::OdbcDbc dbc(&odbc, opt.db);
         DBType dbt(&dbc);
         DBContext db(&dbc, &dbt, &log);
-        initUpgrade(&odbc, opt.db, &db);
+        initUpgrade(&odbc, opt.db, &db, opt.ldpUser);
     }
 
     log.log(Level::info, "server", "",

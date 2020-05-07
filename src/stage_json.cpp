@@ -647,6 +647,10 @@ static void createLoadingTable(const Options& opt, Log* log,
                 "Setting comment on table: " + table.tableName, -1);
         dbc->execDirect(nullptr, sql);
     }
+
+    sql = "GRANT SELECT ON " + loadingTable + " TO " + opt.ldpUser + ";";
+    log->logSQL(sql);
+    dbc->execDirect(nullptr, sql);
 }
 
 void stageTable(const Options& opt, Log* log, TableSchema* table,

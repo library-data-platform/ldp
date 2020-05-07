@@ -98,13 +98,7 @@ void Log::log(Level level, const char* type, const string& table,
         "    (" + string(dbt->currentTimestamp()) + ", " + to_string(getpid()) +
         ", '" + levelStr + "', '" + type + "', '" + table + "', " +
         logmsgEncoded + ", " + elapsed_time_str + ");";
-    try {
-        dbc->execDirect(nullptr, sql);
-    } catch (runtime_error& e) {
-        if (level == Level::debug || level == Level::trace ||
-                level == Level::detail)
-            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
-    }
+    dbc->execDirect(nullptr, sql);
 }
 
 void Log::logSQL(const string& sql)

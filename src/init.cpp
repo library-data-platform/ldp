@@ -15,7 +15,7 @@
 bool selectSchemaVersion(DBContext* db, int64_t* version)
 {
     string sql = "SELECT ldp_schema_version FROM ldpsystem.main;";
-    db->log->log(Level::detail, "", "", sql, -1);
+    //db->log->log(Level::detail, "", "", sql, -1);
     etymon::OdbcStmt stmt(db->dbc);
     try {
         db->dbc->execDirect(&stmt, sql);
@@ -27,7 +27,7 @@ bool selectSchemaVersion(DBContext* db, int64_t* version)
         // This means there are no rows.  Do not try to recover
         // automatically from this problem.
         string e = "No rows could be read from table: ldpsystem.main";
-        db->log->log(Level::error, "", "", e, -1);
+        //db->log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
     string ldpSchemaVersion;
@@ -36,7 +36,7 @@ bool selectSchemaVersion(DBContext* db, int64_t* version)
         // This means there is more than one row.  Do not try to
         // recover automatically from this problem.
         string e = "Too many rows in table: ldpsystem.main";
-        db->log->log(Level::error, "", "", e, -1);
+        //db->log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
     *version = stol(ldpSchemaVersion);
@@ -54,23 +54,34 @@ bool selectSchemaVersion(DBContext* db, int64_t* version)
  *
  * \param[in] db Database context.
  */
-void initSchema(DBContext* db)
+void initSchema(DBContext* db, const string& ldpUser,
+        int64_t thisSchemaVersion)
 {
+    // TODO This should probably be passed into the function as a parameter.
+    Schema schema;
+    Schema::MakeDefaultSchema(&schema);
+
     string sql = "CREATE SCHEMA ldpsystem;";
-    db->log->log(Level::detail, "", "", sql, -1);
+    //db->log->log(Level::detail, "", "", sql, -1);
+    db->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpUser + ";";
+    //db->log->logSQL(sql);
+    db->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpUser + ";";
+    //db->log->logSQL(sql);
     db->dbc->execDirect(nullptr, sql);
 
     sql =
         "CREATE TABLE ldpsystem.main (\n"
         "    ldp_schema_version BIGINT NOT NULL\n"
         ");";
-    db->log->log(Level::detail, "", "", sql, -1);
+    //db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
-    sql = "DELETE FROM ldpsystem.main;";  // Temporary: pre-LDP-1.0
-    db->log->log(Level::detail, "", "", sql, -1);
-    db->dbc->execDirect(nullptr, sql);
-    sql = "INSERT INTO ldpsystem.main (ldp_schema_version) VALUES (0);";
-    db->log->log(Level::detail, "", "", sql, -1);
+    sql = "INSERT INTO ldpsystem.main (ldp_schema_version) VALUES (" +
+        to_string(thisSchemaVersion) + ");";
+    //db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
     sql =
@@ -84,10 +95,24 @@ void initSchema(DBContext* db)
         "    elapsed_time REAL\n"
         ");";
     db->dbc->execDirect(nullptr, sql);
-    db->log->log(Level::detail, "", "", sql, -1);
+    //db->log->log(Level::detail, "", "", sql, -1);
+
+    string rskeys;
+    db->dbt->redshiftKeys("sk", "sk", &rskeys);
+    string autoInc;
+    db->dbt->autoIncrementType(1, false, "", &autoInc);
+    sql =
+        "CREATE TABLE ldpsystem.idmap (\n"
+        "    sk " + autoInc + ",\n"
+        "    id VARCHAR(65535),\n"
+        "        PRIMARY KEY (sk),\n"
+        "        UNIQUE (id)\n"
+        ")" + rskeys + ";";
+    db->log->logSQL(sql);
+    db->dbc->execDirect(nullptr, sql);
 
     sql = "CREATE SCHEMA ldpconfig;";
-    db->log->log(Level::detail, "", "", sql, -1);
+    db->log->logSQL(sql);
     db->dbc->execDirect(nullptr, sql);
 
     sql =
@@ -112,8 +137,45 @@ void initSchema(DBContext* db)
     db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
+    sql = "GRANT USAGE ON SCHEMA history TO " + ldpUser + ";";
+    db->log->logSQL(sql);
+    db->dbc->execDirect(nullptr, sql);
+
+    for (auto& table : schema.tables) {
+        string rskeys;
+        db->dbt->redshiftKeys("sk", "sk, updated", &rskeys);
+        string sql =
+            "CREATE TABLE IF NOT EXISTS\n"
+            "    history." + table.tableName + " (\n"
+            "    sk BIGINT NOT NULL,\n"
+            "    id VARCHAR(65535) NOT NULL,\n"
+            "    data " + db->dbt->jsonType() + " NOT NULL,\n"
+            "    updated TIMESTAMPTZ NOT NULL,\n"
+            "    tenant_id SMALLINT NOT NULL,\n"
+            "    CONSTRAINT\n"
+            "        history_" + table.tableName + "_pkey\n"
+            "        PRIMARY KEY (sk),\n"
+            "    CONSTRAINT\n"
+            "        history_" + table.tableName + "_id_updated_key\n"
+            "        UNIQUE (id, updated)\n"
+            ")" + rskeys + ";";
+        db->log->log(Level::detail, "", "", sql, -1);
+        db->dbc->execDirect(nullptr, sql);
+
+        sql =
+            "GRANT SELECT ON\n"
+            "    history." + table.tableName + "\n"
+            "    TO " + ldpUser + ";";
+        db->log->logSQL(sql);
+        db->dbc->execDirect(nullptr, sql);
+    }
+
     sql = "CREATE SCHEMA local;";
     db->log->log(Level::detail, "", "", sql, -1);
+    db->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + ldpUser + ";";
+    db->log->logSQL(sql);
     db->dbc->execDirect(nullptr, sql);
 }
 
@@ -122,7 +184,8 @@ typedef void (*SchemaUpgrade)(etymon::OdbcDbc* dbc, Log* log);
 void catalogAddTable(etymon::OdbcDbc* dbc, Log* log, const string& table)
 {
     string sql =
-        "INSERT INTO ldpsystem.tables (table_name) VALUES (" + table + ");";
+        "INSERT INTO ldpsystem.tables (table_name) VALUES\n"
+        "    ('" + table + "');";
     log->logSQL(sql);
     dbc->execDirect(nullptr, sql);
 }
@@ -165,15 +228,6 @@ void schemaUpgrade1(etymon::OdbcDbc* dbc, Log* log)
         "feesfines_transfer_criterias",
         "feesfines_transfers",
         "feesfines_waives",
-        "course_courselistings",
-        "course_roles",
-        "course_terms",
-        "course_coursetypes",
-        "course_departments",
-        "course_processingstatuses",
-        "course_copyrightstatuses",
-        "course_courses",
-        "course_reserves",
         "finance_budgets",
         "finance_fiscal_years",
         "finance_fund_types",
@@ -247,6 +301,7 @@ void schemaUpgrade1(etymon::OdbcDbc* dbc, Log* log)
         // Create stub tables if they don't exist.
         sql =
             "CREATE TABLE IF NOT EXISTS " + string(table[x]) + " (\n"
+            "    row_id BIGINT NOT NULL,\n"
             "    sk BIGINT NOT NULL,\n"
             "    id VARCHAR(65535) NOT NULL,\n"
             "    data " + dbt.jsonType() + ",\n"
@@ -256,6 +311,7 @@ void schemaUpgrade1(etymon::OdbcDbc* dbc, Log* log)
         dbc->execDirect(nullptr, sql);
         sql =
             "CREATE TABLE IF NOT EXISTS history." + string(table[x]) + " (\n"
+            "    row_id BIGINT NOT NULL,\n"
             "    sk BIGINT NOT NULL,\n"
             "    id VARCHAR(65535) NOT NULL,\n"
             "    data " + dbt.jsonType() + ",\n"
@@ -264,6 +320,27 @@ void schemaUpgrade1(etymon::OdbcDbc* dbc, Log* log)
             ");";
         log->logSQL(sql);
         dbc->execDirect(nullptr, sql);
+        if (string(dbt.dbType()) == "PostgreSQL") {
+            // Remove row_id columns.
+            sql =
+                "ALTER TABLE \n"
+                "    " + string(table[x]) + "\n"
+                "    DROP COLUMN row_id;";
+            log->logSQL(sql);
+            dbc->execDirect(nullptr, sql);
+            sql =
+                "ALTER TABLE \n"
+                "    history." + string(table[x]) + "\n"
+                "    DROP COLUMN row_id;";
+            log->logSQL(sql);
+            dbc->execDirect(nullptr, sql);
+            // Add sk column in history table.
+            sql =
+                "ALTER TABLE history." + string(table[x]) + "\n"
+                "    ADD COLUMN sk BIGINT;";
+            log->logSQL(sql);
+            dbc->execDirect(nullptr, sql);
+        }
     }
 
     // Create idmap table.
@@ -279,9 +356,8 @@ void schemaUpgrade1(etymon::OdbcDbc* dbc, Log* log)
         "        PRIMARY KEY (sk),\n"
         "        UNIQUE (id)\n"
         ")" + rskeys + ";";
+    log->logSQL(sql);
     dbc->execDirect(nullptr, sql);
-    log->log(Level::detail, "", "", sql, -1);
-
 }
 
 SchemaUpgrade schemaUpgrade[] = {
@@ -290,22 +366,25 @@ SchemaUpgrade schemaUpgrade[] = {
 };
 
 void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn, int64_t version,
-        Log* log)
+        int64_t thisSchemaVersion, Log* log)
 {
-    int64_t latestVersion = 1;
+    //int64_t latestVersion = 1;
 
-    if (version < 0 || version > latestVersion)
+    if (version < 0 || version > thisSchemaVersion)
         throw runtime_error(
                 "Unknown LDP schema version: " + to_string(version));
 
     etymon::OdbcDbc dbc(odbc, dsn);
     etymon::OdbcTx tx(&dbc);
 
-    for (int v = version + 1; v <= latestVersion; v++)
+    for (int v = version + 1; v <= thisSchemaVersion; v++) {
+        log->log(Level::trace, "", "",
+                "Applying schema upgrade: " + to_string(v), -1);
         schemaUpgrade[v](&dbc, log);
+    }
 
     string sql = "UPDATE ldpsystem.main SET ldp_schema_version = " +
-        to_string(latestVersion) + ";";
+        to_string(thisSchemaVersion) + ";";
     log->log(Level::detail, "", "", sql, -1);
     dbc.execDirect(nullptr, sql);
 
@@ -329,26 +408,30 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn, int64_t version,
  * \param[in] odbc ODBC environment.
  * \param[in] db Database context.
  */
-void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db)
+void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
+        const string& ldpUser)
 {
-    db->log->log(Level::trace, "", "", "Initializing database", -1);
+    int64_t thisSchemaVersion = 1;
+
+    //db->log->log(Level::trace, "", "", "Initializing database", -1);
 
     int64_t version;
     bool versionFound = selectSchemaVersion(db, &version);
-    db->log->log(Level::detail, "", "", "ldp_schema_version: " +
-            (versionFound ? to_string(version) : "(not found)"),
-            -1);
+    //db->log->log(Level::detail, "", "", "ldp_schema_version: " +
+    //        (versionFound ? to_string(version) : "(not found)"),
+    //        -1);
 
     if (versionFound) {
         // Schema is present: check if it needs to be upgraded.
-        upgradeSchema(odbc, dsn, version, db->log);
+        upgradeSchema(odbc, dsn, version, thisSchemaVersion, db->log);
     } else {
         // Schema is not present: create it.
-        db->log->log(Level::detail, "", "", "Creating schema", -1);
+        fprintf(stderr, "ldp: Creating schema\n");
+        //db->log->log(Level::trace, "", "", "Creating schema", -1);
         {
-            etymon::OdbcTx tx(db->dbc);
-            initSchema(db);
-            tx.commit();
+            //etymon::OdbcTx tx(db->dbc);
+            initSchema(db, ldpUser, thisSchemaVersion);
+            //tx.commit();
             fprintf(stderr, "ldp: Logging enabled in table: ldpsystem.log\n");
         }
     }

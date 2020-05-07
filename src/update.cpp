@@ -24,39 +24,6 @@ void makeTmpDir(const Options& opt, string* loaddir)
             S_IROTH | S_IXOTH);
 }
 
-static void updateDBPermissions(const Options& opt, Log* log,
-        etymon::OdbcDbc* dbc)
-{
-    string sql;
-
-    sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + opt.ldpUser + ";";
-    log->log(Level::detail, "", "", sql, -1);
-    dbc->execDirect(nullptr, sql);
-
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " +
-        opt.ldpUser + ";";
-    log->log(Level::detail, "", "", sql, -1);
-    dbc->execDirect(nullptr, sql);
-
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
-        opt.ldpUser + ";";
-    log->log(Level::detail, "", "", sql, -1);
-    dbc->execDirect(nullptr, sql);
-
-    sql = "GRANT USAGE ON SCHEMA history TO " + opt.ldpUser + ";";
-    log->log(Level::detail, "", "", sql, -1);
-    dbc->execDirect(nullptr, sql);
-
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA history TO " +
-        opt.ldpUser + ";";
-    log->log(Level::detail, "", "", sql, -1);
-    dbc->execDirect(nullptr, sql);
-
-    sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + opt.ldpUser + ";";
-    log->log(Level::detail, "", "", sql, -1);
-    dbc->execDirect(nullptr, sql);
-}
-
 void runUpdate(const Options& opt)
 {
     // TODO Wrap curl_global_init() in a class.
@@ -78,7 +45,7 @@ void runUpdate(const Options& opt)
         etymon::OdbcDbc dbc(&odbc, opt.db);
         DBType dbt(&dbc);
         DBContext db(&dbc, &dbt, &log);
-        initUpgrade(&odbc, opt.db, &db);
+        initUpgrade(&odbc, opt.db, &db, opt.ldpUser);
     }
 
     ExtractionFiles extractionDir(opt);
@@ -161,7 +128,7 @@ void runUpdate(const Options& opt)
 
             log.log(Level::trace, "", "",
                     "Updating database permissions", -1);
-            updateDBPermissions(opt, &log, &dbc);
+            //updateDBPermissions(opt, &log, &dbc);
 
             tx.commit();
         }
