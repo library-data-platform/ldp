@@ -163,6 +163,7 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
     return 0;
 }
 
+/*
 void debugOptions(const Options& opt)
 {
     fprintf(stderr, "%s: option: command = %s\n", opt.prog,
@@ -210,4 +211,5 @@ void debugOptions(const Options& opt)
     fprintf(stderr, "%s: option: logLevel = %d\n", opt.prog, opt.logLevel);
     //fprintf(stderr, "%s: option: version = %d\n", opt.prog, opt.version);
 }
+*/
 
