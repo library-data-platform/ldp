@@ -5,6 +5,7 @@
 
 #include "dbcontext.h"
 
-void initUpgrade(DBContext* db);
+void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db);
 
 #endif
+

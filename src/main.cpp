@@ -198,7 +198,7 @@ void runServer(const Options& opt)
         etymon::OdbcDbc dbc(&odbc, opt.db);
         DBType dbt(&dbc);
         DBContext db(&dbc, &dbt, &log);
-        initUpgrade(&db);
+        initUpgrade(&odbc, opt.db, &db);
     }
 
     log.log(Level::info, "server", "",
@@ -353,7 +353,7 @@ int main(int argc, char* argv[])
         string s = e.what();
         if ( !(s.empty()) && s.back() == '\n' )
             s.pop_back();
-        fprintf(stderr, "ldp: error: %s\n", s.c_str());
+        fprintf(stderr, "ldp: Error: %s\n", s.c_str());
         return 1;
     }
     return 0;

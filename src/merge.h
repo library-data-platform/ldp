@@ -17,7 +17,7 @@ void placeTable(const Options& opt, Log* log, const TableSchema& table,
         etymon::OdbcDbc* dbc);
 void updateStatus(const Options& opt, const TableSchema& table,
         etymon::OdbcDbc* dbc);
-void dropOldTables(const Options& opt, Log* log, etymon::OdbcDbc* dbc);
+//void dropOldTables(const Options& opt, Log* log, etymon::OdbcDbc* dbc);
 
 //void mergeAll(const Options& opt, Schema* schema, etymon::Postgres* db);
 

@@ -26,6 +26,8 @@ public:
     ~Log();
     void log(Level level, const char* type, const string& table,
             const string& message, double elapsed_time);
+    void logSQL(const string& sql);
+    //void error(const string& message);
 private:
     Level level;
     etymon::OdbcDbc* dbc;

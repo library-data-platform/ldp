@@ -78,7 +78,7 @@ void runUpdate(const Options& opt)
         etymon::OdbcDbc dbc(&odbc, opt.db);
         DBType dbt(&dbc);
         DBContext db(&dbc, &dbt, &log);
-        initUpgrade(&db);
+        initUpgrade(&odbc, opt.db, &db);
     }
 
     ExtractionFiles extractionDir(opt);
@@ -177,14 +177,13 @@ void runUpdate(const Options& opt)
     }
 
     {
-        etymon::OdbcDbc dbc(&odbc, opt.db);
-        //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+        //etymon::OdbcDbc dbc(&odbc, opt.db);
 
-        {
-            etymon::OdbcTx tx(&dbc);
-            dropOldTables(opt, &log, &dbc);
-            tx.commit();
-        }
+        //{
+        //    etymon::OdbcTx tx(&dbc);
+        //    dropOldTables(opt, &log, &dbc);
+        //    tx.commit();
+        //}
     }
 
     // TODO Check if needed for history tables; if so, move into loop above.

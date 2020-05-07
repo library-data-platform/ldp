@@ -107,3 +107,15 @@ void Log::log(Level level, const char* type, const string& table,
     }
 }
 
+void Log::logSQL(const string& sql)
+{
+    log(Level::detail, "", "", sql, -1);
+}
+
+//void Log::error(const string& message)
+//{
+//    log(Level::error, "server", "", message, -1);
+//    throw runtime_error(message);
+//}
+
+
