@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include "merge.h"
 #include "names.h"
 #include "util.h"
