@@ -9,6 +9,7 @@
 #include "anonymize.h"
 #include "camelcase.h"
 #include "dbtype.h"
+#include "idmap.h"
 #include "names.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
@@ -150,13 +151,14 @@ public:
     // Loading to database
     etymon::OdbcDbc* dbc;
     const DBType& dbt;
+    IDMap* idmap;
     size_t recordCount = 0;
     string insertBuffer;
     JSONHandler(int pass, const Options& options, Log* log,
             const TableSchema& table, etymon::OdbcDbc* dbc, const DBType& dbt,
-            map<string,Counts>* statistics) :
+            IDMap* idmap, map<string,Counts>* statistics) :
         pass(pass), opt(options), log(log), tableSchema(table),
-        stats(statistics), dbc(dbc), dbt(dbt) { }
+        stats(statistics), dbc(dbc), dbt(dbt), idmap(idmap) { }
     bool StartObject();
     bool EndObject(json::SizeType memberCount);
     bool StartArray();
@@ -201,20 +203,26 @@ static void endInserts(const Options& opt, Log* log, const string& table,
 }
 
 static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
-        const TableSchema& table, const json::Document& doc,
+        IDMap* idmap, const TableSchema& table, const json::Document& doc,
         size_t* recordCount, string* insertBuffer)
 {
     if (*recordCount > 0)
         *insertBuffer += ',';
     *insertBuffer += '(';
 
-    *insertBuffer += "DEFAULT,";
+    //*insertBuffer += "DEFAULT,";
 
     const char* id = doc["id"].GetString();
+    // iid
+    string iid;
+    idmap->makeIID(id, &iid);
+    *insertBuffer += iid;
+    *insertBuffer += ',';
+    // id
     string idenc;
     dbt.encodeStringConst(id, &idenc);
     *insertBuffer += idenc;
-    *insertBuffer += ",";
+    *insertBuffer += ',';
 
     string s;
     for (const auto& column : table.columns) {
@@ -328,7 +336,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
                 recordCount = 0;
             }
 
-            writeTuple(opt, log, dbt, tableSchema, doc, &recordCount,
+            writeTuple(opt, log, dbt, idmap, tableSchema, doc, &recordCount,
                     &insertBuffer);
         }
 
@@ -510,14 +518,15 @@ size_t readPageCount(const Options& opt, Log* log, const string& loadDir,
 }
 
 static void stagePage(const Options& opt, Log* log, int pass,
-        const TableSchema& tableSchema, etymon::OdbcDbc* dbc,
-        const DBType &dbt, map<string,Counts>* stats, const string& filename,
-        char* readBuffer, size_t readBufferSize)
+        const TableSchema& tableSchema, etymon::OdbcEnv* odbc,
+        etymon::OdbcDbc* dbc, const DBType &dbt, map<string,Counts>* stats,
+        const string& filename, char* readBuffer, size_t readBufferSize)
 {
     json::Reader reader;
     etymon::File f(filename, "r");
     json::FileReadStream is(f.file, readBuffer, readBufferSize);
-    JSONHandler handler(pass, opt, log, tableSchema, dbc, dbt, stats);
+    IDMap idmap(odbc, opt.db, log);
+    JSONHandler handler(pass, opt, log, tableSchema, dbc, dbt, &idmap, stats);
     reader.Parse(is, handler);
 }
 
@@ -538,53 +547,48 @@ static void createLoadingTable(const Options& opt, Log* log,
     loadingTableName(table.tableName, &loadingTable);
     string sql;
 
-    //sql = "CREATE TABLE IF NOT EXISTS " + table.tableName + " (\n"
-    //    "    row_id BIGINT\n"
-    //    ");";
-    //log->log(Level::detail, "", "", sql, -1);
-    //dbc->execDirect(nullptr, sql);
-
     // Start auto-increment after max(row_id) to avoid reusing values.
-    int64_t autoIncStart = 1;  // Default to 1 if no data available.
+    //int64_t autoIncStart = 1;  // Default to 1 if no data available.
 
-    {
-        etymon::OdbcDbc dbc1(odbc, opt.db);
-        sql = "SELECT max(row_id) FROM " + table.tableName + ";";
-        log->log(Level::detail, "", "", sql, -1);
-        try {
-            etymon::OdbcStmt stmt(&dbc1);
-            dbc1.execDirect(&stmt, sql);
-            dbc1.fetch(&stmt);
-            string maxRowId;
-            dbc1.getData(&stmt, 1, &maxRowId);
-            if (maxRowId != "NULL") {
-                int64_t start = stol(maxRowId) + 1;
-                if (start < 1000000000000000000)
-                    autoIncStart = start;
-            }
-        } catch (runtime_error& e) {}
-    }
+    //{
+    //    etymon::OdbcDbc dbc1(odbc, opt.db);
+    //    sql = "SELECT max(row_id) FROM " + table.tableName + ";";
+    //    log->log(Level::detail, "", "", sql, -1);
+    //    try {
+    //        etymon::OdbcStmt stmt(&dbc1);
+    //        dbc1.execDirect(&stmt, sql);
+    //        dbc1.fetch(&stmt);
+    //        string maxRowId;
+    //        dbc1.getData(&stmt, 1, &maxRowId);
+    //        if (maxRowId != "NULL") {
+    //            int64_t start = stol(maxRowId) + 1;
+    //            if (start < 1000000000000000000)
+    //                autoIncStart = start;
+    //        }
+    //    } catch (runtime_error& e) {}
+    //}
 
-    dbt.renameSequence(sequenceName, sequenceName + "_old", &sql);
-    if (sql != "") {
-        log->log(Level::detail, "", "", sql, -1);
-        dbc->execDirect(nullptr, sql);
-    }
+    //dbt.renameSequence(sequenceName, sequenceName + "_old", &sql);
+    //if (sql != "") {
+    //    log->log(Level::detail, "", "", sql, -1);
+    //    dbc->execDirect(nullptr, sql);
+    //}
 
-    dbt.createSequence(sequenceName, autoIncStart, &sql);
-    if (sql != "") {
-        log->log(Level::detail, "", "", sql, -1);
-        dbc->execDirect(nullptr, sql);
-    }
+    //dbt.createSequence(sequenceName, autoIncStart, &sql);
+    //if (sql != "") {
+    //    log->log(Level::detail, "", "", sql, -1);
+    //    dbc->execDirect(nullptr, sql);
+    //}
 
     string rskeys;
-    dbt.redshiftKeys("id", "id", &rskeys);
-    string autoInc;
-    dbt.autoIncrementType(autoIncStart, true, sequenceName, &autoInc);
+    dbt.redshiftKeys("iid", "iid", &rskeys);
+    //string autoInc;
+    //dbt.autoIncrementType(autoIncStart, true, sequenceName, &autoInc);
     sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
-        "    row_id " + autoInc + ",\n"
+        //"    row_id " + autoInc + ",\n"
+        "    iid BIGINT NOT NULL,\n"
         "    id VARCHAR(65535) NOT NULL,\n";
     string columnType;
     for (const auto& column : table.columns) {
@@ -601,17 +605,17 @@ static void createLoadingTable(const Options& opt, Log* log,
         //"    updated TIMESTAMPTZ NOT NULL,\n"
         //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"
-        "    PRIMARY KEY (row_id),\n"
+        "    PRIMARY KEY (iid),\n"
         "    UNIQUE (id)\n"
         ")" + rskeys + ";";
     log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 
-    dbt.alterSequenceOwnedBy(sequenceName, loadingTable + ".row_id", &sql);
-    if (sql != "") {
-        log->log(Level::detail, "", "", sql, -1);
-        dbc->execDirect(nullptr, sql);
-    }
+    //dbt.alterSequenceOwnedBy(sequenceName, loadingTable + ".row_id", &sql);
+    //if (sql != "") {
+    //    log->log(Level::detail, "", "", sql, -1);
+    //    dbc->execDirect(nullptr, sql);
+    //}
 
     // Add comment on table.
     if (table.moduleName != "mod-agreements") {
@@ -661,7 +665,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                     "Staging: " + table->tableName +
                     (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                     to_string(page), -1);
-            stagePage(opt, log, pass, *table, dbc, dbt, &stats, path,
+            stagePage(opt, log, pass, *table, odbc, dbc, dbt, &stats, path,
                     readBuffer, sizeof readBuffer);
         }
 
@@ -673,7 +677,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                         "Staging: " + table->tableName +
                         (pass == 1 ?  ": analyze" : ": load") +
                         ": test file", -1);
-                stagePage(opt, log, pass, *table, dbc, dbt, &stats, path,
+                stagePage(opt, log, pass, *table, odbc, dbc, dbt, &stats, path,
                         readBuffer, sizeof readBuffer);
             }
         }

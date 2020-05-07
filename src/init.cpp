@@ -120,6 +120,23 @@ void initSchema(DBContext* db)
     db->dbc->execDirect(nullptr, sql);
 }
 
+void bootstrapSchema(DBContext* db)
+{
+    string rskeys;
+    db->dbt->redshiftKeys("iid", "iid", &rskeys);
+    string autoInc;
+    db->dbt->autoIncrementType(1, false, "", &autoInc);
+    string sql =
+        "CREATE TABLE IF NOT EXISTS ldpsystem.idmap (\n"
+        "    iid " + autoInc + ",\n"
+        "    id VARCHAR(65535),\n"
+        "        PRIMARY KEY (iid),\n"
+        "        UNIQUE (id)\n"
+        ")" + rskeys + ";";
+    db->dbc->execDirect(nullptr, sql);
+    db->log->log(Level::detail, "", "", sql, -1);
+}
+
 /**
  * \brief Initializes or upgrades an LDP database if needed.
  *
@@ -161,5 +178,7 @@ void initUpgrade(DBContext* db)
             fprintf(stderr, "ldp: Logging enabled in table: ldpsystem.log\n");
         }
     }
+
+    bootstrapSchema(db);
 }
 

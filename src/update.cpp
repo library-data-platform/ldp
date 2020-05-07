@@ -151,7 +151,7 @@ void runUpdate(const Options& opt)
 
             log.log(Level::trace, "", "",
                     "Merging table: " + table.tableName, -1);
-            mergeTable(opt, &log, table, &dbc, dbt);
+            mergeTable(opt, &log, table, &odbc, &dbc, dbt);
 
             log.log(Level::trace, "", "",
                     "Replacing table: " + table.tableName, -1);

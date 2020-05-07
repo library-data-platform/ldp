@@ -1,10 +1,7 @@
 #include <stdexcept>
-#include <string.h>
 #include <unistd.h>
 
-#include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/util.h"
-#include "dbtype.h"
 #include "log.h"
 
 Log::Log(etymon::OdbcDbc* dbc, Level level, const char* program)

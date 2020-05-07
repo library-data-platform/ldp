@@ -3,36 +3,46 @@
 #include "util.h"
 
 void mergeTable(const Options& opt, Log* log, const TableSchema& table,
-        etymon::OdbcDbc* dbc, const DBType& dbt)
+        etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, const DBType& dbt)
 {
     // Update history tables.
 
     string historyTable;
     historyTableName(table.tableName, &historyTable);
 
-    // Temporarily drop history tables before recreating them.
-    dropTable(opt, log, historyTable, dbc);
-
     string rskeys;
-    dbt.redshiftKeys("id", "id, updated", &rskeys);
-    string autoInc;
-    dbt.autoIncrementType(1, false, "", &autoInc);
+    dbt.redshiftKeys("iid", "iid, updated", &rskeys);
+    //string autoInc;
+    //dbt.autoIncrementType(1, false, "", &autoInc);
     string sql =
         "CREATE TABLE IF NOT EXISTS\n"
         "    " + historyTable + " (\n"
-        "    row_id " + autoInc + ",\n"
+        //"    row_id " + autoInc + ",\n"
+        "    iid BIGINT NOT NULL,\n"
         "    id VARCHAR(65535) NOT NULL,\n"
         "    data " + dbt.jsonType() + " NOT NULL,\n"
         "    updated TIMESTAMPTZ NOT NULL,\n"
         //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"
-        "    PRIMARY KEY (row_id),\n"
+        "    PRIMARY KEY (iid),\n"
         "    CONSTRAINT\n"
-        "        history_" + table.tableName + "_id_updated_key\n"
-        "        UNIQUE (id, updated)\n"
+        "        history_" + table.tableName + "_iid_updated_key\n"
+        "        UNIQUE (iid, updated)\n"
         ")" + rskeys + ";";
     log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
+
+    // bootstrap: add column in separate connection
+    {
+        etymon::OdbcDbc dbc(odbc, opt.db);
+        try {
+            sql =
+                "ALTER TABLE " + historyTable + "\n"
+                "    ADD COLUMN iid BIGINT;";
+            log->log(Level::detail, "", "", sql, -1);
+            dbc.execDirect(nullptr, sql);
+        } catch (runtime_error& e) {}
+    }
 
     string latestHistoryTable;
     latestHistoryTableName(table.tableName, &latestHistoryTable);
@@ -58,8 +68,9 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
 
     sql =
         "INSERT INTO " + historyTable + "\n"
-        "    (id, data, updated, tenant_id)\n"
-        "SELECT s.id,\n"
+        "    (iid, id, data, updated, tenant_id)\n"
+        "SELECT s.iid,\n"
+        "       s.id,\n"
         "       s.data,\n" +
         "       " + dbt.currentTimestamp() + ",\n"
         "       s.tenant_id\n"
