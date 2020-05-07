@@ -547,6 +547,7 @@ void ColumnSchema::columnTypeToString(ColumnType type, string* str)
     case ColumnType::timestamptz:
         *str = "TIMESTAMPTZ";
         break;
+    case ColumnType::id:
     case ColumnType::varchar:
         *str = "VARCHAR(65535)";
         break;
@@ -558,10 +559,14 @@ void ColumnSchema::columnTypeToString(ColumnType type, string* str)
 ColumnType ColumnSchema::selectColumnType(const Counts& counts)
 {
     if (counts.string > 0) {
-        if (counts.string == counts.dateTime)
-            return ColumnType::timestamptz;
-        else
-            return ColumnType::varchar;
+        if (counts.string == counts.uuid) {
+            return ColumnType::id;
+        } else {
+            if (counts.string == counts.dateTime)
+                return ColumnType::timestamptz;
+            else
+                return ColumnType::varchar;
+        }
     }
     if (counts.number > 0) {
         if (counts.floating > 0)

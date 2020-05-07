@@ -111,6 +111,18 @@ void trim(string* s)
     free(tmp);
 }
 
+void toLower(string* s)
+{
+    for (char& c: *s)
+        c = tolower(c);
+}
+
+void toUpper(string* s)
+{
+    for (char& c: *s)
+        c = toupper(c);
+}
+
 void split(const string& str, char delim, vector<string>* v)
 {
     v->clear();

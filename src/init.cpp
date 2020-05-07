@@ -123,14 +123,14 @@ void initSchema(DBContext* db)
 void bootstrapSchema(DBContext* db)
 {
     string rskeys;
-    db->dbt->redshiftKeys("iid", "iid", &rskeys);
+    db->dbt->redshiftKeys("sk", "sk", &rskeys);
     string autoInc;
     db->dbt->autoIncrementType(1, false, "", &autoInc);
     string sql =
         "CREATE TABLE IF NOT EXISTS ldpsystem.idmap (\n"
-        "    iid " + autoInc + ",\n"
+        "    sk " + autoInc + ",\n"
         "    id VARCHAR(65535),\n"
-        "        PRIMARY KEY (iid),\n"
+        "        PRIMARY KEY (sk),\n"
         "        UNIQUE (id)\n"
         ")" + rskeys + ";";
     db->dbc->execDirect(nullptr, sql);

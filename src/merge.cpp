@@ -11,23 +11,22 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
     historyTableName(table.tableName, &historyTable);
 
     string rskeys;
-    dbt.redshiftKeys("iid", "iid, updated", &rskeys);
+    dbt.redshiftKeys("sk", "sk, updated", &rskeys);
     //string autoInc;
     //dbt.autoIncrementType(1, false, "", &autoInc);
     string sql =
         "CREATE TABLE IF NOT EXISTS\n"
         "    " + historyTable + " (\n"
         //"    row_id " + autoInc + ",\n"
-        "    iid BIGINT NOT NULL,\n"
+        "    sk BIGINT NOT NULL,\n"
         "    id VARCHAR(65535) NOT NULL,\n"
         "    data " + dbt.jsonType() + " NOT NULL,\n"
         "    updated TIMESTAMPTZ NOT NULL,\n"
         //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"
-        "    PRIMARY KEY (iid),\n"
         "    CONSTRAINT\n"
-        "        history_" + table.tableName + "_iid_updated_key\n"
-        "        UNIQUE (iid, updated)\n"
+        "        history_" + table.tableName + "_sk_updated_pkey\n"
+        "        PRIMARY KEY (sk, updated)\n"
         ")" + rskeys + ";";
     log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
@@ -38,7 +37,7 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
         try {
             sql =
                 "ALTER TABLE " + historyTable + "\n"
-                "    ADD COLUMN iid BIGINT;";
+                "    ADD COLUMN sk BIGINT;";
             log->log(Level::detail, "", "", sql, -1);
             dbc.execDirect(nullptr, sql);
         } catch (runtime_error& e) {}
@@ -68,8 +67,8 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
 
     sql =
         "INSERT INTO " + historyTable + "\n"
-        "    (iid, id, data, updated, tenant_id)\n"
-        "SELECT s.iid,\n"
+        "    (sk, id, data, updated, tenant_id)\n"
+        "SELECT s.sk,\n"
         "       s.id,\n"
         "       s.data,\n" +
         "       " + dbt.currentTimestamp() + ",\n"

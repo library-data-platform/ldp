@@ -87,6 +87,8 @@ void processJSONRecord(json::Document* root, json::Value* node,
             }
             if (collectStats && depth == 1) {
                 (*stats)[path.c_str() + 1].string++;
+                if (isUUID(node->GetString()))
+                    (*stats)[path.c_str() + 1].uuid++;
                 if (looksLikeDateTime(node->GetString()))
                     (*stats)[path.c_str() + 1].dateTime++;
             }
@@ -213,10 +215,10 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
     //*insertBuffer += "DEFAULT,";
 
     const char* id = doc["id"].GetString();
-    // iid
-    string iid;
-    idmap->makeIID(id, &iid);
-    *insertBuffer += iid;
+    // sk
+    string sk;
+    idmap->makeSK(id, &sk);
+    *insertBuffer += sk;
     *insertBuffer += ',';
     // id
     string idenc;
@@ -230,11 +232,15 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
             continue;
         const char* sourceColumnName = column.sourceColumnName.c_str();
         if (doc.HasMember(sourceColumnName) == false) {
+            if (column.columnType == ColumnType::id)
+                *insertBuffer += "NULL,";
             *insertBuffer += "NULL,";
             continue;
         }
         const json::Value& jsonValue = doc[sourceColumnName];
         if (jsonValue.IsNull()) {
+            if (column.columnType == ColumnType::id)
+                *insertBuffer += "NULL,";
             *insertBuffer += "NULL,";
             continue;
         }
@@ -248,6 +254,10 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
         case ColumnType::numeric:
             *insertBuffer += to_string(jsonValue.GetDouble());
             break;
+        case ColumnType::id:
+            idmap->makeSK(jsonValue.GetString(), &s);
+            *insertBuffer += s;
+            *insertBuffer += ",";
         case ColumnType::timestamptz:
         case ColumnType::varchar:
             dbt.encodeStringConst(jsonValue.GetString(), &s);
@@ -581,18 +591,23 @@ static void createLoadingTable(const Options& opt, Log* log,
     //}
 
     string rskeys;
-    dbt.redshiftKeys("iid", "iid", &rskeys);
+    dbt.redshiftKeys("sk", "sk", &rskeys);
     //string autoInc;
     //dbt.autoIncrementType(autoIncStart, true, sequenceName, &autoInc);
     sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
         //"    row_id " + autoInc + ",\n"
-        "    iid BIGINT NOT NULL,\n"
+        "    sk BIGINT NOT NULL,\n"
         "    id VARCHAR(65535) NOT NULL,\n";
     string columnType;
     for (const auto& column : table.columns) {
         if (column.columnName != "id") {
+            if (column.columnType == ColumnType::id) {
+                sql += "    \"";
+                sql += column.columnName;
+                sql += "_sk\" BIGINT,\n";
+            }
             sql += "    \"";
             sql += column.columnName;
             sql += "\" ";
@@ -605,7 +620,7 @@ static void createLoadingTable(const Options& opt, Log* log,
         //"    updated TIMESTAMPTZ NOT NULL,\n"
         //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL,\n"
-        "    PRIMARY KEY (iid),\n"
+        "    PRIMARY KEY (sk),\n"
         "    UNIQUE (id)\n"
         ")" + rskeys + ";";
     log->log(Level::detail, "", "", sql, -1);

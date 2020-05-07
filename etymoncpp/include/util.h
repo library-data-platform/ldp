@@ -28,6 +28,8 @@ bool fileExists(const string& filename);
 
 void join(string* s1, const string& s2);
 void trim(string* s);
+void toLower(string* s);
+void toUpper(string* s);
 void split(const string& str, char delim, vector<string>* v);
 void prefixLines(string* str, const char* prefix);
 

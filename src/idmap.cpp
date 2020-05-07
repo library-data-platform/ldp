@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include "../etymoncpp/include/util.h"
 #include "idmap.h"
 
@@ -14,22 +16,24 @@ IDMap::~IDMap()
     delete dbc;
 }
 
-void IDMap::makeIID(const char* id, string* iid)
+void IDMap::makeSK(const char* id, string* sk)
 {
+    string lowerID = id;
+    etymon::toLower(&lowerID);
     string encodedID;
-    dbt->encodeStringConst(id, &encodedID);
+    dbt->encodeStringConst(lowerID.c_str(), &encodedID);
     string selectSQL =
-        "SELECT iid FROM ldpsystem.idmap WHERE id = " + encodedID + ";";
+        "SELECT sk FROM ldpsystem.idmap WHERE id = " + encodedID + ";";
     log->log(Level::detail, "", "", selectSQL, -1);
     {
         etymon::OdbcStmt stmt(dbc);
         dbc->execDirect(&stmt, selectSQL);
         if (dbc->fetch(&stmt)) {
-            dbc->getData(&stmt, 1, iid);
+            dbc->getData(&stmt, 1, sk);
             return;
         }
     }
-    // The iid was not found.  So we shall add it.
+    // The sk was not found; so we add it.
     string insertSQL =
         "INSERT INTO ldpsystem.idmap (id) VALUES (" + encodedID + ");";
     log->log(Level::detail, "", "", insertSQL, -1);
@@ -39,7 +43,7 @@ void IDMap::makeIID(const char* id, string* iid)
         etymon::OdbcStmt stmt(dbc);
         dbc->execDirect(&stmt, selectSQL);
         if (dbc->fetch(&stmt)) {
-            dbc->getData(&stmt, 1, iid);
+            dbc->getData(&stmt, 1, sk);
             return;
         }
     }
