@@ -1,3 +1,4 @@
+#include <cstring>
 #include <stdexcept>
 #include <unistd.h>
 
