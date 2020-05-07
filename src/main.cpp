@@ -209,6 +209,7 @@ void runServer(const Options& opt)
 
     do {
         if (opt.cliMode || timeForFullUpdate(opt, &dbc, &dbt, &log) ) {
+            rescheduleNextDailyLoad(opt, &dbc, &dbt, &log);
             log.log(Level::trace, "", "", "Starting full update", -1);
             pid_t pid = fork();
             if (pid == 0)
@@ -223,18 +224,13 @@ void runServer(const Options& opt)
                 else
                     log.log(Level::trace, "", "",
                             "Full update did not terminate normally", -1);
-                rescheduleNextDailyLoad(opt, &dbc, &dbt, &log);
             }
             if (pid < 0)
                 throw runtime_error("Error starting child process");
         }
 
-        if (!opt.cliMode) {
-            int s = 60;
-            log.log(Level::detail, "", "",
-                    "Sleeping for " + to_string(s) + " seconds", -1);
-            std::this_thread::sleep_for(std::chrono::seconds(s));
-        }
+        if (!opt.cliMode)
+            std::this_thread::sleep_for(std::chrono::seconds(60));
     } while (!opt.cliMode);
 
     log.log(Level::info, "server", "",
