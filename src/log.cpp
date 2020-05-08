@@ -1,10 +1,8 @@
+#include <cstring>
 #include <stdexcept>
-#include <string.h>
 #include <unistd.h>
 
-#include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/util.h"
-#include "dbtype.h"
 #include "log.h"
 
 Log::Log(etymon::OdbcDbc* dbc, Level level, const char* program)
@@ -100,12 +98,18 @@ void Log::log(Level level, const char* type, const string& table,
         "    (" + string(dbt->currentTimestamp()) + ", " + to_string(getpid()) +
         ", '" + levelStr + "', '" + type + "', '" + table + "', " +
         logmsgEncoded + ", " + elapsed_time_str + ");";
-    try {
-        dbc->execDirect(nullptr, sql);
-    } catch (runtime_error& e) {
-        if (level == Level::debug || level == Level::trace ||
-                level == Level::detail)
-            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
-    }
+    dbc->execDirect(nullptr, sql);
 }
+
+void Log::logSQL(const string& sql)
+{
+    log(Level::detail, "", "", sql, -1);
+}
+
+//void Log::error(const string& message)
+//{
+//    log(Level::error, "server", "", message, -1);
+//    throw runtime_error(message);
+//}
+
 

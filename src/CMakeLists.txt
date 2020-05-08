@@ -41,6 +41,7 @@ add_executable(ldp
     dbcontext.cpp
     dbtype.cpp
     extract.cpp
+    idmap.cpp
     init.cpp
     log.cpp
     main.cpp

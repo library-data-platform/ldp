@@ -1,5 +1,3 @@
-// Old error printing functions
-
 #ifndef LDP_UTIL_H
 #define LDP_UTIL_H
 
@@ -10,6 +8,11 @@
 #include "schema.h"
 
 using namespace std;
+
+bool isUUID(const char* str);
+
+////////////////////////////////////////////////////////////////////////////
+// Old error printing functions
 
 enum class Print {
     error,

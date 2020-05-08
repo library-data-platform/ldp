@@ -9,6 +9,7 @@ using namespace std;
 enum class ColumnType {
     bigint,
     boolean,
+    id,
     numeric,
     timestamptz,
     varchar
@@ -23,6 +24,7 @@ public:
     unsigned int floating = 0;
     unsigned int boolean = 0;
     unsigned int null = 0;
+    unsigned int uuid = 0;
 };
 
 class ColumnSchema {

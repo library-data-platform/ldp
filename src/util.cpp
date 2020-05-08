@@ -1,7 +1,52 @@
-// Old error printing functions
+#include <cstring>
 
 #include "../etymoncpp/include/util.h"
 #include "util.h"
+
+bool isUUID(const char* str)
+{
+    if (strlen(str) != 36)
+        return false;
+    for (int x = 0; x < 36; x++) {
+        char c = str[x];
+        if (x == 8 || x == 13 || x == 18 || x == 23) {
+            if (c != '-')
+                return false;
+        } else {
+            switch (c) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case 'A':
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'E':
+            case 'F':
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'e':
+            case 'f':
+                break;
+            default:
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////
+// Old error printing functions
 
 void print(Print level, const Options& opt, const string& str)
 {

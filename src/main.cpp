@@ -187,6 +187,8 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
 
 void runServer(const Options& opt)
 {
+    fprintf(stderr, "%s: Starting server\n", opt.prog);
+
     etymon::OdbcEnv odbc;
 
     //runPreloadTests(opt, &odbc);
@@ -198,7 +200,7 @@ void runServer(const Options& opt)
         etymon::OdbcDbc dbc(&odbc, opt.db);
         DBType dbt(&dbc);
         DBContext db(&dbc, &dbt, &log);
-        initUpgrade(&db);
+        initUpgrade(&odbc, opt.db, &db, opt.ldpUser);
     }
 
     log.log(Level::info, "server", "",
@@ -209,6 +211,7 @@ void runServer(const Options& opt)
 
     do {
         if (opt.cliMode || timeForFullUpdate(opt, &dbc, &dbt, &log) ) {
+            rescheduleNextDailyLoad(opt, &dbc, &dbt, &log);
             log.log(Level::trace, "", "", "Starting full update", -1);
             pid_t pid = fork();
             if (pid == 0)
@@ -223,18 +226,13 @@ void runServer(const Options& opt)
                 else
                     log.log(Level::trace, "", "",
                             "Full update did not terminate normally", -1);
-                rescheduleNextDailyLoad(opt, &dbc, &dbt, &log);
             }
             if (pid < 0)
                 throw runtime_error("Error starting child process");
         }
 
-        if (!opt.cliMode) {
-            int s = 60;
-            log.log(Level::detail, "", "",
-                    "Sleeping for " + to_string(s) + " seconds", -1);
-            std::this_thread::sleep_for(std::chrono::seconds(s));
-        }
+        if (!opt.cliMode)
+            std::this_thread::sleep_for(std::chrono::seconds(60));
     } while (!opt.cliMode);
 
     log.log(Level::info, "server", "",
@@ -353,7 +351,7 @@ int main(int argc, char* argv[])
         string s = e.what();
         if ( !(s.empty()) && s.back() == '\n' )
             s.pop_back();
-        fprintf(stderr, "ldp: error: %s\n", s.c_str());
+        fprintf(stderr, "ldp: Error: %s\n", s.c_str());
         return 1;
     }
     return 0;
