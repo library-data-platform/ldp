@@ -240,7 +240,9 @@ void initSchema(DBContext* db, const string& ldpUser,
     sql =
         "CREATE TABLE ldpconfig.general (\n"
         "    full_update_enabled BOOLEAN NOT NULL,\n"
-        "    next_full_update TIMESTAMPTZ NOT NULL\n"
+        "    next_full_update TIMESTAMPTZ NOT NULL,\n"
+        "    log_referential_analysis BOOLEAN NOT NULL DEFAULT FALSE,\n"
+        "    force_referential_constraints BOOLEAN NOT NULL DEFAULT FALSE\n"
         ");";
     db->dbc->execDirect(nullptr, sql);
     db->log->log(Level::detail, "", "", sql, -1);
@@ -614,10 +616,27 @@ void schemaUpgrade2(SchemaUpgradeOptions* opt)
     }
 }
 
+void schemaUpgrade3(SchemaUpgradeOptions* opt)
+{
+    string sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    ADD COLUMN log_referential_analysis\n"
+        "        BOOLEAN NOT NULL DEFAULT FALSE;";
+    opt->log->logDetail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+    sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    ADD COLUMN force_referential_constraints\n"
+        "        BOOLEAN NOT NULL DEFAULT FALSE;";
+    opt->log->logDetail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+}
+
 SchemaUpgrade schemaUpgrade[] = {
     nullptr,  // Version 0 has no migration.
     schemaUpgrade1,
-    schemaUpgrade2
+    schemaUpgrade2,
+    schemaUpgrade3
 };
 
 void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
@@ -675,7 +694,7 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
 void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
         const string& ldpUser)
 {
-    int64_t thisSchemaVersion = 2;
+    int64_t thisSchemaVersion = 3;
 
     //db->log->log(Level::trace, "", "", "Initializing database", -1);
 

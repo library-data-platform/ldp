@@ -128,6 +128,29 @@ void processReferentialPaths(etymon::OdbcEnv* odbc, const string& dbName,
     }
 }
 
+void selectConfigGeneral(etymon::OdbcDbc* dbc, Log* log,
+        bool* logReferentialAnalysis, bool* forceReferentialConstraints)
+{
+    string sql =
+        "SELECT log_referential_analysis,\n"
+        "       force_referential_constraints\n"
+        "    FROM ldpconfig.general;";
+    log->logDetail(sql);
+    etymon::OdbcStmt stmt(dbc);
+    dbc->execDirect(&stmt, sql);
+    if (dbc->fetch(&stmt) == false)
+        throw runtime_error(
+                "No rows could be read from table: ldpconfig.general");
+    string logReferentialAnalysisStr, forceReferentialConstraintsStr;
+    dbc->getData(&stmt, 1, &logReferentialAnalysisStr);
+    dbc->getData(&stmt, 2, &forceReferentialConstraintsStr);
+    if (dbc->fetch(&stmt))
+        throw runtime_error("Too many rows in table: ldpsystem.main");
+    *logReferentialAnalysis = logReferentialAnalysisStr == "1";
+    *forceReferentialConstraints = forceReferentialConstraintsStr == "1";
+}
+
+
 void runUpdate(const Options& opt)
 {
     // TODO Wrap curl_global_init() in a class.
@@ -253,17 +276,26 @@ void runUpdate(const Options& opt)
         log.log(Level::debug, "server", "", "Competed full update",
                 fullUpdateTimer.elapsedTime());
 
-        log.log(Level::debug, "server", "", "Analyzing referential paths", -1);
-
-        Timer refTimer(opt);
-
         {
             etymon::OdbcDbc dbc(&odbc, opt.db);
 
-            {
-                etymon::OdbcTx tx(&dbc);
+            bool logReferentialAnalysis = false;
+            bool forceReferentialConstraints = false;
+            selectConfigGeneral(&dbc, &log, &logReferentialAnalysis,
+                    &forceReferentialConstraints);
+            if (logReferentialAnalysis)
+                printf("logReferentialAnalysis\n");
+            if (forceReferentialConstraints)
+                printf("forceReferentialConstraints\n");
 
-                bool forceReferentialConstraints = false;
+            if (logReferentialAnalysis) {
+
+                log.log(Level::debug, "server", "",
+                        "Analyzing referential paths", -1);
+
+                Timer refTimer(opt);
+
+                etymon::OdbcTx tx(&dbc);
 
                 for (auto& table : schema.tables)
                     processReferentialPaths(&odbc, opt.db, &dbc, &log, schema,
