@@ -603,13 +603,13 @@ void schemaUpgrade2(SchemaUpgradeOptions* opt)
         string sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
             "    DROP CONSTRAINT history_" + table[x] + "_pkey;";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
             "    ADD CONSTRAINT history_" + table[x] + "_pkey\n"
             "    PRIMARY KEY (sk, updated);";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
     }
 }

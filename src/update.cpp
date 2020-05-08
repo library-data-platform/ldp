@@ -24,17 +24,108 @@ void makeTmpDir(const Options& opt, string* loaddir)
             S_IROTH | S_IXOTH);
 }
 
-void addForeignKeys(etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, Log* log,
-        const Schema& schema, const TableSchema& table)
+bool isForeignKey(etymon::OdbcDbc* dbc, Log* log, const TableSchema& table2,
+        const ColumnSchema& column2, const TableSchema& table1)
 {
+    string sql =
+        "SELECT 1\n"
+        "    FROM " + table2.tableName + " AS r2\n"
+        "        JOIN " + table1.tableName + " AS r1\n"
+        "            ON r2." + column2.columnName + "_sk = r1.sk\n"
+        "    LIMIT 1;";
+    log->logDetail(sql);
+    etymon::OdbcStmt stmt(dbc);
+    try {
+        dbc->execDirect(&stmt, sql);
+    } catch (runtime_error& e) {
+        return false;
+    }
+    return dbc->fetch(&stmt);
+}
+
+void forceConstrainReferencedTable(/*etymon::OdbcEnv* odbc, const string& dbName,*/
+        etymon::OdbcDbc* dbc, Log* log, const TableSchema& table2,
+        const ColumnSchema& column2, const TableSchema& table1,
+        bool deleteRecords)
+{
+    string sql =
+        "SELECT " + column2.columnName + "_sk AS fkey_sk,\n"
+        "       " + column2.columnName + " AS fkey_id\n"
+        "    FROM " + table2.tableName + "\n"
+        "    WHERE " + column2.columnName + "_sk NOT IN (\n"
+        "        SELECT sk FROM " + table1.tableName + "\n"
+        "    );";
+    log->logDetail(sql);
+    // Assume the tables exist.
+    //etymon::OdbcDbc deleteDBC(odbc, dbName);
+    vector<string> fkeys;
+    {
+        etymon::OdbcStmt stmt(dbc);
+        dbc->execDirect(&stmt, sql);
+        while (dbc->fetch(&stmt)) {
+            string fkeySK, fkeyID;
+            dbc->getData(&stmt, 1, &fkeySK);
+            dbc->getData(&stmt, 2, &fkeyID);
+            if (deleteRecords)
+                fkeys.push_back(fkeySK);
+            log->log(Level::debug, "constraint", table2.tableName,
+                    "Nonexistent key in referential path:\n"
+                    "    Referencing table: " + table2.tableName + "\n"
+                    "    Referencing column: " + column2.columnName + "\n"
+                    "    Referencing column (sk): " + fkeySK + "\n"
+                    "    Referencing column (id): " + fkeyID + "\n"
+                    "    Referenced table: " + table1.tableName + "\n"
+                    "    Action: " +
+                    (deleteRecords ? "Deleted (cascading)" : "Ignored"),
+                    -1);
+        }
+    }
+    if (deleteRecords) {
+        for (auto& fkey : fkeys) {
+            sql =
+                "DELETE FROM \n"
+                "    " + table2.tableName + "\n"
+                "    WHERE " + column2.columnName + "_sk = '" + fkey + "';";
+            log->logDetail(sql);
+            dbc->execDirect(nullptr, sql);
+        }
+        // TODO Do the same for _id -> id
+        sql =
+            "ALTER TABLE\n"
+            "    " + table2.tableName + "\n"
+            "    ADD CONSTRAINT\n"
+            "        " + table2.tableName + "_" + column2.columnName +
+            "_sk_fkey\n"
+            "        FOREIGN KEY (" + column2.columnName + "_sk)\n"
+            "        REFERENCES\n"
+            "        " + table1.tableName + "\n"
+            "        (sk) ON DELETE CASCADE;";
+        log->logDetail(sql);
+        dbc->execDirect(nullptr, sql);
+    }
+}
+
+void analyzeForeignKeys(etymon::OdbcEnv* odbc, const string& dbName,
+        etymon::OdbcDbc* dbc, Log* log, const Schema& schema,
+        const TableSchema& table)
+{
+    etymon::OdbcDbc queryDBC(odbc, dbName);
     log->logDetail("Searching for foreign keys in table: " + table.tableName);
+    //printf("Table: %s\n", table.tableName.c_str());
     for (auto& column : table.columns) {
         if (column.columnType != ColumnType::id)
             continue;
-        printf("%s\n", column.columnName.c_str());
-        //string sql =
-        //    "SELECT r2." + column.columnName + ",\n"
-        //    "       r1." + 
+        if (column.columnName == "id")
+            continue;
+        //printf("Column: %s\n", column.columnName.c_str());
+        for (auto& table1 : schema.tables) {
+            if (isForeignKey(&queryDBC, log, table, column, table1)) {
+                //printf("-> %s\n", table1.tableName.c_str());
+                forceConstrainReferencedTable(/*odbc, dbName,*/ dbc, log, table,
+                        column, table1, false);
+                break;
+            }
+        }
     }
 }
 
@@ -96,35 +187,35 @@ void runUpdate(const Options& opt)
         curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
     }
 
-    for (auto& table : schema.tables) {
-
-        ExtractionFiles extractionFiles(opt);
-
-        log.log(Level::trace, "", "",
-                "Updating table: " + table.tableName, -1);
-
-        Timer loadTimer(opt);
-
-        if (opt.loadFromDir == "") {
-            log.log(Level::trace, "", "",
-                    "Extracting: " + table.sourcePath, -1);
-            bool foundData = directOverride(opt, table.sourcePath) ?
-                retrieveDirect(opt, &log, table, loadDir, &extractionFiles) :
-                retrievePages(c, opt, &log, token, table, loadDir,
-                        &extractionFiles);
-            if (!foundData)
-                table.skip = true;
-        }
-
-        if (table.skip)
-            continue;
-
+    {
         etymon::OdbcDbc dbc(&odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
         DBType dbt(&dbc);
 
-        {
-            etymon::OdbcTx tx(&dbc);
+        //etymon::OdbcTx tx(&dbc);
+
+        for (auto& table : schema.tables) {
+
+            ExtractionFiles extractionFiles(opt);
+
+            log.log(Level::trace, "", "",
+                    "Updating table: " + table.tableName, -1);
+
+            Timer loadTimer(opt);
+
+            if (opt.loadFromDir == "") {
+                log.log(Level::trace, "", "",
+                        "Extracting: " + table.sourcePath, -1);
+                bool foundData = directOverride(opt, table.sourcePath) ?
+                    retrieveDirect(opt, &log, table, loadDir, &extractionFiles) :
+                    retrievePages(c, opt, &log, token, table, loadDir,
+                            &extractionFiles);
+                if (!foundData)
+                    table.skip = true;
+            }
+
+            if (table.skip)
+                continue;
 
             log.log(Level::trace, "", "",
                     "Staging table: " + table.tableName, -1);
@@ -144,20 +235,22 @@ void runUpdate(const Options& opt)
                     "Updating database permissions", -1);
             //updateDBPermissions(opt, &log, &dbc);
 
-            tx.commit();
-        }
+            //vacuumAnalyzeTable(opt, table, &dbc);
 
-        //vacuumAnalyzeTable(opt, table, &dbc);
+            log.log(Level::debug, "update", table.tableName,
+                    "Updated table: " + table.tableName,
+                    loadTimer.elapsedTime());
 
-        addForeignKeys(&odbc, &dbc, &log, schema, table);
+            //if (opt.logLevel == Level::trace)
+            //    loadTimer.print("load time");
+        } // for
 
-        log.log(Level::debug, "update", table.tableName,
-                "Updated table: " + table.tableName,
-                loadTimer.elapsedTime());
+        for (auto& table : schema.tables)
+            analyzeForeignKeys(&odbc, opt.db, &dbc, &log, schema, table);
 
-        //if (opt.logLevel == Level::trace)
-        //    loadTimer.print("load time");
-    } // for
+        //tx.commit();
+
+    }
 
     {
         //etymon::OdbcDbc dbc(&odbc, opt.db);

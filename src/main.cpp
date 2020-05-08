@@ -187,7 +187,7 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
 
 void runServer(const Options& opt)
 {
-    fprintf(stderr, "%s: Starting server\n", opt.prog);
+    fprintf(stderr, "%s: Initializing\n", opt.prog);
 
     etymon::OdbcEnv odbc;
 
