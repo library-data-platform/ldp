@@ -280,7 +280,7 @@ void initSchema(DBContext* db, const string& ldpUser,
             "    tenant_id SMALLINT NOT NULL,\n"
             "    CONSTRAINT\n"
             "        history_" + table.tableName + "_pkey\n"
-            "        PRIMARY KEY (sk),\n"
+            "        PRIMARY KEY (sk, updated),\n"
             "    CONSTRAINT\n"
             "        history_" + table.tableName + "_id_updated_key\n"
             "        UNIQUE (id, updated)\n"
