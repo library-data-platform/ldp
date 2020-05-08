@@ -43,10 +43,9 @@ bool isForeignKey(etymon::OdbcDbc* dbc, Log* log, const TableSchema& table2,
     return dbc->fetch(&stmt);
 }
 
-void forceConstrainReferencedTable(/*etymon::OdbcEnv* odbc, const string& dbName,*/
-        etymon::OdbcDbc* dbc, Log* log, const TableSchema& table2,
-        const ColumnSchema& column2, const TableSchema& table1,
-        bool deleteRecords)
+void analyzeReferentialPaths(etymon::OdbcDbc* dbc, Log* log,
+        const TableSchema& table2, const ColumnSchema& column2,
+        const TableSchema& table1, bool forceConstraints)
 {
     string sql =
         "SELECT " + column2.columnName + "_sk AS fkey_sk,\n"
@@ -66,7 +65,7 @@ void forceConstrainReferencedTable(/*etymon::OdbcEnv* odbc, const string& dbName
             string fkeySK, fkeyID;
             dbc->getData(&stmt, 1, &fkeySK);
             dbc->getData(&stmt, 2, &fkeyID);
-            if (deleteRecords)
+            if (forceConstraints)
                 fkeys.push_back(fkeySK);
             log->log(Level::debug, "constraint", table2.tableName,
                     "Nonexistent key in referential path:\n"
@@ -76,11 +75,11 @@ void forceConstrainReferencedTable(/*etymon::OdbcEnv* odbc, const string& dbName
                     "    Referencing column (id): " + fkeyID + "\n"
                     "    Referenced table: " + table1.tableName + "\n"
                     "    Action: " +
-                    (deleteRecords ? "Deleted (cascading)" : "Ignored"),
+                    (forceConstraints ? "Deleted (cascading)" : "Ignored"),
                     -1);
         }
     }
-    if (deleteRecords) {
+    if (forceConstraints) {
         for (auto& fkey : fkeys) {
             sql =
                 "DELETE FROM \n"
@@ -105,9 +104,9 @@ void forceConstrainReferencedTable(/*etymon::OdbcEnv* odbc, const string& dbName
     }
 }
 
-void analyzeForeignKeys(etymon::OdbcEnv* odbc, const string& dbName,
+void processReferentialPaths(etymon::OdbcEnv* odbc, const string& dbName,
         etymon::OdbcDbc* dbc, Log* log, const Schema& schema,
-        const TableSchema& table)
+        const TableSchema& table, bool forceConstraints)
 {
     etymon::OdbcDbc queryDBC(odbc, dbName);
     log->logDetail("Searching for foreign keys in table: " + table.tableName);
@@ -121,8 +120,8 @@ void analyzeForeignKeys(etymon::OdbcEnv* odbc, const string& dbName,
         for (auto& table1 : schema.tables) {
             if (isForeignKey(&queryDBC, log, table, column, table1)) {
                 //printf("-> %s\n", table1.tableName.c_str());
-                forceConstrainReferencedTable(/*odbc, dbName,*/ dbc, log, table,
-                        column, table1, false);
+                analyzeReferentialPaths(/*odbc, dbName,*/ dbc, log, table,
+                        column, table1, forceConstraints);
                 break;
             }
         }
@@ -152,6 +151,8 @@ void runUpdate(const Options& opt)
         DBContext db(&dbc, &dbt, &log);
         initUpgrade(&odbc, opt.db, &db, opt.ldpUser);
     }
+
+    Timer fullUpdateTimer(opt);
 
     ExtractionFiles extractionDir(opt);
 
@@ -188,12 +189,6 @@ void runUpdate(const Options& opt)
     }
 
     {
-        etymon::OdbcDbc dbc(&odbc, opt.db);
-        //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
-        DBType dbt(&dbc);
-
-        //etymon::OdbcTx tx(&dbc);
-
         for (auto& table : schema.tables) {
 
             ExtractionFiles extractionFiles(opt);
@@ -201,7 +196,7 @@ void runUpdate(const Options& opt)
             log.log(Level::trace, "", "",
                     "Updating table: " + table.tableName, -1);
 
-            Timer loadTimer(opt);
+            Timer updateTimer(opt);
 
             if (opt.loadFromDir == "") {
                 log.log(Level::trace, "", "",
@@ -217,38 +212,73 @@ void runUpdate(const Options& opt)
             if (table.skip)
                 continue;
 
-            log.log(Level::trace, "", "",
-                    "Staging table: " + table.tableName, -1);
-            stageTable(opt, &log, &table, &odbc, &dbc, dbt, loadDir);
+            etymon::OdbcDbc dbc(&odbc, opt.db);
+            //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+            DBType dbt(&dbc);
 
-            log.log(Level::trace, "", "",
-                    "Merging table: " + table.tableName, -1);
-            mergeTable(opt, &log, table, &odbc, &dbc, dbt);
+            {
+                etymon::OdbcTx tx(&dbc);
 
-            log.log(Level::trace, "", "",
-                    "Replacing table: " + table.tableName, -1);
-            dropTable(opt, &log, table.tableName, &dbc);
-            placeTable(opt, &log, table, &dbc);
-            //updateStatus(opt, table, &dbc);
+                log.log(Level::trace, "", "",
+                        "Staging table: " + table.tableName, -1);
+                stageTable(opt, &log, &table, &odbc, &dbc, dbt, loadDir);
 
-            log.log(Level::trace, "", "",
-                    "Updating database permissions", -1);
-            //updateDBPermissions(opt, &log, &dbc);
+                log.log(Level::trace, "", "",
+                        "Merging table: " + table.tableName, -1);
+                mergeTable(opt, &log, table, &odbc, &dbc, dbt);
+
+                log.log(Level::trace, "", "",
+                        "Replacing table: " + table.tableName, -1);
+                dropTable(opt, &log, table.tableName, &dbc);
+                placeTable(opt, &log, table, &dbc);
+                //updateStatus(opt, table, &dbc);
+
+                log.log(Level::trace, "", "",
+                        "Updating database permissions", -1);
+                //updateDBPermissions(opt, &log, &dbc);
+
+                tx.commit();
+            }
 
             //vacuumAnalyzeTable(opt, table, &dbc);
 
             log.log(Level::debug, "update", table.tableName,
                     "Updated table: " + table.tableName,
-                    loadTimer.elapsedTime());
+                    updateTimer.elapsedTime());
 
             //if (opt.logLevel == Level::trace)
             //    loadTimer.print("load time");
         } // for
 
-        for (auto& table : schema.tables)
-            analyzeForeignKeys(&odbc, opt.db, &dbc, &log, schema, table);
+        log.log(Level::debug, "server", "", "Competed full update",
+                fullUpdateTimer.elapsedTime());
 
-        //tx.commit();
+        log.log(Level::debug, "server", "", "Analyzing referential paths", -1);
+
+        Timer refTimer(opt);
+
+        {
+            etymon::OdbcDbc dbc(&odbc, opt.db);
+
+            {
+                etymon::OdbcTx tx(&dbc);
+
+                bool forceReferentialConstraints = false;
+
+                for (auto& table : schema.tables)
+                    processReferentialPaths(&odbc, opt.db, &dbc, &log, schema,
+                            table, forceReferentialConstraints);
+
+                log.log(Level::debug, "server", "",
+                        string("Completed analysis of referential paths") +
+                        ( forceReferentialConstraints ?
+                        " and created referential constraints" : "" ),
+                        refTimer.elapsedTime());
+
+                tx.commit();
+            }
+
+        }
 
     }
 
