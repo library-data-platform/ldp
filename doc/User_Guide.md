@@ -85,9 +85,9 @@ improve query performance.  The JSON fields offer access to the complete
 extracted source data.
 
 In addition, attributes called `sk` or ending in `_sk` are surrogate
-keys, which can be used as an alternative to the source record
-identifiers such as `id`.  The table `ldpsystem.idmap` contains all
-surrogate keys used in the database and their corresponding IDs.
+keys, which can be used as an alternative to the source identifiers
+such as `id`.  The table `ldpsystem.idmap` contains all surrogate keys
+used in the database and their corresponding IDs.
 
 One additional attribute, `tenant_id`, is reserved for future use in
 consortial reporting.
