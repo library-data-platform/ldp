@@ -377,11 +377,17 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn, int64_t version,
     etymon::OdbcDbc dbc(odbc, dsn);
     etymon::OdbcTx tx(&dbc);
 
+    bool upgraded = false;
     for (int v = version + 1; v <= thisSchemaVersion; v++) {
         log->log(Level::trace, "", "",
                 "Applying schema upgrade: " + to_string(v), -1);
         schemaUpgrade[v](&dbc, log);
+        upgraded = true;
     }
+    if (upgraded)
+        log->log(Level::info, "server", "",
+                "Database upgraded to schema version: " +
+                to_string(thisSchemaVersion), -1);
 
     string sql = "UPDATE ldpsystem.main SET ldp_schema_version = " +
         to_string(thisSchemaVersion) + ";";
