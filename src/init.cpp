@@ -48,7 +48,7 @@ void catalogAddTable(etymon::OdbcDbc* dbc, Log* log, const string& table)
     string sql =
         "INSERT INTO ldpsystem.tables (table_name) VALUES\n"
         "    ('" + table + "');";
-    log->logSQL(sql);
+    log->logDetail(sql);
     dbc->execDirect(nullptr, sql);
 }
 
@@ -77,7 +77,7 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpUser + ";";
-    //db->log->logSQL(sql);
+    //db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     sql =
@@ -115,7 +115,7 @@ void initSchema(DBContext* db, const string& ldpUser,
         "        PRIMARY KEY (sk),\n"
         "        UNIQUE (id)\n"
         ")" + rskeys + ";";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     // Table: ldpsystem.tables
@@ -124,7 +124,7 @@ void initSchema(DBContext* db, const string& ldpUser,
         "CREATE TABLE ldpsystem.tables (\n"
         "    table_name VARCHAR(63) NOT NULL\n"
         ");";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     const char *table[] = {
@@ -224,17 +224,17 @@ void initSchema(DBContext* db, const string& ldpUser,
         catalogAddTable(db->dbc, db->log, table[x]);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpUser + ";";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     // Schema: ldpconfig
 
     sql = "CREATE SCHEMA ldpconfig;";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldpUser + ";";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     sql =
@@ -256,7 +256,7 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpUser + ";";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     sql = "CREATE SCHEMA history;";
@@ -264,7 +264,7 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA history TO " + ldpUser + ";";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     for (auto& table : schema.tables) {
@@ -292,7 +292,7 @@ void initSchema(DBContext* db, const string& ldpUser,
             "GRANT SELECT ON\n"
             "    history." + table.tableName + "\n"
             "    TO " + ldpUser + ";";
-        db->log->logSQL(sql);
+        db->log->logDetail(sql);
         db->dbc->execDirect(nullptr, sql);
     }
 
@@ -301,7 +301,7 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + ldpUser + ";";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 }
 
@@ -324,11 +324,11 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
         "CREATE TABLE ldpsystem.tables (\n"
         "    table_name VARCHAR(63) NOT NULL\n"
         ");";
-    opt->log->logSQL(sql);
+    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.tables TO " + opt->ldpUser + ";";
-    opt->log->logSQL(sql);
+    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     const char *table[] = {
@@ -435,18 +435,18 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
             "    data " + dbt.jsonType() + ",\n"
             "    tenant_id SMALLINT NOT NULL\n"
             ");";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         sql =
             "GRANT SELECT ON\n"
             "    " + string(table[x]) + "\n"
             "    TO " + opt->ldpUser + ";";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         // Recreate history table.
         sql = "DROP TABLE IF EXISTS\n"
             "    history." + string(table[x]) + ";";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         string rskeys;
         dbt.redshiftKeys("sk", "sk, updated", &rskeys);
@@ -465,13 +465,13 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
             "        history_" + table[x] + "_id_updated_key\n"
             "        UNIQUE (id, updated)\n"
             ")" + rskeys + ";";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         sql =
             "GRANT SELECT ON\n"
             "    history." + string(table[x]) + "\n"
             "    TO " + opt->ldpUser + ";";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         if (string(dbt.dbType()) == "PostgreSQL") {
             // Remove row_id columns.
@@ -479,7 +479,7 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
                 "ALTER TABLE \n"
                 "    " + string(table[x]) + "\n"
                 "    DROP COLUMN row_id;";
-            opt->log->logSQL(sql);
+            opt->log->logDetail(sql);
             opt->dbc->execDirect(nullptr, sql);
         }
     }
@@ -497,11 +497,11 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
         "        PRIMARY KEY (sk),\n"
         "        UNIQUE (id)\n"
         ")" + rskeys + ";";
-    opt->log->logSQL(sql);
+    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldpUser + ";";
-    opt->log->logSQL(sql);
+    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 }
 

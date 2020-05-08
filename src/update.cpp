@@ -24,6 +24,20 @@ void makeTmpDir(const Options& opt, string* loaddir)
             S_IROTH | S_IXOTH);
 }
 
+void addForeignKeys(etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, Log* log,
+        const Schema& schema, const TableSchema& table)
+{
+    log->logDetail("Searching for foreign keys in table: " + table.tableName);
+    for (auto& column : table.columns) {
+        if (column.columnType != ColumnType::id)
+            continue;
+        printf("%s\n", column.columnName.c_str());
+        //string sql =
+        //    "SELECT r2." + column.columnName + ",\n"
+        //    "       r1." + 
+    }
+}
+
 void runUpdate(const Options& opt)
 {
     // TODO Wrap curl_global_init() in a class.
@@ -135,13 +149,15 @@ void runUpdate(const Options& opt)
 
         //vacuumAnalyzeTable(opt, table, &dbc);
 
+        addForeignKeys(&odbc, &dbc, &log, schema, table);
+
         log.log(Level::debug, "update", table.tableName,
                 "Updated table: " + table.tableName,
                 loadTimer.elapsedTime());
 
         //if (opt.logLevel == Level::trace)
         //    loadTimer.print("load time");
-    }
+    } // for
 
     {
         //etymon::OdbcDbc dbc(&odbc, opt.db);
