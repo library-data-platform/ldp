@@ -50,16 +50,17 @@ attributes:
 SELECT * FROM circulation_loans LIMIT 1;
 ```
 ```
-row_id        | 5326
+sk            | 5326
 id            | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
 action        | checkedin
 due_date      | 2017-02-17 08:43:15+00
+item_id_sk    | 5089
 item_id       | 459afaba-5b39-468d-9072-eb1685e0ddf4
 item_status   | Available
 loan_date     | 2017-02-03 08:43:15+00
-proxy_user_id | a13dda6b-51ce-4543-be9c-eff894c0c2d0
 renewal_count | 0
 return_date   | 2017-03-01 11:35:12+00
+user_id_sk    | 462
 user_id       | ab579dc3-219b-4f5b-8068-ab1c7a55c402
 data          | {                                                          
               |     "id": "0bab56e5-1ab6-4ac2-afdf-8b2df0434378",          
@@ -83,18 +84,20 @@ The relational attributes are provided to simplify writing queries and to
 improve query performance.  The JSON fields offer access to the complete
 extracted source data.
 
-In addition, the attribute `row_id` is an LDP-specific key, and
-`tenant_id` is reserved for future use in consortial reporting.
+In addition, attributes called `sk` or ending in `_sk` are surrogate
+keys, which can be used as an alternative to the source identifiers
+such as `id`.  The table `ldpsystem.idmap` contains all surrogate keys
+used in the database and their corresponding IDs.
 
-The data in these tables are extracted from Okapi-based APIs and loaded
-into the database by the LDP data loader.  The data loader typically
-runs once per day, and so the LDP database reflects the state of the
-source data as of sometime within the past 24 hours or so.
+One additional attribute, `tenant_id`, is reserved for future use in
+consortial reporting.
 
-<!--
-A table called `ldp_catalog.table_updates` records when each data
-table was last updated.
--->
+The data in these tables are extracted from Okapi-based APIs and
+loaded into the database by the LDP data loader.  The data loader
+typically runs once per day, and so the LDP database reflects the
+state of the source data as of sometime within the past 24 hours or
+so.  The table `ldpsystem.tables` maintains a catalog of all tables
+managed by the LDP software.
 
 
 2\. JSON queries
@@ -221,14 +224,10 @@ the library by analyzing trends over time.
 
 History tables contain these attributes:
 
-* `row_id` is an LDP-specific key.
-
+* `sk` is the surrogate key.
 * `id` is the record ID.
-
 * `data` is the source data, usually a JSON object.
-
 * `updated` is the date and time when the data were loaded.
-
 * `tenant_id` is reserved for future use in consortial reporting.
 
 For example:
@@ -237,7 +236,7 @@ For example:
 SELECT * FROM history.circulation_loans LIMIT 1;
 ```
 ```
-row_id    | 29201
+sk        | 29201
 id        | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
 data      | {                                                          
           |     "id": "0bab56e5-1ab6-4ac2-afdf-8b2df0434378",          
@@ -357,6 +356,7 @@ on specific software.
 7\. Community
 -------------
 
+<!--
 ### Mailing lists
 
 Mailing lists for the LDP software are hosted on FOLIO's discussion
@@ -364,15 +364,19 @@ site:
 
 * [`ldp-announce`](https://discuss.folio.org/c/ldp) is a low volume
   announcement list.
-
 * [`ldp-users`](https://discuss.folio.org/c/ldp/ldp-users) is for
   general usage and querying of the LDP database.
-
 * [`ldp-sysadmin`](https://discuss.folio.org/c/ldp/ldp-sysadmin) is
   for system administration of the LDP software.
 
 FOLIO's [Slack organization](https://slack-invitation.folio.org/) also
 contains LDP-related channels.
+-->
+
+### Discussion
+
+FOLIO's [Slack organization](https://slack-invitation.folio.org/)
+contains LDP-related channels for announcements and discussion.
 
 ### Bugs and feature requests
 
