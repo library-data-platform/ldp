@@ -48,7 +48,7 @@ void catalogAddTable(etymon::OdbcDbc* dbc, Log* log, const string& table)
     string sql =
         "INSERT INTO ldpsystem.tables (table_name) VALUES\n"
         "    ('" + table + "');";
-    log->logSQL(sql);
+    log->logDetail(sql);
     dbc->execDirect(nullptr, sql);
 }
 
@@ -77,7 +77,7 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpUser + ";";
-    //db->log->logSQL(sql);
+    //db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     sql =
@@ -115,7 +115,7 @@ void initSchema(DBContext* db, const string& ldpUser,
         "        PRIMARY KEY (sk),\n"
         "        UNIQUE (id)\n"
         ")" + rskeys + ";";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     // Table: ldpsystem.tables
@@ -124,7 +124,7 @@ void initSchema(DBContext* db, const string& ldpUser,
         "CREATE TABLE ldpsystem.tables (\n"
         "    table_name VARCHAR(63) NOT NULL\n"
         ");";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     const char *table[] = {
@@ -224,23 +224,25 @@ void initSchema(DBContext* db, const string& ldpUser,
         catalogAddTable(db->dbc, db->log, table[x]);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpUser + ";";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     // Schema: ldpconfig
 
     sql = "CREATE SCHEMA ldpconfig;";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldpUser + ";";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     sql =
         "CREATE TABLE ldpconfig.general (\n"
         "    full_update_enabled BOOLEAN NOT NULL,\n"
-        "    next_full_update TIMESTAMPTZ NOT NULL\n"
+        "    next_full_update TIMESTAMPTZ NOT NULL,\n"
+        "    log_referential_analysis BOOLEAN NOT NULL DEFAULT FALSE,\n"
+        "    force_referential_constraints BOOLEAN NOT NULL DEFAULT FALSE\n"
         ");";
     db->dbc->execDirect(nullptr, sql);
     db->log->log(Level::detail, "", "", sql, -1);
@@ -256,7 +258,7 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpUser + ";";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     sql = "CREATE SCHEMA history;";
@@ -264,7 +266,7 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA history TO " + ldpUser + ";";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     for (auto& table : schema.tables) {
@@ -292,7 +294,7 @@ void initSchema(DBContext* db, const string& ldpUser,
             "GRANT SELECT ON\n"
             "    history." + table.tableName + "\n"
             "    TO " + ldpUser + ";";
-        db->log->logSQL(sql);
+        db->log->logDetail(sql);
         db->dbc->execDirect(nullptr, sql);
     }
 
@@ -301,7 +303,7 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + ldpUser + ";";
-    db->log->logSQL(sql);
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 }
 
@@ -324,11 +326,11 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
         "CREATE TABLE ldpsystem.tables (\n"
         "    table_name VARCHAR(63) NOT NULL\n"
         ");";
-    opt->log->logSQL(sql);
+    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.tables TO " + opt->ldpUser + ";";
-    opt->log->logSQL(sql);
+    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     const char *table[] = {
@@ -435,18 +437,18 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
             "    data " + dbt.jsonType() + ",\n"
             "    tenant_id SMALLINT NOT NULL\n"
             ");";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         sql =
             "GRANT SELECT ON\n"
             "    " + string(table[x]) + "\n"
             "    TO " + opt->ldpUser + ";";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         // Recreate history table.
         sql = "DROP TABLE IF EXISTS\n"
             "    history." + string(table[x]) + ";";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         string rskeys;
         dbt.redshiftKeys("sk", "sk, updated", &rskeys);
@@ -465,13 +467,13 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
             "        history_" + table[x] + "_id_updated_key\n"
             "        UNIQUE (id, updated)\n"
             ")" + rskeys + ";";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         sql =
             "GRANT SELECT ON\n"
             "    history." + string(table[x]) + "\n"
             "    TO " + opt->ldpUser + ";";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         if (string(dbt.dbType()) == "PostgreSQL") {
             // Remove row_id columns.
@@ -479,7 +481,7 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
                 "ALTER TABLE \n"
                 "    " + string(table[x]) + "\n"
                 "    DROP COLUMN row_id;";
-            opt->log->logSQL(sql);
+            opt->log->logDetail(sql);
             opt->dbc->execDirect(nullptr, sql);
         }
     }
@@ -497,11 +499,11 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
         "        PRIMARY KEY (sk),\n"
         "        UNIQUE (id)\n"
         ")" + rskeys + ";";
-    opt->log->logSQL(sql);
+    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldpUser + ";";
-    opt->log->logSQL(sql);
+    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 }
 
@@ -603,21 +605,38 @@ void schemaUpgrade2(SchemaUpgradeOptions* opt)
         string sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
             "    DROP CONSTRAINT history_" + table[x] + "_pkey;";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
             "    ADD CONSTRAINT history_" + table[x] + "_pkey\n"
             "    PRIMARY KEY (sk, updated);";
-        opt->log->logSQL(sql);
+        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
     }
+}
+
+void schemaUpgrade3(SchemaUpgradeOptions* opt)
+{
+    string sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    ADD COLUMN log_referential_analysis\n"
+        "        BOOLEAN NOT NULL DEFAULT FALSE;";
+    opt->log->logDetail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+    sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    ADD COLUMN force_referential_constraints\n"
+        "        BOOLEAN NOT NULL DEFAULT FALSE;";
+    opt->log->logDetail(sql);
+    opt->dbc->execDirect(nullptr, sql);
 }
 
 SchemaUpgrade schemaUpgrade[] = {
     nullptr,  // Version 0 has no migration.
     schemaUpgrade1,
-    schemaUpgrade2
+    schemaUpgrade2,
+    schemaUpgrade3
 };
 
 void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
@@ -675,7 +694,7 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
 void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
         const string& ldpUser)
 {
-    int64_t thisSchemaVersion = 2;
+    int64_t thisSchemaVersion = 3;
 
     //db->log->log(Level::trace, "", "", "Initializing database", -1);
 

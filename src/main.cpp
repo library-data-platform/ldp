@@ -187,7 +187,7 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
 
 void runServer(const Options& opt)
 {
-    fprintf(stderr, "%s: Starting server\n", opt.prog);
+    fprintf(stderr, "%s: Initializing\n", opt.prog);
 
     etymon::OdbcEnv odbc;
 
@@ -212,7 +212,7 @@ void runServer(const Options& opt)
     do {
         if (opt.cliMode || timeForFullUpdate(opt, &dbc, &dbt, &log) ) {
             rescheduleNextDailyLoad(opt, &dbc, &dbt, &log);
-            log.log(Level::trace, "", "", "Starting full update", -1);
+            log.log(Level::debug, "server", "", "Starting full update", -1);
             pid_t pid = fork();
             if (pid == 0)
                 runUpdateProcess(opt);

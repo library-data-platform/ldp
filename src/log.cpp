@@ -101,7 +101,7 @@ void Log::log(Level level, const char* type, const string& table,
     dbc->execDirect(nullptr, sql);
 }
 
-void Log::logSQL(const string& sql)
+void Log::logDetail(const string& sql)
 {
     log(Level::detail, "", "", sql, -1);
 }
