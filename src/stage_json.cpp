@@ -537,13 +537,13 @@ size_t readPageCount(const Options& opt, Log* log, const string& loadDir,
 static void stagePage(const Options& opt, Log* log, int pass,
         const TableSchema& tableSchema, etymon::OdbcEnv* odbc,
         etymon::OdbcDbc* dbc, const DBType &dbt, map<string,Counts>* stats,
-        const string& filename, char* readBuffer, size_t readBufferSize)
+        const string& filename, char* readBuffer, size_t readBufferSize,
+        IDMap* idmap)
 {
     json::Reader reader;
     etymon::File f(filename, "r");
     json::FileReadStream is(f.file, readBuffer, readBufferSize);
-    IDMap idmap(odbc, opt.db, log);
-    JSONHandler handler(pass, opt, log, tableSchema, dbc, dbt, &idmap, stats);
+    JSONHandler handler(pass, opt, log, tableSchema, dbc, dbt, idmap, stats);
     reader.Parse(is, handler);
 }
 
@@ -664,6 +664,8 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
         etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, const DBType& dbt,
         const string& loadDir)
 {
+    IDMap idmap(odbc, opt.db, log);
+
     size_t pageCount = readPageCount(opt, log, loadDir, table->tableName);
 
     log->log(Level::detail, "", "",
@@ -692,7 +694,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                     (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                     to_string(page), -1);
             stagePage(opt, log, pass, *table, odbc, dbc, dbt, &stats, path,
-                    readBuffer, sizeof readBuffer);
+                    readBuffer, sizeof readBuffer, &idmap);
         }
 
         if (opt.loadFromDir != "") {
@@ -704,7 +706,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                         (pass == 1 ?  ": analyze" : ": load") +
                         ": test file", -1);
                 stagePage(opt, log, pass, *table, odbc, dbc, dbt, &stats, path,
-                        readBuffer, sizeof readBuffer);
+                        readBuffer, sizeof readBuffer, &idmap);
             }
         }
 
