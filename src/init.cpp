@@ -95,7 +95,7 @@ void initSchema(DBContext* db, const string& ldpUser,
         "CREATE TABLE ldpsystem.log (\n"
         "    log_time TIMESTAMPTZ NOT NULL,\n"
         "    pid BIGINT NOT NULL,\n"
-        "    level VARCHAR(6) NOT NULL,\n"
+        "    level VARCHAR(7) NOT NULL DEFAULT '',\n"
         "    type VARCHAR(63) NOT NULL,\n"
         "    table_name VARCHAR(63) NOT NULL,\n"
         "    message VARCHAR(65535) NOT NULL,\n"
@@ -112,6 +112,7 @@ void initSchema(DBContext* db, const string& ldpUser,
         "CREATE TABLE ldpsystem.idmap (\n"
         "    sk " + autoInc + ",\n"
         "    id VARCHAR(65535),\n"
+        "    table_name VARCHAR(63) NOT NULL DEFAULT '',\n"
         "        PRIMARY KEY (sk),\n"
         "        UNIQUE (id)\n"
         ")" + rskeys + ";";
@@ -222,6 +223,19 @@ void initSchema(DBContext* db, const string& ldpUser,
     // Add tables to the catalog.
     for (int x = 0; table[x] != nullptr; x++)
         catalogAddTable(db->dbc, db->log, table[x]);
+
+    db->dbt->redshiftKeys("referencing_table",
+            "referencing_table, referencing_column", &rskeys);
+    sql =
+        "CREATE TABLE ldpsystem.referential_constraints (\n"
+        "    referencing_table VARCHAR(63) NOT NULL,\n"
+        "    referencing_column VARCHAR(63) NOT NULL,\n"
+        "    referenced_table VARCHAR(63) NOT NULL,\n"
+        "    referenced_column VARCHAR(63) NOT NULL,\n"
+        "        PRIMARY KEY (referencing_table, referencing_column)\n"
+        ")" + rskeys + ";";
+    db->log->logDetail(sql);
+    db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpUser + ";";
     db->log->logDetail(sql);
@@ -632,11 +646,61 @@ void schemaUpgrade3(SchemaUpgradeOptions* opt)
     opt->dbc->execDirect(nullptr, sql);
 }
 
+void schemaUpgrade4(SchemaUpgradeOptions* opt)
+{
+    DBType dbt(opt->dbc);
+
+    //string sql =
+    //    "ALTER TABLE ldpsystem.log\n"
+    //    "    ALTER COLUMN level\n"
+    //    "        TYPE VARCHAR(7);";
+    //opt->log->logDetail(sql);
+    //opt->dbc->execDirect(nullptr, sql);
+
+    string sql = "ALTER TABLE ldpsystem.log DROP COLUMN level;";
+    opt->log->logDetail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql =
+        "ALTER TABLE ldpsystem.log\n"
+        "    ADD COLUMN level\n"
+        "        VARCHAR(7) NOT NULL DEFAULT '';";
+    opt->log->logDetail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql =
+        "ALTER TABLE ldpsystem.idmap\n"
+        "    ADD COLUMN table_name\n"
+        "        VARCHAR(63) NOT NULL DEFAULT '';";
+    opt->log->logDetail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+
+    string rskeys;
+    dbt.redshiftKeys("referencing_table",
+            "referencing_table, referencing_column", &rskeys);
+    sql =
+        "CREATE TABLE ldpsystem.referential_constraints (\n"
+        "    referencing_table VARCHAR(63) NOT NULL,\n"
+        "    referencing_column VARCHAR(63) NOT NULL,\n"
+        "    referenced_table VARCHAR(63) NOT NULL,\n"
+        "    referenced_column VARCHAR(63) NOT NULL,\n"
+        "        PRIMARY KEY (referencing_table, referencing_column)\n"
+        ")" + rskeys + ";";
+    opt->log->logDetail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + opt->ldpUser +
+        ";";
+    opt->log->logDetail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+}
+
 SchemaUpgrade schemaUpgrade[] = {
     nullptr,  // Version 0 has no migration.
     schemaUpgrade1,
     schemaUpgrade2,
-    schemaUpgrade3
+    schemaUpgrade3,
+    schemaUpgrade4
 };
 
 void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
@@ -694,7 +758,7 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
 void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
         const string& ldpUser)
 {
-    int64_t thisSchemaVersion = 3;
+    int64_t thisSchemaVersion = 4;
 
     //db->log->log(Level::trace, "", "", "Initializing database", -1);
 

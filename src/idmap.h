@@ -12,7 +12,8 @@ using namespace std;
 class IDMap {
 public:
     IDMap(etymon::OdbcEnv* odbc, const string& dataSourceName, Log* log);
-    void makeSK(const char* id, string* sk);
+    void makeSK(const string& table, const char* id, string* sk,
+            string* storedTable);
     ~IDMap();
 private:
     etymon::OdbcDbc* dbc;
