@@ -85,7 +85,7 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
 void dropTable(const Options& opt, Log* log, const string& tableName,
         etymon::OdbcDbc* dbc)
 {
-    string sql = "DROP TABLE IF EXISTS " + tableName + ";";
+    string sql = "DROP TABLE IF EXISTS " + tableName + " CASCADE;";
     log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 }
