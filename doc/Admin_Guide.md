@@ -10,7 +10,8 @@ LDP Admin Guide
 6\. Running the LDP in production  
 7\. Loading data from files (for testing only)  
 8\. Direct extraction of large data  
-9\. Server mode
+9\. Server mode  
+10\. Referential analysis (experimental)
 
 
 1\. System requirements
@@ -453,6 +454,22 @@ UPDATE ldpconfig.general
 ```
 
 Also ensure that `full_update_enabled` is set to `TRUE`.
+
+
+10\. Referential analysis (experimental)
+----------------------------------------
+
+LDP 0.7.3 provides an experimental feature that analyzes potential
+foreign key relationships between tables, and writes messages to the
+log (`ldpsystem.log`) about presumed referential violations.  The
+analysis runs immediately after a full update.
+
+To enable this feature:
+
+```sql
+UPDATE ldpconfig.general
+    SET log_referential_analysis = TRUE;
+```
 
 
 Further reading
