@@ -220,11 +220,11 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
     string storedTable;
     idmap->makeSK(table.tableName, id, &sk, &storedTable);
     if (storedTable != "" && storedTable != table.tableName)
-        log->log(Level::error, "server", "",
-                "UUID collision in tables:\n"
-                "    UUID: " + string(id) + "\n"
+        log->log(Level::warning, "server", "",
+                "Possible UUID collision in tables:\n"
                 "    Table 1: " + table.tableName + "\n"
-                "    Table 2: " + storedTable, -1);
+                "    Table 2: " + storedTable + "\n"
+                "    UUID: " + string(id), -1);
     *insertBuffer += sk;
     *insertBuffer += ',';
     // id
