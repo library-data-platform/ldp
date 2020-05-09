@@ -283,10 +283,6 @@ void runUpdate(const Options& opt)
             bool forceReferentialConstraints = false;
             selectConfigGeneral(&dbc, &log, &logReferentialAnalysis,
                     &forceReferentialConstraints);
-            if (logReferentialAnalysis)
-                printf("logReferentialAnalysis\n");
-            if (forceReferentialConstraints)
-                printf("forceReferentialConstraints\n");
 
             if (logReferentialAnalysis) {
 
