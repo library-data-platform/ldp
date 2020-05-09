@@ -658,21 +658,21 @@ void schemaUpgrade4(SchemaUpgradeOptions* opt)
     //opt->dbc->execDirect(nullptr, sql);
 
     string sql = "ALTER TABLE ldpsystem.log DROP COLUMN level;";
-    opt->log->logDetail(sql);
+    //opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql =
         "ALTER TABLE ldpsystem.log\n"
         "    ADD COLUMN level\n"
         "        VARCHAR(7) NOT NULL DEFAULT '';";
-    opt->log->logDetail(sql);
+    //opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql =
         "ALTER TABLE ldpsystem.idmap\n"
         "    ADD COLUMN table_name\n"
         "        VARCHAR(63) NOT NULL DEFAULT '';";
-    opt->log->logDetail(sql);
+    //opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     string rskeys;
@@ -686,12 +686,12 @@ void schemaUpgrade4(SchemaUpgradeOptions* opt)
         "    referenced_column VARCHAR(63) NOT NULL,\n"
         "        PRIMARY KEY (referencing_table, referencing_column)\n"
         ")" + rskeys + ";";
-    opt->log->logDetail(sql);
+    //opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + opt->ldpUser +
         ";";
-    opt->log->logDetail(sql);
+    //opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 }
 
@@ -707,6 +707,8 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
         const string& ldpUser, int64_t version, int64_t thisSchemaVersion,
         Log* log)
 {
+    // Do not using logging during schema upgrades.
+
     if (version < 0 || version > thisSchemaVersion)
         throw runtime_error(
                 "Unknown LDP schema version: " + to_string(version));
@@ -716,8 +718,8 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
 
     bool upgraded = false;
     for (int v = version + 1; v <= thisSchemaVersion; v++) {
-        log->log(Level::trace, "", "",
-                "Applying schema upgrade: " + to_string(v), -1);
+        //log->log(Level::trace, "", "",
+        //        "Applying schema upgrade: " + to_string(v), -1);
         SchemaUpgradeOptions opt;
         opt.dbc = &dbc;
         opt.log = log;
@@ -725,17 +727,18 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
         schemaUpgrade[v](&opt);
         upgraded = true;
     }
+
+    string sql = "UPDATE ldpsystem.main SET ldp_schema_version = " +
+        to_string(thisSchemaVersion) + ";";
+    //log->log(Level::detail, "", "", sql, -1);
+    dbc.execDirect(nullptr, sql);
+
+    tx.commit();
+
     if (upgraded)
         log->log(Level::info, "server", "",
                 "Database upgraded to schema version: " +
                 to_string(thisSchemaVersion), -1);
-
-    string sql = "UPDATE ldpsystem.main SET ldp_schema_version = " +
-        to_string(thisSchemaVersion) + ";";
-    log->log(Level::detail, "", "", sql, -1);
-    dbc.execDirect(nullptr, sql);
-
-    tx.commit();
 }
 
 /**
