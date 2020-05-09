@@ -112,6 +112,7 @@ void initSchema(DBContext* db, const string& ldpUser,
         "CREATE TABLE ldpsystem.idmap (\n"
         "    sk " + autoInc + ",\n"
         "    id VARCHAR(65535),\n"
+        "    table_name VARCHAR(63) NOT NULL DEFAULT '',\n"
         "        PRIMARY KEY (sk),\n"
         "        UNIQUE (id)\n"
         ")" + rskeys + ";";
@@ -632,11 +633,22 @@ void schemaUpgrade3(SchemaUpgradeOptions* opt)
     opt->dbc->execDirect(nullptr, sql);
 }
 
+void schemaUpgrade4(SchemaUpgradeOptions* opt)
+{
+    string sql =
+        "ALTER TABLE ldpsystem.idmap\n"
+        "    ADD COLUMN table_name\n"
+        "        VARCHAR(63) NOT NULL DEFAULT '';";
+    opt->log->logDetail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+}
+
 SchemaUpgrade schemaUpgrade[] = {
     nullptr,  // Version 0 has no migration.
     schemaUpgrade1,
     schemaUpgrade2,
-    schemaUpgrade3
+    schemaUpgrade3,
+    schemaUpgrade4
 };
 
 void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
@@ -694,7 +706,7 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
 void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
         const string& ldpUser)
 {
-    int64_t thisSchemaVersion = 3;
+    int64_t thisSchemaVersion = 4;
 
     //db->log->log(Level::trace, "", "", "Initializing database", -1);
 
