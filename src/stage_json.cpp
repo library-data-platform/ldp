@@ -289,10 +289,8 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
     dbt.encodeStringConst(jsonText.GetString(), &data);
     // Check if pretty-printed JSON exceeds maximum string length (65535).
     if (data.length() > 65535) {
-        log->log(Level::warning, "", "", 
-                "Formatted JSON object size exceeds database limit, "
-                "compacting: " + table.sourcePath + ": " + id, -1);
-        // Try compact-printed JSON.
+        // Formatted JSON object size exceeds database limit.  Try
+        // compact-printed JSON.
         json::StringBuffer jsonText;
         json::Writer<json::StringBuffer> writer(jsonText);
         doc.Accept(writer);
