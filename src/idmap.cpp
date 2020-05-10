@@ -3,17 +3,11 @@
 #include "../etymoncpp/include/util.h"
 #include "idmap.h"
 
-IDMap::IDMap(etymon::OdbcEnv* odbc, const string& dataSourceName, Log* log)
+IDMap::IDMap(etymon::OdbcDbc* dbc, DBType* dbt, Log* log)
 {
-    dbc = new etymon::OdbcDbc(odbc, dataSourceName);
-    dbt = new DBType(dbc);
+    this->dbc = dbc;
+    this->dbt = dbt;
     this->log = log;
-}
-
-IDMap::~IDMap()
-{
-    delete dbt;
-    delete dbc;
 }
 
 void IDMap::makeSK(const string& table, const char* id, string* sk,

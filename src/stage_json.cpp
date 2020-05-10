@@ -659,10 +659,10 @@ static void createLoadingTable(const Options& opt, Log* log,
 }
 
 void stageTable(const Options& opt, Log* log, TableSchema* table,
-        etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, const DBType& dbt,
+        etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, DBType* dbt,
         const string& loadDir)
 {
-    IDMap idmap(odbc, opt.db, log);
+    IDMap idmap(dbc, dbt, log);
 
     size_t pageCount = readPageCount(opt, log, loadDir, table->tableName);
 
@@ -691,7 +691,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                     "Staging: " + table->tableName +
                     (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                     to_string(page), -1);
-            stagePage(opt, log, pass, *table, odbc, dbc, dbt, &stats, path,
+            stagePage(opt, log, pass, *table, odbc, dbc, *dbt, &stats, path,
                     readBuffer, sizeof readBuffer, &idmap);
         }
 
@@ -703,7 +703,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                         "Staging: " + table->tableName +
                         (pass == 1 ?  ": analyze" : ": load") +
                         ": test file", -1);
-                stagePage(opt, log, pass, *table, odbc, dbc, dbt, &stats, path,
+                stagePage(opt, log, pass, *table, odbc, dbc, *dbt, &stats, path,
                         readBuffer, sizeof readBuffer, &idmap);
             }
         }
@@ -744,7 +744,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                 column.sourceColumnName = field;
                 table->columns.push_back(column);
             }
-            createLoadingTable(opt, log, *table, odbc, dbc, dbt);
+            createLoadingTable(opt, log, *table, odbc, dbc, *dbt);
         }
 
     }
