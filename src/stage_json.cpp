@@ -289,18 +289,17 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
     dbt.encodeStringConst(jsonText.GetString(), &data);
     // Check if pretty-printed JSON exceeds maximum string length (65535).
     if (data.length() > 65535) {
-        log->log(Level::warning, "", "", 
-                "Formatted JSON object size exceeds database limit, "
-                "compacting: " + table.sourcePath + ": " + id, -1);
-        // Try compact-printed JSON.
+        // Formatted JSON object size exceeds database limit.  Try
+        // compact-printed JSON.
         json::StringBuffer jsonText;
         json::Writer<json::StringBuffer> writer(jsonText);
         doc.Accept(writer);
         dbt.encodeStringConst(jsonText.GetString(), &data);
         if (data.length() > 65535) {
             log->log(Level::warning, "", "", 
-                    "Compacted JSON object size exceeds database limit: " +
-                    table.sourcePath + ": " + id, -1);
+                    "JSON object size exceeds database limit:\n"
+                    "    Table: " + table.tableName + "\n"
+                    "    ID: " + id, -1);
             data = "NULL";
         }
     }
@@ -537,13 +536,13 @@ size_t readPageCount(const Options& opt, Log* log, const string& loadDir,
 static void stagePage(const Options& opt, Log* log, int pass,
         const TableSchema& tableSchema, etymon::OdbcEnv* odbc,
         etymon::OdbcDbc* dbc, const DBType &dbt, map<string,Counts>* stats,
-        const string& filename, char* readBuffer, size_t readBufferSize)
+        const string& filename, char* readBuffer, size_t readBufferSize,
+        IDMap* idmap)
 {
     json::Reader reader;
     etymon::File f(filename, "r");
     json::FileReadStream is(f.file, readBuffer, readBufferSize);
-    IDMap idmap(odbc, opt.db, log);
-    JSONHandler handler(pass, opt, log, tableSchema, dbc, dbt, &idmap, stats);
+    JSONHandler handler(pass, opt, log, tableSchema, dbc, dbt, idmap, stats);
     reader.Parse(is, handler);
 }
 
@@ -661,9 +660,11 @@ static void createLoadingTable(const Options& opt, Log* log,
 }
 
 void stageTable(const Options& opt, Log* log, TableSchema* table,
-        etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, const DBType& dbt,
+        etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, DBType* dbt,
         const string& loadDir)
 {
+    IDMap idmap(dbc, dbt, log);
+
     size_t pageCount = readPageCount(opt, log, loadDir, table->tableName);
 
     log->log(Level::detail, "", "",
@@ -691,8 +692,8 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                     "Staging: " + table->tableName +
                     (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                     to_string(page), -1);
-            stagePage(opt, log, pass, *table, odbc, dbc, dbt, &stats, path,
-                    readBuffer, sizeof readBuffer);
+            stagePage(opt, log, pass, *table, odbc, dbc, *dbt, &stats, path,
+                    readBuffer, sizeof readBuffer, &idmap);
         }
 
         if (opt.loadFromDir != "") {
@@ -703,8 +704,8 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                         "Staging: " + table->tableName +
                         (pass == 1 ?  ": analyze" : ": load") +
                         ": test file", -1);
-                stagePage(opt, log, pass, *table, odbc, dbc, dbt, &stats, path,
-                        readBuffer, sizeof readBuffer);
+                stagePage(opt, log, pass, *table, odbc, dbc, *dbt, &stats, path,
+                        readBuffer, sizeof readBuffer, &idmap);
             }
         }
 
@@ -744,7 +745,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                 column.sourceColumnName = field;
                 table->columns.push_back(column);
             }
-            createLoadingTable(opt, log, *table, odbc, dbc, dbt);
+            createLoadingTable(opt, log, *table, odbc, dbc, *dbt);
         }
 
     }

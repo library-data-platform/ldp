@@ -68,7 +68,7 @@ void analyzeReferentialPaths(etymon::OdbcDbc* dbc, Log* log,
             if (forceConstraints)
                 fkeys.push_back(fkeySK);
             if (logAnalysis)
-                log->log(Level::debug, "constraint", table2.tableName,
+                log->log(Level::debug, "reference", table2.tableName,
                         "Nonexistent key in referential path:\n"
                         "    Referencing table: " + table2.tableName + "\n"
                         "    Referencing column: " + column2.columnName + "\n"
@@ -223,95 +223,90 @@ void runUpdate(const Options& opt)
         curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
     }
 
-    {
-        for (auto& table : schema.tables) {
+    for (auto& table : schema.tables) {
 
-            ExtractionFiles extractionFiles(opt);
+        log.log(Level::trace, "", "",
+                "Updating table: " + table.tableName, -1);
 
+        Timer updateTimer(opt);
+
+        ExtractionFiles extractionFiles(opt);
+
+        if (opt.loadFromDir == "") {
             log.log(Level::trace, "", "",
-                    "Updating table: " + table.tableName, -1);
+                    "Extracting: " + table.sourcePath, -1);
+            bool foundData = directOverride(opt, table.sourcePath) ?
+                retrieveDirect(opt, &log, table, loadDir, &extractionFiles) :
+                retrievePages(c, opt, &log, token, table, loadDir,
+                        &extractionFiles);
+            if (!foundData)
+                table.skip = true;
+        }
 
-            Timer updateTimer(opt);
+        if (table.skip)
+            continue;
 
-            if (opt.loadFromDir == "") {
-                log.log(Level::trace, "", "",
-                        "Extracting: " + table.sourcePath, -1);
-                bool foundData = directOverride(opt, table.sourcePath) ?
-                    retrieveDirect(opt, &log, table, loadDir, &extractionFiles) :
-                    retrievePages(c, opt, &log, token, table, loadDir,
-                            &extractionFiles);
-                if (!foundData)
-                    table.skip = true;
-            }
-
-            if (table.skip)
-                continue;
-
-            etymon::OdbcDbc dbc(&odbc, opt.db);
-            //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
-            DBType dbt(&dbc);
-
-            {
-                etymon::OdbcTx tx(&dbc);
-
-                log.log(Level::trace, "", "",
-                        "Staging table: " + table.tableName, -1);
-                stageTable(opt, &log, &table, &odbc, &dbc, dbt, loadDir);
-
-                log.log(Level::trace, "", "",
-                        "Merging table: " + table.tableName, -1);
-                mergeTable(opt, &log, table, &odbc, &dbc, dbt);
-
-                log.log(Level::trace, "", "",
-                        "Replacing table: " + table.tableName, -1);
-
-                dropTable(opt, &log, table.tableName, &dbc);
-
-                placeTable(opt, &log, table, &dbc);
-                //updateStatus(opt, table, &dbc);
-
-                log.log(Level::trace, "", "",
-                        "Updating database permissions", -1);
-                //updateDBPermissions(opt, &log, &dbc);
-
-                tx.commit();
-            }
-
-            //vacuumAnalyzeTable(opt, table, &dbc);
-
-            log.log(Level::debug, "update", table.tableName,
-                    "Updated table: " + table.tableName,
-                    updateTimer.elapsedTime());
-
-            //if (opt.logLevel == Level::trace)
-            //    loadTimer.print("load time");
-        } // for
+        etymon::OdbcDbc dbc(&odbc, opt.db);
+        //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
+        DBType dbt(&dbc);
 
         {
-            etymon::OdbcDbc dbc(&odbc, opt.db);
+            etymon::OdbcTx tx(&dbc);
 
-            bool logReferentialAnalysis = false;
-            bool forceReferentialConstraints = false;
-            selectConfigGeneral(&dbc, &log, &logReferentialAnalysis,
-                    &forceReferentialConstraints);
+            log.log(Level::trace, "", "",
+                    "Staging table: " + table.tableName, -1);
+            stageTable(opt, &log, &table, &odbc, &dbc, &dbt, loadDir);
 
-            if (logReferentialAnalysis /*|| forceReferentialConstraints*/) {
+            log.log(Level::trace, "", "",
+                    "Merging table: " + table.tableName, -1);
+            mergeTable(opt, &log, table, &odbc, &dbc, dbt);
 
-                log.log(Level::debug, "update", "",
-                        "Analyzing referential paths", -1);
+            log.log(Level::trace, "", "",
+                    "Replacing table: " + table.tableName, -1);
 
-                Timer refTimer(opt);
+            dropTable(opt, &log, table.tableName, &dbc);
 
-                etymon::OdbcTx tx(&dbc);
+            placeTable(opt, &log, table, &dbc);
+            //updateStatus(opt, table, &dbc);
 
-                for (auto& table : schema.tables)
-                    processReferentialPaths(&odbc, opt.db, &dbc, &log, schema,
-                            table, logReferentialAnalysis,
-                            /*forceReferentialConstraints*/ false);
+            //updateDBPermissions(opt, &log, &dbc);
 
-                tx.commit();
-            }
+            tx.commit();
+        }
 
+        //vacuumAnalyzeTable(opt, table, &dbc);
+
+        log.log(Level::debug, "update", table.tableName,
+                "Updated table: " + table.tableName,
+                updateTimer.elapsedTime());
+
+        //if (opt.logLevel == Level::trace)
+        //    loadTimer.print("load time");
+    } // for
+
+    {
+        etymon::OdbcDbc dbc(&odbc, opt.db);
+
+        bool logReferentialAnalysis = false;
+        bool forceReferentialConstraints = false;
+        selectConfigGeneral(&dbc, &log, &logReferentialAnalysis,
+                &forceReferentialConstraints);
+
+        if (logReferentialAnalysis /*|| forceReferentialConstraints*/) {
+
+            log.log(Level::debug, "update", "",
+                    "Analyzing referential paths", -1);
+
+            Timer refTimer(opt);
+
+            etymon::OdbcTx tx(&dbc);
+
+            for (auto& table : schema.tables)
+                processReferentialPaths(&odbc, opt.db, &dbc, &log, schema,
+                        table, logReferentialAnalysis,
+                        /*forceReferentialConstraints*/ false);
+
+            tx.commit();
         }
 
     }
@@ -329,7 +324,7 @@ void runUpdate(const Options& opt)
     // TODO Check if needed for history tables; if so, move into loop above.
     //vacuumAnalyzeAll(opt, &schema, &db);
 
-    log.log(Level::debug, "server", "", "Competed full update",
+    log.log(Level::debug, "server", "", "Completed full update",
             fullUpdateTimer.elapsedTime());
 
     curl_global_cleanup();  // Clean-up after curl_global_init().
