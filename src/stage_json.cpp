@@ -297,8 +297,9 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
         dbt.encodeStringConst(jsonText.GetString(), &data);
         if (data.length() > 65535) {
             log->log(Level::warning, "", "", 
-                    "Compacted JSON object size exceeds database limit: " +
-                    table.sourcePath + ": " + id, -1);
+                    "JSON object size exceeds database limit:\n"
+                    "    Table: " + table.tableName + "\n"
+                    "    ID: " + id, -1);
             data = "NULL";
         }
     }
