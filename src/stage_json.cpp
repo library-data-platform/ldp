@@ -217,14 +217,7 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
     const char* id = doc["id"].GetString();
     // sk
     string sk;
-    string storedTable;
-    idmap->makeSK(table.tableName, id, &sk, &storedTable);
-    if (storedTable != "" && storedTable != table.tableName)
-        log->log(Level::warning, "server", "",
-                "Possible UUID collision in tables:\n"
-                "    Table 1: " + table.tableName + "\n"
-                "    Table 2: " + storedTable + "\n"
-                "    UUID: " + string(id), -1);
+    idmap->makeSK(table.tableName, id, &sk);
     *insertBuffer += sk;
     *insertBuffer += ',';
     // id
@@ -262,7 +255,7 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
             *insertBuffer += to_string(jsonValue.GetDouble());
             break;
         case ColumnType::id:
-            idmap->makeSK("", jsonValue.GetString(), &s, nullptr);
+            idmap->makeSK("", jsonValue.GetString(), &s);
             *insertBuffer += s;
             *insertBuffer += ",";
         case ColumnType::timestamptz:
@@ -271,9 +264,12 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
             // Check if varchar exceeds maximum string length (65535).
             if (s.length() >= 65535) {
                 log->log(Level::warning, "", "",
-                        "String length exceeds database limit: " +
-                        table.sourcePath + ": " + id + ": " +
-                        column.columnName, -1);
+                        "String length exceeds database limit:\n"
+                        "    Table: " + table.tableName + "\n"
+                        "    Column: " + column.columnName + "\n"
+                        "    SK: " + sk + "\n"
+                        "    ID: " + id + "\n"
+                        "    Action: Value stored as NULL", -1);
                 s = "NULL";
             }
             *insertBuffer += s;
@@ -299,7 +295,9 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
             log->log(Level::warning, "", "", 
                     "JSON object size exceeds database limit:\n"
                     "    Table: " + table.tableName + "\n"
-                    "    ID: " + id, -1);
+                    "    SK: " + sk + "\n"
+                    "    ID: " + id + "\n"
+                    "    Action: Value of column \"data\" stored as NULL", -1);
             data = "NULL";
         }
     }
