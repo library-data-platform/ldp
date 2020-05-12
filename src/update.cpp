@@ -223,6 +223,8 @@ void runUpdate(const Options& opt)
         curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
     }
 
+    IDMap idmap(&odbc, opt.db, &log, loadDir, &extractionDir);
+
     for (auto& table : schema.tables) {
 
         log.log(Level::trace, "", "",
@@ -255,7 +257,7 @@ void runUpdate(const Options& opt)
 
             log.log(Level::trace, "", "",
                     "Staging table: " + table.tableName, -1);
-            stageTable(opt, &log, &table, &odbc, &dbc, &dbt, loadDir);
+            stageTable(opt, &log, &table, &odbc, &dbc, &dbt, loadDir, &idmap);
 
             log.log(Level::trace, "", "",
                     "Merging table: " + table.tableName, -1);
@@ -283,6 +285,8 @@ void runUpdate(const Options& opt)
         //if (opt.logLevel == Level::trace)
         //    loadTimer.print("load time");
     } // for
+
+    idmap.syncCommit();
 
     {
         etymon::OdbcDbc dbc(&odbc, opt.db);

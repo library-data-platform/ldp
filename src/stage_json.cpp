@@ -9,7 +9,6 @@
 #include "anonymize.h"
 #include "camelcase.h"
 #include "dbtype.h"
-#include "idmap.h"
 #include "names.h"
 #include "rapidjson/document.h"
 #include "rapidjson/filereadstream.h"
@@ -160,7 +159,7 @@ public:
             const TableSchema& table, etymon::OdbcDbc* dbc, const DBType& dbt,
             IDMap* idmap, map<string,Counts>* statistics) :
         pass(pass), opt(options), log(log), tableSchema(table),
-        stats(statistics), dbc(dbc), dbt(dbt), idmap(idmap) { }
+        stats(statistics), dbc(dbc), dbt(dbt), idmap(idmap) {}
     bool StartObject();
     bool EndObject(json::SizeType memberCount);
     bool StartArray();
@@ -269,7 +268,7 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
                         "    Column: " + column.columnName + "\n"
                         "    SK: " + sk + "\n"
                         "    ID: " + id + "\n"
-                        "    Action: Value stored as NULL", -1);
+                        "    Action: Value set to NULL", -1);
                 s = "NULL";
             }
             *insertBuffer += s;
@@ -297,7 +296,7 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
                     "    Table: " + table.tableName + "\n"
                     "    SK: " + sk + "\n"
                     "    ID: " + id + "\n"
-                    "    Action: Value of column \"data\" stored as NULL", -1);
+                    "    Action: Value for column \"data\" set to NULL", -1);
             data = "NULL";
         }
     }
@@ -659,10 +658,8 @@ static void createLoadingTable(const Options& opt, Log* log,
 
 void stageTable(const Options& opt, Log* log, TableSchema* table,
         etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, DBType* dbt,
-        const string& loadDir)
+        const string& loadDir, IDMap* idmap)
 {
-    IDMap idmap(dbc, dbt, log);
-
     size_t pageCount = readPageCount(opt, log, loadDir, table->tableName);
 
     log->log(Level::detail, "", "",
@@ -691,7 +688,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                     (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                     to_string(page), -1);
             stagePage(opt, log, pass, *table, odbc, dbc, *dbt, &stats, path,
-                    readBuffer, sizeof readBuffer, &idmap);
+                    readBuffer, sizeof readBuffer, idmap);
         }
 
         if (opt.loadFromDir != "") {
@@ -703,7 +700,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                         (pass == 1 ?  ": analyze" : ": load") +
                         ": test file", -1);
                 stagePage(opt, log, pass, *table, odbc, dbc, *dbt, &stats, path,
-                        readBuffer, sizeof readBuffer, &idmap);
+                        readBuffer, sizeof readBuffer, idmap);
             }
         }
 
