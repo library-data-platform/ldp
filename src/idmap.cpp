@@ -74,14 +74,14 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     // Cache data on local file system.
     string cacheFile = tempPath;
     etymon::join(&cacheFile, "idmap_cache");
-    printf("[%s]\n", cacheFile.c_str());
+    //printf("[%s]\n", cacheFile.c_str());
     tempFiles->files.push_back(cacheFile);
     sqlite = new etymon::Sqlite3(cacheFile);
     string sql =
         "CREATE TABLE idmap_cache (\n"
         "    id VARCHAR(65535) NOT NULL,\n"
         "    sk BIGINT NOT NULL,\n"
-        "    new BOOLEAN NOT NULL,\n"
+        "    new INTEGER NOT NULL,\n"
         "    PRIMARY KEY (id)\n"
         ");";
     char *zErrMsg = 0;
@@ -107,7 +107,7 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
             //printf("(%s, %s)\n", sk.c_str(), id.c_str());
             sql =
                 "INSERT INTO idmap_cache (id, sk, new)\n"
-                "    VALUES ('" + id + "', " + sk + ", FALSE);";
+                "    VALUES ('" + id + "', " + sk + ", 0);";
             rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
             if( rc != SQLITE_OK ){
                 fprintf(stderr, "SQL error: %s\n", zErrMsg);
@@ -154,7 +154,7 @@ void IDMap::makeSK(const string& table, const char* id, string* sk)
     nextvalSK++;
     sql =
         "INSERT INTO idmap_cache (id, sk, new)\n"
-        "    VALUES ('" + string(id) + "', " + *sk + ", TRUE);";
+        "    VALUES ('" + string(id) + "', " + *sk + ", 1);";
     rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
     if (rc != SQLITE_OK){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
@@ -166,7 +166,7 @@ void IDMap::makeSK(const string& table, const char* id, string* sk)
 
 void IDMap::syncCommit()
 {
-    string sql = "SELECT id, sk FROM idmap_cache WHERE new = TRUE;";
+    string sql = "SELECT id, sk FROM idmap_cache WHERE new = 1;";
     log->logDetail(sql);
     char *zErrMsg = 0;
     SyncData syncData(dbc, log);
