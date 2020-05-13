@@ -120,7 +120,7 @@ $ sudo apt install odbc-postgresql
 
 ```shell
 $ sudo dnf install cmake gcc-c++ libcurl-devel libpq-devel make \
-      postgresql-server-devel unixODBC-devel
+      postgresql-server-devel sqlite-devel unixODBC-devel
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
