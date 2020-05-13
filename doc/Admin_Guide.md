@@ -106,7 +106,8 @@ a package manager on some platforms.
 
 ```shell
 $ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
-      postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev
+      postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev \
+      libsqlite3-dev
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:

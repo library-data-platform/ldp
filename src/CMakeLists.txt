@@ -28,12 +28,15 @@ find_package(PostgreSQL REQUIRED)
 include_directories(${PostgreSQL_INCLUDE_DIR})
 #set(LIBS ${LIBS} ${PostgreSQL_LIBRARY})
 
-find_package(RapidJSON)
+find_package(SQLite3 REQUIRED)
+
+find_package(RapidJSON REQUIRED)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 add_executable(ldp
     ../etymoncpp/src/odbc.cpp
     ../etymoncpp/src/postgres.cpp
+    ../etymoncpp/src/sqlite3.cpp
     ../etymoncpp/src/util.cpp
     anonymize.cpp
     camelcase.cpp
@@ -59,6 +62,7 @@ target_link_libraries(ldp
     ${CURL_LIBRARIES}
     ${ODBC_LIBRARY}
     ${PostgreSQL_LIBRARY}
+    ${SQLite3_LIBRARY}
 )
 
 INSTALL(PROGRAMS ldp DESTINATION /usr/local/bin)
