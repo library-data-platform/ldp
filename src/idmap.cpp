@@ -5,11 +5,11 @@
 #include "idmap.h"
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
-    int i;
-    for(i = 0; i<argc; i++) {
-        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-    }
-    printf("\n");
+    //int i;
+    //for(i = 0; i<argc; i++) {
+    //    printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+    //}
+    //printf("\n");
     return 0;
 }
 
@@ -77,19 +77,50 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     //printf("[%s]\n", cacheFile.c_str());
     tempFiles->files.push_back(cacheFile);
     sqlite = new etymon::Sqlite3(cacheFile);
-    string sql =
+
+    char *zErrMsg = 0;
+    int rc;
+    string sql;
+
+    sql = "PRAGMA journal_mode = OFF;";
+    rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+    if( rc != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }
+    sql = "PRAGMA synchronous = OFF;";
+    rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+    if( rc != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }
+    sql = "PRAGMA locking_mode = EXCLUSIVE;";
+    rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+    if( rc != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }
+
+    sql =
         "CREATE TABLE idmap_cache (\n"
         "    id VARCHAR(65535) NOT NULL,\n"
         "    sk BIGINT NOT NULL,\n"
         "    new INTEGER NOT NULL,\n"
         "    PRIMARY KEY (id)\n"
         ");";
-    char *zErrMsg = 0;
-    int rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+    rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
     }
+
+    sql = "BEGIN;";
+    rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+    if( rc != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }
+
     sql = "SELECT sk, id FROM ldpsystem.idmap;";
     log->logDetail(sql);
     {
@@ -116,6 +147,14 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
         }
         //printf("Cached\n");
     }
+
+    sql = "COMMIT;";
+    rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+    if( rc != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }
+
 }
 
 IDMap::~IDMap()
