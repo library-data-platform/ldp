@@ -110,9 +110,8 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->dbt->autoIncrementType(1, false, "", &autoInc);
     sql =
         "CREATE TABLE ldpsystem.idmap (\n"
-        "    sk " + autoInc + ",\n"
-        "    id VARCHAR(65535),\n"
-        "    table_name VARCHAR(63) NOT NULL DEFAULT '',\n"
+        "    sk BIGINT NOT NULL,\n"
+        "    id VARCHAR(65535) NOT NULL,\n"
         "        PRIMARY KEY (sk),\n"
         "        UNIQUE (id)\n"
         ")" + rskeys + ";";
@@ -650,13 +649,6 @@ void schemaUpgrade4(SchemaUpgradeOptions* opt)
 {
     DBType dbt(opt->dbc);
 
-    //string sql =
-    //    "ALTER TABLE ldpsystem.log\n"
-    //    "    ALTER COLUMN level\n"
-    //    "        TYPE VARCHAR(7);";
-    //opt->log->logDetail(sql);
-    //opt->dbc->execDirect(nullptr, sql);
-
     string sql = "ALTER TABLE ldpsystem.log DROP COLUMN level;";
     //opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
@@ -695,12 +687,46 @@ void schemaUpgrade4(SchemaUpgradeOptions* opt)
     opt->dbc->execDirect(nullptr, sql);
 }
 
+void schemaUpgrade5(SchemaUpgradeOptions* opt)
+{
+    DBType dbt(opt->dbc);
+
+    string sql = "ALTER TABLE ldpsystem.idmap DROP CONSTRAINT idmap_pkey;";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql = "ALTER TABLE ldpsystem.idmap DROP CONSTRAINT idmap_id_key;";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql = "ALTER TABLE ldpsystem.idmap RENAME TO idmap_old;";
+    opt->dbc->execDirect(nullptr, sql);
+
+    string rskeys;
+    dbt.redshiftKeys("sk", "sk", &rskeys);
+    sql =
+        "CREATE TABLE ldpsystem.idmap (\n"
+        "    sk BIGINT NOT NULL,\n"
+        "    id VARCHAR(65535) NOT NULL,\n"
+        "        PRIMARY KEY (sk),\n"
+        "        UNIQUE (id)\n"
+        ")" + rskeys + ";";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql =
+        "INSERT INTO ldpsystem.idmap (sk, id)\n"
+        "    SELECT sk, id FROM ldpsystem.idmap_old;";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql = "DROP TABLE ldpsystem.idmap_old;";
+    opt->dbc->execDirect(nullptr, sql);
+}
+
 SchemaUpgrade schemaUpgrade[] = {
     nullptr,  // Version 0 has no migration.
     schemaUpgrade1,
     schemaUpgrade2,
     schemaUpgrade3,
-    schemaUpgrade4
+    schemaUpgrade4,
+    schemaUpgrade5
 };
 
 void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
@@ -761,7 +787,7 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
 void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
         const string& ldpUser)
 {
-    int64_t thisSchemaVersion = 4;
+    int64_t thisSchemaVersion = 5;
 
     //db->log->log(Level::trace, "", "", "Initializing database", -1);
 
