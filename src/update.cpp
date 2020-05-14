@@ -225,7 +225,7 @@ void runUpdate(const Options& opt)
 
     Timer idmapTimer1(opt);
     IDMap idmap(&odbc, opt.db, &log, loadDir, &extractionDir);
-    log.log(Level::debug, "server", "", "Synchronized cache",
+    log.log(Level::debug, "update", "", "Synchronized cache",
             idmapTimer1.elapsedTime());
 
     for (auto& table : schema.tables) {
@@ -291,7 +291,7 @@ void runUpdate(const Options& opt)
 
     Timer idmapTimer2(opt);
     idmap.syncCommit();
-    log.log(Level::debug, "server", "", "Synchronized cache",
+    log.log(Level::debug, "update", "", "Synchronized cache",
             idmapTimer2.elapsedTime());
 
     {
