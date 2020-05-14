@@ -223,7 +223,10 @@ void runUpdate(const Options& opt)
         curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
     }
 
+    Timer idmapTimer1(opt);
     IDMap idmap(&odbc, opt.db, &log, loadDir, &extractionDir);
+    log.log(Level::debug, "server", "", "Synchronized cache",
+            idmapTimer1.elapsedTime());
 
     for (auto& table : schema.tables) {
 
@@ -286,7 +289,10 @@ void runUpdate(const Options& opt)
         //    loadTimer.print("load time");
     } // for
 
+    Timer idmapTimer2(opt);
     idmap.syncCommit();
+    log.log(Level::debug, "server", "", "Synchronized cache",
+            idmapTimer2.elapsedTime());
 
     {
         etymon::OdbcDbc dbc(&odbc, opt.db);
@@ -301,7 +307,7 @@ void runUpdate(const Options& opt)
             log.log(Level::debug, "update", "",
                     "Analyzing referential paths", -1);
 
-            Timer refTimer(opt);
+            //Timer refTimer(opt);
 
             etymon::OdbcTx tx(&dbc);
 
