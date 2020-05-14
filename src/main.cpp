@@ -26,25 +26,24 @@
 
 static const char* optionHelp =
 "Usage:  ldp <command> <options>\n"
-"  e.g.  ldp update --config ldpconf.json --source folio\n"
-//"  e.g.  ldp server --config ldpconfig.json\n"
+"  e.g.  ldp server -D /usr/local/ldp/data\n"
 "Commands:\n"
-//"  server              - Run LDP server\n"
-"  update              - Load data into the LDP database\n"
+"  server              - Run the LDP server\n"
+"  update              - Run a full update and exit\n"
 "  help                - Display help information\n"
 "Options:\n"
-"  --config <path>     - Specify the path to the configuration file\n"
-"  --source <name>     - Extract data from source <name>, which refers to\n"
-"                        the name of an object under \"sources\" in the\n"
-"                        configuration file that describes connection\n"
-"                        parameters for an Okapi instance\n"
+"  -D <path>           - Store data and configuration in directory <path>\n"
+//"  --config <path>     - Specify the path to the configuration file\n"
+//"  --source <name>     - Extract data from source <name>, which refers to\n"
+//"                        the name of an object under \"sources\" in the\n"
+//"                        configuration file that describes connection\n"
+//"                        parameters for an Okapi instance\n"
 "  --unsafe            - Enable functions used for testing/debugging\n"
-//"  --nossl             - Disable SSL in the database connection (unsafe)\n"
 "  --savetemps         - Disable deletion of temporary files containing\n"
 "                        extracted data (unsafe)\n"
-"  --sourcedir <path>  - Load data from a directory instead of extracting\n"
-"                        from Okapi (unsafe)\n"
-"  --trace             - Enable very detailed logging\n";
+"  --sourcedir <path>  - Load data from directory <path> instead of\n"
+"                        extracting from Okapi (unsafe)\n"
+"  --trace             - Enable detailed logging\n";
 
 void debugNoticeProcessor(void *arg, const char *message)
 {
