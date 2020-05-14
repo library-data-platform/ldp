@@ -67,10 +67,6 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     this->log = log;
     tx = new etymon::OdbcTx(dbc);
 
-    //sql = "LOCK ldpsystem.idmap;";
-    //log->logDetail(sql);
-    //dbc->execDirect(nullptr, sql);
-
     // Cache data on local file system.
     string cacheFile = tempPath;
     etymon::join(&cacheFile, "idmap_cache");

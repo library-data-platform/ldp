@@ -184,33 +184,24 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
     } while (updateInFuture == "0");
 }
 
-void runServer(const Options& opt)
+void server(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
 {
-    fprintf(stderr, "%s: Initializing\n", opt.prog);
-
-    etymon::OdbcEnv odbc;
-
-    //runPreloadTests(opt, &odbc);
-
-    etymon::OdbcDbc logDbc(&odbc, opt.db);
-    Log log(&logDbc, opt.logLevel, opt.prog);
-
     {
-        etymon::OdbcDbc dbc(&odbc, opt.db);
+        etymon::OdbcDbc dbc(odbc, opt.db);
         DBType dbt(&dbc);
-        DBContext db(&dbc, &dbt, &log);
-        initUpgrade(&odbc, opt.db, &db, opt.ldpUser);
+        DBContext db(&dbc, &dbt, log);
+        initUpgrade(odbc, opt.db, &db, opt.ldpUser);
     }
 
-    log.log(Level::info, "server", "",
+    log->log(Level::info, "server", "",
             string("Server started") + (opt.cliMode ? " (CLI mode)" : ""), -1);
 
-    etymon::OdbcDbc dbc(&odbc, opt.db);
+    etymon::OdbcDbc dbc(odbc, opt.db);
     DBType dbt(&dbc);
 
     do {
-        if (opt.cliMode || timeForFullUpdate(opt, &dbc, &dbt, &log) ) {
-            rescheduleNextDailyLoad(opt, &dbc, &dbt, &log);
+        if (opt.cliMode || timeForFullUpdate(opt, &dbc, &dbt, log) ) {
+            rescheduleNextDailyLoad(opt, &dbc, &dbt, log);
             pid_t pid = fork();
             if (pid == 0)
                 runUpdateProcess(opt);
@@ -218,11 +209,11 @@ void runServer(const Options& opt)
                 int stat;
                 waitpid(pid, &stat, 0);
                 if (WIFEXITED(stat))
-                    log.log(Level::trace, "", "",
+                    log->log(Level::trace, "", "",
                             "Status code of full update: " +
                             to_string(WEXITSTATUS(stat)), -1);
                 else
-                    log.log(Level::trace, "", "",
+                    log->log(Level::trace, "", "",
                             "Full update did not terminate normally", -1);
             }
             if (pid < 0)
@@ -233,11 +224,39 @@ void runServer(const Options& opt)
             std::this_thread::sleep_for(std::chrono::seconds(60));
     } while (!opt.cliMode);
 
-    log.log(Level::info, "server", "",
+    log->log(Level::info, "server", "",
             string("Server stopped") + (opt.cliMode ? " (CLI mode)" : ""), -1);
 
     if (opt.cliMode)
         fprintf(opt.err, "%s: Update completed\n", opt.prog);
+}
+
+void runServer(const Options& opt)
+{
+    fprintf(stderr, "%s: Initializing\n", opt.prog);
+
+    etymon::OdbcEnv odbc;
+
+    //runPreloadTests(opt, odbc);
+
+    etymon::OdbcDbc logConn(&odbc, opt.db);
+    Log log(&logConn, opt.logLevel, opt.prog);
+
+    etymon::OdbcDbc lockConn(&odbc, opt.db);
+    string sql = "CREATE TABLE IF NOT EXISTS ldpsystem.server_lock ();";
+    log.logDetail(sql);
+    lockConn.execDirect(nullptr, sql);
+
+    {
+        log.log(Level::trace, "", "", "Acquiring server lock", -1);
+
+        etymon::OdbcTx tx(&lockConn);
+        sql = "LOCK ldpsystem.server_lock;";
+        log.logDetail(sql);
+        lockConn.execDirect(nullptr, sql);
+
+        server(opt, &odbc, &log);
+    }
 }
 
 void fillDirectOptions(const Config& config, const string& base, Options* opt)
