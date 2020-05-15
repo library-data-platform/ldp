@@ -23,13 +23,14 @@ class Options {
 public:
     string command;
     bool cliMode = false;
+    string datadir;
     string loadFromDir;
     string source;
     string okapiURL;
     string okapiTenant;
     string okapiUser;
     string okapiPassword;
-    string extractDir;
+    //string extractDir;
     DirectExtraction direct;
     string db;
     // Temporary
@@ -59,7 +60,7 @@ public:
     Level logLevel = Level::debug;
     //bool version = false;
     size_t pageSize = 1000;
-    string config;
+    //string config;
     int nargc = 0;
     char **nargv = nullptr;
     const char* prog = "ldp";

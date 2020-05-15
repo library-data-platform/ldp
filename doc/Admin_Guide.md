@@ -10,8 +10,7 @@ LDP Admin Guide
 6\. Running the LDP in production  
 7\. Loading data from files (for testing only)  
 8\. Direct extraction of large data  
-9\. Server mode  
-10\. Referential analysis (experimental)
+9\. Server mode
 
 
 1\. System requirements
@@ -31,6 +30,7 @@ LDP Admin Guide
   * [libpq](https://www.postgresql.org/) 11.5 or later
   * [libcurl](https://curl.haxx.se/) 7.64.0 or later
   * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
+  * [SQLite](https://sqlite.org/) 3.22.0 or later
 * Required to build from source code:
   * C++ compilers supported:
     * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
@@ -159,7 +159,8 @@ $ ./all.sh
 The compiled executable file `ldp` should appear in `ldp/build/src/`:
 
 ```shell
-$ ./build/src/ldp
+$ cd build/src/
+$ ./ldp
 ```
 
 
@@ -244,35 +245,39 @@ SSLMode = require
 4\. Configuring the LDP software
 --------------------------------
 
-The LDP software reads a configuration file that describes
-administrative settings for an LDP database.  The provided example
-file
-[ldpconfig.json](https://raw.githubusercontent.com/folio-org/ldp/master/examples/ldpconfig.json)
+The LDP software reads a configuration file `ldpconf.json` that
+describes administrative settings for an LDP database.  The provided
+example file
+[ldpconf.json](https://raw.githubusercontent.com/folio-org/ldp/master/examples/ldpconf.json)
 can be used as a template.
 
-__ldpconfig.json__
+__ldpconf.json__
 ```
 {
     "ldpDatabase": {
-        "odbcDataSourceName": "ldpdemo"
+        "odbcDatabase": "ldpdemo"
     },
-    "dataSources": {
+    "enableSources": ["okapi"],
+    "sources": {
         "okapi": {
             "okapiURL": "https://folio-release-okapi.aws.indexdata.com",
             "okapiTenant": "diku",
             "okapiUser": "diku_admin",
-            "okapiPassword": "(Okapi password here)",
-            "extractDir": "/var/lib/ldp/extract/"
+            "okapiPassword": "(Okapi password here)"
         }
     }
 }
 ```
 
-The path to this file is specified using the command line option
-`--config`, e.g.:
+This file should be placed in the "data directory" where LDP will
+store cache and temporary data.  The path to the data directory is
+specified using the command line option `-D`.  For example, if the
+data directory is `/usr/local/ldp/data`, then the configuration file
+should be `/usr/local/ldp/data/ldpconf.json` and the LDP software
+would be run as:
 
 ```shell
-$ ldp update --config /etc/ldp/ldpconfig.json  ( etc. )
+$ ldp update -D /usr/local/ldp/data
 ```
 
 
@@ -285,19 +290,21 @@ usage is low, in order to refresh the database with new data.
 To extract data and load them into the LDP database:
 
 ```shell
-$ ldp update --config ldpconf.json --source okapi
+$ ldp update -D /usr/local/ldp/data
 ```
 
 The `update` command is used to load data.  The data are extracted
 from a data "source" and loaded into the LDP database.
 
-The `--source` option specifies the name of a section under `sources`
-in the LDP configuration file.  This section should provide connection
-details for a data source, as well as a directory (`extractDir`) where
-temporary extracted files can be written.
+The configuration file `/usr/local/ldp/data/ldpconf.json` defines
+`odbcDatabase` (under `ldpDatabase`) which specifies the ODBC data
+source name for the LDP database.  It also defines `enableSources`
+which specifies which data source described under `sources` to extract
+data from.
 
-LDP logs its activities to the table `ldpsystem.log`.  The `--trace`
-option can be used to enable more detailed logging.
+As the update runs, LDP logs its activities to the table
+`ldpsystem.log`.  The `--trace` option can be used to enable more
+detailed logging.
 
 Another option that is available to assist with debugging problems is
 `--savetemps` (used together with `--unsafe`), which tells the loader
@@ -312,43 +319,15 @@ Note:  LDP releases earlier than 1.0 should not be used in production.
 This section is included here to assist system administrators in
 planning for production deployment.
 
-The data loader is intended to be run automatically once per day, using
-a job scheduler such as Cron.
-
 ### Scheduling data loads and availability of the database
 
-While the data loader runs, the database generally will be available to
-users, although query performance may be affected.  However, note that
-some of the final stages of the loading process involve schema changes
-and could interrupt any long-running queries that are executing at the
-same time.  For these reasons, it may be best to run the data loader at
-a time when the database will not be used heavily.
-
-### Handling errors in data loading
-
-If the data loading fails, the `ldp` process returns a non-zero exit
-status.  It is recommended to check the exit status if the process is
-being run automatically, in order to alert the administrator that data
-loading was not completed.  Once the problem has been addressed,
-simply run the data loader again.
-
-### Managing temporary disk space for data loading
-
-As mentioned earlier, the "sources" listed in the configuration file
-include `extractDir` which is a directory used for writing temporary
-files extracted from a source.  This directory should have enough disk
-space to hold all of the extracted data in JSON format.
-
-The data loader expects that the `extractDir` directory already exists,
-and it creates a temporary directory under it beginning with the prefix,
-`tmp_ldp_`.  After data loading has been completed, the `ldp` process
-will normally try to delete the temporary directory as part of "cleaning
-up".  However, it is possible that the clean-up phase may not always
-run, for example, if a signal 9 is sent to the process.  This could
-result in filling up disk space and cause future data loading to fail.
-In a production context it is a good idea to take additional steps to
-ensure that any temporary directories under the `extractDir` directory
-are removed after each run of the data loader.
+The data loader is intended to be run automatically once per day.
+During this time, the database generally will be available to users,
+although query performance may be affected.  However, note that some
+of the final stages of the loading process involve schema changes and
+could interrupt any long-running queries that are executing at the
+same time.  For these reasons, it is best to run the data loader at a
+time when the database will not be used heavily.
 
 ### RDS/PostgreSQL configuration
 
@@ -381,7 +360,7 @@ data can be loaded directly from the file system for testing purposes,
 using the `--unsafe` and `--sourcedir` options, e.g.:
 
 ```shell
-$ ldp update --config ldpconf.json --unsafe --sourcedir ldp-analytics/testdata/
+$ ldp update -D /usr/local/ldp/data --unsafe --sourcedir ldp-analytics/testdata/
 ```
 
 The loader expects the data files to have particular names, e.g.
@@ -443,7 +422,7 @@ background process with `nohup`, and use the `server` command in place
 of the `update` command, e.g.:
 
 ```shell
-$ nohup ldp server --config ldpconf.json --source okapi &
+$ nohup ldp server -D /usr/local/ldp/data &
 ```
 
 Data updates can be scheduled by setting `next_full_update` in table
@@ -457,6 +436,7 @@ UPDATE ldpconfig.general
 Also ensure that `full_update_enabled` is set to `TRUE`.
 
 
+<!--
 10\. Referential analysis (experimental)
 ----------------------------------------
 
@@ -471,6 +451,7 @@ To enable this feature:
 UPDATE ldpconfig.general
     SET log_referential_analysis = TRUE;
 ```
+-->
 
 
 Further reading

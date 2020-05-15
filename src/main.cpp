@@ -1,7 +1,9 @@
 #include <chrono>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -26,25 +28,24 @@
 
 static const char* optionHelp =
 "Usage:  ldp <command> <options>\n"
-"  e.g.  ldp update --config ldpconf.json --source folio\n"
-//"  e.g.  ldp server --config ldpconfig.json\n"
+"  e.g.  ldp server -D /usr/local/ldp/data\n"
 "Commands:\n"
-//"  server              - Run LDP server\n"
-"  update              - Load data into the LDP database\n"
+"  server              - Run the LDP server\n"
+"  update              - Run a full update and exit\n"
 "  help                - Display help information\n"
 "Options:\n"
-"  --config <path>     - Specify the path to the configuration file\n"
-"  --source <name>     - Extract data from source <name>, which refers to\n"
-"                        the name of an object under \"sources\" in the\n"
-"                        configuration file that describes connection\n"
-"                        parameters for an Okapi instance\n"
+"  -D <path>           - Store data and configuration in directory <path>\n"
+//"  --config <path>     - Specify the path to the configuration file\n"
+//"  --source <name>     - Extract data from source <name>, which refers to\n"
+//"                        the name of an object under \"sources\" in the\n"
+//"                        configuration file that describes connection\n"
+//"                        parameters for an Okapi instance\n"
 "  --unsafe            - Enable functions used for testing/debugging\n"
-//"  --nossl             - Disable SSL in the database connection (unsafe)\n"
 "  --savetemps         - Disable deletion of temporary files containing\n"
 "                        extracted data (unsafe)\n"
-"  --sourcedir <path>  - Load data from a directory instead of extracting\n"
-"                        from Okapi (unsafe)\n"
-"  --trace             - Enable very detailed logging\n";
+"  --sourcedir <path>  - Load data from directory <path> instead of\n"
+"                        extracting from Okapi (unsafe)\n"
+"  --trace             - Enable detailed logging\n";
 
 void debugNoticeProcessor(void *arg, const char *message)
 {
@@ -185,33 +186,24 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
     } while (updateInFuture == "0");
 }
 
-void runServer(const Options& opt)
+void server(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
 {
-    fprintf(stderr, "%s: Initializing\n", opt.prog);
-
-    etymon::OdbcEnv odbc;
-
-    //runPreloadTests(opt, &odbc);
-
-    etymon::OdbcDbc logDbc(&odbc, opt.db);
-    Log log(&logDbc, opt.logLevel, opt.prog);
-
     {
-        etymon::OdbcDbc dbc(&odbc, opt.db);
+        etymon::OdbcDbc dbc(odbc, opt.db);
         DBType dbt(&dbc);
-        DBContext db(&dbc, &dbt, &log);
-        initUpgrade(&odbc, opt.db, &db, opt.ldpUser);
+        DBContext db(&dbc, &dbt, log);
+        initUpgrade(odbc, opt.db, &db, opt.ldpUser);
     }
 
-    log.log(Level::info, "server", "",
+    log->log(Level::info, "server", "",
             string("Server started") + (opt.cliMode ? " (CLI mode)" : ""), -1);
 
-    etymon::OdbcDbc dbc(&odbc, opt.db);
+    etymon::OdbcDbc dbc(odbc, opt.db);
     DBType dbt(&dbc);
 
     do {
-        if (opt.cliMode || timeForFullUpdate(opt, &dbc, &dbt, &log) ) {
-            rescheduleNextDailyLoad(opt, &dbc, &dbt, &log);
+        if (opt.cliMode || timeForFullUpdate(opt, &dbc, &dbt, log) ) {
+            rescheduleNextDailyLoad(opt, &dbc, &dbt, log);
             pid_t pid = fork();
             if (pid == 0)
                 runUpdateProcess(opt);
@@ -219,11 +211,11 @@ void runServer(const Options& opt)
                 int stat;
                 waitpid(pid, &stat, 0);
                 if (WIFEXITED(stat))
-                    log.log(Level::trace, "", "",
+                    log->log(Level::trace, "", "",
                             "Status code of full update: " +
                             to_string(WEXITSTATUS(stat)), -1);
                 else
-                    log.log(Level::trace, "", "",
+                    log->log(Level::trace, "", "",
                             "Full update did not terminate normally", -1);
             }
             if (pid < 0)
@@ -234,11 +226,47 @@ void runServer(const Options& opt)
             std::this_thread::sleep_for(std::chrono::seconds(60));
     } while (!opt.cliMode);
 
-    log.log(Level::info, "server", "",
+    log->log(Level::info, "server", "",
             string("Server stopped") + (opt.cliMode ? " (CLI mode)" : ""), -1);
 
     if (opt.cliMode)
         fprintf(opt.err, "%s: Update completed\n", opt.prog);
+}
+
+//void emptyTempDir(const string& datadir)
+//{
+//    filesystem::path dd = datadir;
+//    filesystem::path tmp = dd / "tmp";
+//    filesystem::remove_all(tmp);
+//    filesystem::create_directories(tmp);
+//}
+
+void runServer(const Options& opt)
+{
+    fprintf(stderr, "%s: Initializing\n", opt.prog);
+
+    etymon::OdbcEnv odbc;
+
+    //runPreloadTests(opt, odbc);
+
+    etymon::OdbcDbc logConn(&odbc, opt.db);
+    Log log(&logConn, opt.logLevel, opt.prog);
+
+    etymon::OdbcDbc lockConn(&odbc, opt.db);
+    string sql = "CREATE TABLE IF NOT EXISTS ldpsystem.server_lock ();";
+    log.logDetail(sql);
+    lockConn.execDirect(nullptr, sql);
+
+    {
+        log.log(Level::trace, "", "", "Acquiring server lock", -1);
+
+        etymon::OdbcTx tx(&lockConn);
+        sql = "LOCK ldpsystem.server_lock;";
+        log.logDetail(sql);
+        lockConn.execDirect(nullptr, sql);
+
+        server(opt, &odbc, &log);
+    }
 }
 
 void fillDirectOptions(const Config& config, const string& base, Options* opt)
@@ -282,31 +310,29 @@ void fillDirectOptions(const Config& config, const string& base, Options* opt)
 
 void fillOptions(const Config& config, Options* opt)
 {
+    string target = "/ldpDatabase/";
+    config.getRequired(target + "odbcDatabase", &(opt->db));
+    config.get(target + "ldpUser", &(opt->ldpUser));
+
     if (opt->loadFromDir == "") {
-        string source = "/dataSources/";
-        source += opt->source;
-        source += "/";
+        string enableSource;
+        config.getRequired("/enableSources/0", &enableSource);
+        string secondSource;
+        config.get("/enableSources/1", &secondSource);
+        if (secondSource != "")
+            throw runtime_error(
+                    "Multiple sources not currently supported in "
+                    "configuration:\n"
+                    "    Attribute: enableSources\n"
+                    "    Value: " + secondSource);
+        string source = "/sources/" + enableSource + "/";
         config.getRequired(source + "okapiURL", &(opt->okapiURL));
         config.getRequired(source + "okapiTenant", &(opt->okapiTenant));
         config.getRequired(source + "okapiUser", &(opt->okapiUser));
         config.getRequired(source + "okapiPassword", &(opt->okapiPassword));
-        config.getRequired(source + "extractDir", &(opt->extractDir));
+        //config.getRequired(source + "extractDir", &(opt->extractDir));
         fillDirectOptions(config, source, opt);
     }
-
-    string target = "/ldpDatabase/";
-    config.getRequired(target + "odbcDataSourceName",
-            &(opt->db));
-    config.get(target + "ldpUser", &(opt->ldpUser));
-    //config.getRequired(target + "databaseType", &(opt->databaseType));
-    //config.getRequired(target + "databaseHost", &(opt->databaseHost));
-    //config.getRequired(target + "databasePort", &(opt->databasePort));
-    //checkForOldParameters(*opt, config, target);
-    //config.getRequired(target + "ldpAdmin", &(opt->ldpAdmin));
-    //config.getRequired(target + "ldpAdminPassword", &(opt->ldpAdminPassword));
-    //config.get(target + "ldpUser", &(opt->ldpUser));
-    //opt->dbtype.setType(opt->databaseType);
-    //opt->dbtype.setType("PostgreSQL"); ////////////////// Set DBType
 }
 
 void run(const etymon::CommandArgs& cargs)
@@ -321,7 +347,8 @@ void run(const etymon::CommandArgs& cargs)
         return;
     }
 
-    Config config(opt.config);
+    //Config config(opt.config);
+    Config config(opt.datadir + "/ldpconf.json");
     fillOptions(config, &opt);
 
     //if (opt.logLevel == Level::trace)
