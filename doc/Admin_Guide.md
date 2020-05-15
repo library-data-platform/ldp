@@ -420,12 +420,13 @@ as when the data are too large for the API to process.  In LDP this is
 referred to as _direct extraction_ and is currently supported for the
 following tables:
 
-* `inventory_holdings` extracted from `/holdings-storage/holdings`
-* `inventory_instances` extracted from `/instance-storage/instances`
-* `inventory_items` extracted from `/item-storage/items`
+* `inventory_holdings`
+* `inventory_instances`
+* `inventory_items`
 
-This can be enabled by adding database connection parameters to a
-source configuration, for example:
+Direct extraction can be enabled by adding the list of tables and
+database connection parameters to a source configuration, as in this
+example:
 
 ```
 {
@@ -437,10 +438,10 @@ source configuration, for example:
 
             ( . . . )
 
-	    "directInterfaces": [
-	        "/holdings-storage/holdings",
-		"/instance-storage/instances",
-		"/item-storage/items"
+	    "directTables": [
+	        "inventory_holdings",
+		"inventory_instances",
+		"inventory_items"
             ],
             "directDatabaseName": "okapi",
             "directDatabaseHost": "database.indexdata.com",

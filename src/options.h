@@ -11,7 +11,7 @@ using namespace std;
 
 class DirectExtraction {
 public:
-    vector<string> interfaces;
+    vector<string> tableNames;
     string databaseName;
     string databaseHost;
     string databasePort;

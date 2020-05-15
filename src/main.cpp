@@ -272,12 +272,12 @@ void runServer(const Options& opt)
 void fillDirectOptions(const Config& config, const string& base, Options* opt)
 {
     int x = 0;
-    string directInterfaces = base + "directInterfaces/";
+    string directTables = base + "directTables/";
     while (true) {
-        string interface;
-        if (!config.get(directInterfaces + to_string(x), &interface))
+        string t;
+        if (!config.get(directTables + to_string(x), &t))
             break;
-        opt->direct.interfaces.push_back(interface);
+        opt->direct.tableNames.push_back(t);
         x++;
     }
     config.get(base + "directDatabaseName", &(opt->direct.databaseName));

@@ -259,10 +259,10 @@ bool retrievePages(const Curl& c, const Options& opt, Log* log,
     }
 }
 
-bool directOverride(const Options& opt, const string& sourcePath)
+bool directOverride(const Options& opt, const string& tableName)
 {
-    for (auto& interface : opt.direct.interfaces) {
-        if (interface == sourcePath)
+    for (auto& t : opt.direct.tableNames) {
+        if (t == tableName)
             return true;
     }
     return false;

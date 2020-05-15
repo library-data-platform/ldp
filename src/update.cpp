@@ -251,7 +251,7 @@ void runUpdate(const Options& opt)
         if (opt.loadFromDir == "") {
             log.log(Level::trace, "", "",
                     "Extracting: " + table.sourcePath, -1);
-            bool foundData = directOverride(opt, table.sourcePath) ?
+            bool foundData = directOverride(opt, table.tableName) ?
                 retrieveDirect(opt, &log, table, loadDir, &extractionFiles) :
                 retrievePages(c, opt, &log, token, table, loadDir,
                         &extractionFiles);
