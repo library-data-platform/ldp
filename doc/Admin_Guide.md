@@ -2,7 +2,7 @@ LDP Admin Guide
 ===============
 
 ##### Contents  
-1\. Overview  
+1\. Architecture  
 2\. System requirements  
 3\. Installation  
 4\. Database configuration  
@@ -10,12 +10,12 @@ LDP Admin Guide
 6\. Direct extraction
 
 
-1\. Overview
-------------
+1\. Architecture
+----------------
 
-### Architecture
+### LDP instances
 
-There are two components to an LDP deployment: the LDP server and a
+There are two components in an LDP deployment: the LDP server and a
 database server.  Together these constitute an _LDP instance_.
 
 The LDP server updates data in the database from data sources such as
@@ -24,8 +24,7 @@ reporting and analytics.
 
 ### Multitenancy
 
-In this guide, we refer to two types of multitenant configuration of
-LDP:
+Two kinds of multitenant configuration are relevant to LDP:
 
 * _General multitenancy_ is typically used for a hosting service that
   sets up LDP instances for multiple tenants.  In this case, one LDP
@@ -34,8 +33,8 @@ instance should be created per tenant.
 * _Consortial multitenancy_ is used for a consortium that would like
   to combine data shared by its members to support pan-consortial
 analytics.  In this case, the members of the consortium share a single
-LDP instance.  _This feature is not yet supported by LDP but is
-planned for the near future._
+LDP instance.  _This feature is not yet fully implemented in LDP but
+is planned for the near future._
 
 These configurations can be combined if a hosting service has a
 consortium as one of its tenants.  It would use general multitenancy
@@ -44,8 +43,8 @@ instance provided for the consortium.
 
 In the context of LDP, a _tenant_ implies consortial multitenancy, for
 example the `tenant_id` attribute included in most tables.  LDP is
-generally unaware of general multitenancy because it occurs outside of
-a single instance.
+generally unaware of general multitenancy because that occurs outside
+of a single instance.
 
 
 2\. System requirements
@@ -88,9 +87,8 @@ following minimum requirements:
 For large libraries, or if very high performance is desired, the
 database CPU and memory can be increased as needed.  Alternatively,
 Amazon Redshift can be used instead of PostgreSQL for significantly
-higher performance and scalability.  (See below for notes on
-configuring Redshift.)  The database storage capacity also can be
-increased as needed.
+higher performance and scalability.  The database storage capacity
+also can be increased as needed.
 
 
 3\. Installation
@@ -208,7 +206,7 @@ Before using the LDP software, we have to create a database that will
 store the data.  This can be a local or cloud-based PostgreSQL
 database or a cloud-based Redshift database.
 
-#### RDS PostgreSQL configuration
+#### PostgreSQL hosted in RDS
 
 For libraries that deploy LDP with cloud-based PostgreSQL using Amazon
 Relational Database Service (RDS), these configuration settings are
@@ -219,7 +217,7 @@ suggested as a starting point:
 * Storage:  `General Purpose SSD`
 * Snapshots:  Automated snapshots enabled
 
-#### Redshift configuration
+#### Redshift
 
 For libraries that deploy LDP with Redshift, these configuration
 settings are suggested as a starting point:
@@ -232,10 +230,13 @@ settings are suggested as a starting point:
 
 ### Configuring the database
 
-Two database users are required: `ldpadmin`, an administrator account,
-and `ldp`, a normal user of the database.  It is also a good idea to
-restrict access permissions.  In PostgreSQL, this can be done on the
-command line, for example:
+Two database users are required:
+
+* `ldpadmin` is an administrator account.
+* `ldp` is a general user of the database.
+
+It is also a good idea to restrict access permissions.  In PostgreSQL,
+this can be done on the command line, for example:
 
 ```shell
 $ createuser ldpadmin --username=<admin_user> --pwprompt
@@ -315,7 +316,7 @@ server will be run as an `ldp` user:
 
 ```shell
 $ sudo mkdir -p /var/lib/ldp
-$ sudo chown /var/lib/ldp
+$ sudo chown ldp /var/lib/ldp
 ```
 
 ### Configuration file
@@ -351,18 +352,18 @@ The following configuration settings are supported:
   * `odbcDatabase` (required) is the ODBC "data source name" of the
     LDP database.
 
-* `enableSources` (required) is an array of the sources that LDP will
-  extract data from.  The source names refer to a subset of the
-sources defined (below) under `sources`.  _Currently LDP supports
-configuring only one source per LDP instance, and so this array should
-have only one element_.
+* `enableSources` (required) is an array of sources that are enabled
+  for the LDP to extract data from.  The source names refer to a
+subset of those defined under `sources` (see below).  Only one source
+should be provided in the case of non-consortial deployments.
 
 * `sources` (required) is a collection of sources that LDP can extract
-  data from.  Each source is defined by a source name and an
-associated object containing several settings:
+  data from.  Only one source should be provided in the case of
+non-consortial deployments.  A source is defined by a source name and
+an associated object containing several settings:
 
   * `okapiURL` (required) is the URL for the Okapi instance to extract
-    dat from.
+    data from.
 
   * `okapiTenant` (required) is the Okapi tenant.
 
@@ -373,14 +374,15 @@ associated object containing several settings:
 
 ### Starting the server
 
-To start the LDP server, for example:
+To start the LDP server:
 
 ```shell
 $ nohup ldp server -D /var/lib/ldp &>> logfile &
 ```
 
-The server logs its activities to the table `ldpsystem.log`.  For more
-detailed logging, the `--trace` option can be used:
+The server logs details of its activities in the table
+`ldpsystem.log`.  For more detailed logging, the `--trace` option can
+be used:
 
 ```shell
 $ nohup ldp server -D /var/lib/ldp --trace &>> logfile &
@@ -401,7 +403,7 @@ UPDATE ldpconfig.general
 Also ensure that `full_update_enabled` is set to `TRUE`.
 
 A full update may take several hours for a large library.  During this
-time, the database will remain available to users, but query
+time, the database generally remains available to users, but query
 performance may be affected.  Also, some stages of the update process
 involve schema changes and could interrupt any long-running queries
 that are executing at the same time.  For all of these reasons, it is
@@ -418,9 +420,9 @@ as when the data are too large for the API to process.  In LDP this is
 referred to as _direct extraction_ and is currently supported for the
 following tables:
 
-* `inventory_holdings`
-* `inventory_instances`
-* `inventory_items`
+* `inventory_holdings` extracted from `/holdings-storage/holdings`
+* `inventory_instances` extracted from `/instance-storage/instances`
+* `inventory_items` extracted from `/item-storage/items`
 
 This can be enabled by adding database connection parameters to a
 source configuration, for example:
