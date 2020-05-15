@@ -15,11 +15,13 @@
 #include "timer.h"
 #include "update.h"
 
-void makeTmpDir(const Options& opt, string* loaddir)
+void makeUpdateTmpDir(const Options& opt, string* loaddir)
 {
     filesystem::path datadir = opt.datadir;
     filesystem::path tmp = datadir / "tmp";
-    filesystem::path tmppath = tmp / ("update_" + to_string(time(nullptr)));
+    //filesystem::path tmppath = tmp / ("update_" + to_string(time(nullptr)));
+    filesystem::path tmppath = tmp / "update";
+    filesystem::remove_all(tmppath);
     filesystem::create_directories(tmppath);
     *loaddir = tmppath;
 
@@ -218,7 +220,7 @@ void runUpdate(const Options& opt)
 
         okapiLogin(opt, &log, &token);
 
-        makeTmpDir(opt, &loadDir);
+        makeUpdateTmpDir(opt, &loadDir);
         extractionDir.dir = loadDir;
 
         tenantHeader = "X-Okapi-Tenant: ";
