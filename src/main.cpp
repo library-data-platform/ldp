@@ -300,10 +300,23 @@ void fillDirectOptions(const Config& config, const string& base, Options* opt)
 
 void fillOptions(const Config& config, Options* opt)
 {
+    string target = "/ldpDatabase/";
+    config.getRequired(target + "odbcDatabaseName", &(opt->db));
+    config.get(target + "ldpUser", &(opt->ldpUser));
+
     if (opt->loadFromDir == "") {
-        string source = "/dataSources/";
-        source += opt->source;
-        source += "/";
+        string enableSource;
+        config.getRequired("/enableSources/0", &enableSource);
+        string secondSource;
+        config.get("/enableSources/1", &secondSource);
+        if (secondSource != "")
+            throw runtime_error(
+                    "Multiple sources not currently supported in "
+                    "configuration:\n"
+                    "    Attribute: enableSources\n"
+                    "    Value: " + secondSource);
+        printf("Enabled data source: [%s]\n", enableSource.c_str());
+        string source = "/sources/" + enableSource + "/";
         config.getRequired(source + "okapiURL", &(opt->okapiURL));
         config.getRequired(source + "okapiTenant", &(opt->okapiTenant));
         config.getRequired(source + "okapiUser", &(opt->okapiUser));
@@ -311,20 +324,6 @@ void fillOptions(const Config& config, Options* opt)
         config.getRequired(source + "extractDir", &(opt->extractDir));
         fillDirectOptions(config, source, opt);
     }
-
-    string target = "/ldpDatabase/";
-    config.getRequired(target + "odbcDataSourceName",
-            &(opt->db));
-    config.get(target + "ldpUser", &(opt->ldpUser));
-    //config.getRequired(target + "databaseType", &(opt->databaseType));
-    //config.getRequired(target + "databaseHost", &(opt->databaseHost));
-    //config.getRequired(target + "databasePort", &(opt->databasePort));
-    //checkForOldParameters(*opt, config, target);
-    //config.getRequired(target + "ldpAdmin", &(opt->ldpAdmin));
-    //config.getRequired(target + "ldpAdminPassword", &(opt->ldpAdminPassword));
-    //config.get(target + "ldpUser", &(opt->ldpUser));
-    //opt->dbtype.setType(opt->databaseType);
-    //opt->dbtype.setType("PostgreSQL"); ////////////////// Set DBType
 }
 
 void run(const etymon::CommandArgs& cargs)
@@ -339,7 +338,8 @@ void run(const etymon::CommandArgs& cargs)
         return;
     }
 
-    Config config(opt.config);
+    //Config config(opt.config);
+    Config config(opt.datadir + "/ldp.conf");
     fillOptions(config, &opt);
 
     //if (opt.logLevel == Level::trace)

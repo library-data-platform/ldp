@@ -23,6 +23,7 @@ class Options {
 public:
     string command;
     bool cliMode = false;
+    string datadir;
     string loadFromDir;
     string source;
     string okapiURL;
@@ -59,7 +60,7 @@ public:
     Level logLevel = Level::debug;
     //bool version = false;
     size_t pageSize = 1000;
-    string config;
+    //string config;
     int nargc = 0;
     char **nargv = nullptr;
     const char* prog = "ldp";

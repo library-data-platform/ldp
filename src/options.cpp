@@ -36,10 +36,10 @@ static void validate(const Options& opt)
             opt.command != "")
         throw runtime_error("unknown command: " + opt.command);
 
-    if (opt.command == "update") {
-        if (opt.source == "" && opt.loadFromDir == "")
-            throw runtime_error("update requires --source or --sourcedir");
-    }
+    //if (opt.command == "update") {
+    //    if (opt.source == "" && opt.loadFromDir == "")
+    //        throw runtime_error("update requires --source or --sourcedir");
+    //}
 
     //if (opt.nossl && !opt.unsafe)
     //    throw runtime_error("--nossl requires --unsafe");
@@ -48,9 +48,9 @@ static void validate(const Options& opt)
     if (opt.loadFromDir != "" && !opt.unsafe)
         throw runtime_error("--sourcedir requires --unsafe");
 
-    if (opt.loadFromDir != "" && opt.source != "")
-        throw runtime_error(
-                "--source and --sourcedir cannot both be specified");
+    //if (opt.loadFromDir != "" && opt.source != "")
+    //    throw runtime_error(
+    //            "--source and --sourcedir cannot both be specified");
 }
 
 static void evaloptlong(char *name, char *arg, Options* opt)
@@ -59,18 +59,18 @@ static void evaloptlong(char *name, char *arg, Options* opt)
         opt->loadFromDir = arg;
         return;
     }
-    if (!strcmp(name, "source")) {
-        opt->source = arg;
-        return;
-    }
+    //if (!strcmp(name, "source")) {
+    //    opt->source = arg;
+    //    return;
+    //}
     if (!strcmp(name, "target")) {
         opt->target = arg;
         return;
     }
-    if (!strcmp(name, "config")) {
-        opt->config = arg;
-        return;
-    }
+    //if (!strcmp(name, "config")) {
+    //    opt->config = arg;
+    //    return;
+    //}
     if (!strcmp(name, "unsafe")) {
         opt->unsafe = true;
         return;
@@ -105,9 +105,9 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
 {
     static struct option longopts[] = {
         { "sourcedir", required_argument, NULL, 0   },
-        { "source",    required_argument, NULL, 0   },
+        //{ "source",    required_argument, NULL, 0   },
         //{ "target",    required_argument, NULL, 0   },
-        { "config",    required_argument, NULL, 0   },
+        //{ "config",    required_argument, NULL, 0   },
         { "verbose",   no_argument,       NULL, 'v' },
         { "debug",     no_argument,       NULL, 0   },
         { "trace",     no_argument,       NULL, 0   },
@@ -129,7 +129,7 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
     while (1) {
         int longindex = 0;
         g = getopt_long(cargs.argc, cargs.argv,
-                "hv",
+                "D:hv",
                 longopts, &longindex);
         if (g == -1)
             break;
@@ -139,6 +139,9 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
             case 0:
                 evaloptlong( (char *) longopts[longindex].name,
                         optarg, opt);
+                break;
+            case 'D':
+                opt->datadir = optarg;
                 break;
             case 'v':
                 opt->verbose = true;
