@@ -2,18 +2,53 @@ LDP Admin Guide
 ===============
 
 ##### Contents  
-1\. System requirements  
-2\. Installing the software  
-3\. Preparing the LDP database  
-4\. Configuring the LDP software  
-5\. Loading data into the database  
-6\. Running the LDP in production  
-7\. Loading data from files (for testing only)  
-8\. Direct extraction of large data  
-9\. Server mode
+1\. Overview  
+2\. System requirements  
+3\. Installation  
+4\. Database configuration  
+5\. Server configuration  
+6\. Direct extraction
 
 
-1\. System requirements
+1\. Overview
+------------
+
+### Architecture
+
+There are two components to an LDP deployment: the LDP server and a
+database server.  Together these constitute an _LDP instance_.
+
+The LDP server updates data in the database from data sources such as
+FOLIO modules, and users connect directly to the database to perform
+reporting and analytics.
+
+### Multitenancy
+
+In this guide, we refer to two types of multitenant configuration of
+LDP:
+
+* _General multitenancy_ is typically used for a hosting service that
+  sets up LDP instances for multiple tenants.  In this case, one LDP
+instance should be created per tenant.
+
+* _Consortial multitenancy_ is used for a consortium that would like
+  to combine data shared by its members to support pan-consortial
+analytics.  In this case, the members of the consortium share a single
+LDP instance.  _This feature is not yet supported by LDP but is
+planned for the near future._
+
+These configurations can be combined if a hosting service has a
+consortium as one of its tenants.  It would use general multitenancy
+overall, but would also configure consortial multitenancy in the LDP
+instance provided for the consortium.
+
+In the context of LDP, a _tenant_ implies consortial multitenancy, for
+example the `tenant_id` attribute included in most tables.  LDP is
+generally unaware of general multitenancy because it occurs outside of
+a single instance.
+
+
+2\. System requirements
 -----------------------
 
 ### Software
@@ -58,8 +93,8 @@ configuring Redshift.)  The database storage capacity also can be
 increased as needed.
 
 
-2\. Installing the software
----------------------------
+3\. Installation
+----------------
 
 ### Releases and branches
 
@@ -164,17 +199,43 @@ $ ./ldp
 ```
 
 
-3\. Preparing the LDP database
-------------------------------
+4\. Database configuration
+--------------------------
+
+### Creating a database
+
+Before using the LDP software, we have to create a database that will
+store the data.  This can be a local or cloud-based PostgreSQL
+database or a cloud-based Redshift database.
+
+#### RDS PostgreSQL configuration
+
+For libraries that deploy LDP with cloud-based PostgreSQL using Amazon
+Relational Database Service (RDS), these configuration settings are
+suggested as a starting point:
+
+* Instance type:  `db.m5.large`
+* Number of instances:  `1`
+* Storage:  `General Purpose SSD`
+* Snapshots:  Automated snapshots enabled
+
+#### Redshift configuration
+
+For libraries that deploy LDP with Redshift, these configuration
+settings are suggested as a starting point:
+
+* Node type:  `dc2.large`
+* Cluster type:  `Single Node`
+* Number of compute nodes:  `1`
+* Snapshots:  Automated snapshots enabled
+* Maintenance Track:  `Trailing`
 
 ### Configuring the database
 
-Before using the LDP software, we need a database to load data into.
-Two database users are also required: `ldpadmin`, an administrator
-account, and `ldp`, a normal user of the database.  It is also a good
-idea to restrict access permissions.
-
-In PostgreSQL, this can be done on the command line, for example:
+Two database users are required: `ldpadmin`, an administrator account,
+and `ldp`, a normal user of the database.  It is also a good idea to
+restrict access permissions.  In PostgreSQL, this can be done on the
+command line, for example:
 
 ```shell
 $ createuser ldpadmin --username=<admin_user> --pwprompt
@@ -201,9 +262,9 @@ GRANT ALL ON SCHEMA public TO ldpadmin;
 GRANT USAGE ON SCHEMA public TO ldp;
 ```
 
-Assuming this preliminary set up has been done, the LDP software will
-automatically attempt to initialize the schema in an empty database,
-or to upgrade the schema in a database previously initialized with an
+Assuming this preliminary set up has been completed, the LDP software
+will automatically initialize the schema in an empty database, or
+upgrade the schema in a database previously initialized with an
 earlier version of LDP.
 
 ### Configuring ODBC
@@ -242,12 +303,26 @@ SSLMode = require
 ```
 
 
-4\. Configuring the LDP software
---------------------------------
+5\. Server configuration
+------------------------
 
-The LDP software reads a configuration file `ldpconf.json` that
-describes administrative settings for an LDP database.  The provided
-example file
+### Creating a data directory
+
+LDP uses a "data directory" where cached and temporary data, as
+well as server configuration files, are stored.  In these examples, we
+will suppose that the data directory is `/var/lib/ldp` and that the
+server will be run as an `ldp` user:
+
+```shell
+$ sudo mkdir -p /var/lib/ldp
+$ sudo chown /var/lib/ldp
+```
+
+### Configuration file
+
+Server configuration settings are stored in a file in the data
+directory called `ldpconf.json`.  In our example it would be
+`/var/lib/ldp/ldpconf.json`.  The provided example file
 [ldpconf.json](https://raw.githubusercontent.com/folio-org/ldp/master/examples/ldpconf.json)
 can be used as a template.
 
@@ -269,119 +344,85 @@ __ldpconf.json__
 }
 ```
 
-This file should be placed in the "data directory" where LDP will
-store cache and temporary data.  The path to the data directory is
-specified using the command line option `-D`.  For example, if the
-data directory is `/usr/local/ldp/data`, then the configuration file
-should be `/usr/local/ldp/data/ldpconf.json` and the LDP software
-would be run as:
+The following configuration settings are supported:
+
+* `ldpDatabase` (required) is a group of database-related settings.
+
+  * `odbcDatabase` (required) is the ODBC "data source name" of the
+    LDP database.
+
+* `enableSources` (required) is an array of the sources that LDP will
+  extract data from.  The source names refer to a subset of the
+sources defined (below) under `sources`.  _Currently LDP supports
+configuring only one source per LDP instance, and so this array should
+have only one element_.
+
+* `sources` (required) is a collection of sources that LDP can extract
+  data from.  Each source is defined by a source name and an
+associated object containing several settings:
+
+  * `okapiURL` (required) is the URL for the Okapi instance to extract
+    dat from.
+
+  * `okapiTenant` (required) is the Okapi tenant.
+
+  * `okapiUser` (required) is the Okapi user name.
+
+  * `okapiPassword` (required) is the password for the specified Okapi
+    user name.
+
+### Starting the server
+
+To start the LDP server, for example:
 
 ```shell
-$ ldp update -D /usr/local/ldp/data
+$ nohup ldp server -D /var/lib/ldp &>> logfile &
 ```
 
-
-5\. Loading data into the database
-----------------------------------
-
-The LDP loader is intended to be run once per day, at a time of day when
-usage is low, in order to refresh the database with new data.
-
-To extract data and load them into the LDP database:
+The server logs its activities to the table `ldpsystem.log`.  For more
+detailed logging, the `--trace` option can be used:
 
 ```shell
-$ ldp update -D /usr/local/ldp/data
+$ nohup ldp server -D /var/lib/ldp --trace &>> logfile &
 ```
 
-The `update` command is used to load data.  The data are extracted
-from a data "source" and loaded into the LDP database.
+Once per day, the server runs a _full update_ which performs all
+supported data updates.
 
-The configuration file `/usr/local/ldp/data/ldpconf.json` defines
-`odbcDatabase` (under `ldpDatabase`) which specifies the ODBC data
-source name for the LDP database.  It also defines `enableSources`
-which specifies which data source described under `sources` to extract
-data from.
+Full updates can be scheduled at a recurring time of day by setting
+`next_full_update` in table `ldpconfig.general`.  Note that the
+timezone is part of the value.  For example:
 
-As the update runs, LDP logs its activities to the table
-`ldpsystem.log`.  The `--trace` option can be used to enable more
-detailed logging.
-
-Another option that is available to assist with debugging problems is
-`--savetemps` (used together with `--unsafe`), which tells the loader
-not to delete temporary files that store extracted data.  These files
-are not anonymized and may contain personal data.
-
-
-6\. Running the LDP in production
----------------------------------
-
-Note:  LDP releases earlier than 1.0 should not be used in production.
-This section is included here to assist system administrators in
-planning for production deployment.
-
-### Scheduling data loads and availability of the database
-
-The data loader is intended to be run automatically once per day.
-During this time, the database generally will be available to users,
-although query performance may be affected.  However, note that some
-of the final stages of the loading process involve schema changes and
-could interrupt any long-running queries that are executing at the
-same time.  For these reasons, it is best to run the data loader at a
-time when the database will not be used heavily.
-
-### RDS/PostgreSQL configuration
-
-For libraries that deploy the LDP database in PostgreSQL using Amazon
-Relational Database Service (RDS), these configuration settings are
-suggested as a starting point:
-
-* Instance type:  `db.m5.large`
-* Number of instances:  `1`
-* Storage:  `General Purpose SSD`
-* Snapshots:  Automated snapshots enabled
-
-### Redshift configuration
-
-For libraries that deploy the LDP database in Redshift, these
-configuration settings are suggested as a starting point:
-
-* Node type:  `dc2.large`
-* Cluster type:  `Single Node`
-* Number of compute nodes:  `1`
-* Snapshots:  Automated snapshots enabled
-* Maintenance Track:  `Trailing`
-
-
-7\. Loading data from files (for testing only)
-----------------------------------------------
-
-As an alternative to loading data with the `--source` option, source
-data can be loaded directly from the file system for testing purposes,
-using the `--unsafe` and `--sourcedir` options, e.g.:
-
-```shell
-$ ldp update -D /usr/local/ldp/data --unsafe --sourcedir ldp-analytics/testdata/
+```sql
+UPDATE ldpconfig.general
+    SET next_full_update = '2020-05-07 22:00:00Z';
 ```
 
-The loader expects the data files to have particular names, e.g.
-`loans_0.json`; and when `--sourcedir` is used, it also looks for an
-optional, accompanying file ending with the suffix, `_test.json`, e.g.
-`loans_test.json`.  Data in these "test" files are loaded into the same
-table as the files they accompany.  This is used for testing in query
-development to combine extracted test data with additional static test
-data.
+Also ensure that `full_update_enabled` is set to `TRUE`.
+
+A full update may take several hours for a large library.  During this
+time, the database will remain available to users, but query
+performance may be affected.  Also, some stages of the update process
+involve schema changes and could interrupt any long-running queries
+that are executing at the same time.  For all of these reasons, it is
+best to run full updates at a time when the database will not be used
+heavily.
 
 
-8\. Direct extraction of large data
------------------------------------
+6\. Direct extraction
+---------------------
 
-At the present time, FOLIO modules do not generally offer a performant
-method of extracting a large number of records.  For this reason, a
-workaround referred to as "direct extraction" has been implemented in
-the LDP software that allows some data to be extracted directly from a
-module's internal database, bypassing the module API.  Direct
-extraction is currently supported for holdings, instances, and items.
-It can be enabled by adding database connection parameters to a data
+LDP extracts most data via module APIs; but in some cases it is
+necessary to extract directly from a module's internal database, such
+as when the data are too large for the API to process.  In LDP this is
+referred to as _direct extraction_ and is currently supported for the
+following tables:
+
+* `inventory_holdings`
+* `inventory_instances`
+* `inventory_items`
+
+This can be enabled by adding database connection parameters to a
 source configuration, for example:
 
 ```
@@ -389,7 +430,7 @@ source configuration, for example:
 
     ( . . . )
 
-    "dataSources": {
+    "sources": {
         "okapi": {
 
             ( . . . )
@@ -409,31 +450,32 @@ source configuration, for example:
 }
 ```
 
-Note that this requires the client host to be able to connect to the
-database, which may be protected by a firewall.
+Note that direct extraction requires network access to the database,
+which may be protected by a firewall.
 
 
-9\. Server mode
----------------
+<!--
+7\. Updating data from files (testing only)
+-------------------------------------------
 
-LDP 0.7 provides a new "server mode" which does not require Cron for
-scheduling data updates.  To test this mode, start `ldp` as a
-background process with `nohup`, and use the `server` command in place
-of the `update` command, e.g.:
+For testing purposes, source data can be loaded directly from the file
+system using the `update` command with options `--unsafe` and
+`--sourcedir`, e.g.:
 
 ```shell
-$ nohup ldp server -D /usr/local/ldp/data &
+$ ldp update -D /usr/local/ldp/data --unsafe --sourcedir ldp-analytics/testdata/
 ```
 
-Data updates can be scheduled by setting `next_full_update` in table
-`ldpconfig.general`.  For example:
+The `update` command cannot be used while the server is running, and
+it will wait until the server is stopped before continuing.
 
-```sql
-UPDATE ldpconfig.general
-    SET next_full_update = '2020-05-07 22:00:00Z';
-```
-
-Also ensure that `full_update_enabled` is set to `TRUE`.
+The source data are expected to have particular names, e.g.
+`loans_0.json`.  In addition, an optional, accompanying file can be
+included having the suffix, `_test.json`, e.g. `loans_test.json`.
+Data in these "test" files are loaded into the same table as the files
+they accompany.  This is used for testing in query development to
+combine extracted test data with additional static test data.
+-->
 
 
 <!--
