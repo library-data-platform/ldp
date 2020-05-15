@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: install dependency packages
-      run: sudo apt install -y cmake g++ libcurl4-openssl-dev libpq-dev postgresql-server-dev-all rapidjson-dev libsqlite3-dev
+      run: sudo apt install -y cmake gcc-8 g++ libcurl4-openssl-dev libpq-dev postgresql-server-dev-all rapidjson-dev libsqlite3-dev
     - name: configure
       run: cmake .
     - name: make
