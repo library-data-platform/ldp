@@ -321,7 +321,7 @@ void fillOptions(const Config& config, Options* opt)
         config.getRequired(source + "okapiTenant", &(opt->okapiTenant));
         config.getRequired(source + "okapiUser", &(opt->okapiUser));
         config.getRequired(source + "okapiPassword", &(opt->okapiPassword));
-        config.getRequired(source + "extractDir", &(opt->extractDir));
+        //config.getRequired(source + "extractDir", &(opt->extractDir));
         fillDirectOptions(config, source, opt);
     }
 }

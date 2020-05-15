@@ -1,4 +1,7 @@
+#include <cstdint>
 #include <curl/curl.h>
+#include <filesystem>
+#include <iostream>
 #include <stdexcept>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -14,14 +17,20 @@
 
 void makeTmpDir(const Options& opt, string* loaddir)
 {
-    *loaddir = opt.extractDir;
-    string filename = "tmp_ldp_" + to_string(time(nullptr));
-    etymon::join(loaddir, filename);
-    //if (opt.logLevel == Level::trace)
-    //    fprintf(opt.err, "%s: Creating directory: %s\n",
-    //            opt.prog, loaddir->c_str());
-    mkdir(loaddir->c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP |
-            S_IROTH | S_IXOTH);
+    filesystem::path datadir = opt.datadir;
+    filesystem::path tmp = datadir / "tmp";
+    filesystem::path tmppath = tmp / ("update_" + to_string(time(nullptr)));
+    filesystem::create_directories(tmppath);
+    *loaddir = tmppath;
+
+    //*loaddir = opt.datadir;
+    //etymon::join(loaddir, "tmp");
+    //mkdir(loaddir->c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP |
+    //        S_IROTH | S_IXOTH);
+    //string filename = "tmp_ldp_" + to_string(time(nullptr));
+    //etymon::join(loaddir, filename);
+    //mkdir(loaddir->c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP |
+    //        S_IROTH | S_IXOTH);
 }
 
 bool isForeignKey(etymon::OdbcDbc* dbc, Log* log, const TableSchema& table2,

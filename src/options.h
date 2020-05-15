@@ -30,7 +30,7 @@ public:
     string okapiTenant;
     string okapiUser;
     string okapiPassword;
-    string extractDir;
+    //string extractDir;
     DirectExtraction direct;
     string db;
     // Temporary
