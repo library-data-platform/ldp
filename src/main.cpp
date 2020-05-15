@@ -311,7 +311,7 @@ void fillDirectOptions(const Config& config, const string& base, Options* opt)
 void fillOptions(const Config& config, Options* opt)
 {
     string target = "/ldpDatabase/";
-    config.getRequired(target + "odbcDatabaseName", &(opt->db));
+    config.getRequired(target + "odbcDatabase", &(opt->db));
     config.get(target + "ldpUser", &(opt->ldpUser));
 
     if (opt->loadFromDir == "") {
@@ -348,7 +348,7 @@ void run(const etymon::CommandArgs& cargs)
     }
 
     //Config config(opt.config);
-    Config config(opt.datadir + "/ldp.conf");
+    Config config(opt.datadir + "/ldpconf.json");
     fillOptions(config, &opt);
 
     //if (opt.logLevel == Level::trace)
