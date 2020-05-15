@@ -1,4 +1,5 @@
 #include <sqlite3.h>
+#include <sstream>
 #include <stdexcept>
 
 #include "../etymoncpp/include/util.h"
@@ -128,7 +129,12 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
             dbc->getData(&stmt, 1, &sk);
             dbc->getData(&stmt, 2, &id);
             etymon::toLower(&id);
-            int64_t skl = stol(sk);
+            //int64_t skl = stol(sk);
+            int64_t skl;
+            {
+                stringstream stream(sk);
+                stream >> skl;
+            }
             if (skl >= nextvalSK)
                 nextvalSK = skl + 1;
             //printf("(%s, %s)\n", sk.c_str(), id.c_str());

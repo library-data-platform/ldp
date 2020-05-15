@@ -1,3 +1,4 @@
+#include <sstream>
 #include <stdexcept>
 
 #include "dbtype.h"
@@ -39,7 +40,11 @@ bool selectSchemaVersion(DBContext* db, int64_t* version)
         //db->log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
-    *version = stol(ldpSchemaVersion);
+    //*version = stol(ldpSchemaVersion);
+    {
+        stringstream stream(ldpSchemaVersion);
+        stream >> *version;
+    }
     return true;
 }
 
