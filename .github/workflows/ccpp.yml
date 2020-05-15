@@ -5,14 +5,12 @@ on: [push]
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     
     steps:
     - uses: actions/checkout@v1
     - name: install dependency packages
-      run: sudo apt install -y cmake g++-8 libcurl4-openssl-dev libpq-dev postgresql-server-dev-all rapidjson-dev libsqlite3-dev
-      run: sudo ln -fs /usr/bin/gcc-8 /usr/bin/gcc
-      run: sudo ln -fs /usr/bin/g++-8 /usr/bin/g++
+      run: sudo apt install -y cmake g++ libcurl4-openssl-dev libpq-dev postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev libsqlite3-dev
     - name: configure
       run: cmake .
     - name: make
