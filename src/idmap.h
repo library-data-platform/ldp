@@ -14,16 +14,18 @@ using namespace std;
 class IDMap {
 public:
     IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
-            const string& tempPath, ExtractionFiles* tempFiles);
+            const string& tempPath, const string& datadir);
     ~IDMap();
     void makeSK(const string& table, const char* id, string* sk);
     void syncCommit();
 private:
+    void createCache(const string& cacheFile);
     etymon::OdbcDbc* dbc;
     DBType* dbt;
     etymon::OdbcTx* tx;
     Log* log;
-    etymon::Sqlite3* sqlite;
+    string cacheLock;
+    etymon::Sqlite3* cacheDB;
     int64_t nextvalSK;
 };
 

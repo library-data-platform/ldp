@@ -1,3 +1,7 @@
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <sqlite3.h>
 #include <sstream>
 #include <stdexcept>
@@ -59,40 +63,28 @@ static int selectAllNew(void *data, int argc, char **argv, char **azColName){
     return 0;
 }
 
-IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
-        const string& tempPath, ExtractionFiles* tempFiles)
+void IDMap::createCache(const string& cacheFile)
 {
-    nextvalSK = 1;
-    dbc = new etymon::OdbcDbc(odbc, databaseDSN);
-    dbt = new DBType(dbc);
-    this->log = log;
-    tx = new etymon::OdbcTx(dbc);
-
-    // Cache data on local file system.
-    string cacheFile = tempPath;
-    etymon::join(&cacheFile, "idmap_cache");
-    //printf("[%s]\n", cacheFile.c_str());
-    tempFiles->files.push_back(cacheFile);
-    sqlite = new etymon::Sqlite3(cacheFile);
+    etymon::Sqlite3 sqlite(cacheFile.c_str());
 
     char *zErrMsg = 0;
     int rc;
     string sql;
 
     sql = "PRAGMA journal_mode = OFF;";
-    rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+    rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
     }
     sql = "PRAGMA synchronous = OFF;";
-    rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+    rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
     }
     sql = "PRAGMA locking_mode = EXCLUSIVE;";
-    rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+    rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
@@ -105,14 +97,14 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
         "    new INTEGER NOT NULL,\n"
         "    PRIMARY KEY (id)\n"
         ");";
-    rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+    rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
     }
 
     sql = "BEGIN;";
-    rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+    rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
@@ -141,17 +133,16 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
             sql =
                 "INSERT INTO idmap_cache (id, sk, new)\n"
                 "    VALUES ('" + id + "', " + sk + ", 0);";
-            rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+            rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
             if( rc != SQLITE_OK ){
                 fprintf(stderr, "SQL error: %s\n", zErrMsg);
                 sqlite3_free(zErrMsg);
             }
         }
-        //printf("Cached\n");
     }
 
     sql = "COMMIT;";
-    rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+    rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
     if( rc != SQLITE_OK ){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
@@ -159,12 +150,43 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
 
 }
 
+IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
+        const string& tempPath, const string& datadir)
+{
+    nextvalSK = 1;
+    dbc = new etymon::OdbcDbc(odbc, databaseDSN);
+    dbt = new DBType(dbc);
+    this->log = log;
+    tx = new etymon::OdbcTx(dbc);
+
+    filesystem::path dd = datadir;
+    filesystem::path cachedir = dd / "cache";
+    filesystem::create_directories(cachedir);
+    filesystem::path cachedb = cachedir / "idmap.db";
+    filesystem::path cachelock = cachedir / "idmap.lock";
+    if (filesystem::exists(cachedb)) {
+        if (filesystem::exists(cachelock)) {
+            filesystem::remove(cachedb);
+            { ofstream output(cachelock); }
+            createCache(cachedb);
+        } else {
+            { ofstream output(cachelock); }
+        }
+    } else {
+        { ofstream output(cachelock); }
+        createCache(cachedb);
+    }
+    cacheLock = cachelock;
+    cacheDB = new etymon::Sqlite3(string(cachedb));
+}
+
 IDMap::~IDMap()
 {
     delete tx;
     delete dbt;
     delete dbc;
-    delete sqlite;
+    delete cacheDB;
+    filesystem::remove(cacheLock);
 }
 
 void IDMap::makeSK(const string& table, const char* id, string* sk)
@@ -177,7 +199,7 @@ void IDMap::makeSK(const string& table, const char* id, string* sk)
     log->logDetail(sql);
     char *zErrMsg = 0;
     *sk = "";
-    int rc = sqlite3_exec(sqlite->db, sql.c_str(), lookupSK, (void*) sk,
+    int rc = sqlite3_exec(cacheDB->db, sql.c_str(), lookupSK, (void*) sk,
             &zErrMsg);
     if( rc != SQLITE_OK ) {
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
@@ -196,7 +218,7 @@ void IDMap::makeSK(const string& table, const char* id, string* sk)
     sql =
         "INSERT INTO idmap_cache (id, sk, new)\n"
         "    VALUES ('" + string(id) + "', " + *sk + ", 1);";
-    rc = sqlite3_exec(sqlite->db, sql.c_str(), callback, 0, &zErrMsg);
+    rc = sqlite3_exec(cacheDB->db, sql.c_str(), callback, 0, &zErrMsg);
     if (rc != SQLITE_OK){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         //throw runtime_error("Unable to map ID: " + string(id));
@@ -211,13 +233,22 @@ void IDMap::syncCommit()
     log->logDetail(sql);
     char *zErrMsg = 0;
     SyncData syncData(dbc, log);
-    int rc = sqlite3_exec(sqlite->db, sql.c_str(), selectAllNew,
+    int rc = sqlite3_exec(cacheDB->db, sql.c_str(), selectAllNew,
             (void*) &syncData, &zErrMsg);
     if( rc != SQLITE_OK ) {
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
     }
-    syncData.sync();
+    syncData.sync();  // Sync any remaining data.
+
+    sql = "UPDATE idmap_cache SET new = 0;";
+    rc = sqlite3_exec(cacheDB->db, sql.c_str(), callback, 0, &zErrMsg);
+    if (rc != SQLITE_OK){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        //throw runtime_error("Unable to map ID: " + string(id));
+        sqlite3_free(zErrMsg);
+    }
+
     tx->commit();
 }
 

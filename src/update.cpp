@@ -235,7 +235,7 @@ void runUpdate(const Options& opt)
     }
 
     Timer idmapTimer1(opt);
-    IDMap idmap(&odbc, opt.db, &log, loadDir, &extractionDir);
+    IDMap idmap(&odbc, opt.db, &log, loadDir, opt.datadir);
     log.log(Level::debug, "update", "", "Synchronized cache",
             idmapTimer1.elapsedTime());
 

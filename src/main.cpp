@@ -325,7 +325,6 @@ void fillOptions(const Config& config, Options* opt)
                     "configuration:\n"
                     "    Attribute: enableSources\n"
                     "    Value: " + secondSource);
-        printf("Enabled data source: [%s]\n", enableSource.c_str());
         string source = "/sources/" + enableSource + "/";
         config.getRequired(source + "okapiURL", &(opt->okapiURL));
         config.getRequired(source + "okapiTenant", &(opt->okapiTenant));
