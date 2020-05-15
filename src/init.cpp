@@ -77,12 +77,10 @@ void initSchema(DBContext* db, const string& ldpUser,
 
     // Schema: ldpsystem
 
-    string sql = "CREATE SCHEMA ldpsystem;";
-    //db->log->log(Level::detail, "", "", sql, -1);
-    db->dbc->execDirect(nullptr, sql);
+    //string sql = "CREATE SCHEMA ldpsystem;";
+    //db->dbc->execDirect(nullptr, sql);
 
-    sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpUser + ";";
-    //db->log->logDetail(sql);
+    string sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpUser + ";";
     db->dbc->execDirect(nullptr, sql);
 
     sql =

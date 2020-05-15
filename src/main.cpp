@@ -253,13 +253,14 @@ void runServer(const Options& opt)
     Log log(&logConn, opt.logLevel, opt.prog);
 
     etymon::OdbcDbc lockConn(&odbc, opt.db);
-    string sql = "CREATE TABLE IF NOT EXISTS ldpsystem.server_lock ();";
+    string sql = "CREATE SCHEMA IF NOT EXISTS ldpsystem;";
+    log.logDetail(sql);
+    lockConn.execDirect(nullptr, sql);
+    sql = "CREATE TABLE IF NOT EXISTS ldpsystem.server_lock ();";
     log.logDetail(sql);
     lockConn.execDirect(nullptr, sql);
 
     {
-        log.log(Level::trace, "", "", "Acquiring server lock", -1);
-
         etymon::OdbcTx tx(&lockConn);
         sql = "LOCK ldpsystem.server_lock;";
         log.logDetail(sql);
