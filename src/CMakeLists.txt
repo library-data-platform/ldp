@@ -1,8 +1,9 @@
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall")
 
-#IF(CMAKE_COMPILER_IS_GNUCXX)
-#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall")
-#ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+IF(CMAKE_COMPILER_IS_GNUCXX)
+    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall")
+    SET(STATIC_LIBRARY_FLAGS "-lstdc++fs")
+ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 OPTION(DEBUG
     "Build the project in debugging mode"
