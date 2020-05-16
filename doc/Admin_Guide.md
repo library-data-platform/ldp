@@ -2,7 +2,7 @@ LDP Administrator Guide
 =======================
 
 ##### Contents  
-1\. Architecture  
+1\. Overview  
 2\. System requirements  
 3\. Installation  
 4\. Database configuration  
@@ -10,8 +10,8 @@ LDP Administrator Guide
 6\. Direct extraction
 
 
-1\. Architecture
-----------------
+1\. Overview
+------------
 
 There are two components in an LDP deployment: the LDP server and a
 database server.  Together these constitute an _LDP instance_.
@@ -26,6 +26,9 @@ libraries of a consortium can be stored in a single LDP instance, and
 in that case we refer to each of the libraries as a tenant.  _This
 consortial feature is not fully implemented but is planned for the
 near future._
+
+This administrator guide covers installation and configuration of a
+single LDP instance.
 
 
 2\. System requirements
