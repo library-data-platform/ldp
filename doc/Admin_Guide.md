@@ -450,7 +450,7 @@ included: `inventory_holdings`, `inventory_instances`, and
     name.
   * `directDatabaseHost` (string; optional) is the FOLIO database host
     name.
-  * `directDatabasePort` (string; optional) is the FOLIO database
+  * `directDatabasePort` (integer; optional) is the FOLIO database
     port.
   * `directDatabaseUser` (string; optional) is the FOLIO database user
     name.

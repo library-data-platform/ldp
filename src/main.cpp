@@ -283,7 +283,9 @@ void fillDirectOptions(const Config& config, const string& base, Options* opt)
     }
     config.get(base + "directDatabaseName", &(opt->direct.databaseName));
     config.get(base + "directDatabaseHost", &(opt->direct.databaseHost));
-    config.get(base + "directDatabasePort", &(opt->direct.databasePort));
+    int port;
+    config.getInt(base + "directDatabasePort", &port);
+    opt->direct.databasePort = to_string(port);
     config.get(base + "directDatabaseUser", &(opt->direct.databaseUser));
     config.get(base + "directDatabasePassword",
             &(opt->direct.databasePassword));
@@ -335,6 +337,15 @@ void fillOptions(const Config& config, Options* opt)
         //config.getRequired(source + "extractDir", &(opt->extractDir));
         fillDirectOptions(config, source, opt);
     }
+
+    //string disableAnonymization;
+    bool disableAnonymization;
+    config.getBool("/disableAnonymization", &disableAnonymization);
+    //if (disableAnonymization != "") {
+    //    etymon::toLower(&disableAnonymization);
+    //    opt->disableAnonymization = (disableAnonymization == "true");
+    //}
+    opt->disableAnonymization = disableAnonymization;
 }
 
 void run(const etymon::CommandArgs& cargs)

@@ -30,7 +30,42 @@ Config::Config(const string& config)
 bool Config::get(const string& key, string* value) const
 {
     if (const json::Value* v = json::Pointer(key.c_str()).Get(jsondoc)) {
+        if (v->IsString() == false)
+            throw runtime_error(
+                    "Unexpected data type in configuration setting:\n"
+                    "    Key: " + key + "\n"
+                    "    Expected type: string");
         *value = v->GetString();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool Config::getBool(const string& key, bool* value) const
+{
+    if (const json::Value* v = json::Pointer(key.c_str()).Get(jsondoc)) {
+        if (v->IsBool() == false)
+            throw runtime_error(
+                    "Unexpected data type in configuration setting:\n"
+                    "    Key: " + key + "\n"
+                    "    Expected type: Boolean");
+        *value = v->GetBool();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool Config::getInt(const string& key, int* value) const
+{
+    if (const json::Value* v = json::Pointer(key.c_str()).Get(jsondoc)) {
+        if (v->IsInt() == false)
+            throw runtime_error(
+                    "Unexpected data type in configuration setting:\n"
+                    "    Key: " + key + "\n"
+                    "    Expected type: integer");
+        *value = v->GetInt();
         return true;
     } else {
         return false;

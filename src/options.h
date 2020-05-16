@@ -53,7 +53,7 @@ public:
     //DBType dbtype;
     bool unsafe = false;
     //bool nossl = false;
-    //string disableAnonymization;
+    bool disableAnonymization;
     bool savetemps = false;
     FILE* err = stderr;
     bool verbose = false;  // Deprecated.

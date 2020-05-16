@@ -239,9 +239,30 @@ void runUpdate(const Options& opt)
     log.log(Level::debug, "update", "", "Synchronized cache",
             idmapTimer1.elapsedTime());
 
+    string ldpconfigDisableAnonymization;
+    {
+        etymon::OdbcDbc dbc(&odbc, opt.db);
+        string sql = "SELECT disable_anonymization FROM ldpconfig.general;";
+        log.logDetail(sql);
+        {
+            etymon::OdbcStmt stmt(&dbc);
+            dbc.execDirect(&stmt, sql);
+            dbc.fetch(&stmt);
+            dbc.getData(&stmt, 1, &ldpconfigDisableAnonymization);
+        }
+    }
+
     for (auto& table : schema.tables) {
 
-        if (table.anonymize)
+        bool anonymizeTable = ( table.anonymize &&
+                (!opt.disableAnonymization ||
+                 ldpconfigDisableAnonymization != "1") );
+
+        //printf("anonymize=%d\tfile_disable=%d\tdb_disable=%s\tA=%d\n",
+        //        table.anonymize, opt.disableAnonymization,
+        //        ldpconfigDisableAnonymization.c_str(), anonymizeTable);
+
+        if (anonymizeTable)
             continue;
 
         log.log(Level::trace, "", "",
