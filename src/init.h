@@ -6,7 +6,7 @@
 #include "dbcontext.h"
 
 void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
-        const string& ldpUser);
+        const string& ldpUser, const string& ldpconfigUser);
 
 #endif
 
