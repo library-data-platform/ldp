@@ -239,9 +239,12 @@ and carefully.
 * `ldpconfig` is a special user account for changing configuration
   settings in the `ldpconfig` schema.  It is intended to enable
 designated users to make changes safely to the server operation such
-as scheduling when data updates occur.
+as scheduling when data updates occur.  This user name can be modified
+using the `ldpconfigUser` configuration setting in `ldpconf.json`.
 
-* `ldp` is a general user of the LDP database.
+* `ldp` is a general user of the LDP database.  This user name can be
+  modified using the `ldpUser` configuration setting in
+`ldpconf.json`.
 
 In addition to creating these users, it is a good idea to restrict
 access permissions.  In PostgreSQL, this can be done on the command
@@ -362,6 +365,12 @@ The following configuration settings are supported:
 
   * `odbcDatabase` (required) is the ODBC "data source name" of the
     LDP database.
+
+  * `ldpconfigUser` (optional) is the database user that is defined by
+    default as `ldpconfig`.
+
+  * `ldpUser` (optional) is the database user that is defined by
+    default as `ldp`.
 
 * `enableSources` (required) is an array of sources that are enabled
   for the LDP to extract data from.  The source names refer to a

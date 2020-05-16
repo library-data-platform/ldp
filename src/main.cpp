@@ -313,6 +313,7 @@ void fillOptions(const Config& config, Options* opt)
 {
     string target = "/ldpDatabase/";
     config.getRequired(target + "odbcDatabase", &(opt->db));
+    config.get(target + "ldpconfigUser", &(opt->ldpconfigUser));
     config.get(target + "ldpUser", &(opt->ldpUser));
 
     if (opt->loadFromDir == "") {
