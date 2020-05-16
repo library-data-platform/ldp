@@ -2,7 +2,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall")
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall")
-    SET(STATIC_LIBRARY_FLAGS "-lstdc++fs")
+    set(FSLIB "-lstdc++fs")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 OPTION(DEBUG
@@ -64,6 +64,7 @@ target_link_libraries(ldp
     ${ODBC_LIBRARY}
     ${PostgreSQL_LIBRARY}
     ${SQLite3_LIBRARY}
+    ${FSLIB}
 )
 
 INSTALL(PROGRAMS ldp DESTINATION /usr/local/bin)
