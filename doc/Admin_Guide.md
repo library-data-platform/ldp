@@ -2,7 +2,7 @@ LDP Administrator Guide
 =======================
 
 ##### Contents  
-1\. Architecture  
+1\. Overview  
 2\. System requirements  
 3\. Installation  
 4\. Database configuration  
@@ -10,41 +10,23 @@ LDP Administrator Guide
 6\. Direct extraction
 
 
-1\. Architecture
-----------------
+1\. Overview
+------------
 
-### LDP instances
-
-There are two components in an LDP deployment: the LDP server and a
-database server.  Together these constitute an _LDP instance_.
-
+An _LDP instance_ is composed of a running LDP server and a database.
 The LDP server updates data in the database from data sources such as
 FOLIO modules, and users connect directly to the database to perform
 reporting and analytics.
 
-### Multitenancy
+LDP is not multitenant in the general sense, and normally one LDP
+instance is deployed per library.  However, shared data from multiple
+libraries of a consortium can be stored in a single LDP instance, and
+in that case we refer to each of the libraries as a tenant.  _This
+consortial feature is not fully implemented but is planned for the
+near future._
 
-Two kinds of multitenant configuration are relevant to LDP:
-
-* _General multitenancy_ is typically used for a hosting service that
-  sets up LDP instances for multiple tenants.  In this case, one LDP
-instance should be created per tenant.
-
-* _Consortial multitenancy_ is used for a consortium that would like
-  to combine data shared by its members to support pan-consortial
-analytics.  In this case, the members of the consortium share a single
-LDP instance.  _This feature is not yet fully implemented in LDP but
-is planned for the near future._
-
-These configurations can be combined if a hosting service has a
-consortium as one of its tenants.  It would use general multitenancy
-overall, but would also configure consortial multitenancy in the LDP
-instance provided for the consortium.
-
-In the context of LDP, a _tenant_ implies consortial multitenancy, for
-example the `tenant_id` attribute included in most tables.  LDP is
-generally unaware of general multitenancy because that occurs outside
-of a single instance.
+This administrator guide covers installation and configuration of an
+LDP instance.
 
 
 2\. System requirements
@@ -96,11 +78,6 @@ also can be increased as needed.
 
 ### Releases and branches
 
-Note: All releases earlier than LDP 1.0 are for testing purposes and
-are not intended for production use.  Releases earlier than LDP 1.0
-also do not support database migration, so that it may be necessary to
-create a new database when upgrading to a new release.
-
 LDP releases use version numbers in the form, _a_._b_._c_, where
 _a_._b_ is the release number and _c_ indicates a bug fix version.
 For example, suppose that LDP 1.3 has been released.  The first
@@ -124,11 +101,8 @@ there are two main branches:
 
 Beginning with LDP 1.0, a numbered branch will be created for each
 release; for example, `1.2-release` would point to the latest version
-of LDP 1.2, e.g. `1.2.5`.
-
-The `-release` branches are the most stable versions, and `current` is
-the least stable; `master` is somewhere in between in terms of
-stability.
+of LDP 1.2, e.g. 1.2.5.  The `-release` branches are the most stable
+in the source repository.
 
 ### Before installation
 
@@ -232,16 +206,14 @@ settings are suggested as a starting point:
 
 Three database users are required:
 
-* `ldpadmin` is the LDP administrator which owns all database objects
-  created by the LDP software.  This account should be used sparingly
-and carefully.
-
+* `ldpadmin` owns all database objects created by the LDP software.
+  This account should be used very sparingly and carefully.
 * `ldpconfig` is a special user account for changing configuration
   settings in the `ldpconfig` schema.  It is intended to enable
-designated users to make changes safely to the server operation such
-as scheduling when data updates occur.  This user name can be modified
-using the `ldpconfigUser` configuration setting in `ldpconf.json`.
-
+designated users to make changes safely to the server's operation,
+such as scheduling when data updates occur.  This user name can be
+modified using the `ldpconfigUser` configuration setting in
+`ldpconf.json`.
 * `ldp` is a general user of the LDP database.  This user name can be
   modified using the `ldpUser` configuration setting in
 `ldpconf.json`.
@@ -277,20 +249,13 @@ GRANT ALL ON SCHEMA public TO ldpadmin;
 GRANT USAGE ON SCHEMA public TO ldp;
 ```
 
-Assuming this preliminary set up has been completed, the LDP software
-will automatically initialize the schema in an empty database, or
-upgrade the schema in a database previously initialized with an
-earlier version of LDP.
-
 ### Configuring ODBC
 
-The LDP software uses unixODBC to connect to the LDP database.  To
-configure ODBC, install the ODBC driver for the database system being
-used (PostgreSQL or Redshift), and create the files
-`$HOME/.odbcinst.ini` and `$HOME/.odbc.ini` as described in this
-[guide](http://www.unixodbc.org/odbcinst.html).
-
-The provided example files
+The LDP software uses [unixODBC](http://www.unixodbc.org/) to connect
+to the LDP database.  To configure ODBC, install the ODBC driver for
+the database system being used (PostgreSQL or Redshift), and create
+the files `$HOME/.odbcinst.ini` and `$HOME/.odbc.ini`.  The provided
+example files
 [odbcinst.ini](https://raw.githubusercontent.com/folio-org/ldp/master/examples/odbcinst.ini)
 and
 [odbc.ini](https://raw.githubusercontent.com/folio-org/ldp/master/examples/odbc.ini)
@@ -362,33 +327,24 @@ __ldpconf.json__
 The following configuration settings are supported:
 
 * `ldpDatabase` (required) is a group of database-related settings.
-
   * `odbcDatabase` (required) is the ODBC "data source name" of the
     LDP database.
-
   * `ldpconfigUser` (optional) is the database user that is defined by
     default as `ldpconfig`.
-
   * `ldpUser` (optional) is the database user that is defined by
     default as `ldp`.
-
 * `enableSources` (required) is an array of sources that are enabled
   for the LDP to extract data from.  The source names refer to a
 subset of those defined under `sources` (see below).  Only one source
 should be provided in the case of non-consortial deployments.
-
 * `sources` (required) is a collection of sources that LDP can extract
   data from.  Only one source should be provided in the case of
 non-consortial deployments.  A source is defined by a source name and
 an associated object containing several settings:
-
   * `okapiURL` (required) is the URL for the Okapi instance to extract
     data from.
-
   * `okapiTenant` (required) is the Okapi tenant.
-
   * `okapiUser` (required) is the Okapi user name.
-
   * `okapiPassword` (required) is the password for the specified Okapi
     user name.
 
