@@ -31,6 +31,7 @@ void Schema::MakeDefaultSchema(Schema* schema)
     TableSchema table;
 
     table.sourceType = SourceType::rmb;
+    table.anonymize = false;
 
     ///////////////////////////////////////////////////////////////////////////
     table.moduleName = "mod-circulation-storage";
@@ -529,7 +530,9 @@ void Schema::MakeDefaultSchema(Schema* schema)
 
     table.sourcePath = "/users";
     table.tableName = "user_users";
+    table.anonymize = true;
     schema->tables.push_back(table);
+    table.anonymize = false;
 }
 
 void ColumnSchema::columnTypeToString(ColumnType type, string* str)

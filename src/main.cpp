@@ -250,7 +250,7 @@ void runServer(const Options& opt)
     //runPreloadTests(opt, odbc);
 
     etymon::OdbcDbc logConn(&odbc, opt.db);
-    Log log(&logConn, opt.logLevel, opt.prog);
+    Log log(&logConn, opt.logLevel, opt.console, opt.prog);
 
     etymon::OdbcDbc lockConn(&odbc, opt.db);
     string sql = "CREATE SCHEMA IF NOT EXISTS ldpsystem;";
@@ -283,7 +283,9 @@ void fillDirectOptions(const Config& config, const string& base, Options* opt)
     }
     config.get(base + "directDatabaseName", &(opt->direct.databaseName));
     config.get(base + "directDatabaseHost", &(opt->direct.databaseHost));
-    config.get(base + "directDatabasePort", &(opt->direct.databasePort));
+    int port;
+    config.getInt(base + "directDatabasePort", &port);
+    opt->direct.databasePort = to_string(port);
     config.get(base + "directDatabaseUser", &(opt->direct.databaseUser));
     config.get(base + "directDatabasePassword",
             &(opt->direct.databasePassword));
@@ -335,6 +337,15 @@ void fillOptions(const Config& config, Options* opt)
         //config.getRequired(source + "extractDir", &(opt->extractDir));
         fillDirectOptions(config, source, opt);
     }
+
+    //string disableAnonymization;
+    bool disableAnonymization;
+    config.getBool("/disableAnonymization", &disableAnonymization);
+    //if (disableAnonymization != "") {
+    //    etymon::toLower(&disableAnonymization);
+    //    opt->disableAnonymization = (disableAnonymization == "true");
+    //}
+    opt->disableAnonymization = disableAnonymization;
 }
 
 void run(const etymon::CommandArgs& cargs)

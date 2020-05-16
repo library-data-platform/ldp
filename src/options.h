@@ -53,12 +53,13 @@ public:
     //DBType dbtype;
     bool unsafe = false;
     //bool nossl = false;
-    //string disableAnonymization;
+    bool disableAnonymization;
     bool savetemps = false;
     FILE* err = stderr;
     bool verbose = false;  // Deprecated.
     bool debug = false;  // Deprecated.
     Level logLevel = Level::debug;
+    bool console = false;
     //bool version = false;
     size_t pageSize = 1000;
     //string config;

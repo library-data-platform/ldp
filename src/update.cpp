@@ -185,7 +185,7 @@ void runUpdate(const Options& opt)
     etymon::OdbcEnv odbc;
 
     etymon::OdbcDbc logDbc(&odbc, opt.db);
-    Log log(&logDbc, opt.logLevel, opt.prog);
+    Log log(&logDbc, opt.logLevel, opt.console, opt.prog);
 
     log.log(Level::debug, "server", "", "Starting full update", -1);
     Timer fullUpdateTimer(opt);
@@ -239,7 +239,31 @@ void runUpdate(const Options& opt)
     log.log(Level::debug, "update", "", "Synchronized cache",
             idmapTimer1.elapsedTime());
 
+    string ldpconfigDisableAnonymization;
+    {
+        etymon::OdbcDbc dbc(&odbc, opt.db);
+        string sql = "SELECT disable_anonymization FROM ldpconfig.general;";
+        log.logDetail(sql);
+        {
+            etymon::OdbcStmt stmt(&dbc);
+            dbc.execDirect(&stmt, sql);
+            dbc.fetch(&stmt);
+            dbc.getData(&stmt, 1, &ldpconfigDisableAnonymization);
+        }
+    }
+
     for (auto& table : schema.tables) {
+
+        bool anonymizeTable = ( table.anonymize &&
+                (!opt.disableAnonymization ||
+                 ldpconfigDisableAnonymization != "1") );
+
+        //printf("anonymize=%d\tfile_disable=%d\tdb_disable=%s\tA=%d\n",
+        //        table.anonymize, opt.disableAnonymization,
+        //        ldpconfigDisableAnonymization.c_str(), anonymizeTable);
+
+        if (anonymizeTable)
+            continue;
 
         log.log(Level::trace, "", "",
                 "Updating table: " + table.tableName, -1);
@@ -291,6 +315,41 @@ void runUpdate(const Options& opt)
         }
 
         //vacuumAnalyzeTable(opt, table, &dbc);
+
+        string sql = 
+            "SELECT COUNT(*) FROM\n"
+            "    " + table.tableName + ";";
+        log.logDetail(sql);
+        string rowCount;
+        {
+            etymon::OdbcStmt stmt(&dbc);
+            dbc.execDirect(&stmt, sql);
+            dbc.fetch(&stmt);
+            dbc.getData(&stmt, 1, &rowCount);
+        }
+        sql = 
+            "SELECT COUNT(*) FROM\n"
+            "    history." + table.tableName + ";";
+        log.logDetail(sql);
+        string historyRowCount;
+        {
+            etymon::OdbcStmt stmt(&dbc);
+            dbc.execDirect(&stmt, sql);
+            dbc.fetch(&stmt);
+            dbc.getData(&stmt, 1, &historyRowCount);
+        }
+        sql =
+            "UPDATE ldpsystem.tables\n"
+            "    SET updated = " + string(dbt.currentTimestamp()) + ",\n"
+            "        row_count = " + rowCount + ",\n"
+            "        history_row_count = " + historyRowCount + ",\n"
+            "        documentation = '" + table.sourcePath + " in "
+            + table.moduleName + "',\n"
+            "        documentation_url = 'https://dev.folio.org/reference/api/#"
+            + table.moduleName + "'\n"
+            "    WHERE table_name = '" + table.tableName + "';";
+        log.logDetail(sql);
+        dbc.execDirect(nullptr, sql);
 
         log.log(Level::debug, "update", table.tableName,
                 "Updated table: " + table.tableName,
@@ -362,7 +421,7 @@ void runUpdateProcess(const Options& opt)
             s.pop_back();
         etymon::OdbcEnv odbc;
         etymon::OdbcDbc logDbc(&odbc, opt.db);
-        Log log(&logDbc, opt.logLevel, opt.prog);
+        Log log(&logDbc, opt.logLevel, opt.console, opt.prog);
         log.log(Level::error, "server", "", s, -1);
         exit(1);
     }
