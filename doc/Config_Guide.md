@@ -42,13 +42,10 @@ Reference
 * `full_update_enabled` (`BOOLEAN`) turns on daily full updates when
   set to `TRUE`.  No full updates are performed if it is set to
 `FALSE`.
-
 * `next_full_update` (`TIMESTAMP WITH TIME ZONE`) is the date and time
   of the next full update.  Once the full update begins, this value is
 automatically incremented to the next day at the same time.
-
 * `log_referential_analysis` (`BOOLEAN`) is reserved for future use.
-
 * `force_referential_constraints` (`BOOLEAN`) is reserved for future
   use.
 
