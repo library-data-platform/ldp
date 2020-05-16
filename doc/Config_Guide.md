@@ -39,16 +39,18 @@ Reference
 
 ### Table ldpconfig.general
 
-* `full_update_enabled` turns on daily full updates when set to
-  `TRUE`.  No full updates are performed if it is set to `FALSE`.
+* `full_update_enabled` (`BOOLEAN`) turns on daily full updates when
+  set to `TRUE`.  No full updates are performed if it is set to
+`FALSE`.
 
-* `next_full_update` is the date and time of the next full update.
-  Once the full update begins, this value is automatically incremented
-to the next day at the same time.
+* `next_full_update` (`TIMESTAMP WITH TIME ZONE`) is the date and time
+  of the next full update.  Once the full update begins, this value is
+automatically incremented to the next day at the same time.
 
-* `log_referential_analysis` is reserved for future use.
+* `log_referential_analysis` (`BOOLEAN`) is reserved for future use.
 
-* `force_referential_constraints` is reserved for future use.
+* `force_referential_constraints` (`BOOLEAN`) is reserved for future
+  use.
 
 
 Further reading
