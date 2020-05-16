@@ -98,7 +98,7 @@ void initSchema(DBContext* db, const string& ldpUser,
 
     sql =
         "CREATE TABLE ldpsystem.log (\n"
-        "    log_time TIMESTAMPTZ NOT NULL,\n"
+        "    log_time TIMESTAMP WITH TIME ZONE NOT NULL,\n"
         "    pid BIGINT NOT NULL,\n"
         "    level VARCHAR(7) NOT NULL DEFAULT '',\n"
         "    type VARCHAR(63) NOT NULL,\n"
@@ -127,7 +127,13 @@ void initSchema(DBContext* db, const string& ldpUser,
 
     sql =
         "CREATE TABLE ldpsystem.tables (\n"
-        "    table_name VARCHAR(63) NOT NULL\n"
+        "    table_name VARCHAR(63) NOT NULL,\n"
+        "    updated TIMESTAMP WITH TIME ZONE,\n"
+        "    row_count BIGINT,\n"
+        "    history BOOLEAN,\n"
+        "    history_row_count BIGINT,\n"
+        "    documentation VARCHAR(65535),\n"
+        "    documentation_url VARCHAR(65535)\n"
         ");";
     db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
@@ -265,7 +271,7 @@ void initSchema(DBContext* db, const string& ldpUser,
     sql =
         "CREATE TABLE ldpconfig.general (\n"
         "    full_update_enabled BOOLEAN NOT NULL,\n"
-        "    next_full_update TIMESTAMPTZ NOT NULL,\n"
+        "    next_full_update TIMESTAMP WITH TIME ZONE NOT NULL,\n"
         "    log_referential_analysis BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    force_referential_constraints BOOLEAN NOT NULL DEFAULT FALSE\n"
         ");";
@@ -313,7 +319,7 @@ void initSchema(DBContext* db, const string& ldpUser,
             "    sk BIGINT NOT NULL,\n"
             "    id VARCHAR(65535) NOT NULL,\n"
             "    data " + db->dbt->jsonType() + " NOT NULL,\n"
-            "    updated TIMESTAMPTZ NOT NULL,\n"
+            "    updated TIMESTAMP WITH TIME ZONE NOT NULL,\n"
             "    tenant_id SMALLINT NOT NULL,\n"
             "    CONSTRAINT\n"
             "        history_" + table.tableName + "_pkey\n"
@@ -503,7 +509,7 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
             "    sk BIGINT NOT NULL,\n"
             "    id VARCHAR(65535) NOT NULL,\n"
             "    data " + dbt.jsonType() + " NOT NULL,\n"
-            "    updated TIMESTAMPTZ NOT NULL,\n"
+            "    updated TIMESTAMP WITH TIME ZONE NOT NULL,\n"
             "    tenant_id SMALLINT NOT NULL,\n"
             "    CONSTRAINT\n"
             "        history_" + table[x] + "_pkey\n"
@@ -754,11 +760,6 @@ void schemaUpgrade5(SchemaUpgradeOptions* opt)
 
 void schemaUpgrade6(SchemaUpgradeOptions* opt)
 {
-    //DBType dbt(opt->dbc);
-
-    //string sql = "ALTER TABLE ldpsystem.idmap DROP CONSTRAINT idmap_pkey;";
-    //opt->dbc->execDirect(nullptr, sql);
-
     string sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + opt->ldpconfigUser +
         ";";
     opt->dbc->execDirect(nullptr, sql);
@@ -884,6 +885,39 @@ void schemaUpgrade6(SchemaUpgradeOptions* opt)
     opt->dbc->execDirect(nullptr, sql);
 }
 
+void schemaUpgrade7(SchemaUpgradeOptions* opt)
+{
+    string sql =
+        "ALTER TABLE ldpsystem.tables\n"
+        "    ADD COLUMN updated TIMESTAMP WITH TIME ZONE;";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql =
+        "ALTER TABLE ldpsystem.tables\n"
+        "    ADD COLUMN row_count BIGINT;";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql =
+        "ALTER TABLE ldpsystem.tables\n"
+        "    ADD COLUMN history BOOLEAN;";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql =
+        "ALTER TABLE ldpsystem.tables\n"
+        "    ADD COLUMN history_row_count BIGINT;";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql =
+        "ALTER TABLE ldpsystem.tables\n"
+        "    ADD COLUMN documentation VARCHAR(65535);";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql =
+        "ALTER TABLE ldpsystem.tables\n"
+        "    ADD COLUMN documentation_url VARCHAR(65535);";
+    opt->dbc->execDirect(nullptr, sql);
+}
+
 SchemaUpgrade schemaUpgrade[] = {
     nullptr,  // Version 0 has no migration.
     schemaUpgrade1,
@@ -891,7 +925,8 @@ SchemaUpgrade schemaUpgrade[] = {
     schemaUpgrade3,
     schemaUpgrade4,
     schemaUpgrade5,
-    schemaUpgrade6
+    schemaUpgrade6,
+    schemaUpgrade7
 };
 
 void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
@@ -953,7 +988,7 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
 void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
         const string& ldpUser, const string& ldpconfigUser)
 {
-    int64_t thisSchemaVersion = 6;
+    int64_t thisSchemaVersion = 7;
 
     //db->log->log(Level::trace, "", "", "Initializing database", -1);
 

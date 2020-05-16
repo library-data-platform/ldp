@@ -292,6 +292,42 @@ void runUpdate(const Options& opt)
 
         //vacuumAnalyzeTable(opt, table, &dbc);
 
+        string sql = 
+            "SELECT COUNT(*) FROM\n"
+            "    " + table.tableName + ";";
+        log.logDetail(sql);
+        string rowCount;
+        {
+            etymon::OdbcStmt stmt(&dbc);
+            dbc.execDirect(&stmt, sql);
+            dbc.fetch(&stmt);
+            dbc.getData(&stmt, 1, &rowCount);
+        }
+        sql = 
+            "SELECT COUNT(*) FROM\n"
+            "    history." + table.tableName + ";";
+        log.logDetail(sql);
+        string historyRowCount;
+        {
+            etymon::OdbcStmt stmt(&dbc);
+            dbc.execDirect(&stmt, sql);
+            dbc.fetch(&stmt);
+            dbc.getData(&stmt, 1, &historyRowCount);
+        }
+        sql =
+            "UPDATE ldpsystem.tables\n"
+            "    SET updated = " + string(dbt.currentTimestamp()) + ",\n"
+            "        row_count = " + rowCount + ",\n"
+            "        history = TRUE,\n"
+            "        history_row_count = " + historyRowCount + ",\n"
+            "        documentation = '" + table.sourcePath + " in "
+            + table.moduleName + "',\n"
+            "        documentation_url = 'https://dev.folio.org/reference/api/#"
+            + table.moduleName + "'\n"
+            "    WHERE table_name = '" + table.tableName + "';";
+        log.logDetail(sql);
+        dbc.execDirect(nullptr, sql);
+
         log.log(Level::debug, "update", table.tableName,
                 "Updated table: " + table.tableName,
                 updateTimer.elapsedTime());
