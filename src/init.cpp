@@ -69,7 +69,7 @@ void catalogAddTable(etymon::OdbcDbc* dbc, Log* log, const string& table)
  * \param[in] db Database context.
  */
 void initSchema(DBContext* db, const string& ldpUser,
-        int64_t thisSchemaVersion)
+        const string& ldpconfigUser, int64_t thisSchemaVersion)
 {
     // TODO This should probably be passed into the function as a parameter.
     Schema schema;
@@ -77,12 +77,12 @@ void initSchema(DBContext* db, const string& ldpUser,
 
     // Schema: ldpsystem
 
-    string sql = "CREATE SCHEMA ldpsystem;";
-    //db->log->log(Level::detail, "", "", sql, -1);
-    db->dbc->execDirect(nullptr, sql);
+    //string sql = "CREATE SCHEMA ldpsystem;";
+    //db->dbc->execDirect(nullptr, sql);
 
-    sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpUser + ";";
-    //db->log->logDetail(sql);
+    string sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpUser + ";";
+    db->dbc->execDirect(nullptr, sql);
+    sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpconfigUser + ";";
     db->dbc->execDirect(nullptr, sql);
 
     sql =
@@ -244,6 +244,10 @@ void initSchema(DBContext* db, const string& ldpUser,
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpUser + ";";
     db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpconfigUser +
+        ";";
+    db->log->logDetail(sql);
+    db->dbc->execDirect(nullptr, sql);
 
     // Schema: ldpconfig
 
@@ -252,6 +256,9 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldpUser + ";";
+    db->log->logDetail(sql);
+    db->dbc->execDirect(nullptr, sql);
+    sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldpconfigUser + ";";
     db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
@@ -278,12 +285,22 @@ void initSchema(DBContext* db, const string& ldpUser,
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpUser + ";";
     db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpconfigUser +
+        ";";
+    db->log->logDetail(sql);
+    db->dbc->execDirect(nullptr, sql);
+    sql = "GRANT UPDATE ON ldpconfig.general TO " + ldpconfigUser + ";";
+    db->log->logDetail(sql);
+    db->dbc->execDirect(nullptr, sql);
 
     sql = "CREATE SCHEMA history;";
     db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA history TO " + ldpUser + ";";
+    db->log->logDetail(sql);
+    db->dbc->execDirect(nullptr, sql);
+    sql = "GRANT USAGE ON SCHEMA history TO " + ldpconfigUser + ";";
     db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
@@ -314,6 +331,12 @@ void initSchema(DBContext* db, const string& ldpUser,
             "    TO " + ldpUser + ";";
         db->log->logDetail(sql);
         db->dbc->execDirect(nullptr, sql);
+        sql =
+            "GRANT SELECT ON\n"
+            "    history." + table.tableName + "\n"
+            "    TO " + ldpconfigUser + ";";
+        db->log->logDetail(sql);
+        db->dbc->execDirect(nullptr, sql);
     }
 
     sql = "CREATE SCHEMA local;";
@@ -323,6 +346,9 @@ void initSchema(DBContext* db, const string& ldpUser,
     sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + ldpUser + ";";
     db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
+    sql = "GRANT USAGE ON SCHEMA local TO " + ldpconfigUser + ";";
+    db->log->logDetail(sql);
+    db->dbc->execDirect(nullptr, sql);
 }
 
 class SchemaUpgradeOptions {
@@ -330,6 +356,7 @@ public:
     etymon::OdbcDbc* dbc;
     Log* log;
     string ldpUser;
+    string ldpconfigUser;
 };
 
 typedef void (*SchemaUpgrade)(SchemaUpgradeOptions* opt);
@@ -725,18 +752,151 @@ void schemaUpgrade5(SchemaUpgradeOptions* opt)
     opt->dbc->execDirect(nullptr, sql);
 }
 
+void schemaUpgrade6(SchemaUpgradeOptions* opt)
+{
+    //DBType dbt(opt->dbc);
+
+    //string sql = "ALTER TABLE ldpsystem.idmap DROP CONSTRAINT idmap_pkey;";
+    //opt->dbc->execDirect(nullptr, sql);
+
+    string sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + opt->ldpconfigUser +
+        ";";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " +
+        opt->ldpconfigUser + ";";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + opt->ldpconfigUser + ";";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " +
+        opt->ldpconfigUser + ";";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT UPDATE ON ldpconfig.general TO " + opt->ldpconfigUser + ";";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT USAGE ON SCHEMA history TO " + opt->ldpconfigUser + ";";
+    opt->dbc->execDirect(nullptr, sql);
+
+    const char *table[] = {
+        "circulation_cancellation_reasons",
+        "circulation_fixed_due_date_schedules",
+        "circulation_loan_policies",
+        "circulation_loans",
+        "circulation_loan_history",
+        "circulation_patron_action_sessions",
+        "circulation_patron_notice_policies",
+        "circulation_request_policies",
+        "circulation_requests",
+        "circulation_scheduled_notices",
+        "circulation_staff_slips",
+        "feesfines_accounts",
+        "feesfines_comments",
+        "feesfines_feefines",
+        "feesfines_feefineactions",
+        "feesfines_lost_item_fees_policies",
+        "feesfines_manualblocks",
+        "feesfines_overdue_fines_policies",
+        "feesfines_owners",
+        "feesfines_payments",
+        "feesfines_refunds",
+        "feesfines_transfer_criterias",
+        "feesfines_transfers",
+        "feesfines_waives",
+        "finance_budgets",
+        "finance_fiscal_years",
+        "finance_fund_types",
+        "finance_funds",
+        "finance_group_fund_fiscal_years",
+        "finance_groups",
+        "finance_ledgers",
+        "finance_transactions",
+        "inventory_alternative_title_types",
+        "inventory_call_number_types",
+        "inventory_classification_types",
+        "inventory_contributor_name_types",
+        "inventory_contributor_types",
+        "inventory_electronic_access_relationships",
+        "inventory_holdings_note_types",
+        "inventory_holdings",
+        "inventory_holdings_types",
+        "inventory_identifier_types",
+        "inventory_ill_policies",
+        "inventory_instance_formats",
+        "inventory_instance_note_types",
+        "inventory_instance_relationship_types",
+        "inventory_instance_statuses",
+        "inventory_instance_relationships",
+        "inventory_instances",
+        "inventory_instance_types",
+        "inventory_item_damaged_statuses",
+        "inventory_item_note_types",
+        "inventory_items",
+        "inventory_campuses",
+        "inventory_institutions",
+        "inventory_libraries",
+        "inventory_loan_types",
+        "inventory_locations",
+        "inventory_material_types",
+        "inventory_modes_of_issuance",
+        "inventory_nature_of_content_terms",
+        "inventory_service_points",
+        "inventory_service_points_users",
+        "inventory_statistical_code_types",
+        "inventory_statistical_codes",
+        "invoice_lines",
+        "invoice_invoices",
+        "invoice_voucher_lines",
+        "invoice_vouchers",
+        "acquisitions_memberships",
+        "acquisitions_units",
+        "po_alerts",
+        "po_order_invoice_relns",
+        "po_order_templates",
+        "po_pieces",
+        "po_lines",
+        "po_purchase_orders",
+        "po_receiving_history",
+        "po_reporting_codes",
+        "organization_addresses",
+        "organization_categories",
+        "organization_contacts",
+        "organization_emails",
+        "organization_interfaces",
+        "organization_organizations",
+        "organization_phone_numbers",
+        "organization_urls",
+        "user_groups",
+        "user_users",
+        nullptr
+    };
+    for (int x = 0; table[x] != nullptr; x++) {
+        string sql =
+            "GRANT SELECT ON\n"
+            "    history." + string(table[x]) + "\n"
+            "    TO " + opt->ldpconfigUser + ";";
+        opt->dbc->execDirect(nullptr, sql);
+    }
+
+    sql = "GRANT USAGE ON SCHEMA local TO " + opt->ldpconfigUser + ";";
+    opt->dbc->execDirect(nullptr, sql);
+}
+
 SchemaUpgrade schemaUpgrade[] = {
     nullptr,  // Version 0 has no migration.
     schemaUpgrade1,
     schemaUpgrade2,
     schemaUpgrade3,
     schemaUpgrade4,
-    schemaUpgrade5
+    schemaUpgrade5,
+    schemaUpgrade6
 };
 
 void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
-        const string& ldpUser, int64_t version, int64_t thisSchemaVersion,
-        Log* log)
+        const string& ldpUser, const string& ldpconfigUser, int64_t version,
+        int64_t thisSchemaVersion, Log* log)
 {
     // Do not using logging during schema upgrades.
 
@@ -755,6 +915,7 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
         opt.dbc = &dbc;
         opt.log = log;
         opt.ldpUser = ldpUser;
+        opt.ldpconfigUser = ldpconfigUser;
         schemaUpgrade[v](&opt);
         upgraded = true;
     }
@@ -790,9 +951,9 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
  * \param[in] db Database context.
  */
 void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
-        const string& ldpUser)
+        const string& ldpUser, const string& ldpconfigUser)
 {
-    int64_t thisSchemaVersion = 5;
+    int64_t thisSchemaVersion = 6;
 
     //db->log->log(Level::trace, "", "", "Initializing database", -1);
 
@@ -804,14 +965,15 @@ void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
 
     if (versionFound) {
         // Schema is present: check if it needs to be upgraded.
-        upgradeSchema(odbc, dsn, ldpUser, version, thisSchemaVersion, db->log);
+        upgradeSchema(odbc, dsn, ldpUser, ldpconfigUser, version,
+                thisSchemaVersion, db->log);
     } else {
         // Schema is not present: create it.
         fprintf(stderr, "ldp: Creating schema\n");
         //db->log->log(Level::trace, "", "", "Creating schema", -1);
         {
             //etymon::OdbcTx tx(db->dbc);
-            initSchema(db, ldpUser, thisSchemaVersion);
+            initSchema(db, ldpUser, ldpconfigUser, thisSchemaVersion);
             //tx.commit();
             fprintf(stderr, "ldp: Logging enabled in table: ldpsystem.log\n");
         }

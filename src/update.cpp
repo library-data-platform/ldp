@@ -197,7 +197,7 @@ void runUpdate(const Options& opt)
         etymon::OdbcDbc dbc(&odbc, opt.db);
         DBType dbt(&dbc);
         DBContext db(&dbc, &dbt, &log);
-        initUpgrade(&odbc, opt.db, &db, opt.ldpUser);
+        initUpgrade(&odbc, opt.db, &db, opt.ldpUser, opt.ldpconfigUser);
     }
 
     ExtractionFiles extractionDir(opt);

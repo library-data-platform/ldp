@@ -1,5 +1,5 @@
-LDP Admin Guide
-===============
+LDP Administrator Guide
+=======================
 
 ##### Contents  
 1\. Architecture  
@@ -230,16 +230,29 @@ settings are suggested as a starting point:
 
 ### Configuring the database
 
-Two database users are required:
+Three database users are required:
 
-* `ldpadmin` is an administrator account.
-* `ldp` is a general user of the database.
+* `ldpadmin` is the LDP administrator which owns all database objects
+  created by the LDP software.  This account should be used sparingly
+and carefully.
 
-It is also a good idea to restrict access permissions.  In PostgreSQL,
-this can be done on the command line, for example:
+* `ldpconfig` is a special user account for changing configuration
+  settings in the `ldpconfig` schema.  It is intended to enable
+designated users to make changes safely to the server operation such
+as scheduling when data updates occur.  This user name can be modified
+using the `ldpconfigUser` configuration setting in `ldpconf.json`.
+
+* `ldp` is a general user of the LDP database.  This user name can be
+  modified using the `ldpUser` configuration setting in
+`ldpconf.json`.
+
+In addition to creating these users, it is a good idea to restrict
+access permissions.  In PostgreSQL, this can be done on the command
+line, for example:
 
 ```shell
 $ createuser ldpadmin --username=<admin_user> --pwprompt
+$ createuser ldpconfig --username=<admin_user> --pwprompt
 $ createuser ldp --username=<admin_user> --pwprompt
 $ createdb ldp --username=<admin_user> --owner=ldpadmin
 $ psql ldp --username=<admin_user> --single-transaction \
@@ -256,6 +269,7 @@ for example:
 
 ```sql
 CREATE USER ldpadmin PASSWORD '(ldpadmin password here)';
+CREATE USER ldpconfig PASSWORD '(ldpconfig password here)';
 CREATE USER ldp PASSWORD '(ldp password here)';
 ALTER DATABASE ldp OWNER TO ldpadmin;
 REVOKE ALL ON SCHEMA public FROM public;
@@ -352,6 +366,12 @@ The following configuration settings are supported:
   * `odbcDatabase` (required) is the ODBC "data source name" of the
     LDP database.
 
+  * `ldpconfigUser` (optional) is the database user that is defined by
+    default as `ldpconfig`.
+
+  * `ldpUser` (optional) is the database user that is defined by
+    default as `ldp`.
+
 * `enableSources` (required) is an array of sources that are enabled
   for the LDP to extract data from.  The source names refer to a
 subset of those defined under `sources` (see below).  Only one source
@@ -389,26 +409,9 @@ $ nohup ldp server -D /var/lib/ldp --trace &>> logfile &
 ```
 
 Once per day, the server runs a _full update_ which performs all
-supported data updates.
-
-Full updates can be scheduled at a recurring time of day by setting
-`next_full_update` in table `ldpconfig.general`.  Note that the
-timezone is part of the value.  For example:
-
-```sql
-UPDATE ldpconfig.general
-    SET next_full_update = '2020-05-07 22:00:00Z';
-```
-
-Also ensure that `full_update_enabled` is set to `TRUE`.
-
-A full update may take several hours for a large library.  During this
-time, the database generally remains available to users, but query
-performance may be affected.  Also, some stages of the update process
-involve schema changes and could interrupt any long-running queries
-that are executing at the same time.  For all of these reasons, it is
-best to run full updates at a time when the database will not be used
-heavily.
+supported data updates.  Full updates can be scheduled at a preferred
+time of day using the table `ldpconfig.general`.  See the
+[Configuration Guide](Config_Guide.md) for more information.
 
 
 6\. Direct extraction
@@ -501,6 +504,8 @@ UPDATE ldpconfig.general
 
 Further reading
 ---------------
+
+[__Learn about configuring LDP in the Configuration Guide > > >__](Config_Guide.md)
 
 [__Learn about using the LDP database in the User Guide > > >__](User_Guide.md)
 

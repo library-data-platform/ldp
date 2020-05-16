@@ -95,7 +95,8 @@ void IDMap::createCache(const string& cacheFile)
         "    id VARCHAR(65535) NOT NULL,\n"
         "    sk BIGINT NOT NULL,\n"
         "    new INTEGER NOT NULL,\n"
-        "    PRIMARY KEY (id)\n"
+        "    PRIMARY KEY (id),\n"
+        "    UNIQUE (sk)\n"
         ");";
     rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
     if( rc != SQLITE_OK ){

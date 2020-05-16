@@ -46,4 +46,6 @@ tenant_id     | 1
 
 [__Learn about using the LDP database in the User Guide > > >__](doc/User_Guide.md)
 
-[__Learn about installing and administering the LDP in the Admin Guide > > >__](doc/Admin_Guide.md)
+[__Learn about configuring LDP in the Configuration Guide > > >__](doc/Config_Guide.md)
+
+[__Learn about installing and administering LDP in the Administrator Guide > > >__](doc/Admin_Guide.md)
