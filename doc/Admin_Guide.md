@@ -8,6 +8,7 @@ LDP Administrator Guide
 4\. Database configuration  
 5\. Server configuration  
 6\. Direct extraction  
+7\. Data privacy  
 Reference
 
 
@@ -393,6 +394,27 @@ Note that direct extraction requires network access to the database,
 which may be protected by a firewall.
 
 
+7\. Data privacy
+----------------
+
+By default, LDP attempts to "anonymize" personal data.  It does this
+by not updating certain tables that would contain personal data, for
+example `user_users`, and by deleting foreign key references to them
+from other tables.  This anonymization process is enabled unless LDP
+is otherwise configured.
+
+If it should be necessary to disable anonymization, this can be done
+by setting `disableAnonymization` to `true` in `ldpconf.json`, and by
+setting `disable_anonymization` to `TRUE` in the table
+`ldpconfig.general`.  Both are required to be set in order to disable
+anonymization.
+
+__WARNING:  LDP does not provide a way to anonymize the database after
+personal data have been loaded into it.  For this reason, these
+settings should never be used unless you are absolutely sure that you
+want to store personal data in the LDP database.__
+
+
 Reference
 ---------
 
@@ -434,6 +456,11 @@ included: `inventory_holdings`, `inventory_instances`, and
     name.
   * `directDatabasePassword` (string; optional) is the password for
     the specified FOLIO database user name.
+* `disableAnonymization` (Boolean; optional) when set to `true`,
+  disables anonymization of personal data.  Please read the section on
+"Data privacy" above before changing this setting.  As a safety
+precaution, the configuration attribute `disable_anonymization` in
+table `ldpconfig.general` also must be set.
 
 
 <!--

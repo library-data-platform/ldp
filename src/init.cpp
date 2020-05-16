@@ -180,7 +180,8 @@ void initSchema(DBContext* db, const string& ldpUser,
         "    full_update_enabled BOOLEAN NOT NULL,\n"
         "    next_full_update TIMESTAMP WITH TIME ZONE NOT NULL,\n"
         "    log_referential_analysis BOOLEAN NOT NULL DEFAULT FALSE,\n"
-        "    force_referential_constraints BOOLEAN NOT NULL DEFAULT FALSE\n"
+        "    force_referential_constraints BOOLEAN NOT NULL DEFAULT FALSE,\n"
+        "    disable_anonymization BOOLEAN NOT NULL DEFAULT FALSE\n"
         ");";
     db->dbc->execDirect(nullptr, sql);
     db->log->log(Level::detail, "", "", sql, -1);
@@ -827,7 +828,6 @@ void schemaUpgrade7(SchemaUpgradeOptions* opt)
     opt->dbc->execDirect(nullptr, sql);
 
     sql =
-    sql =
         "ALTER TABLE ldpsystem.tables\n"
         "    ADD COLUMN history_row_count BIGINT;";
     opt->dbc->execDirect(nullptr, sql);
@@ -840,6 +840,11 @@ void schemaUpgrade7(SchemaUpgradeOptions* opt)
     sql =
         "ALTER TABLE ldpsystem.tables\n"
         "    ADD COLUMN documentation_url VARCHAR(65535);";
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    ADD COLUMN disable_anonymization BOOLEAN NOT NULL DEFAULT FALSE;";
     opt->dbc->execDirect(nullptr, sql);
 }
 

@@ -47,6 +47,12 @@ automatically incremented to the next day at the same time.
 * `log_referential_analysis` (BOOLEAN) is reserved for future use.
 * `force_referential_constraints` (BOOLEAN) is reserved for future
   use.
+* `disable_anonymization` (BOOLEAN) when set to `TRUE`, disables
+  anonymization of personal data.  Please read the section on "Data
+privacy" in the [Administrator Guide](Admin_Guide.md) before changing
+this setting.  As a safety precaution, the configuration setting
+`disableAnonymization` in `ldpconf.json` also must be set by the LDP
+system administrator.
 
 
 Further reading
