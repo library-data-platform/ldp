@@ -13,7 +13,7 @@ LDP Administrator Guide
 1\. Overview
 ------------
 
-There are two components in an LDP deployment: an LDP server and a
+There are two components in LDP deployment: an LDP server and a
 database server.  Together these constitute an _LDP instance_.
 
 The LDP server updates data in the database from data sources such as
