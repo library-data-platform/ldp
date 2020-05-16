@@ -7,7 +7,8 @@ LDP Administrator Guide
 3\. Installation  
 4\. Database configuration  
 5\. Server configuration  
-6\. Direct extraction
+6\. Direct extraction  
+Reference
 
 
 1\. Overview
@@ -312,9 +313,9 @@ __ldpconf.json__
     "ldpDatabase": {
         "odbcDatabase": "ldpdemo"
     },
-    "enableSources": ["okapi"],
+    "enableSources": ["myLibrary"],
     "sources": {
-        "okapi": {
+        "myLibrary": {
             "okapiURL": "https://folio-release-okapi.aws.indexdata.com",
             "okapiTenant": "diku",
             "okapiUser": "diku_admin",
@@ -323,30 +324,6 @@ __ldpconf.json__
     }
 }
 ```
-
-The following configuration settings are supported:
-
-* `ldpDatabase` (required) is a group of database-related settings.
-  * `odbcDatabase` (required) is the ODBC "data source name" of the
-    LDP database.
-  * `ldpconfigUser` (optional) is the database user that is defined by
-    default as `ldpconfig`.
-  * `ldpUser` (optional) is the database user that is defined by
-    default as `ldp`.
-* `enableSources` (required) is an array of sources that are enabled
-  for the LDP to extract data from.  The source names refer to a
-subset of those defined under `sources` (see below).  Only one source
-should be provided in the case of non-consortial deployments.
-* `sources` (required) is a collection of sources that LDP can extract
-  data from.  Only one source should be provided in the case of
-non-consortial deployments.  A source is defined by a source name and
-an associated object containing several settings:
-  * `okapiURL` (required) is the URL for the Okapi instance to extract
-    data from.
-  * `okapiTenant` (required) is the Okapi tenant.
-  * `okapiUser` (required) is the Okapi user name.
-  * `okapiPassword` (required) is the password for the specified Okapi
-    user name.
 
 ### Starting the server
 
@@ -416,7 +393,51 @@ Note that direct extraction requires network access to the database,
 which may be protected by a firewall.
 
 
+Reference
+---------
+
+### Configuration file: ldpconf.json
+
+* `ldpDatabase` (object; required) is a group of database-related
+  settings.
+  * `odbcDatabase` (string; required) is the ODBC "data source name"
+    of the LDP database.
+  * `ldpconfigUser` (string; optional) is the database user that is
+    defined by default as `ldpconfig`.
+  * `ldpUser` (string; optional) is the database user that is defined
+    by default as `ldp`.
+* `enableSources` (array; required) is a list of sources that are
+  enabled for the LDP to extract data from.  The source names refer to
+a subset of those defined under `sources` (see below).  Only one
+source should be provided in the case of non-consortial deployments.
+* `sources` (object; required) is a collection of sources that LDP can
+  extract data from.  Only one source should be provided in the case
+of non-consortial deployments.  A source is defined by a source name
+and an associated object containing several settings:
+  * `okapiURL` (string; required) is the URL for the Okapi instance to
+    extract data from.
+  * `okapiTenant` (string; required) is the Okapi tenant.
+  * `okapiUser` (string; required) is the Okapi user name.
+  * `okapiPassword` (string; required) is the password for the
+    specified Okapi user name.
+  * `directTables` (array; optional) is a list of tables that should
+    be updated using direct extraction.  Only these tables may be
+included: `inventory_holdings`, `inventory_instances`, and
+`inventory_items`.
+  * `directDatabaseName` (string; optional) is the FOLIO database
+    name.
+  * `directDatabaseHost` (string; optional) is the FOLIO database host
+    name.
+  * `directDatabasePort` (string; optional) is the FOLIO database
+    port.
+  * `directDatabaseUser` (string; optional) is the FOLIO database user
+    name.
+  * `directDatabasePassword` (string; optional) is the password for
+    the specified FOLIO database user name.
+
+
 <!--
+
 7\. Updating data from files (testing only)
 -------------------------------------------
 
@@ -437,10 +458,8 @@ included having the suffix, `_test.json`, e.g. `loans_test.json`.
 Data in these "test" files are loaded into the same table as the files
 they accompany.  This is used for testing in query development to
 combine extracted test data with additional static test data.
--->
 
 
-<!--
 10\. Referential analysis (experimental)
 ----------------------------------------
 
@@ -455,6 +474,7 @@ To enable this feature:
 UPDATE ldpconfig.general
     SET log_referential_analysis = TRUE;
 ```
+
 -->
 
 

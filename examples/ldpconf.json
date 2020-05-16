@@ -2,9 +2,9 @@
     "ldpDatabase": {
         "odbcDatabase": "ldpdemo"
     },
-    "enableSources": ["okapi"],
+    "enableSources": ["myLibrary"],
     "sources": {
-        "okapi": {
+        "myLibrary": {
             "okapiURL": "https://folio-release-okapi.aws.indexdata.com",
             "okapiTenant": "diku",
             "okapiUser": "diku_admin",

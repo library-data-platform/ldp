@@ -164,7 +164,7 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     filesystem::path cachedir = dd / "cache";
     filesystem::create_directories(cachedir);
     filesystem::path cachedb = cachedir / "idmap.db";
-    filesystem::path cachelock = cachedir / "idmap.lock";
+    filesystem::path cachelock = cachedir / "idmap.sync";
     if (filesystem::exists(cachedb)) {
         if (filesystem::exists(cachelock)) {
             filesystem::remove(cachedb);
