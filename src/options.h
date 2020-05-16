@@ -59,6 +59,7 @@ public:
     bool verbose = false;  // Deprecated.
     bool debug = false;  // Deprecated.
     Level logLevel = Level::debug;
+    bool console = false;
     //bool version = false;
     size_t pageSize = 1000;
     //string config;

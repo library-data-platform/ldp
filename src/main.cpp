@@ -250,7 +250,7 @@ void runServer(const Options& opt)
     //runPreloadTests(opt, odbc);
 
     etymon::OdbcDbc logConn(&odbc, opt.db);
-    Log log(&logConn, opt.logLevel, opt.prog);
+    Log log(&logConn, opt.logLevel, opt.console, opt.prog);
 
     etymon::OdbcDbc lockConn(&odbc, opt.db);
     string sql = "CREATE SCHEMA IF NOT EXISTS ldpsystem;";

@@ -185,7 +185,7 @@ void runUpdate(const Options& opt)
     etymon::OdbcEnv odbc;
 
     etymon::OdbcDbc logDbc(&odbc, opt.db);
-    Log log(&logDbc, opt.logLevel, opt.prog);
+    Log log(&logDbc, opt.logLevel, opt.console, opt.prog);
 
     log.log(Level::debug, "server", "", "Starting full update", -1);
     Timer fullUpdateTimer(opt);
@@ -421,7 +421,7 @@ void runUpdateProcess(const Options& opt)
             s.pop_back();
         etymon::OdbcEnv odbc;
         etymon::OdbcDbc logDbc(&odbc, opt.db);
-        Log log(&logDbc, opt.logLevel, opt.prog);
+        Log log(&logDbc, opt.logLevel, opt.console, opt.prog);
         log.log(Level::error, "server", "", s, -1);
         exit(1);
     }
