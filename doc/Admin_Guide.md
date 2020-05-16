@@ -13,8 +13,6 @@ LDP Administrator Guide
 1\. Architecture
 ----------------
 
-### LDP instances
-
 There are two components in an LDP deployment: the LDP server and a
 database server.  Together these constitute an _LDP instance_.
 
@@ -22,29 +20,12 @@ The LDP server updates data in the database from data sources such as
 FOLIO modules, and users connect directly to the database to perform
 reporting and analytics.
 
-### Multitenancy
-
-Two kinds of multitenant configuration are relevant to LDP:
-
-* _General multitenancy_ is typically used for a hosting service that
-  sets up LDP instances for multiple tenants.  In this case, one LDP
-instance should be created per tenant.
-
-* _Consortial multitenancy_ is used for a consortium that would like
-  to combine data shared by its members to support pan-consortial
-analytics.  In this case, the members of the consortium share a single
-LDP instance.  _This feature is not yet fully implemented in LDP but
-is planned for the near future._
-
-These configurations can be combined if a hosting service has a
-consortium as one of its tenants.  It would use general multitenancy
-overall, but would also configure consortial multitenancy in the LDP
-instance provided for the consortium.
-
-In the context of LDP, a _tenant_ implies consortial multitenancy, for
-example the `tenant_id` attribute included in most tables.  LDP is
-generally unaware of general multitenancy because that occurs outside
-of a single instance.
+LDP is not multitenant in the general sense, and normally one LDP
+instance is deployed per library.  However, shared data from multiple
+libraries of a consortium can be stored in a single LDP instance, and
+in that case we refer to each of the libraries as a tenant.  _This
+consortial feature is not fully implemented but is planned for the
+near future._
 
 
 2\. System requirements
