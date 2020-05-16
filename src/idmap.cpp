@@ -63,6 +63,11 @@ static int selectAllNew(void *data, int argc, char **argv, char **azColName){
     return 0;
 }
 
+static int selectMaxSK(void *data, int argc, char **argv, char **azColName){
+    *((string*) data) = argv[0];
+    return 0;
+}
+
 void IDMap::createCache(const string& cacheFile)
 {
     etymon::Sqlite3 sqlite(cacheFile.c_str());
@@ -165,20 +170,42 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     filesystem::create_directories(cachedir);
     filesystem::path cachedb = cachedir / "idmap.db";
     filesystem::path cachelock = cachedir / "idmap.sync";
+    bool create = false;
     if (filesystem::exists(cachedb)) {
         if (filesystem::exists(cachelock)) {
             filesystem::remove(cachedb);
-            { ofstream output(cachelock); }
-            createCache(cachedb);
+            create = true;
         } else {
             { ofstream output(cachelock); }
         }
     } else {
+        create = true;
+    }
+    if (create) {
         { ofstream output(cachelock); }
         createCache(cachedb);
     }
     cacheLock = cachelock;
     cacheDB = new etymon::Sqlite3(string(cachedb));
+    if (!create) {
+        string sql = "SELECT MAX(sk) FROM idmap_cache;";
+        log->logDetail(sql);
+        char *zErrMsg = 0;
+        string msk;
+        int rc = sqlite3_exec(cacheDB->db, sql.c_str(), selectMaxSK,
+                (void*) &msk, &zErrMsg);
+        if( rc != SQLITE_OK ) {
+            fprintf(stderr, "SQL error: %s\n", zErrMsg);
+            sqlite3_free(zErrMsg);
+        }
+        int64_t maxSK;
+        {
+            stringstream stream(msk);
+            stream >> maxSK;
+        }
+        nextvalSK = maxSK + 1;
+    }
+    //printf("nextvalSK = %llu\n", nextvalSK);
 }
 
 IDMap::~IDMap()
