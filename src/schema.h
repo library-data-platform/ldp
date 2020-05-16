@@ -44,6 +44,7 @@ enum class SourceType {
 class TableSchema {
 public:
     bool skip = false;
+    bool anonymize = false;
     string tableName;
     string sourcePath;
     SourceType sourceType;

@@ -130,7 +130,6 @@ void initSchema(DBContext* db, const string& ldpUser,
         "    table_name VARCHAR(63) NOT NULL,\n"
         "    updated TIMESTAMP WITH TIME ZONE,\n"
         "    row_count BIGINT,\n"
-        "    history BOOLEAN,\n"
         "    history_row_count BIGINT,\n"
         "    documentation VARCHAR(65535),\n"
         "    documentation_url VARCHAR(65535)\n"
@@ -138,101 +137,9 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
-    const char *table[] = {
-        "circulation_cancellation_reasons",
-        "circulation_fixed_due_date_schedules",
-        "circulation_loan_policies",
-        "circulation_loans",
-        "circulation_loan_history",
-        "circulation_patron_action_sessions",
-        "circulation_patron_notice_policies",
-        "circulation_request_policies",
-        "circulation_requests",
-        "circulation_scheduled_notices",
-        "circulation_staff_slips",
-        "feesfines_accounts",
-        "feesfines_comments",
-        "feesfines_feefines",
-        "feesfines_feefineactions",
-        "feesfines_lost_item_fees_policies",
-        "feesfines_manualblocks",
-        "feesfines_overdue_fines_policies",
-        "feesfines_owners",
-        "feesfines_payments",
-        "feesfines_refunds",
-        "feesfines_transfer_criterias",
-        "feesfines_transfers",
-        "feesfines_waives",
-        "finance_budgets",
-        "finance_fiscal_years",
-        "finance_fund_types",
-        "finance_funds",
-        "finance_group_fund_fiscal_years",
-        "finance_groups",
-        "finance_ledgers",
-        "finance_transactions",
-        "inventory_alternative_title_types",
-        "inventory_call_number_types",
-        "inventory_classification_types",
-        "inventory_contributor_name_types",
-        "inventory_contributor_types",
-        "inventory_electronic_access_relationships",
-        "inventory_holdings_note_types",
-        "inventory_holdings",
-        "inventory_holdings_types",
-        "inventory_identifier_types",
-        "inventory_ill_policies",
-        "inventory_instance_formats",
-        "inventory_instance_note_types",
-        "inventory_instance_relationship_types",
-        "inventory_instance_statuses",
-        "inventory_instance_relationships",
-        "inventory_instances",
-        "inventory_instance_types",
-        "inventory_item_damaged_statuses",
-        "inventory_item_note_types",
-        "inventory_items",
-        "inventory_campuses",
-        "inventory_institutions",
-        "inventory_libraries",
-        "inventory_loan_types",
-        "inventory_locations",
-        "inventory_material_types",
-        "inventory_modes_of_issuance",
-        "inventory_nature_of_content_terms",
-        "inventory_service_points",
-        "inventory_service_points_users",
-        "inventory_statistical_code_types",
-        "inventory_statistical_codes",
-        "invoice_lines",
-        "invoice_invoices",
-        "invoice_voucher_lines",
-        "invoice_vouchers",
-        "acquisitions_memberships",
-        "acquisitions_units",
-        "po_alerts",
-        "po_order_invoice_relns",
-        "po_order_templates",
-        "po_pieces",
-        "po_lines",
-        "po_purchase_orders",
-        "po_receiving_history",
-        "po_reporting_codes",
-        "organization_addresses",
-        "organization_categories",
-        "organization_contacts",
-        "organization_emails",
-        "organization_interfaces",
-        "organization_organizations",
-        "organization_phone_numbers",
-        "organization_urls",
-        "user_groups",
-        "user_users",
-        nullptr
-    };
     // Add tables to the catalog.
-    for (int x = 0; table[x] != nullptr; x++)
-        catalogAddTable(db->dbc, db->log, table[x]);
+    for (auto& table : schema.tables)
+        catalogAddTable(db->dbc, db->log, table.tableName);
 
     db->dbt->redshiftKeys("referencing_table",
             "referencing_table, referencing_column", &rskeys);
@@ -299,6 +206,8 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
+    // Schema: history
+
     sql = "CREATE SCHEMA history;";
     db->log->log(Level::detail, "", "", sql, -1);
     db->dbc->execDirect(nullptr, sql);
@@ -344,6 +253,26 @@ void initSchema(DBContext* db, const string& ldpUser,
         db->log->logDetail(sql);
         db->dbc->execDirect(nullptr, sql);
     }
+
+    // Schema: public
+
+    for (auto& table : schema.tables) {
+        string rskeys;
+        db->dbt->redshiftKeys("sk", "sk", &rskeys);
+        sql =
+            "CREATE TABLE " + table.tableName + " (\n"
+            "    sk BIGINT NOT NULL,\n"
+            "    id VARCHAR(65535) NOT NULL,\n"
+            "    data " + db->dbt->jsonType() + ",\n"
+            "    tenant_id SMALLINT NOT NULL,\n"
+            "    PRIMARY KEY (sk),\n"
+            "    UNIQUE (id)\n"
+        ")" + rskeys + ";";
+        db->log->logDetail(sql);
+        db->dbc->execDirect(nullptr, sql);
+    }
+
+    // Schema: local
 
     sql = "CREATE SCHEMA local;";
     db->log->log(Level::detail, "", "", sql, -1);
@@ -898,10 +827,6 @@ void schemaUpgrade7(SchemaUpgradeOptions* opt)
     opt->dbc->execDirect(nullptr, sql);
 
     sql =
-        "ALTER TABLE ldpsystem.tables\n"
-        "    ADD COLUMN history BOOLEAN;";
-    opt->dbc->execDirect(nullptr, sql);
-
     sql =
         "ALTER TABLE ldpsystem.tables\n"
         "    ADD COLUMN history_row_count BIGINT;";

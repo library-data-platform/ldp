@@ -241,6 +241,9 @@ void runUpdate(const Options& opt)
 
     for (auto& table : schema.tables) {
 
+        if (table.anonymize)
+            continue;
+
         log.log(Level::trace, "", "",
                 "Updating table: " + table.tableName, -1);
 
@@ -318,7 +321,6 @@ void runUpdate(const Options& opt)
             "UPDATE ldpsystem.tables\n"
             "    SET updated = " + string(dbt.currentTimestamp()) + ",\n"
             "        row_count = " + rowCount + ",\n"
-            "        history = TRUE,\n"
             "        history_row_count = " + historyRowCount + ",\n"
             "        documentation = '" + table.sourcePath + " in "
             + table.moduleName + "',\n"
