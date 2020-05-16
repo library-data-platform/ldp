@@ -13,9 +13,7 @@ LDP Administrator Guide
 1\. Overview
 ------------
 
-There are two components in LDP deployment: an LDP server and a
-database server.  Together these constitute an _LDP instance_.
-
+An _LDP instance_ is composed of a running LDP server and a database.
 The LDP server updates data in the database from data sources such as
 FOLIO modules, and users connect directly to the database to perform
 reporting and analytics.
@@ -27,8 +25,8 @@ in that case we refer to each of the libraries as a tenant.  _This
 consortial feature is not fully implemented but is planned for the
 near future._
 
-This administrator guide covers installation and configuration of a
-single LDP instance.
+This administrator guide covers installation and configuration of an
+LDP instance.
 
 
 2\. System requirements
