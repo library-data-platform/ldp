@@ -79,7 +79,7 @@ void analyzeReferentialPaths(etymon::OdbcDbc* dbc, Log* log,
             if (forceConstraints)
                 fkeys.push_back(fkeySK);
             if (logAnalysis)
-                log->log(Level::debug, "reference", table2.tableName,
+                log->log(Level::debug, "", table2.tableName,
                         "Nonexistent key in referential path:\n"
                         "    Referencing table: " + table2.tableName + "\n"
                         "    Referencing column: " + column2.columnName + "\n"
@@ -364,6 +364,22 @@ void runUpdate(const Options& opt)
     log.log(Level::debug, "update", "", "Synchronized cache",
             idmapTimer2.elapsedTime());
 
+    //{
+    //    etymon::OdbcDbc dbc(&odbc, opt.db);
+    //    {
+    //        etymon::OdbcTx tx(&dbc);
+    //        dropOldTables(opt, &log, &dbc);
+    //        tx.commit();
+    //    }
+    //}
+
+    // TODO Check if needed for history tables; if so, move into loop above.
+    //vacuumAnalyzeAll(opt, &schema, &db);
+
+    log.log(Level::debug, "server", "", "Completed full update",
+            fullUpdateTimer.elapsedTime());
+
+    // TODO Move analysis and constraints out of update process.
     {
         etymon::OdbcDbc dbc(&odbc, opt.db);
 
@@ -374,10 +390,10 @@ void runUpdate(const Options& opt)
 
         if (logReferentialAnalysis /*|| forceReferentialConstraints*/) {
 
-            log.log(Level::debug, "update", "",
-                    "Analyzing referential paths", -1);
+            log.log(Level::debug, "server", "",
+                    "Starting referential analysis", -1);
 
-            //Timer refTimer(opt);
+            Timer refTimer(opt);
 
             etymon::OdbcTx tx(&dbc);
 
@@ -387,25 +403,13 @@ void runUpdate(const Options& opt)
                         /*forceReferentialConstraints*/ false);
 
             tx.commit();
+
+            log.log(Level::debug, "server", "",
+                    "Completed referential analysis",
+                    refTimer.elapsedTime());
         }
 
     }
-
-    {
-        //etymon::OdbcDbc dbc(&odbc, opt.db);
-
-        //{
-        //    etymon::OdbcTx tx(&dbc);
-        //    dropOldTables(opt, &log, &dbc);
-        //    tx.commit();
-        //}
-    }
-
-    // TODO Check if needed for history tables; if so, move into loop above.
-    //vacuumAnalyzeAll(opt, &schema, &db);
-
-    log.log(Level::debug, "server", "", "Completed full update",
-            fullUpdateTimer.elapsedTime());
 
     curl_global_cleanup();  // Clean-up after curl_global_init().
 }

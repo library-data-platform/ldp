@@ -91,6 +91,10 @@ static void evaloptlong(char *name, char *arg, Options* opt)
         opt->logLevel = Level::trace;
         return;
     }
+    if (!strcmp(name, "detail")) {
+        opt->logLevel = Level::detail;
+        return;
+    }
     if (!strcmp(name, "console")) {
         opt->console = true;
         return;
@@ -111,6 +115,7 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
         { "verbose",   no_argument,       NULL, 'v' },
         { "debug",     no_argument,       NULL, 0   },
         { "trace",     no_argument,       NULL, 0   },
+        { "detail",     no_argument,       NULL, 0   },
         { "console",     no_argument,       NULL, 0   },
         { "unsafe",    no_argument,       NULL, 0   },
         //{ "nossl",     no_argument,       NULL, 0   },

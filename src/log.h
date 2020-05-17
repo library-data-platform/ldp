@@ -27,11 +27,12 @@ public:
     void log(Level level, const char* type, const string& table,
             const string& message, double elapsed_time);
     void logDetail(const string& sql);
-    void console(const string& sql);
+    void detail(const string& sql);
+    //void console(const string& sql);
     //void error(const string& message);
 private:
     Level level;
-    bool cons = false;
+    bool console = false;
     etymon::OdbcDbc* dbc;
     DBType* dbt;
     string program;

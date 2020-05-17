@@ -35,11 +35,6 @@ static const char* optionHelp =
 "  help                - Display help information\n"
 "Options:\n"
 "  -D <path>           - Store data and configuration in directory <path>\n"
-//"  --config <path>     - Specify the path to the configuration file\n"
-//"  --source <name>     - Extract data from source <name>, which refers to\n"
-//"                        the name of an object under \"sources\" in the\n"
-//"                        configuration file that describes connection\n"
-//"                        parameters for an Okapi instance\n"
 "  --unsafe            - Enable functions used for testing/debugging\n"
 "  --savetemps         - Disable deletion of temporary files containing\n"
 "                        extracted data (unsafe)\n"
@@ -228,9 +223,6 @@ void server(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
 
     log->log(Level::info, "server", "",
             string("Server stopped") + (opt.cliMode ? " (CLI mode)" : ""), -1);
-
-    if (opt.cliMode)
-        fprintf(opt.err, "%s: Update completed\n", opt.prog);
 }
 
 //void emptyTempDir(const string& datadir)
@@ -363,6 +355,8 @@ void run(const etymon::CommandArgs& cargs)
     //Config config(opt.config);
     Config config(opt.datadir + "/ldpconf.json");
     fillOptions(config, &opt);
+    if (opt.command == "update")
+        opt.console = true;
 
     //if (opt.logLevel == Level::trace)
     //    debugOptions(opt);

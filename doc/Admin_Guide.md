@@ -212,10 +212,9 @@ Three database users are required:
   This account should be used very sparingly and carefully.
 * `ldpconfig` is a special user account for changing configuration
   settings in the `ldpconfig` schema.  It is intended to enable
-designated users to make changes safely to the server's operation,
-such as scheduling when data updates occur.  This user name can be
-modified using the `ldpconfigUser` configuration setting in
-`ldpconf.json`.
+designated users to make changes to the server's operation, such as
+scheduling when data updates occur.  This user name can be modified
+using the `ldpconfigUser` configuration setting in `ldpconf.json`.
 * `ldp` is a general user of the LDP database.  This user name can be
   modified using the `ldpUser` configuration setting in
 `ldpconf.json`.
