@@ -9,7 +9,7 @@ Log::Log(etymon::OdbcDbc* dbc, Level level, bool console, const char* program)
 {
     this->dbc = dbc;
     this->level = level;
-    cons = console;
+    this->console = console;
     this->program = program;
     dbt = new DBType(dbc);
 }
@@ -22,13 +22,13 @@ Log::~Log()
 void Log::log(Level level, const char* type, const string& table,
         const string& message, double elapsed_time)
 {
-    if (level == Level::detail) {
-        console(message);
-        return;
-    }
+    //if (level == Level::detail) {
+    //    console(message);
+    //    return;
+    //}
 
-    if (cons)
-        console(message);
+    //if (cons)
+    //    console(message);
 
     // Add a prefix to highlight error states.
     string logmsg;
@@ -48,7 +48,7 @@ void Log::log(Level level, const char* type, const string& table,
 
     // For printing, prefix with '\n' if the message has multiple lines.
     string printmsg;
-    if (message.find('\n') != string::npos)
+    if (level != Level::detail && message.find('\n') != string::npos)
         printmsg = "\n" + logmsg;
     else
         printmsg = logmsg;
@@ -73,17 +73,26 @@ void Log::log(Level level, const char* type, const string& table,
         levelStr = "info";
         break;
     case Level::debug:
-        if (this->level != Level::debug && this->level != Level::trace)
+        if (this->level != Level::debug && this->level != Level::trace &&
+                this->level != Level::detail)
             return;
+        if (console)
+            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
         levelStr = "debug";
         break;
     case Level::trace:
-        if (this->level != Level::trace)
+        if (this->level != Level::trace && this->level != Level::detail)
             return;
+        if (console)
+            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
         levelStr = "trace";
         break;
     case Level::detail:
-        break;
+        if (this->level != Level::detail)
+            return;
+        if (console)
+            fprintf(stderr, "%s\n", printmsg.c_str());
+        return;
     }
 
     // Format elapsed time for logging.
@@ -108,15 +117,19 @@ void Log::log(Level level, const char* type, const string& table,
 
 void Log::logDetail(const string& sql)
 {
-    console(sql);
-    //log(Level::detail, "", "", sql, -1);
+    detail(sql);
 }
 
-void Log::console(const string& sql)
+void Log::detail(const string& sql)
 {
-    if (cons)
-        fprintf(stderr, "%s\n", sql.c_str());
+    log(Level::detail, "", "", sql, -1);
 }
+
+//void Log::console(const string& sql)
+//{
+//    if (cons)
+//        fprintf(stderr, "%s\n", sql.c_str());
+//}
 
 //void Log::error(const string& message)
 //{

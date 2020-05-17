@@ -1,6 +1,6 @@
 #include <cstdint>
 #include <curl/curl.h>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <sys/stat.h>
@@ -15,14 +15,16 @@
 #include "timer.h"
 #include "update.h"
 
+namespace fs = std::experimental::filesystem;
+
 void makeUpdateTmpDir(const Options& opt, string* loaddir)
 {
-    filesystem::path datadir = opt.datadir;
-    filesystem::path tmp = datadir / "tmp";
-    //filesystem::path tmppath = tmp / ("update_" + to_string(time(nullptr)));
-    filesystem::path tmppath = tmp / "update";
-    filesystem::remove_all(tmppath);
-    filesystem::create_directories(tmppath);
+    fs::path datadir = opt.datadir;
+    fs::path tmp = datadir / "tmp";
+    //fs::path tmppath = tmp / ("update_" + to_string(time(nullptr)));
+    fs::path tmppath = tmp / "update";
+    fs::remove_all(tmppath);
+    fs::create_directories(tmppath);
     *loaddir = tmppath;
 
     //*loaddir = opt.datadir;
@@ -79,7 +81,7 @@ void analyzeReferentialPaths(etymon::OdbcDbc* dbc, Log* log,
             if (forceConstraints)
                 fkeys.push_back(fkeySK);
             if (logAnalysis)
-                log->log(Level::debug, "reference", table2.tableName,
+                log->log(Level::debug, "", table2.tableName,
                         "Nonexistent key in referential path:\n"
                         "    Referencing table: " + table2.tableName + "\n"
                         "    Referencing column: " + column2.columnName + "\n"
@@ -364,6 +366,22 @@ void runUpdate(const Options& opt)
     log.log(Level::debug, "update", "", "Synchronized cache",
             idmapTimer2.elapsedTime());
 
+    //{
+    //    etymon::OdbcDbc dbc(&odbc, opt.db);
+    //    {
+    //        etymon::OdbcTx tx(&dbc);
+    //        dropOldTables(opt, &log, &dbc);
+    //        tx.commit();
+    //    }
+    //}
+
+    // TODO Check if needed for history tables; if so, move into loop above.
+    //vacuumAnalyzeAll(opt, &schema, &db);
+
+    log.log(Level::debug, "server", "", "Completed full update",
+            fullUpdateTimer.elapsedTime());
+
+    // TODO Move analysis and constraints out of update process.
     {
         etymon::OdbcDbc dbc(&odbc, opt.db);
 
@@ -374,10 +392,10 @@ void runUpdate(const Options& opt)
 
         if (logReferentialAnalysis /*|| forceReferentialConstraints*/) {
 
-            log.log(Level::debug, "update", "",
-                    "Analyzing referential paths", -1);
+            log.log(Level::debug, "server", "",
+                    "Starting referential analysis", -1);
 
-            //Timer refTimer(opt);
+            Timer refTimer(opt);
 
             etymon::OdbcTx tx(&dbc);
 
@@ -387,25 +405,13 @@ void runUpdate(const Options& opt)
                         /*forceReferentialConstraints*/ false);
 
             tx.commit();
+
+            log.log(Level::debug, "server", "",
+                    "Completed referential analysis",
+                    refTimer.elapsedTime());
         }
 
     }
-
-    {
-        //etymon::OdbcDbc dbc(&odbc, opt.db);
-
-        //{
-        //    etymon::OdbcTx tx(&dbc);
-        //    dropOldTables(opt, &log, &dbc);
-        //    tx.commit();
-        //}
-    }
-
-    // TODO Check if needed for history tables; if so, move into loop above.
-    //vacuumAnalyzeAll(opt, &schema, &db);
-
-    log.log(Level::debug, "server", "", "Completed full update",
-            fullUpdateTimer.elapsedTime());
 
     curl_global_cleanup();  // Clean-up after curl_global_init().
 }

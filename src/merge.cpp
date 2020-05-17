@@ -77,7 +77,7 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
         "               s.id = h.id\n"
         "    WHERE s.data IS NOT NULL AND\n"
         "          ( h.id IS NULL OR\n"
-        "            (s.data)::VARCHAR <> (h.data)::VARCHAR );\n";
+        "            (s.data)::VARCHAR <> (h.data)::VARCHAR );";
     log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 }

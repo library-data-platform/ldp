@@ -1,5 +1,5 @@
 #include <cstdint>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <fstream>
 #include <iostream>
 #include <sqlite3.h>
@@ -8,6 +8,8 @@
 
 #include "../etymoncpp/include/util.h"
 #include "idmap.h"
+
+namespace fs = std::experimental::filesystem;
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
     //int i;
@@ -165,27 +167,24 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     this->log = log;
     tx = new etymon::OdbcTx(dbc);
 
-    filesystem::path dd = datadir;
-    filesystem::path cachedir = dd / "cache";
-    filesystem::create_directories(cachedir);
-    filesystem::path cachedb = cachedir / "idmap.db";
-    filesystem::path cachelock = cachedir / "idmap.sync";
+    fs::path dd = datadir;
+    fs::path cachedir = dd / "cache";
+    fs::create_directories(cachedir);
+    fs::path cachedb = cachedir / "idmap.db";
+    fs::path sync = cachedir / "idmap.sync";
     bool create = false;
-    if (filesystem::exists(cachedb)) {
-        if (filesystem::exists(cachelock)) {
-            filesystem::remove(cachedb);
+    if (fs::exists(cachedb)) {
+        if (!fs::exists(sync))
             create = true;
-        } else {
-            { ofstream output(cachelock); }
-        }
     } else {
         create = true;
     }
+    fs::remove(sync);
     if (create) {
-        { ofstream output(cachelock); }
+        fs::remove(cachedb);
         createCache(cachedb);
     }
-    cacheLock = cachelock;
+    cacheSync = sync;
     cacheDB = new etymon::Sqlite3(string(cachedb));
     if (!create) {
         string sql = "SELECT MAX(sk) FROM idmap_cache;";
@@ -214,7 +213,7 @@ IDMap::~IDMap()
     delete dbt;
     delete dbc;
     delete cacheDB;
-    filesystem::remove(cacheLock);
+    { ofstream output(cacheSync); }
 }
 
 void IDMap::makeSK(const string& table, const char* id, string* sk)

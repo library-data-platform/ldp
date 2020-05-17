@@ -24,7 +24,7 @@ private:
     DBType* dbt;
     etymon::OdbcTx* tx;
     Log* log;
-    string cacheLock;
+    string cacheSync;
     etymon::Sqlite3* cacheDB;
     int64_t nextvalSK;
 };

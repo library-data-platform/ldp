@@ -20,7 +20,7 @@ The LDP server updates data in the database from data sources such as
 FOLIO modules, and users connect directly to the database to perform
 reporting and analytics.
 
-LDP is not multitenant in the general sense, and normally one LDP
+LDP is not multitenant in the usual sense, and normally one LDP
 instance is deployed per library.  However, shared data from multiple
 libraries of a consortium can be stored in a single LDP instance, and
 in that case we refer to each of the libraries as a tenant.  _This
@@ -97,7 +97,6 @@ there are two main branches:
 
 * `master` is the branch that new releases are made from.  It contains
   recently added features that have had some testing.
-
 * `current` is for active development and tends to be very unstable.
   This is where new features are first added.
 
@@ -212,10 +211,9 @@ Three database users are required:
   This account should be used very sparingly and carefully.
 * `ldpconfig` is a special user account for changing configuration
   settings in the `ldpconfig` schema.  It is intended to enable
-designated users to make changes safely to the server's operation,
-such as scheduling when data updates occur.  This user name can be
-modified using the `ldpconfigUser` configuration setting in
-`ldpconf.json`.
+designated users to make changes to the server's operation, such as
+scheduling when data updates occur.  This user name can be modified
+using the `ldpconfigUser` configuration setting in `ldpconf.json`.
 * `ldp` is a general user of the LDP database.  This user name can be
   modified using the `ldpUser` configuration setting in
 `ldpconf.json`.
