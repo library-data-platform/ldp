@@ -1,6 +1,6 @@
 #include <cstdint>
 #include <curl/curl.h>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <sys/stat.h>
@@ -15,14 +15,16 @@
 #include "timer.h"
 #include "update.h"
 
+namespace fs = std::experimental::filesystem;
+
 void makeUpdateTmpDir(const Options& opt, string* loaddir)
 {
-    filesystem::path datadir = opt.datadir;
-    filesystem::path tmp = datadir / "tmp";
-    //filesystem::path tmppath = tmp / ("update_" + to_string(time(nullptr)));
-    filesystem::path tmppath = tmp / "update";
-    filesystem::remove_all(tmppath);
-    filesystem::create_directories(tmppath);
+    fs::path datadir = opt.datadir;
+    fs::path tmp = datadir / "tmp";
+    //fs::path tmppath = tmp / ("update_" + to_string(time(nullptr)));
+    fs::path tmppath = tmp / "update";
+    fs::remove_all(tmppath);
+    fs::create_directories(tmppath);
     *loaddir = tmppath;
 
     //*loaddir = opt.datadir;

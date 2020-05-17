@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -224,14 +223,6 @@ void server(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
     log->log(Level::info, "server", "",
             string("Server stopped") + (opt.cliMode ? " (CLI mode)" : ""), -1);
 }
-
-//void emptyTempDir(const string& datadir)
-//{
-//    filesystem::path dd = datadir;
-//    filesystem::path tmp = dd / "tmp";
-//    filesystem::remove_all(tmp);
-//    filesystem::create_directories(tmp);
-//}
 
 void runServer(const Options& opt)
 {

@@ -1,5 +1,5 @@
 #include <cstdint>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <fstream>
 #include <iostream>
 #include <sqlite3.h>
@@ -8,6 +8,8 @@
 
 #include "../etymoncpp/include/util.h"
 #include "idmap.h"
+
+namespace fs = std::experimental::filesystem;
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
     //int i;
@@ -165,21 +167,21 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     this->log = log;
     tx = new etymon::OdbcTx(dbc);
 
-    filesystem::path dd = datadir;
-    filesystem::path cachedir = dd / "cache";
-    filesystem::create_directories(cachedir);
-    filesystem::path cachedb = cachedir / "idmap.db";
-    filesystem::path sync = cachedir / "idmap.sync";
+    fs::path dd = datadir;
+    fs::path cachedir = dd / "cache";
+    fs::create_directories(cachedir);
+    fs::path cachedb = cachedir / "idmap.db";
+    fs::path sync = cachedir / "idmap.sync";
     bool create = false;
-    if (filesystem::exists(cachedb)) {
-        if (!filesystem::exists(sync))
+    if (fs::exists(cachedb)) {
+        if (!fs::exists(sync))
             create = true;
     } else {
         create = true;
     }
-    filesystem::remove(sync);
+    fs::remove(sync);
     if (create) {
-        filesystem::remove(cachedb);
+        fs::remove(cachedb);
         createCache(cachedb);
     }
     cacheSync = sync;
