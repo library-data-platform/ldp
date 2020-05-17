@@ -174,11 +174,10 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     if (filesystem::exists(cachedb)) {
         if (!filesystem::exists(sync))
             create = true;
-        else
-            filesystem::remove(sync);
     } else {
         create = true;
     }
+    filesystem::remove(sync);
     if (create) {
         filesystem::remove(cachedb);
         createCache(cachedb);
