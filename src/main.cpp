@@ -368,7 +368,7 @@ void run(const etymon::CommandArgs& cargs)
                     fprintf(stderr,
                             "ldp: Server error occurred after %.4f seconds\n",
                             elapsedTime);
-                    int64_t waitTime = 60;
+                    long long int waitTime = 60;
                     fprintf(stderr, "ldp: Waiting for %lld seconds\n",
                             waitTime);
                     std::this_thread::sleep_for(std::chrono::seconds(waitTime));
