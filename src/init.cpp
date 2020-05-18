@@ -154,12 +154,49 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpUser + ";";
-    db->log->logDetail(sql);
+    //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpUser + ";";
+    //db->log->logDetail(sql);
+    //db->dbc->execDirect(nullptr, sql);
+    //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpconfigUser +
+    //    ";";
+    //db->log->logDetail(sql);
+    //db->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ldpsystem.idmap TO " + ldpUser + ";";
+    db->log->detail(sql);
     db->dbc->execDirect(nullptr, sql);
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpconfigUser +
+    sql = "GRANT SELECT ON ldpsystem.idmap TO " + ldpconfigUser + ";";
+    db->log->detail(sql);
+    db->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ldpsystem.log TO " + ldpUser + ";";
+    db->log->detail(sql);
+    db->dbc->execDirect(nullptr, sql);
+    sql = "GRANT SELECT ON ldpsystem.log TO " + ldpconfigUser + ";";
+    db->log->detail(sql);
+    db->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ldpsystem.main TO " + ldpUser + ";";
+    db->log->detail(sql);
+    db->dbc->execDirect(nullptr, sql);
+    sql = "GRANT SELECT ON ldpsystem.main TO " + ldpconfigUser + ";";
+    db->log->detail(sql);
+    db->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ldpsystem.referential_constraints TO " + ldpUser +
         ";";
-    db->log->logDetail(sql);
+    db->log->detail(sql);
+    db->dbc->execDirect(nullptr, sql);
+    sql = "GRANT SELECT ON ldpsystem.referential_constraints TO " +
+        ldpconfigUser + ";";
+    db->log->detail(sql);
+    db->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ldpsystem.tables TO " + ldpUser + ";";
+    db->log->detail(sql);
+    db->dbc->execDirect(nullptr, sql);
+    sql = "GRANT SELECT ON ldpsystem.tables TO " + ldpconfigUser + ";";
+    db->log->detail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     // Schema: ldpconfig
@@ -694,8 +731,41 @@ void schemaUpgrade6(SchemaUpgradeOptions* opt)
         ";";
     opt->dbc->execDirect(nullptr, sql);
 
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " +
+    sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldpUser + ";";
+    opt->log->detail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+    sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldpconfigUser + ";";
+    opt->log->detail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ldpsystem.log TO " + opt->ldpUser + ";";
+    opt->log->detail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+    sql = "GRANT SELECT ON ldpsystem.log TO " + opt->ldpconfigUser + ";";
+    opt->log->detail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ldpsystem.main TO " + opt->ldpUser + ";";
+    opt->log->detail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+    sql = "GRANT SELECT ON ldpsystem.main TO " + opt->ldpconfigUser + ";";
+    opt->log->detail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ldpsystem.referential_constraints TO " +
+        opt->ldpUser + ";";
+    opt->log->detail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+    sql = "GRANT SELECT ON ldpsystem.referential_constraints TO " +
         opt->ldpconfigUser + ";";
+    opt->log->detail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ldpsystem.tables TO " + opt->ldpUser + ";";
+    opt->log->detail(sql);
+    opt->dbc->execDirect(nullptr, sql);
+    sql = "GRANT SELECT ON ldpsystem.tables TO " + opt->ldpconfigUser + ";";
+    opt->log->detail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + opt->ldpconfigUser + ";";
@@ -874,6 +944,8 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
 
     bool upgraded = false;
     for (int v = version + 1; v <= thisSchemaVersion; v++) {
+        //if (upgraded == false)
+        //    fprintf(stderr, "Upgrading schema\n");
         //log->log(Level::trace, "", "",
         //        "Applying schema upgrade: " + to_string(v), -1);
         SchemaUpgradeOptions opt;
