@@ -19,6 +19,7 @@
 #include "init.h"
 #include "log.h"
 #include "options.h"
+#include "timer.h"
 #include "update.h"
 #include "util.h"
 
@@ -352,7 +353,33 @@ void run(const etymon::CommandArgs& cargs)
     //if (opt.logLevel == Level::trace)
     //    debugOptions(opt);
 
-    if (opt.command == "server" || opt.command == "update") {
+    if (opt.command == "server") {
+        do {
+            Timer timer(opt);
+            try {
+                runServer(opt);
+            } catch (runtime_error& e) {
+                string s = e.what();
+                if ( !(s.empty()) && s.back() == '\n' )
+                    s.pop_back();
+                fprintf(stderr, "ldp: Error: %s\n", s.c_str());
+                double elapsedTime = timer.elapsedTime();
+                if (elapsedTime < 60) {
+                    fprintf(stderr,
+                            "ldp: Server error occurred after %.4f seconds\n",
+                            elapsedTime);
+                    int64_t waitTime = 60;
+                    fprintf(stderr, "ldp: Waiting for %lld seconds\n",
+                            waitTime);
+                    std::this_thread::sleep_for(std::chrono::seconds(waitTime));
+                }
+                fprintf(stderr, "ldp: Restarting server\n");
+            }
+        } while (true);
+        return;
+    }
+
+    if (opt.command == "update") {
         runServer(opt);
         return;
     }
