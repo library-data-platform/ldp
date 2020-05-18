@@ -29,9 +29,9 @@ A full update may take several hours for a large library.  During this
 time, the database generally remains available to users, but query
 performance may be affected.  Also, some stages of the update process
 involve schema changes and could interrupt any long-running queries
-that are executing at the same time.  For all of these reasons, it is
-best to run full updates at a time when the database will not be used
-heavily.
+that are executing at the same time.  For these reasons, it is best to
+run full updates at a time when the database will be least heavily
+used.
 
 
 Reference
