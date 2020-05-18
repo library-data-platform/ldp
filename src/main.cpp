@@ -240,7 +240,7 @@ void runServer(const Options& opt)
     string sql = "CREATE SCHEMA IF NOT EXISTS ldpsystem;";
     log.logDetail(sql);
     lockConn.execDirect(nullptr, sql);
-    sql = "CREATE TABLE IF NOT EXISTS ldpsystem.server_lock ();";
+    sql = "CREATE TABLE IF NOT EXISTS ldpsystem.server_lock (b BOOLEAN);";
     log.logDetail(sql);
     lockConn.execDirect(nullptr, sql);
 
