@@ -230,6 +230,7 @@ $ createdb ldp --username=<admin_user> --owner=ldpadmin
 $ psql ldp --username=<admin_user> --single-transaction \
       --command="REVOKE ALL ON SCHEMA public FROM public;" \
       --command="GRANT ALL ON SCHEMA public TO ldpadmin;" \
+      --command="GRANT USAGE ON SCHEMA public TO ldpconfig;" \
       --command="GRANT USAGE ON SCHEMA public TO ldp;"
 ```
 
@@ -246,6 +247,7 @@ CREATE USER ldp PASSWORD '(ldp password here)';
 ALTER DATABASE ldp OWNER TO ldpadmin;
 REVOKE ALL ON SCHEMA public FROM public;
 GRANT ALL ON SCHEMA public TO ldpadmin;
+GRANT USAGE ON SCHEMA public TO ldpconfig;
 GRANT USAGE ON SCHEMA public TO ldp;
 ```
 
