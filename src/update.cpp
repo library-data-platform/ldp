@@ -140,13 +140,17 @@ void processReferentialPaths(etymon::OdbcEnv* odbc, const string& dbName,
             continue;
         if (column.columnName == "id")
             continue;
-        //printf("Column: %s\n", column.columnName.c_str());
+        //printf("    Column: %s\n", column.columnName.c_str());
         for (auto& table1 : schema.tables) {
             if (isForeignKey(&queryDBC, log, table, column, table1)) {
-                //printf("-> %s\n", table1.tableName.c_str());
-                analyzeReferentialPaths(/*odbc, dbName,*/ dbc, log, table,
-                        column, table1, logAnalysis, forceConstraints);
-                break;
+                fprintf(stderr, "%s.%s -> %s\n",
+                        table.tableName.c_str(),
+                        column.columnName.c_str(),
+                        table1.tableName.c_str());
+                //printf("        -> %s\n", table1.tableName.c_str());
+                //analyzeReferentialPaths([>odbc, dbName,<] dbc, log, table,
+                //        column, table1, logAnalysis, forceConstraints);
+                //break;
             }
         }
     }
