@@ -198,8 +198,8 @@ For libraries that deploy LDP with Redshift, these configuration
 settings are suggested as a starting point:
 
 * Node type:  `dc2.large`
-* Cluster type:  `Single Node`
-* Number of compute nodes:  `1`
+* Cluster type:  `Multiple Node`
+* Number of compute nodes:  `2`
 * Snapshots:  Automated snapshots enabled
 * Maintenance Track:  `Trailing`
 
@@ -217,6 +217,15 @@ using the `ldpconfigUser` configuration setting in `ldpconf.json`.
 * `ldp` is a general user of the LDP database.  This user name can be
   modified using the `ldpUser` configuration setting in
 `ldpconf.json`.
+
+If more than one LDP instance are being hosted in a single PostgreSQL
+server, the `ldpconfig` and `ldp` user names should for security
+reasons be configured to be different for each LDP instance.  This is
+done by including within `ldpconf.json` the `ldpconfigUser` and
+`ldpUser` settings described below in the "Reference" section of this
+guide.  In the following examples we will assume that the default user
+names are being used, but please substitute alternative names if you
+have configured them.
 
 In addition to creating these users, it is a good idea to restrict
 access permissions.  In PostgreSQL, this can be done on the command
