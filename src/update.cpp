@@ -2,6 +2,7 @@
 #include <curl/curl.h>
 #include <experimental/filesystem>
 #include <iostream>
+#include <map>
 #include <stdexcept>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -128,10 +129,19 @@ void analyzeReferentialPaths(etymon::OdbcDbc* dbc, Log* log,
     }
 }
 
+class Reference {
+public:
+    string referencingTable;
+    string referencingColumn;
+    string referencedTable;
+    string referencedColumn;
+};
+
 void processReferentialPaths(etymon::OdbcEnv* odbc, const string& dbName,
         etymon::OdbcDbc* dbc, Log* log, const Schema& schema,
         const TableSchema& table, bool logAnalysis, bool forceConstraints)
 {
+    map<string, vector<Reference>> refs;
     etymon::OdbcDbc queryDBC(odbc, dbName);
     log->logDetail("Searching for foreign keys in table: " + table.tableName);
     //printf("Table: %s\n", table.tableName.c_str());
@@ -143,10 +153,21 @@ void processReferentialPaths(etymon::OdbcEnv* odbc, const string& dbName,
         //printf("    Column: %s\n", column.columnName.c_str());
         for (auto& table1 : schema.tables) {
             if (isForeignKey(&queryDBC, log, table, column, table1)) {
+
                 fprintf(stderr, "%s.%s -> %s\n",
                         table.tableName.c_str(),
                         column.columnName.c_str(),
                         table1.tableName.c_str());
+
+                string key = table.tableName + "." + column.columnName;
+                Reference ref = {
+                    table.tableName,
+                    column.columnName,
+                    table1.tableName,
+                    "id"
+                };
+                refs[key].push_back(ref);
+                //
                 //printf("        -> %s\n", table1.tableName.c_str());
                 //analyzeReferentialPaths([>odbc, dbName,<] dbc, log, table,
                 //        column, table1, logAnalysis, forceConstraints);
