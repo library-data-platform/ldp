@@ -382,7 +382,7 @@ example:
             ],
             "directDatabaseName": "okapi",
             "directDatabaseHost": "database.indexdata.com",
-            "directDatabasePort": "5432",
+            "directDatabasePort": 5432,
             "directDatabaseUser": "folio_admin",
             "directDatabasePassword": "(database password here)"
         }
