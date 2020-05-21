@@ -171,6 +171,7 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     fs::path cachedir = dd / "cache";
     fs::create_directories(cachedir);
     fs::path cachedb = cachedir / "idmap.db";
+    fs::path cachejournal = cachedir / "idmap.db-journal";
     fs::path sync = cachedir / "idmap.sync";
     bool create = false;
     if (fs::exists(cachedb)) {
@@ -182,10 +183,35 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     fs::remove(sync);
     if (create) {
         fs::remove(cachedb);
+        fs::remove(cachejournal);
         createCache(cachedb);
     }
     cacheSync = sync;
     cacheDB = new etymon::Sqlite3(string(cachedb));
+
+    ///////////////////////////////////////////////////////////////////////////
+    char *zErrMsg = 0;
+    int rc;
+    string sql = "PRAGMA journal_mode = OFF;";
+    rc = sqlite3_exec(cacheDB->db, sql.c_str(), callback, 0, &zErrMsg);
+    if( rc != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }
+    sql = "PRAGMA synchronous = OFF;";
+    rc = sqlite3_exec(cacheDB->db, sql.c_str(), callback, 0, &zErrMsg);
+    if( rc != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }
+    sql = "PRAGMA locking_mode = EXCLUSIVE;";
+    rc = sqlite3_exec(cacheDB->db, sql.c_str(), callback, 0, &zErrMsg);
+    if( rc != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }
+    ///////////////////////////////////////////////////////////////////////////
+
     if (!create) {
         string sql = "SELECT MAX(sk) FROM idmap_cache;";
         log->logDetail(sql);
