@@ -239,7 +239,6 @@ void runUpdate(const Options& opt)
 
     Timer idmapTimer1(opt);
     IDMap idmap(&odbc, opt.db, &log, loadDir, opt.datadir);
-    idmap.sync();
     log.log(Level::debug, "update", "", "Synchronized cache",
             idmapTimer1.elapsedTime());
 
@@ -364,7 +363,7 @@ void runUpdate(const Options& opt)
     } // for
 
     Timer idmapTimer2(opt);
-    idmap.sync();
+    idmap.syncCommit();
     log.log(Level::debug, "update", "", "Synchronized cache",
             idmapTimer2.elapsedTime());
 
@@ -414,6 +413,8 @@ void runUpdate(const Options& opt)
         }
 
     }
+
+    idmap.vacuum();
 
     curl_global_cleanup();  // Clean-up after curl_global_init().
 }

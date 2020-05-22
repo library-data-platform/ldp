@@ -224,7 +224,6 @@ int64_t IDMap::cacheSelectMaxSK()
     log->detail(sql);
     string msk;
     cache->exec(sql, selectMaxSK, (void*) &msk);
-    log->detail("["+msk+"]");
     int64_t maxSK = 0;
     if (msk != "") {
         {
@@ -235,9 +234,11 @@ int64_t IDMap::cacheSelectMaxSK()
     return maxSK;
 }
 
-void IDMap::syncPull(int64_t startSK)
+void IDMap::down(int64_t startSK)
 {
-    string sql =
+    string sql = "BEGIN;";
+    cache->exec(sql);
+    sql =
         "SELECT sk, id FROM ldpsystem.idmap WHERE sk >= " +
         to_string(startSK) + ";";
     log->detail(sql);
@@ -261,10 +262,11 @@ void IDMap::syncPull(int64_t startSK)
             cache->exec(sql);
         }
     }
-
+    sql = "COMMIT;";
+    cache->exec(sql);
 }
 
-void IDMap::syncPush(int64_t startSK)
+void IDMap::up(int64_t startSK)
 {
     etymon::OdbcTx tx(dbc);
     string sql = "SELECT id, sk FROM idmap_cache WHERE sk >= " +
@@ -276,7 +278,7 @@ void IDMap::syncPush(int64_t startSK)
     tx.commit();
 }
 
-void IDMap::sync()
+void IDMap::syncUp()
 {
     int64_t ldpMaxSK = ldpSelectMaxSK();
     log->detail("IDMap::sync(): LDP max(sk) = " + to_string(ldpMaxSK));
@@ -289,23 +291,43 @@ void IDMap::sync()
         return;
     }
 
-    string sql = "BEGIN;";
-    cache->exec(sql);
-
     if (ldpMaxSK > cacheMaxSK) {
-        log->trace("Synchronizing cache: idmap: pulling " +
-                to_string(ldpMaxSK - cacheMaxSK) + " rows");
-        syncPull(cacheMaxSK + 1);
-        nextvalSK = ldpMaxSK + 1;
+        throw runtime_error("Cache out of sync with remote database");
     } else {
-        log->trace("Synchronizing cache: idmap: pushing " +
+        log->trace("Synchronizing cache: idmap: sending " +
                 to_string(cacheMaxSK - ldpMaxSK) + " rows");
-        syncPush(ldpMaxSK + 1);
+        up(ldpMaxSK + 1);
         nextvalSK = cacheMaxSK + 1;
     }
+}
 
-    sql = "COMMIT;";
-    cache->exec(sql);
+void IDMap::syncDown()
+{
+    int64_t ldpMaxSK = ldpSelectMaxSK();
+    log->detail("IDMap::sync(): LDP max(sk) = " + to_string(ldpMaxSK));
+    int64_t cacheMaxSK = cacheSelectMaxSK();
+    log->detail("IDMap::sync(): Cache max(sk) = " + to_string(cacheMaxSK));
+
+    if (ldpMaxSK == cacheMaxSK) {
+        log->trace("Synchronizing cache: idmap: 0 rows");
+        nextvalSK = ldpMaxSK + 1;
+        return;
+    }
+
+    if (ldpMaxSK > cacheMaxSK) {
+        log->trace("Synchronizing cache: idmap: receiving " +
+                to_string(ldpMaxSK - cacheMaxSK) + " rows");
+        down(cacheMaxSK + 1);
+        nextvalSK = ldpMaxSK + 1;
+    } else {
+        log->trace("Synchronizing cache: idmap: clearing " +
+                to_string(cacheMaxSK - ldpMaxSK) + " rows");
+        string sql = "DELETE FROM idmap_cache WHERE sk > " +
+            to_string(ldpMaxSK) + ";";
+        log->detail(sql);
+        cache->exec(sql);
+        nextvalSK = ldpMaxSK + 1;
+    }
 }
 
 IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
@@ -335,6 +357,8 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
         ");";
     log->detail(sql);
     cache->exec(sql);
+
+    syncDown();
 
     //if (!create) {
     //    string sql = "SELECT MAX(sk) FROM idmap_cache;";
@@ -392,6 +416,19 @@ void IDMap::makeSK(const string& table, const char* id, string* sk)
     log->detail(sql);
     cache->exec(sql);
     //printf("(%s, %s)\n", sk->c_str(), id);
+}
+
+void IDMap::syncCommit()
+{
+    syncUp();
+}
+
+void IDMap::vacuum()
+{
+    log->trace("Rewriting cache: idmap");
+    string sql = "VACUUM;";
+    log->detail(sql);
+    cache->exec(sql);
 }
 
 //void IDMap::syncCommit()
