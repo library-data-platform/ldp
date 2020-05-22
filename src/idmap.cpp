@@ -138,9 +138,7 @@ int64_t IDMap::cacheSelectMaxSK()
 
 void IDMap::down(int64_t startSK)
 {
-    string sql = "BEGIN;";
-    cache->exec(sql);
-    sql =
+    string sql =
         "SELECT sk, id FROM ldpsystem.idmap WHERE sk >= " +
         to_string(startSK) + ";";
     log->detail(sql);
@@ -162,8 +160,6 @@ void IDMap::down(int64_t startSK)
             cache->exec(sql);
         }
     }
-    sql = "COMMIT;";
-    cache->exec(sql);
 }
 
 void IDMap::up(int64_t startSK)
@@ -254,7 +250,14 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     log->detail(sql);
     cache->exec(sql);
 
+    sql = "BEGIN;";
+    cache->exec(sql);
     syncDown();
+    sql = "COMMIT;";
+    cache->exec(sql);
+
+    sql = "BEGIN;";
+    cache->exec(sql);
 }
 
 IDMap::~IDMap()
@@ -288,6 +291,8 @@ void IDMap::makeSK(const string& table, const char* id, string* sk)
 
 void IDMap::syncCommit()
 {
+    string sql = "COMMIT;";
+    cache->exec(sql);
     syncUp();
 }
 
