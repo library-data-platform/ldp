@@ -414,7 +414,10 @@ void runUpdate(const Options& opt)
 
     }
 
+    Timer idmapTimer3(opt);
     idmap.vacuum();
+    log.log(Level::debug, "update", "", "Optimized cache",
+            idmapTimer3.elapsedTime());
 
     curl_global_cleanup();  // Clean-up after curl_global_init().
 }
