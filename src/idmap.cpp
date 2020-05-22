@@ -11,11 +11,6 @@
 
 namespace fs = std::experimental::filesystem;
 
-//static int callback(void* NotUsed, int argc, char** argv, char** azColName)
-//{
-//    return 0;
-//}
-
 static int lookupSK(void *data, int argc, char **argv, char **azColName){
     *((string*) data) = argv[0];
     return 0;
@@ -35,6 +30,7 @@ void SyncData::sync()
     if (data.size() == 0)
         return;
     string sql = "INSERT INTO ldpsystem.idmap (sk, id) VALUES";
+    log->detail(sql + " ...");
     bool first = true;
     for (auto& d : data) {
         if (first)
@@ -42,13 +38,9 @@ void SyncData::sync()
         else
             sql += ",";
         sql += "\n(" + d.first + ",'" + d.second + "')";
-        //printf(">> sk = %s; id = %s\n", d.first.c_str(), d.second.c_str());
     }
     sql += ";";
-    //printf("%s\n", sql.c_str());
-    log->logDetail("INSERT INTO ldpsystem.idmap (sk, id) VALUES (...");
     dbc->execDirect(nullptr, sql);
-    //printf("%lu record synced\n", data.size());
     data.clear();
 }
 
@@ -67,96 +59,6 @@ static int selectMaxSK(void* data, int argc, char** argv, char** azColName)
     *((string*) data) = (argv[0] == nullptr ? "0" : argv[0]);
     return 0;
 }
-
-/*
-void IDMap::createCache(const string& cacheFile)
-{
-    etymon::Sqlite3 sqlite(cacheFile.c_str());
-
-    char *zErrMsg = 0;
-    int rc;
-    string sql;
-
-    sql = "PRAGMA journal_mode = OFF;";
-    rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
-    if( rc != SQLITE_OK ){
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-        sqlite3_free(zErrMsg);
-    }
-    sql = "PRAGMA synchronous = OFF;";
-    rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
-    if( rc != SQLITE_OK ){
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-        sqlite3_free(zErrMsg);
-    }
-    sql = "PRAGMA locking_mode = EXCLUSIVE;";
-    rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
-    if( rc != SQLITE_OK ){
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-        sqlite3_free(zErrMsg);
-    }
-
-    sql =
-        "CREATE TABLE idmap_cache (\n"
-        "    id VARCHAR(65535) NOT NULL,\n"
-        "    sk BIGINT NOT NULL,\n"
-        "    new INTEGER NOT NULL,\n"
-        "    PRIMARY KEY (id),\n"
-        "    UNIQUE (sk)\n"
-        ");";
-    rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
-    if( rc != SQLITE_OK ){
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-        sqlite3_free(zErrMsg);
-    }
-
-    sql = "BEGIN;";
-    rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
-    if( rc != SQLITE_OK ){
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-        sqlite3_free(zErrMsg);
-    }
-
-    sql = "SELECT sk, id FROM ldpsystem.idmap;";
-    log->logDetail(sql);
-    {
-        etymon::OdbcStmt stmt(dbc);
-        dbc->execDirect(&stmt, sql);
-        string sk, id;
-        //printf("Caching idmap\n");
-        while (dbc->fetch(&stmt)) {
-            dbc->getData(&stmt, 1, &sk);
-            dbc->getData(&stmt, 2, &id);
-            etymon::toLower(&id);
-            //int64_t skl = stol(sk);
-            int64_t skl;
-            {
-                stringstream stream(sk);
-                stream >> skl;
-            }
-            if (skl >= nextvalSK)
-                nextvalSK = skl + 1;
-            //printf("(%s, %s)\n", sk.c_str(), id.c_str());
-            sql =
-                "INSERT INTO idmap_cache (id, sk, new)\n"
-                "    VALUES ('" + id + "', " + sk + ", 0);";
-            rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
-            if( rc != SQLITE_OK ){
-                fprintf(stderr, "SQL error: %s\n", zErrMsg);
-                sqlite3_free(zErrMsg);
-            }
-        }
-    }
-
-    sql = "COMMIT;";
-    rc = sqlite3_exec(sqlite.db, sql.c_str(), callback, 0, &zErrMsg);
-    if( rc != SQLITE_OK ){
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-        sqlite3_free(zErrMsg);
-    }
-
-}
-*/
 
 static void makeCachePath(const string& datadir, string* path)
 {
@@ -254,8 +156,6 @@ void IDMap::down(int64_t startSK)
                 stringstream stream(sk);
                 stream >> skl;
             }
-            //if (skl >= nextvalSK)
-            //    nextvalSK = skl + 1;
             sql =
                 "INSERT INTO idmap_cache (id, sk)\n"
                 "    VALUES ('" + id + "', " + sk + ");";
@@ -280,22 +180,21 @@ void IDMap::up(int64_t startSK)
 
 void IDMap::syncUp()
 {
-    int64_t ldpMaxSK = ldpSelectMaxSK();
-    log->detail("IDMap::sync(): LDP max(sk) = " + to_string(ldpMaxSK));
     int64_t cacheMaxSK = cacheSelectMaxSK();
-    log->detail("IDMap::sync(): Cache max(sk) = " + to_string(cacheMaxSK));
+    int64_t ldpMaxSK = ldpSelectMaxSK();
+    log->detail("Cache (idmap): max sk = " + to_string(cacheMaxSK) +
+            " (" + to_string(ldpMaxSK) + ")");
 
     if (ldpMaxSK == cacheMaxSK) {
-        log->trace("Synchronizing cache: idmap: 0 rows");
         nextvalSK = ldpMaxSK + 1;
         return;
     }
 
     if (ldpMaxSK > cacheMaxSK) {
-        throw runtime_error("Cache out of sync with remote database");
+        throw runtime_error("Cache (idmap) out of sync with remote database");
     } else {
-        log->trace("Synchronizing cache: idmap: sending " +
-                to_string(cacheMaxSK - ldpMaxSK) + " rows");
+        log->trace("Cache (idmap): sync up: " +
+                to_string(cacheMaxSK - ldpMaxSK));
         up(ldpMaxSK + 1);
         nextvalSK = cacheMaxSK + 1;
     }
@@ -303,25 +202,23 @@ void IDMap::syncUp()
 
 void IDMap::syncDown()
 {
-    int64_t ldpMaxSK = ldpSelectMaxSK();
-    log->detail("IDMap::sync(): LDP max(sk) = " + to_string(ldpMaxSK));
     int64_t cacheMaxSK = cacheSelectMaxSK();
-    log->detail("IDMap::sync(): Cache max(sk) = " + to_string(cacheMaxSK));
+    int64_t ldpMaxSK = ldpSelectMaxSK();
+    log->detail("Cache (idmap): max sk = " + to_string(cacheMaxSK) +
+            " (" + to_string(ldpMaxSK) + ")");
 
     if (ldpMaxSK == cacheMaxSK) {
-        log->trace("Synchronizing cache: idmap: 0 rows");
         nextvalSK = ldpMaxSK + 1;
         return;
     }
 
     if (ldpMaxSK > cacheMaxSK) {
-        log->trace("Synchronizing cache: idmap: receiving " +
-                to_string(ldpMaxSK - cacheMaxSK) + " rows");
+        log->trace("Cache (idmap): sync down: " +
+                to_string(ldpMaxSK - cacheMaxSK));
         down(cacheMaxSK + 1);
         nextvalSK = ldpMaxSK + 1;
     } else {
-        log->trace("Synchronizing cache: idmap: clearing " +
-                to_string(cacheMaxSK - ldpMaxSK) + " rows");
+        log->trace("Cache (idmap): clear: " + to_string(cacheMaxSK - ldpMaxSK));
         string sql = "DELETE FROM idmap_cache WHERE sk > " +
             to_string(ldpMaxSK) + ";";
         log->detail(sql);
@@ -337,7 +234,6 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     dbc = new etymon::OdbcDbc(odbc, databaseDSN);
     dbt = new DBType(dbc);
     this->log = log;
-    //tx = new etymon::OdbcTx(dbc);
 
     string filename;
     makeCachePath(datadir, &filename);
@@ -359,35 +255,13 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     cache->exec(sql);
 
     syncDown();
-
-    //if (!create) {
-    //    string sql = "SELECT MAX(sk) FROM idmap_cache;";
-    //    log->logDetail(sql);
-    //    char *zErrMsg = 0;
-    //    string msk;
-    //    int rc = sqlite3_exec(cache->db, sql.c_str(), selectMaxSK,
-    //            (void*) &msk, &zErrMsg);
-    //    if( rc != SQLITE_OK ) {
-    //        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    //        sqlite3_free(zErrMsg);
-    //    }
-    //    int64_t maxSK;
-    //    {
-    //        stringstream stream(msk);
-    //        stream >> maxSK;
-    //    }
-    //    nextvalSK = maxSK + 1;
-    //}
-    //printf("nextvalSK = %llu\n", nextvalSK);
 }
 
 IDMap::~IDMap()
 {
-    //delete tx;
     delete dbt;
     delete dbc;
     delete cache;
-    //{ ofstream output(cacheSync); }
 }
 
 void IDMap::makeSK(const string& table, const char* id, string* sk)
@@ -400,11 +274,6 @@ void IDMap::makeSK(const string& table, const char* id, string* sk)
     log->detail(sql);
     *sk = "";
     cache->exec(sql, lookupSK, (void*) sk);
-    //printf("SK = %s\n", sk->c_str());
-    //if (*sk == "") {
-    //    fprintf(stderr, "sk not found\n");
-    //    fprintf(stderr, "%s\n", qid.c_str());
-    //}
     if (*sk != "")
         return;
     // The sk was not found; so we add it.
@@ -415,7 +284,6 @@ void IDMap::makeSK(const string& table, const char* id, string* sk)
         "    VALUES ('" + string(id) + "', " + *sk + ");";
     log->detail(sql);
     cache->exec(sql);
-    //printf("(%s, %s)\n", sk->c_str(), id);
 }
 
 void IDMap::syncCommit()
@@ -430,27 +298,4 @@ void IDMap::vacuum()
     log->detail(sql);
     cache->exec(sql);
 }
-
-//void IDMap::syncCommit()
-//{
-//    string sql = "SELECT id, sk FROM idmap_cache WHERE new = 1;";
-//    log->logDetail(sql);
-//    char *zErrMsg = 0;
-//    SyncData syncData(dbc, log);
-//    int rc = sqlite3_exec(cache->db, sql.c_str(), selectAllNew,
-//            (void*) &syncData, &zErrMsg);
-//    if( rc != SQLITE_OK ) {
-//        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-//        sqlite3_free(zErrMsg);
-//    }
-//    syncData.sync();  // Sync any remaining data.
-//    sql = "UPDATE idmap_cache SET new = 0;";
-//    rc = sqlite3_exec(cache->db, sql.c_str(), callback, 0, &zErrMsg);
-//    if (rc != SQLITE_OK){
-//        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-//        //throw runtime_error("Unable to map ID: " + string(id));
-//        sqlite3_free(zErrMsg);
-//    }
-//    tx->commit();
-//}
 
