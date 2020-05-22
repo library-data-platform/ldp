@@ -18,14 +18,22 @@ public:
     ~IDMap();
     void makeSK(const string& table, const char* id, string* sk);
     void syncCommit();
+    void vacuum();
+    static void schemaUpgradeRemoveNewColumn(const string& datadir);
 private:
+    void syncDown();
+    void syncUp();
+    int64_t ldpSelectMaxSK();
+    int64_t cacheSelectMaxSK();
+    void down(int64_t startSK);
+    void up(int64_t startSK);
+    void openCache(const string& filename);
     void createCache(const string& cacheFile);
     etymon::OdbcDbc* dbc;
     DBType* dbt;
-    etymon::OdbcTx* tx;
+    //etymon::OdbcTx* tx;
     Log* log;
-    string cacheSync;
-    etymon::Sqlite3* cacheDB;
+    etymon::Sqlite3* cache;
     int64_t nextvalSK;
 };
 

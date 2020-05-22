@@ -2,6 +2,7 @@
 #include <stdexcept>
 
 #include "dbtype.h"
+#include "idmap.h"
 #include "init.h"
 #include "log.h"
 
@@ -330,6 +331,7 @@ public:
     Log* log;
     string ldpUser;
     string ldpconfigUser;
+    string datadir;
 };
 
 typedef void (*SchemaUpgrade)(SchemaUpgradeOptions* opt);
@@ -918,6 +920,11 @@ void schemaUpgrade7(SchemaUpgradeOptions* opt)
     opt->dbc->execDirect(nullptr, sql);
 }
 
+void schemaUpgrade8(SchemaUpgradeOptions* opt)
+{
+    IDMap::schemaUpgradeRemoveNewColumn(opt->datadir);
+}
+
 SchemaUpgrade schemaUpgrade[] = {
     nullptr,  // Version 0 has no migration.
     schemaUpgrade1,
@@ -926,12 +933,13 @@ SchemaUpgrade schemaUpgrade[] = {
     schemaUpgrade4,
     schemaUpgrade5,
     schemaUpgrade6,
-    schemaUpgrade7
+    schemaUpgrade7,
+    schemaUpgrade8
 };
 
 void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
         const string& ldpUser, const string& ldpconfigUser, int64_t version,
-        int64_t thisSchemaVersion, Log* log)
+        int64_t thisSchemaVersion, Log* log, const string& datadir)
 {
     // Do not using logging during schema upgrades.
 
@@ -953,6 +961,7 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
         opt.log = log;
         opt.ldpUser = ldpUser;
         opt.ldpconfigUser = ldpconfigUser;
+        opt.datadir = datadir;
         schemaUpgrade[v](&opt);
         upgraded = true;
     }
@@ -988,9 +997,10 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
  * \param[in] db Database context.
  */
 void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
-        const string& ldpUser, const string& ldpconfigUser)
+        const string& ldpUser, const string& ldpconfigUser,
+        const string& datadir)
 {
-    int64_t thisSchemaVersion = 7;
+    int64_t thisSchemaVersion = 8;
 
     //db->log->log(Level::trace, "", "", "Initializing database", -1);
 
@@ -1003,7 +1013,7 @@ void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
     if (versionFound) {
         // Schema is present: check if it needs to be upgraded.
         upgradeSchema(odbc, dsn, ldpUser, ldpconfigUser, version,
-                thisSchemaVersion, db->log);
+                thisSchemaVersion, db->log, datadir);
     } else {
         // Schema is not present: create it.
         fprintf(stderr, "ldp: Creating schema\n");
