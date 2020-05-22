@@ -199,7 +199,8 @@ void runUpdate(const Options& opt)
         etymon::OdbcDbc dbc(&odbc, opt.db);
         DBType dbt(&dbc);
         DBContext db(&dbc, &dbt, &log);
-        initUpgrade(&odbc, opt.db, &db, opt.ldpUser, opt.ldpconfigUser);
+        initUpgrade(&odbc, opt.db, &db, opt.ldpUser, opt.ldpconfigUser,
+                opt.datadir);
     }
 
     ExtractionFiles extractionDir(opt);
@@ -238,6 +239,7 @@ void runUpdate(const Options& opt)
 
     Timer idmapTimer1(opt);
     IDMap idmap(&odbc, opt.db, &log, loadDir, opt.datadir);
+    idmap.sync();
     log.log(Level::debug, "update", "", "Synchronized cache",
             idmapTimer1.elapsedTime());
 
@@ -362,7 +364,7 @@ void runUpdate(const Options& opt)
     } // for
 
     Timer idmapTimer2(opt);
-    idmap.syncCommit();
+    idmap.sync();
     log.log(Level::debug, "update", "", "Synchronized cache",
             idmapTimer2.elapsedTime());
 

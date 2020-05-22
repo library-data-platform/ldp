@@ -16,16 +16,22 @@ public:
     IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
             const string& tempPath, const string& datadir);
     ~IDMap();
+    void sync();
     void makeSK(const string& table, const char* id, string* sk);
-    void syncCommit();
+    //void syncCommit();
+    static void schemaUpgradeRemoveNewColumn(const string& datadir);
 private:
+    int64_t ldpSelectMaxSK();
+    int64_t cacheSelectMaxSK();
+    void syncPull(int64_t startSK);
+    void syncPush(int64_t startSK);
+    void openCache(const string& filename);
     void createCache(const string& cacheFile);
     etymon::OdbcDbc* dbc;
     DBType* dbt;
-    etymon::OdbcTx* tx;
+    //etymon::OdbcTx* tx;
     Log* log;
-    string cacheSync;
-    etymon::Sqlite3* cacheDB;
+    etymon::Sqlite3* cache;
     int64_t nextvalSK;
 };
 
