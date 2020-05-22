@@ -145,11 +145,12 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->dbt->redshiftKeys("referencing_table",
             "referencing_table, referencing_column", &rskeys);
     sql =
-        "CREATE TABLE ldpsystem.referential_constraints (\n"
+        "CREATE TABLE ldpsystem.foreign_key_constraints (\n"
         "    referencing_table VARCHAR(63) NOT NULL,\n"
         "    referencing_column VARCHAR(63) NOT NULL,\n"
         "    referenced_table VARCHAR(63) NOT NULL,\n"
         "    referenced_column VARCHAR(63) NOT NULL,\n"
+        "    constraint_name VARCHAR(63) NOT NULL,\n"
         "        PRIMARY KEY (referencing_table, referencing_column)\n"
         ")" + rskeys + ";";
     db->log->logDetail(sql);
@@ -215,10 +216,10 @@ void initSchema(DBContext* db, const string& ldpUser,
 
     sql =
         "CREATE TABLE ldpconfig.general (\n"
-        "    full_update_enabled BOOLEAN NOT NULL,\n"
+        "    enable_full_updates BOOLEAN NOT NULL,\n"
         "    next_full_update TIMESTAMP WITH TIME ZONE NOT NULL,\n"
-        "    log_referential_analysis BOOLEAN NOT NULL DEFAULT FALSE,\n"
-        "    force_referential_constraints BOOLEAN NOT NULL DEFAULT FALSE,\n"
+        "    detect_foreign_keys BOOLEAN NOT NULL DEFAULT FALSE,\n"
+        "    enable_foreign_key_warnings BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    disable_anonymization BOOLEAN NOT NULL DEFAULT FALSE\n"
         ");";
     db->dbc->execDirect(nullptr, sql);
@@ -228,10 +229,22 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->dbc->execDirect(nullptr, sql);
     sql =
         "INSERT INTO ldpconfig.general\n"
-        "    (full_update_enabled, next_full_update)\n"
+        "    (enable_full_updates, next_full_update)\n"
         "    VALUES\n"
         "    (TRUE, " + string(db->dbt->currentTimestamp()) + ");";
     db->log->log(Level::detail, "", "", sql, -1);
+    db->dbc->execDirect(nullptr, sql);
+
+    sql =
+        "CREATE TABLE ldpconfig.foreign_keys (\n"
+        "    enable_constraint BOOLEAN NOT NULL,\n"
+        "    force_constraint BOOLEAN NOT NULL,\n"
+        "    referencing_table VARCHAR(63) NOT NULL,\n"
+        "    referencing_column VARCHAR(63) NOT NULL,\n"
+        "    referenced_table VARCHAR(63) NOT NULL,\n"
+        "    referenced_column VARCHAR(63) NOT NULL\n"
+        ");";
+    db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpUser + ";";
@@ -925,6 +938,60 @@ void schemaUpgrade8(SchemaUpgradeOptions* opt)
     IDMap::schemaUpgradeRemoveNewColumn(opt->datadir);
 }
 
+void schemaUpgrade9(SchemaUpgradeOptions* opt)
+{
+    DBType dbt(opt->dbc);
+
+    string sql = "DROP TABLE ldpsystem.referential_constraints;";
+    opt->dbc->execDirect(sql);
+
+    string rskeys;
+    dbt.redshiftKeys("referencing_table",
+            "referencing_table, referencing_column", &rskeys);
+    sql =
+        "CREATE TABLE ldpsystem.foreign_key_constraints (\n"
+        "    referencing_table VARCHAR(63) NOT NULL,\n"
+        "    referencing_column VARCHAR(63) NOT NULL,\n"
+        "    referenced_table VARCHAR(63) NOT NULL,\n"
+        "    referenced_column VARCHAR(63) NOT NULL,\n"
+        "    constraint_name VARCHAR(63) NOT NULL,\n"
+        "        PRIMARY KEY (referencing_table, referencing_column)\n"
+        ")" + rskeys + ";";
+    opt->dbc->execDirect(sql);
+
+    sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    RENAME COLUMN full_update_enabled TO enable_full_updates;";
+    opt->dbc->execDirect(sql);
+
+    sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    RENAME COLUMN log_referential_analysis TO detect_foreign_keys;";
+    opt->dbc->execDirect(sql);
+
+    sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    DROP COLUMN force_referential_constraints;";
+    opt->dbc->execDirect(sql);
+
+    sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    ADD COLUMN enable_foreign_key_warnings\n"
+        "    BOOLEAN NOT NULL DEFAULT FALSE;";
+    opt->dbc->execDirect(sql);
+
+    sql =
+        "CREATE TABLE ldpconfig.foreign_keys (\n"
+        "    enable_constraint BOOLEAN NOT NULL,\n"
+        "    force_constraint BOOLEAN NOT NULL,\n"
+        "    referencing_table VARCHAR(63) NOT NULL,\n"
+        "    referencing_column VARCHAR(63) NOT NULL,\n"
+        "    referenced_table VARCHAR(63) NOT NULL,\n"
+        "    referenced_column VARCHAR(63) NOT NULL\n"
+        ");";
+    opt->dbc->execDirect(sql);
+}
+
 SchemaUpgrade schemaUpgrade[] = {
     nullptr,  // Version 0 has no migration.
     schemaUpgrade1,
@@ -934,7 +1001,8 @@ SchemaUpgrade schemaUpgrade[] = {
     schemaUpgrade5,
     schemaUpgrade6,
     schemaUpgrade7,
-    schemaUpgrade8
+    schemaUpgrade8,
+    schemaUpgrade9
 };
 
 void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
@@ -1000,7 +1068,7 @@ void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
         const string& ldpUser, const string& ldpconfigUser,
         const string& datadir)
 {
-    int64_t thisSchemaVersion = 8;
+    int64_t thisSchemaVersion = 9;
 
     //db->log->log(Level::trace, "", "", "Initializing database", -1);
 

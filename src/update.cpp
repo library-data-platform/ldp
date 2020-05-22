@@ -139,7 +139,7 @@ public:
 
 void processReferentialPaths(etymon::OdbcEnv* odbc, const string& dbName,
         etymon::OdbcDbc* dbc, Log* log, const Schema& schema,
-        const TableSchema& table, bool logAnalysis, bool forceConstraints)
+        const TableSchema& table, bool detectForeignKeys)
 {
     map<string, vector<Reference>> refs;
     etymon::OdbcDbc queryDBC(odbc, dbName);
@@ -154,49 +154,48 @@ void processReferentialPaths(etymon::OdbcEnv* odbc, const string& dbName,
         for (auto& table1 : schema.tables) {
             if (isForeignKey(&queryDBC, log, table, column, table1)) {
 
-                fprintf(stderr, "%s.%s -> %s\n",
-                        table.tableName.c_str(),
-                        column.columnName.c_str(),
-                        table1.tableName.c_str());
-
                 string key = table.tableName + "." + column.columnName;
                 Reference ref = {
                     table.tableName,
-                    column.columnName,
+                    column.columnName + "_sk",
                     table1.tableName,
-                    "id"
+                    "sk"
                 };
+
+                fprintf(stderr, "%s(%s) -> %s(%s)\n",
+                        ref.referencingTable.c_str(),
+                        ref.referencingColumn.c_str(),
+                        ref.referencedTable.c_str(),
+                        ref.referencedColumn.c_str());
+
                 refs[key].push_back(ref);
-                //
+
                 //printf("        -> %s\n", table1.tableName.c_str());
                 //analyzeReferentialPaths([>odbc, dbName,<] dbc, log, table,
                 //        column, table1, logAnalysis, forceConstraints);
-                //break;
             }
         }
     }
 }
 
 void selectConfigGeneral(etymon::OdbcDbc* dbc, Log* log,
-        bool* logReferentialAnalysis, bool* forceReferentialConstraints)
+        bool* detectForeignKeys, bool* enableForeignKeyWarnings)
 {
     string sql =
-        "SELECT log_referential_analysis,\n"
-        "       force_referential_constraints\n"
+        "SELECT detect_foreign_keys,\n"
+        "       enable_foreign_key_warnings\n"
         "    FROM ldpconfig.general;";
     log->logDetail(sql);
     etymon::OdbcStmt stmt(dbc);
     dbc->execDirect(&stmt, sql);
-    if (dbc->fetch(&stmt) == false)
-        throw runtime_error(
-                "No rows could be read from table: ldpconfig.general");
-    string logReferentialAnalysisStr, forceReferentialConstraintsStr;
-    dbc->getData(&stmt, 1, &logReferentialAnalysisStr);
-    dbc->getData(&stmt, 2, &forceReferentialConstraintsStr);
+    dbc->fetch(&stmt);
+    string s1, s2;
+    dbc->getData(&stmt, 1, &s1);
+    dbc->getData(&stmt, 2, &s2);
     if (dbc->fetch(&stmt))
         throw runtime_error("Too many rows in table: ldpsystem.main");
-    *logReferentialAnalysis = logReferentialAnalysisStr == "1";
-    *forceReferentialConstraints = forceReferentialConstraintsStr == "1";
+    *detectForeignKeys = (s1 == "1");
+    *enableForeignKeyWarnings = (s2 == "1");
 }
 
 
@@ -411,12 +410,12 @@ void runUpdate(const Options& opt)
     {
         etymon::OdbcDbc dbc(&odbc, opt.db);
 
-        bool logReferentialAnalysis = false;
-        bool forceReferentialConstraints = false;
-        selectConfigGeneral(&dbc, &log, &logReferentialAnalysis,
-                &forceReferentialConstraints);
+        bool detectForeignKeys = false;
+        bool enableForeignKeyWarnings = false;
+        selectConfigGeneral(&dbc, &log, &detectForeignKeys,
+                &enableForeignKeyWarnings);
 
-        if (logReferentialAnalysis /*|| forceReferentialConstraints*/) {
+        if (detectForeignKeys) {
 
             log.log(Level::debug, "server", "",
                     "Starting referential analysis", -1);
@@ -427,8 +426,7 @@ void runUpdate(const Options& opt)
 
             for (auto& table : schema.tables)
                 processReferentialPaths(&odbc, opt.db, &dbc, &log, schema,
-                        table, logReferentialAnalysis,
-                        /*forceReferentialConstraints*/ false);
+                        table, detectForeignKeys);
 
             tx.commit();
 
