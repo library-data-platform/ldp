@@ -14,6 +14,9 @@ public:
     string filename;
     Sqlite3(const string& filename);
     ~Sqlite3();
+    void exec(const string& sql);
+    void exec(const string& sql, int (*callback)(void*,int,char**,char**),
+            void* data);
 };
 
 }

@@ -115,6 +115,11 @@ void Log::log(Level level, const char* type, const string& table,
     dbc->execDirect(nullptr, sql);
 }
 
+void Log::trace(const string& message)
+{
+    log(Level::trace, "", "", message, -1);
+}
+
 void Log::logDetail(const string& sql)
 {
     detail(sql);

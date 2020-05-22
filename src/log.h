@@ -26,6 +26,7 @@ public:
     ~Log();
     void log(Level level, const char* type, const string& table,
             const string& message, double elapsed_time);
+    void trace(const string& message);
     void logDetail(const string& sql);
     void detail(const string& sql);
     //void console(const string& sql);
