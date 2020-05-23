@@ -271,7 +271,7 @@ void fillDirectOptions(const Config& config, const string& base, Options* opt)
     }
     config.get(base + "directDatabaseName", &(opt->direct.databaseName));
     config.get(base + "directDatabaseHost", &(opt->direct.databaseHost));
-    int port;
+    int port = 0;
     config.getInt(base + "directDatabasePort", &port);
     opt->direct.databasePort = to_string(port);
     config.get(base + "directDatabaseUser", &(opt->direct.databaseUser));
