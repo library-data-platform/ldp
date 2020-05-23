@@ -22,10 +22,10 @@ ENDIF(DEBUG)
 OPTION(GPROF
     "Build the project for gprof (requires DEBUG)"
     OFF)
-IF(DEBUG)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
-    set(GPROFOPT "-pg")
-ENDIF(DEBUG)
+IF(GPROF)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg -DGPROF")
+    set(GPROFFLAG "-pg")
+ENDIF(GPROF)
 
 #set(CURL_LIBRARY "-lcurl") 
 find_package(CURL REQUIRED) 
@@ -68,7 +68,7 @@ add_executable(ldp
     util.cpp
 )
 target_link_libraries(ldp
-    ${GPROFOPT}
+    ${GPROFFLAG}
     ${CURL_LIBRARIES}
     ${ODBC_LIBRARY}
     ${PostgreSQL_LIBRARY}

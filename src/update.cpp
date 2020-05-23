@@ -424,6 +424,11 @@ void runUpdate(const Options& opt)
 
 void runUpdateProcess(const Options& opt)
 {
+#ifdef GPROF
+    string updateDir = "./update-gprof";
+    fs::create_directories(updateDir);
+    chdir(updateDir.c_str());
+#endif
     try {
         runUpdate(opt);
         exit(0);
