@@ -286,7 +286,7 @@ void runUpdate(const Options& opt)
                 table.skip = true;
         }
 
-        if (table.skip)
+        if (table.skip || opt.extractOnly)
             continue;
 
         etymon::OdbcDbc dbc(&odbc, opt.db);
