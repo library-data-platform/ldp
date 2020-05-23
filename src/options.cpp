@@ -57,7 +57,7 @@ static void validate(const Options& opt)
 
 static void evaloptlong(char *name, char *arg, Options* opt)
 {
-    if (!strcmp(name, "extractOnly")) {
+    if (!strcmp(name, "extract-only")) {
         opt->extractOnly = true;
         return;
     }
@@ -114,7 +114,7 @@ static void evaloptlong(char *name, char *arg, Options* opt)
 int evalopt(const etymon::CommandArgs& cargs, Options *opt)
 {
     static struct option longopts[] = {
-        { "extract-only", required_argument, NULL, 0   },
+        { "extract-only", no_argument,       NULL, 0   },
         { "sourcedir",    required_argument, NULL, 0   },
         //{ "source",    required_argument, NULL, 0   },
         //{ "target",    required_argument, NULL, 0   },
@@ -128,7 +128,7 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
         //{ "nossl",     no_argument,       NULL, 0   },
         { "savetemps",    no_argument,       NULL, 0   },
         //{ "version",   no_argument,       NULL, 0   },
-        { 0,           0,                 0,    0   }
+        { 0,              0,                 0,    0   }
     };
     int g, x;
 
