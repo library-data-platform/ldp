@@ -27,7 +27,7 @@ public:
     OdbcDbc(OdbcEnv* odbcEnv, const string& dataSourceName);
     ~OdbcDbc();
     void getDbmsName(string* dbmsName);
-    void execDirect(const string& sql);
+    void exec(const string& sql);
     void execDirect(OdbcStmt* stmt, const string& sql);
     bool fetch(OdbcStmt* stmt);
     void getData(OdbcStmt* stmt, uint16_t column, string* data);

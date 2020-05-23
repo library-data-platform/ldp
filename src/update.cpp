@@ -139,9 +139,9 @@ public:
 
 void processReferentialPaths(etymon::OdbcEnv* odbc, const string& dbName,
         etymon::OdbcDbc* dbc, Log* log, const Schema& schema,
-        const TableSchema& table, bool detectForeignKeys)
+        const TableSchema& table, bool detectForeignKeys,
+        map<string, vector<Reference>>* refs)
 {
-    map<string, vector<Reference>> refs;
     etymon::OdbcDbc queryDBC(odbc, dbName);
     log->logDetail("Searching for foreign keys in table: " + table.tableName);
     //printf("Table: %s\n", table.tableName.c_str());
@@ -154,7 +154,7 @@ void processReferentialPaths(etymon::OdbcEnv* odbc, const string& dbName,
         for (auto& table1 : schema.tables) {
             if (isForeignKey(&queryDBC, log, table, column, table1)) {
 
-                string key = table.tableName + "." + column.columnName;
+                string key = table.tableName + "." + column.columnName + "_sk";
                 Reference ref = {
                     table.tableName,
                     column.columnName + "_sk",
@@ -162,13 +162,13 @@ void processReferentialPaths(etymon::OdbcEnv* odbc, const string& dbName,
                     "sk"
                 };
 
-                fprintf(stderr, "%s(%s) -> %s(%s)\n",
-                        ref.referencingTable.c_str(),
-                        ref.referencingColumn.c_str(),
-                        ref.referencedTable.c_str(),
-                        ref.referencedColumn.c_str());
+                //fprintf(stderr, "%s(%s) -> %s(%s)\n",
+                //        ref.referencingTable.c_str(),
+                //        ref.referencingColumn.c_str(),
+                //        ref.referencedTable.c_str(),
+                //        ref.referencedColumn.c_str());
 
-                refs[key].push_back(ref);
+                (*refs)[key].push_back(ref);
 
                 //printf("        -> %s\n", table1.tableName.c_str());
                 //analyzeReferentialPaths([>odbc, dbName,<] dbc, log, table,
@@ -424,9 +424,41 @@ void runUpdate(const Options& opt)
 
             etymon::OdbcTx tx(&dbc);
 
+            map<string, vector<Reference>> refs;
             for (auto& table : schema.tables)
                 processReferentialPaths(&odbc, opt.db, &dbc, &log, schema,
-                        table, detectForeignKeys);
+                        table, detectForeignKeys, &refs);
+
+            //for (pair<string, vector<Reference>> p : refs) {
+            //    fprintf(stderr, "%s [%lu]\n", p.first.c_str(), p.second.size());
+            //    for (auto& r : p.second) {
+            //        fprintf(stderr, "\t%s(%s)\n", r.referencedTable.c_str(),
+            //                r.referencedColumn.c_str());
+            //    }
+            //}
+
+            string sql = "DELETE FROM ldpconfig.foreign_keys;";
+            log.detail(sql);
+            dbc.exec(sql);
+
+            for (pair<string, vector<Reference>> p : refs) {
+                bool enable = (p.second.size() == 1);
+                for (auto& r : p.second) {
+                    sql =
+                        "INSERT INTO ldpconfig.foreign_keys\n"
+                        "    (enable_constraint,\n"
+                        "        referencing_table, referencing_column,\n"
+                        "        referenced_table, referenced_column)\n"
+                        "VALUES\n"
+                        "    (" + string(enable ? "TRUE" : "FALSE") + ",\n"
+                        "        '" + r.referencingTable + "',\n"
+                        "        '" + r.referencingColumn + "',\n"
+                        "        '" + r.referencedTable + "',\n"
+                        "        '" + r.referencedColumn + "');";
+                    log.detail(sql);
+                    dbc.exec(sql);
+                }
+            }
 
             tx.commit();
 

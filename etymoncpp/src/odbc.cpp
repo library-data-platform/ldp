@@ -83,7 +83,7 @@ void OdbcDbc::execDirectStmt(OdbcStmt* stmt, const string& sql)
     }
 }
 
-void OdbcDbc::execDirect(const string& sql)
+void OdbcDbc::exec(const string& sql)
 {
     OdbcStmt st(this);
     execDirectStmt(&st, sql);
@@ -92,7 +92,7 @@ void OdbcDbc::execDirect(const string& sql)
 void OdbcDbc::execDirect(OdbcStmt* stmt, const string& sql)
 {
     if (stmt == nullptr)
-        execDirect(sql);
+        exec(sql);
     else
         execDirectStmt(stmt, sql);
 }

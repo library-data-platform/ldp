@@ -185,11 +185,11 @@ void initSchema(DBContext* db, const string& ldpUser,
     db->log->detail(sql);
     db->dbc->execDirect(nullptr, sql);
 
-    sql = "GRANT SELECT ON ldpsystem.referential_constraints TO " + ldpUser +
+    sql = "GRANT SELECT ON ldpsystem.foreign_key_constraints TO " + ldpUser +
         ";";
     db->log->detail(sql);
     db->dbc->execDirect(nullptr, sql);
-    sql = "GRANT SELECT ON ldpsystem.referential_constraints TO " +
+    sql = "GRANT SELECT ON ldpsystem.foreign_key_constraints TO " +
         ldpconfigUser + ";";
     db->log->detail(sql);
     db->dbc->execDirect(nullptr, sql);
@@ -219,6 +219,7 @@ void initSchema(DBContext* db, const string& ldpUser,
         "    enable_full_updates BOOLEAN NOT NULL,\n"
         "    next_full_update TIMESTAMP WITH TIME ZONE NOT NULL,\n"
         "    detect_foreign_keys BOOLEAN NOT NULL DEFAULT FALSE,\n"
+        "    force_foreign_key_constraints BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    enable_foreign_key_warnings BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    disable_anonymization BOOLEAN NOT NULL DEFAULT FALSE\n"
         ");";
@@ -238,7 +239,6 @@ void initSchema(DBContext* db, const string& ldpUser,
     sql =
         "CREATE TABLE ldpconfig.foreign_keys (\n"
         "    enable_constraint BOOLEAN NOT NULL,\n"
-        "    force_constraint BOOLEAN NOT NULL,\n"
         "    referencing_table VARCHAR(63) NOT NULL,\n"
         "    referencing_column VARCHAR(63) NOT NULL,\n"
         "    referenced_table VARCHAR(63) NOT NULL,\n"
@@ -943,7 +943,7 @@ void schemaUpgrade9(SchemaUpgradeOptions* opt)
     DBType dbt(opt->dbc);
 
     string sql = "DROP TABLE ldpsystem.referential_constraints;";
-    opt->dbc->execDirect(sql);
+    opt->dbc->exec(sql);
 
     string rskeys;
     dbt.redshiftKeys("referencing_table",
@@ -957,39 +957,44 @@ void schemaUpgrade9(SchemaUpgradeOptions* opt)
         "    constraint_name VARCHAR(63) NOT NULL,\n"
         "        PRIMARY KEY (referencing_table, referencing_column)\n"
         ")" + rskeys + ";";
-    opt->dbc->execDirect(sql);
+    opt->dbc->exec(sql);
 
     sql =
         "ALTER TABLE ldpconfig.general\n"
         "    RENAME COLUMN full_update_enabled TO enable_full_updates;";
-    opt->dbc->execDirect(sql);
+    opt->dbc->exec(sql);
 
     sql =
         "ALTER TABLE ldpconfig.general\n"
         "    RENAME COLUMN log_referential_analysis TO detect_foreign_keys;";
-    opt->dbc->execDirect(sql);
+    opt->dbc->exec(sql);
 
     sql =
         "ALTER TABLE ldpconfig.general\n"
         "    DROP COLUMN force_referential_constraints;";
-    opt->dbc->execDirect(sql);
+    opt->dbc->exec(sql);
+
+    sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    ADD COLUMN force_foreign_key_constraints\n"
+        "    BOOLEAN NOT NULL DEFAULT FALSE;";
+    opt->dbc->exec(sql);
 
     sql =
         "ALTER TABLE ldpconfig.general\n"
         "    ADD COLUMN enable_foreign_key_warnings\n"
         "    BOOLEAN NOT NULL DEFAULT FALSE;";
-    opt->dbc->execDirect(sql);
+    opt->dbc->exec(sql);
 
     sql =
         "CREATE TABLE ldpconfig.foreign_keys (\n"
         "    enable_constraint BOOLEAN NOT NULL,\n"
-        "    force_constraint BOOLEAN NOT NULL,\n"
         "    referencing_table VARCHAR(63) NOT NULL,\n"
         "    referencing_column VARCHAR(63) NOT NULL,\n"
         "    referenced_table VARCHAR(63) NOT NULL,\n"
         "    referenced_column VARCHAR(63) NOT NULL\n"
         ");";
-    opt->dbc->execDirect(sql);
+    opt->dbc->exec(sql);
 }
 
 SchemaUpgrade schemaUpgrade[] = {
