@@ -9,14 +9,14 @@ OPTION(DEBUG
     "Build the project in debugging mode"
     OFF)
 IF(DEBUG)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -DDEBUG")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Og -DDEBUG")
 ENDIF(DEBUG)
 
 OPTION(OPTIMIZE
     "Build the project with compiler optimization"
     ON)
 IF(OPTIMIZE)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG")
 ENDIF(OPTIMIZE)
 
 #set(CURL_LIBRARY "-lcurl") 
