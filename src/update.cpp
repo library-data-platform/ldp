@@ -179,23 +179,26 @@ void processReferentialPaths(etymon::OdbcEnv* odbc, const string& dbName,
 }
 
 void selectConfigGeneral(etymon::OdbcDbc* dbc, Log* log,
-        bool* detectForeignKeys, bool* enableForeignKeyWarnings)
+        bool* detectForeignKeys, bool* forceForeignKeyConstraints,
+        bool* enableForeignKeyWarnings)
 {
     string sql =
         "SELECT detect_foreign_keys,\n"
+        "       force_foreign_key_constraints,\n"
         "       enable_foreign_key_warnings\n"
         "    FROM ldpconfig.general;";
     log->logDetail(sql);
     etymon::OdbcStmt stmt(dbc);
     dbc->execDirect(&stmt, sql);
     dbc->fetch(&stmt);
-    string s1, s2;
+    string s1, s2, s3;
     dbc->getData(&stmt, 1, &s1);
     dbc->getData(&stmt, 2, &s2);
-    if (dbc->fetch(&stmt))
-        throw runtime_error("Too many rows in table: ldpsystem.main");
+    dbc->getData(&stmt, 3, &s3);
+    dbc->fetch(&stmt);
     *detectForeignKeys = (s1 == "1");
-    *enableForeignKeyWarnings = (s2 == "1");
+    *forceForeignKeyConstraints = (s2 == "1");
+    *enableForeignKeyWarnings = (s3 == "1");
 }
 
 
@@ -411,9 +414,10 @@ void runUpdate(const Options& opt)
         etymon::OdbcDbc dbc(&odbc, opt.db);
 
         bool detectForeignKeys = false;
+        bool forceForeignKeyConstraints = false;
         bool enableForeignKeyWarnings = false;
         selectConfigGeneral(&dbc, &log, &detectForeignKeys,
-                &enableForeignKeyWarnings);
+                &forceForeignKeyConstraints, &enableForeignKeyWarnings);
 
         if (detectForeignKeys) {
 
@@ -428,14 +432,6 @@ void runUpdate(const Options& opt)
             for (auto& table : schema.tables)
                 processReferentialPaths(&odbc, opt.db, &dbc, &log, schema,
                         table, detectForeignKeys, &refs);
-
-            //for (pair<string, vector<Reference>> p : refs) {
-            //    fprintf(stderr, "%s [%lu]\n", p.first.c_str(), p.second.size());
-            //    for (auto& r : p.second) {
-            //        fprintf(stderr, "\t%s(%s)\n", r.referencedTable.c_str(),
-            //                r.referencedColumn.c_str());
-            //    }
-            //}
 
             string sql = "DELETE FROM ldpconfig.foreign_keys;";
             log.detail(sql);
@@ -466,6 +462,9 @@ void runUpdate(const Options& opt)
                     "Completed referential analysis",
                     refTimer.elapsedTime());
         }
+
+        //if (forceForeignKeyConstraints) {
+        //}
 
     }
 
