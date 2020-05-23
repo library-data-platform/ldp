@@ -80,6 +80,8 @@ void IDMap::schemaUpgradeRemoveNewColumn(const string& datadir)
     cache.exec(sql);
     sql = "PRAGMA locking_mode = EXCLUSIVE;";
     cache.exec(sql);
+    sql = "PRAGMA cache_size = -1000000;";
+    cache.exec(sql);
     sql = "BEGIN;";
     cache.exec(sql);
     sql = "ALTER TABLE idmap_cache RENAME TO old_idmap;";
