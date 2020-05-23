@@ -13,6 +13,8 @@ public:
     chrono::steady_clock::time_point startTime;
     FILE* err;
     const char* prog;
+    Timer();
+    //Timer(FILE* err, const char* prog);
     Timer(const Options& options);
     void restart();
     double elapsedTime() const;

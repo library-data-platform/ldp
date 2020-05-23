@@ -35,6 +35,7 @@ private:
     Log* log;
     etymon::Sqlite3* cache;
     int64_t nextvalSK;
+    double timeMakeSK;
 };
 
 #endif

@@ -1,5 +1,19 @@
 #include "timer.h"
 
+Timer::Timer()
+{
+    restart();
+    err = stderr;
+    prog = "ldp";
+}
+
+//Timer::Timer(FILE* err, const char* prog)
+//{
+//    restart();
+//    this->err = err;
+//    this->prog = prog;
+//}
+
 Timer::Timer(const Options& options)
 {
     restart();

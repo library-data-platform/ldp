@@ -8,6 +8,7 @@
 
 #include "../etymoncpp/include/util.h"
 #include "idmap.h"
+#include "timer.h"
 
 namespace fs = std::experimental::filesystem;
 
@@ -232,6 +233,7 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     dbc = new etymon::OdbcDbc(odbc, databaseDSN);
     dbt = new DBType(dbc);
     this->log = log;
+    timeMakeSK = 0;
 
     string filename;
     makeCachePath(datadir, &filename);
@@ -267,6 +269,7 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
 
 IDMap::~IDMap()
 {
+    fprintf(stderr, "Timer: IDMap::makeSK(): %f\n", timeMakeSK);
     delete dbt;
     delete dbc;
     delete cache;
@@ -274,6 +277,8 @@ IDMap::~IDMap()
 
 void IDMap::makeSK(const string& table, const char* id, string* sk)
 {
+    Timer timer;
+
     string qid = id;
     etymon::toLower(&qid);
     string sql =
@@ -282,16 +287,18 @@ void IDMap::makeSK(const string& table, const char* id, string* sk)
     log->detail(sql);
     *sk = "";
     cache->exec(sql, lookupSK, (void*) sk);
-    if (*sk != "")
-        return;
-    // The sk was not found; so we add it.
-    *sk = to_string(nextvalSK);
-    nextvalSK++;
-    sql =
-        "INSERT INTO idmap_cache (id, sk)\n"
-        "    VALUES ('" + string(id) + "', " + *sk + ");";
-    log->detail(sql);
-    cache->exec(sql);
+    if (*sk == "") {
+        // The sk was not found; so we add it.
+        *sk = to_string(nextvalSK);
+        nextvalSK++;
+        sql =
+            "INSERT INTO idmap_cache (id, sk)\n"
+            "    VALUES ('" + string(id) + "', " + *sk + ");";
+        log->detail(sql);
+        cache->exec(sql);
+    }
+
+    timeMakeSK += timer.elapsedTime();
 }
 
 void IDMap::syncCommit()
