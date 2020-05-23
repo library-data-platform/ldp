@@ -5,6 +5,13 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
     set(FSLIB "-lstdc++fs")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
+OPTION(OPTIMIZE
+    "Build the project with compiler optimization"
+    ON)
+IF(OPTIMIZE)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG")
+ENDIF(OPTIMIZE)
+
 OPTION(DEBUG
     "Build the project in debugging mode"
     OFF)
@@ -12,12 +19,13 @@ IF(DEBUG)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Og -DDEBUG")
 ENDIF(DEBUG)
 
-OPTION(OPTIMIZE
-    "Build the project with compiler optimization"
-    ON)
-IF(OPTIMIZE)
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG")
-ENDIF(OPTIMIZE)
+OPTION(GPROF
+    "Build the project for gprof (requires DEBUG)"
+    OFF)
+IF(DEBUG)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+    set(GPROFOPT "-pg")
+ENDIF(DEBUG)
 
 #set(CURL_LIBRARY "-lcurl") 
 find_package(CURL REQUIRED) 
@@ -60,6 +68,7 @@ add_executable(ldp
     util.cpp
 )
 target_link_libraries(ldp
+    ${GPROFOPT}
     ${CURL_LIBRARIES}
     ${ODBC_LIBRARY}
     ${PostgreSQL_LIBRARY}
