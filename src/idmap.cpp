@@ -240,6 +240,9 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     sql = "PRAGMA locking_mode = EXCLUSIVE;";
     log->detail(sql);
     cache->exec(sql);
+    sql = "PRAGMA cache_size = -1000000;";
+    log->detail(sql);
+    cache->exec(sql);
     sql =
         "CREATE TABLE IF NOT EXISTS idmap_cache (\n"
         "    id VARCHAR(65535) NOT NULL,\n"
