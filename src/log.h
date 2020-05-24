@@ -29,6 +29,7 @@ public:
     void trace(const string& message);
     void logDetail(const string& sql);
     void detail(const string& sql);
+    void perf(const string& message, double elapsed_time);
     //void console(const string& sql);
     //void error(const string& message);
 private:

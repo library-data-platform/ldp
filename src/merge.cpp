@@ -47,13 +47,13 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
         "CREATE TEMPORARY TABLE\n"
         "    " + latestHistoryTable + "\n"
         "    AS\n"
-        "SELECT id, data, tenant_id\n"
+        "SELECT sk, id, data, tenant_id\n"
         "    FROM " + historyTable + " AS h1\n"
         "    WHERE NOT EXISTS\n"
         "      ( SELECT 1\n"
         "            FROM " + historyTable + " AS h2\n"
         "            WHERE h1.tenant_id = h2.tenant_id AND\n"
-        "                  h1.id = h2.id AND\n"
+        "                  h1.sk = h2.sk AND\n"
         "                  h1.updated < h2.updated\n"
         "      );";
     log->log(Level::detail, "", "", sql, -1);
@@ -74,46 +74,46 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
         "        LEFT JOIN " + latestHistoryTable + "\n"
         "            AS h\n"
         "            ON s.tenant_id = h.tenant_id AND\n"
-        "               s.id = h.id\n"
+        "               s.sk = h.sk\n"
         "    WHERE s.data IS NOT NULL AND\n"
-        "          ( h.id IS NULL OR\n"
+        "          ( h.sk IS NULL OR\n"
         "            (s.data)::VARCHAR <> (h.data)::VARCHAR );";
     log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
 }
 
-void dropReferentialConstraints(const Options& opt, Log* log,
-        const string& tableName, etymon::OdbcDbc* dbc)
-{
-    vector<string> columnNames;
-    {
-        etymon::OdbcStmt stmt(dbc);
-        string sql =
-            "SELECT referencing_column\n"
-            "    FROM ldpsystem.referential_constraints\n"
-            "    WHERE referencing_table = '" + tableName + "';";
-        log->logDetail(sql);
-        dbc->execDirect(&stmt, sql);
-        while (dbc->fetch(&stmt)) {
-            string s;
-            dbc->getData(&stmt, 1, &s);
-            columnNames.push_back(s);
-        }
-    }
-    for (auto& columnName : columnNames) {
-        string sql =
-            "ALTER TABLE " + tableName + " DROP CONSTRAINT IF EXISTS\n"
-            "    " + tableName + "_" + columnName + "_fkey;";
-        log->logDetail(sql);
-        dbc->execDirect(nullptr, sql);
-        sql =
-            "DELETE FROM ldpsystem.referential_constraints\n"
-            "    WHERE referencing_table = '" + tableName + "' AND\n"
-            "          referencing_column = '" + columnName + "';";
-        log->logDetail(sql);
-        dbc->execDirect(nullptr, sql);
-    }
-}
+//void dropReferentialConstraints(const Options& opt, Log* log,
+//        const string& tableName, etymon::OdbcDbc* dbc)
+//{
+//    vector<string> columnNames;
+//    {
+//        etymon::OdbcStmt stmt(dbc);
+//        string sql =
+//            "SELECT referencing_column\n"
+//            "    FROM ldpsystem.referential_constraints\n"
+//            "    WHERE referencing_table = '" + tableName + "';";
+//        log->logDetail(sql);
+//        dbc->execDirect(&stmt, sql);
+//        while (dbc->fetch(&stmt)) {
+//            string s;
+//            dbc->getData(&stmt, 1, &s);
+//            columnNames.push_back(s);
+//        }
+//    }
+//    for (auto& columnName : columnNames) {
+//        string sql =
+//            "ALTER TABLE " + tableName + " DROP CONSTRAINT IF EXISTS\n"
+//            "    " + tableName + "_" + columnName + "_fkey;";
+//        log->logDetail(sql);
+//        dbc->execDirect(nullptr, sql);
+//        sql =
+//            "DELETE FROM ldpsystem.referential_constraints\n"
+//            "    WHERE referencing_table = '" + tableName + "' AND\n"
+//            "          referencing_column = '" + columnName + "';";
+//        log->logDetail(sql);
+//        dbc->execDirect(nullptr, sql);
+//    }
+//}
 
 void dropTable(const Options& opt, Log* log, const string& tableName,
         etymon::OdbcDbc* dbc)

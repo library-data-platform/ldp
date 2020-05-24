@@ -35,12 +35,15 @@ static const char* optionHelp =
 "  help                - Display help information\n"
 "Options:\n"
 "  -D <path>           - Store data and configuration in directory <path>\n"
-"  --unsafe            - Enable functions used for testing/debugging\n"
+"  --trace             - Enable detailed logging\n"
+"Development options:\n"
+"  --unsafe            - Enable functions used for development and testing\n"
+"  --extract-only      - Extract data in the data directory, but do not\n"
+"                        update them in the database (unsafe)\n"
 "  --savetemps         - Disable deletion of temporary files containing\n"
 "                        extracted data (unsafe)\n"
-"  --sourcedir <path>  - Load data from directory <path> instead of\n"
-"                        extracting from Okapi (unsafe)\n"
-"  --trace             - Enable detailed logging\n";
+"  --sourcedir <path>  - Update data from directory <path> instead of\n"
+"                        from source (unsafe)\n";
 
 void debugNoticeProcessor(void *arg, const char *message)
 {
@@ -268,7 +271,7 @@ void fillDirectOptions(const Config& config, const string& base, Options* opt)
     }
     config.get(base + "directDatabaseName", &(opt->direct.databaseName));
     config.get(base + "directDatabaseHost", &(opt->direct.databaseHost));
-    int port;
+    int port = 0;
     config.getInt(base + "directDatabasePort", &port);
     opt->direct.databasePort = to_string(port);
     config.get(base + "directDatabaseUser", &(opt->direct.databaseUser));
