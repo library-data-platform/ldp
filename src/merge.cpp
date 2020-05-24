@@ -40,8 +40,6 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
     //    } catch (runtime_error& e) {}
     //}
 
-    log->trace("Selecting recent history");
-
     string latestHistoryTable;
     latestHistoryTableName(table.tableName, &latestHistoryTable);
 
@@ -49,23 +47,17 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
         "CREATE TEMPORARY TABLE\n"
         "    " + latestHistoryTable + "\n"
         "    AS\n"
-        "SELECT id, data, tenant_id\n"
+        "SELECT sk, id, data, tenant_id\n"
         "    FROM " + historyTable + " AS h1\n"
         "    WHERE NOT EXISTS\n"
         "      ( SELECT 1\n"
         "            FROM " + historyTable + " AS h2\n"
         "            WHERE h1.tenant_id = h2.tenant_id AND\n"
-        "                  h1.id = h2.id AND\n"
+        "                  h1.sk = h2.sk AND\n"
         "                  h1.updated < h2.updated\n"
         "      );";
     log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
-
-    // TODO Use sk instead of id.
-
-    // TODO Consider index on temp table.
-
-    log->trace("Updating history table");
 
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
@@ -82,9 +74,9 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
         "        LEFT JOIN " + latestHistoryTable + "\n"
         "            AS h\n"
         "            ON s.tenant_id = h.tenant_id AND\n"
-        "               s.id = h.id\n"
+        "               s.sk = h.sk\n"
         "    WHERE s.data IS NOT NULL AND\n"
-        "          ( h.id IS NULL OR\n"
+        "          ( h.sk IS NULL OR\n"
         "            (s.data)::VARCHAR <> (h.data)::VARCHAR );";
     log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);

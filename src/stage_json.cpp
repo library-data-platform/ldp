@@ -309,8 +309,8 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
     *insertBuffer += ",1)";
     (*recordCount)++;
     (*totalRecordCount)++;
-    if (*totalRecordCount % 100000 == 0)
-        fprintf(stderr, "%zu\n", *totalRecordCount);
+    //if (*totalRecordCount % 100000 == 0)
+    //    fprintf(stderr, "%zu\n", *totalRecordCount);
 }
 
 bool JSONHandler::EndObject(json::SizeType memberCount)

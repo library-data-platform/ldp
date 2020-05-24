@@ -177,6 +177,7 @@ void IDMap::up(int64_t startSK)
     tx.commit();
 }
 
+// TODO Remove indexes if (cacheMaxSK - ldpMaxSK) > ldpMaxSK
 void IDMap::syncUp()
 {
     int64_t cacheMaxSK = cacheSelectMaxSK();
