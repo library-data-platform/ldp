@@ -284,6 +284,9 @@ void runUpdate(const Options& opt)
 
     for (auto& table : schema.tables) {
 
+        if (opt.table != "" && opt.table != table.tableName)
+            continue;
+
         bool anonymizeTable = ( table.anonymize &&
                 (!opt.disableAnonymization ||
                  ldpconfigDisableAnonymization != "1") );
@@ -313,7 +316,7 @@ void runUpdate(const Options& opt)
                 table.skip = true;
         }
 
-        if (table.skip)
+        if (table.skip || opt.extractOnly)
             continue;
 
         etymon::OdbcDbc dbc(&odbc, opt.db);
@@ -478,6 +481,11 @@ void runUpdate(const Options& opt)
 
 void runUpdateProcess(const Options& opt)
 {
+#ifdef GPROF
+    string updateDir = "./update-gprof";
+    fs::create_directories(updateDir);
+    chdir(updateDir.c_str());
+#endif
     try {
         runUpdate(opt);
         exit(0);

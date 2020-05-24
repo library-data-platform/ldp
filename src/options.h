@@ -24,6 +24,7 @@ public:
     string command;
     bool cliMode = false;
     string datadir;
+    bool extractOnly = false;
     string loadFromDir;
     string source;
     string okapiURL;
@@ -52,6 +53,7 @@ public:
     string ldpconfigUser = "ldpconfig";
     //DBType dbtype;
     bool unsafe = false;
+    string table;
     //bool nossl = false;
     bool disableAnonymization;
     bool savetemps = false;

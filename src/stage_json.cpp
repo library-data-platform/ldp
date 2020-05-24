@@ -154,6 +154,7 @@ public:
     const DBType& dbt;
     IDMap* idmap;
     size_t recordCount = 0;
+    size_t totalRecordCount = 0;
     string insertBuffer;
     JSONHandler(int pass, const Options& options, Log* log,
             const TableSchema& table, etymon::OdbcDbc* dbc, const DBType& dbt,
@@ -205,7 +206,7 @@ static void endInserts(const Options& opt, Log* log, const string& table,
 
 static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
         IDMap* idmap, const TableSchema& table, const json::Document& doc,
-        size_t* recordCount, string* insertBuffer)
+        size_t* recordCount, size_t* totalRecordCount, string* insertBuffer)
 {
     if (*recordCount > 0)
         *insertBuffer += ',';
@@ -307,6 +308,9 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
     //*insertBuffer += string(",") + dbt.currentTimestamp();
     *insertBuffer += ",1)";
     (*recordCount)++;
+    (*totalRecordCount)++;
+    //if (*totalRecordCount % 100000 == 0)
+    //    fprintf(stderr, "%zu\n", *totalRecordCount);
 }
 
 bool JSONHandler::EndObject(json::SizeType memberCount)
@@ -350,7 +354,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
             }
 
             writeTuple(opt, log, dbt, idmap, tableSchema, doc, &recordCount,
-                    &insertBuffer);
+                    &totalRecordCount, &insertBuffer);
         }
 
         free(buffer);
@@ -551,11 +555,29 @@ static void composeDataFilePath(const string& loadDir,
     *path += suffix;
 }
 
+static void indexLoadingTable(Log* log, const TableSchema& table,
+        etymon::OdbcDbc* dbc)
+{
+    log->trace("Creating indexes on table: " + table.tableName);
+    string loadingTable;
+    loadingTableName(table.tableName, &loadingTable);
+    string sql =
+        "ALTER TABLE " + loadingTable + "\n"
+        "    ADD PRIMARY KEY (sk);";
+    log->detail(sql);
+    dbc->execDirect(nullptr, sql);
+    sql =
+        "ALTER TABLE " + loadingTable + "\n"
+        "    ADD UNIQUE (id);";
+    log->detail(sql);
+    dbc->execDirect(nullptr, sql);
+}
+
 static void createLoadingTable(const Options& opt, Log* log,
         const TableSchema& table, etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc,
         const DBType& dbt)
 {
-    string sequenceName = table.tableName + "_row_id_seq";
+    //string sequenceName = table.tableName + "_row_id_seq";
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
     string sql;
@@ -595,12 +617,9 @@ static void createLoadingTable(const Options& opt, Log* log,
 
     string rskeys;
     dbt.redshiftKeys("sk", "sk", &rskeys);
-    //string autoInc;
-    //dbt.autoIncrementType(autoIncStart, true, sequenceName, &autoInc);
     sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
-        //"    row_id " + autoInc + ",\n"
         "    sk BIGINT NOT NULL,\n"
         "    id VARCHAR(65535) NOT NULL,\n";
     string columnType;
@@ -620,11 +639,9 @@ static void createLoadingTable(const Options& opt, Log* log,
         }
     }
     sql += string("    data ") + dbt.jsonType() + ",\n"
-        //"    updated TIMESTAMPTZ NOT NULL,\n"
-        //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
-        "    tenant_id SMALLINT NOT NULL,\n"
-        "    PRIMARY KEY (sk),\n"
-        "    UNIQUE (id)\n"
+        "    tenant_id SMALLINT NOT NULL\n"
+        //"    PRIMARY KEY (sk),\n"
+        //"    UNIQUE (id)\n"
         ")" + rskeys + ";";
     log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
@@ -743,6 +760,8 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
             createLoadingTable(opt, log, *table, odbc, dbc, *dbt);
         }
 
+        if (pass == 2)
+            indexLoadingTable(log, *table, dbc);
     }
 
 }

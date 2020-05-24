@@ -46,12 +46,21 @@ void Log::log(Level level, const char* type, const string& table,
         logmsg = message;
     }
 
+    // Format elapsed time for logging.
+    char elapsed_time_str[255];
+    if (elapsed_time < 0)
+        strcpy(elapsed_time_str, "NULL");
+    else
+        sprintf(elapsed_time_str, "%.4f", elapsed_time);
+
     // For printing, prefix with '\n' if the message has multiple lines.
     string printmsg;
     if (level != Level::detail && message.find('\n') != string::npos)
         printmsg = "\n" + logmsg;
     else
         printmsg = logmsg;
+    if (elapsed_time >= 0)
+        printmsg += " [" + string(elapsed_time_str) + "]";
 
     // Print error states and filter messages below selected log level.
     const char* levelStr;
@@ -77,14 +86,14 @@ void Log::log(Level level, const char* type, const string& table,
                 this->level != Level::detail)
             return;
         if (console)
-            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
+            fprintf(stderr, "%s\n", printmsg.c_str());
         levelStr = "debug";
         break;
     case Level::trace:
         if (this->level != Level::trace && this->level != Level::detail)
             return;
         if (console)
-            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
+            fprintf(stderr, "%s\n", printmsg.c_str());
         levelStr = "trace";
         break;
     case Level::detail:
@@ -94,13 +103,6 @@ void Log::log(Level level, const char* type, const string& table,
             fprintf(stderr, "%s\n", printmsg.c_str());
         return;
     }
-
-    // Format elapsed time for logging.
-    char elapsed_time_str[255];
-    if (elapsed_time < 0)
-        strcpy(elapsed_time_str, "NULL");
-    else
-        sprintf(elapsed_time_str, "%.4f", elapsed_time);
 
     // Log the message, and print if the log is not available.
     string logmsgEncoded;
@@ -128,6 +130,11 @@ void Log::logDetail(const string& sql)
 void Log::detail(const string& sql)
 {
     log(Level::detail, "", "", sql, -1);
+}
+
+void Log::perf(const string& message, double elapsed_time)
+{
+    log(Level::debug, "perf", "", message, elapsed_time);
 }
 
 //void Log::console(const string& sql)
