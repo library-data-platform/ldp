@@ -595,12 +595,9 @@ static void createLoadingTable(const Options& opt, Log* log,
 
     string rskeys;
     dbt.redshiftKeys("sk", "sk", &rskeys);
-    //string autoInc;
-    //dbt.autoIncrementType(autoIncStart, true, sequenceName, &autoInc);
     sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
-        //"    row_id " + autoInc + ",\n"
         "    sk BIGINT NOT NULL,\n"
         "    id VARCHAR(65535) NOT NULL,\n";
     string columnType;
@@ -620,11 +617,9 @@ static void createLoadingTable(const Options& opt, Log* log,
         }
     }
     sql += string("    data ") + dbt.jsonType() + ",\n"
-        //"    updated TIMESTAMPTZ NOT NULL,\n"
-        //"    updated " + string(dbt.timestamp0()) + " NOT NULL,\n"
-        "    tenant_id SMALLINT NOT NULL,\n"
-        "    PRIMARY KEY (sk),\n"
-        "    UNIQUE (id)\n"
+        "    tenant_id SMALLINT NOT NULL\n"
+        //"    PRIMARY KEY (sk),\n"
+        //"    UNIQUE (id)\n"
         ")" + rskeys + ";";
     log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
