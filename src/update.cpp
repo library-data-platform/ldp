@@ -257,6 +257,9 @@ void runUpdate(const Options& opt)
 
     for (auto& table : schema.tables) {
 
+        if (opt.table != "" && opt.table != table.tableName)
+            continue;
+
         bool anonymizeTable = ( table.anonymize &&
                 (!opt.disableAnonymization ||
                  ldpconfigDisableAnonymization != "1") );

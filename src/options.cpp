@@ -49,6 +49,8 @@ static void validate(const Options& opt)
         throw runtime_error("--savetemps requires --unsafe");
     if (opt.loadFromDir != "" && !opt.unsafe)
         throw runtime_error("--sourcedir requires --unsafe");
+    if (opt.table != "" && !opt.unsafe)
+        throw runtime_error("--table requires --unsafe");
 
     //if (opt.loadFromDir != "" && opt.source != "")
     //    throw runtime_error(
@@ -63,6 +65,10 @@ static void evaloptlong(char *name, char *arg, Options* opt)
     }
     if (!strcmp(name, "sourcedir")) {
         opt->loadFromDir = arg;
+        return;
+    }
+    if (!strcmp(name, "table")) {
+        opt->table = arg;
         return;
     }
     //if (!strcmp(name, "source")) {
@@ -116,6 +122,7 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
     static struct option longopts[] = {
         { "extract-only", no_argument,       NULL, 0   },
         { "sourcedir",    required_argument, NULL, 0   },
+        { "table",        required_argument, NULL, 0   },
         //{ "source",    required_argument, NULL, 0   },
         //{ "target",    required_argument, NULL, 0   },
         //{ "config",    required_argument, NULL, 0   },

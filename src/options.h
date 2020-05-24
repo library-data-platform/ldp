@@ -53,6 +53,7 @@ public:
     string ldpconfigUser = "ldpconfig";
     //DBType dbtype;
     bool unsafe = false;
+    string table;
     //bool nossl = false;
     bool disableAnonymization;
     bool savetemps = false;
