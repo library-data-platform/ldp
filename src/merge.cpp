@@ -40,6 +40,8 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
     //    } catch (runtime_error& e) {}
     //}
 
+    log->trace("Selecting recent history");
+
     string latestHistoryTable;
     latestHistoryTableName(table.tableName, &latestHistoryTable);
 
@@ -58,6 +60,12 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
         "      );";
     log->log(Level::detail, "", "", sql, -1);
     dbc->execDirect(nullptr, sql);
+
+    // TODO Use sk instead of id.
+
+    // TODO Consider index on temp table.
+
+    log->trace("Updating history table");
 
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
@@ -82,38 +90,38 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
     dbc->execDirect(nullptr, sql);
 }
 
-void dropReferentialConstraints(const Options& opt, Log* log,
-        const string& tableName, etymon::OdbcDbc* dbc)
-{
-    vector<string> columnNames;
-    {
-        etymon::OdbcStmt stmt(dbc);
-        string sql =
-            "SELECT referencing_column\n"
-            "    FROM ldpsystem.referential_constraints\n"
-            "    WHERE referencing_table = '" + tableName + "';";
-        log->logDetail(sql);
-        dbc->execDirect(&stmt, sql);
-        while (dbc->fetch(&stmt)) {
-            string s;
-            dbc->getData(&stmt, 1, &s);
-            columnNames.push_back(s);
-        }
-    }
-    for (auto& columnName : columnNames) {
-        string sql =
-            "ALTER TABLE " + tableName + " DROP CONSTRAINT IF EXISTS\n"
-            "    " + tableName + "_" + columnName + "_fkey;";
-        log->logDetail(sql);
-        dbc->execDirect(nullptr, sql);
-        sql =
-            "DELETE FROM ldpsystem.referential_constraints\n"
-            "    WHERE referencing_table = '" + tableName + "' AND\n"
-            "          referencing_column = '" + columnName + "';";
-        log->logDetail(sql);
-        dbc->execDirect(nullptr, sql);
-    }
-}
+//void dropReferentialConstraints(const Options& opt, Log* log,
+//        const string& tableName, etymon::OdbcDbc* dbc)
+//{
+//    vector<string> columnNames;
+//    {
+//        etymon::OdbcStmt stmt(dbc);
+//        string sql =
+//            "SELECT referencing_column\n"
+//            "    FROM ldpsystem.referential_constraints\n"
+//            "    WHERE referencing_table = '" + tableName + "';";
+//        log->logDetail(sql);
+//        dbc->execDirect(&stmt, sql);
+//        while (dbc->fetch(&stmt)) {
+//            string s;
+//            dbc->getData(&stmt, 1, &s);
+//            columnNames.push_back(s);
+//        }
+//    }
+//    for (auto& columnName : columnNames) {
+//        string sql =
+//            "ALTER TABLE " + tableName + " DROP CONSTRAINT IF EXISTS\n"
+//            "    " + tableName + "_" + columnName + "_fkey;";
+//        log->logDetail(sql);
+//        dbc->execDirect(nullptr, sql);
+//        sql =
+//            "DELETE FROM ldpsystem.referential_constraints\n"
+//            "    WHERE referencing_table = '" + tableName + "' AND\n"
+//            "          referencing_column = '" + columnName + "';";
+//        log->logDetail(sql);
+//        dbc->execDirect(nullptr, sql);
+//    }
+//}
 
 void dropTable(const Options& opt, Log* log, const string& tableName,
         etymon::OdbcDbc* dbc)

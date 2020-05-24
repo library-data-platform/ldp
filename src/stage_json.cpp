@@ -555,11 +555,29 @@ static void composeDataFilePath(const string& loadDir,
     *path += suffix;
 }
 
+static void indexLoadingTable(Log* log, const TableSchema& table,
+        etymon::OdbcDbc* dbc)
+{
+    log->trace("Creating indexes on table: " + table.tableName);
+    string loadingTable;
+    loadingTableName(table.tableName, &loadingTable);
+    string sql =
+        "ALTER TABLE " + loadingTable + "\n"
+        "    ADD PRIMARY KEY (sk);";
+    log->detail(sql);
+    dbc->execDirect(nullptr, sql);
+    sql =
+        "ALTER TABLE " + loadingTable + "\n"
+        "    ADD UNIQUE (id);";
+    log->detail(sql);
+    dbc->execDirect(nullptr, sql);
+}
+
 static void createLoadingTable(const Options& opt, Log* log,
         const TableSchema& table, etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc,
         const DBType& dbt)
 {
-    string sequenceName = table.tableName + "_row_id_seq";
+    //string sequenceName = table.tableName + "_row_id_seq";
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
     string sql;
@@ -742,6 +760,8 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
             createLoadingTable(opt, log, *table, odbc, dbc, *dbt);
         }
 
+        if (pass == 2)
+            indexLoadingTable(log, *table, dbc);
     }
 
 }
