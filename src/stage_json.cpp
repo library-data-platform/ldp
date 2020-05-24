@@ -154,6 +154,7 @@ public:
     const DBType& dbt;
     IDMap* idmap;
     size_t recordCount = 0;
+    size_t totalRecordCount = 0;
     string insertBuffer;
     JSONHandler(int pass, const Options& options, Log* log,
             const TableSchema& table, etymon::OdbcDbc* dbc, const DBType& dbt,
@@ -205,7 +206,7 @@ static void endInserts(const Options& opt, Log* log, const string& table,
 
 static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
         IDMap* idmap, const TableSchema& table, const json::Document& doc,
-        size_t* recordCount, string* insertBuffer)
+        size_t* recordCount, size_t* totalRecordCount, string* insertBuffer)
 {
     if (*recordCount > 0)
         *insertBuffer += ',';
@@ -307,6 +308,9 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
     //*insertBuffer += string(",") + dbt.currentTimestamp();
     *insertBuffer += ",1)";
     (*recordCount)++;
+    (*totalRecordCount)++;
+    if (*totalRecordCount % 100000 == 0)
+        fprintf(stderr, "%zu\n", *totalRecordCount);
 }
 
 bool JSONHandler::EndObject(json::SizeType memberCount)
@@ -350,7 +354,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
             }
 
             writeTuple(opt, log, dbt, idmap, tableSchema, doc, &recordCount,
-                    &insertBuffer);
+                    &totalRecordCount, &insertBuffer);
         }
 
         free(buffer);
