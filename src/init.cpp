@@ -117,12 +117,12 @@ void initSchema(DBContext* db, const string& ldpUser,
     sql =
         "CREATE TABLE ldpsystem.idmap (\n"
         "    sk BIGINT NOT NULL,\n"
-        "    id VARCHAR(65535) NOT NULL,\n"
-        "        PRIMARY KEY (sk),\n"
-        "        UNIQUE (id)\n"
+        "    id VARCHAR(65535) NOT NULL\n"
         ")" + rskeys + ";";
     db->log->logDetail(sql);
     db->dbc->execDirect(nullptr, sql);
+
+    IDMap::addIndexes(db->dbc, db->log);
 
     // Table: ldpsystem.tables
 

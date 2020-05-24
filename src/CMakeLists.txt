@@ -1,30 +1,30 @@
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall")
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
-    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall")
-    set(FSLIB "-lstdc++fs")
+	#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall")
+	set(FSLIB "-lstdc++fs")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 OPTION(OPTIMIZE
-    "Build the project with compiler optimization"
-    ON)
+	"Build the project with compiler optimization"
+	ON)
 IF(OPTIMIZE)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG")
 ENDIF(OPTIMIZE)
 
 OPTION(DEBUG
-    "Build the project in debugging mode"
-    OFF)
+	"Build the project in debugging mode"
+	OFF)
 IF(DEBUG)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Og -DDEBUG")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Og -DDEBUG -DPERF")
 ENDIF(DEBUG)
 
 OPTION(GPROF
-    "Build the project for gprof (requires DEBUG)"
-    OFF)
+	"Build the project for gprof (requires DEBUG)"
+	OFF)
 IF(GPROF)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg -DGPROF")
-    set(GPROFFLAG "-pg")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg -DGPROF")
+	set(GPROFFLAG "-pg")
 ENDIF(GPROF)
 
 #set(CURL_LIBRARY "-lcurl") 
@@ -43,38 +43,38 @@ find_package(RapidJSON REQUIRED)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 add_executable(ldp
-    ../etymoncpp/src/odbc.cpp
-    ../etymoncpp/src/postgres.cpp
-    ../etymoncpp/src/sqlite3.cpp
-    ../etymoncpp/src/util.cpp
-    anonymize.cpp
-    camelcase.cpp
-    config_json.cpp
-    dbcontext.cpp
-    dbtype.cpp
-    extract.cpp
-    idmap.cpp
-    init.cpp
-    log.cpp
-    main.cpp
-    merge.cpp
-    names.cpp
-    options.cpp
-    paging.cpp
-    schema.cpp
-    stage_json.cpp
-    timer.cpp
-    update.cpp
-    util.cpp
-)
+	../etymoncpp/src/odbc.cpp
+	../etymoncpp/src/postgres.cpp
+	../etymoncpp/src/sqlite3.cpp
+	../etymoncpp/src/util.cpp
+	anonymize.cpp
+	camelcase.cpp
+	config_json.cpp
+	dbcontext.cpp
+	dbtype.cpp
+	extract.cpp
+	idmap.cpp
+	init.cpp
+	log.cpp
+	main.cpp
+	merge.cpp
+	names.cpp
+	options.cpp
+	paging.cpp
+	schema.cpp
+	stage_json.cpp
+	timer.cpp
+	update.cpp
+	util.cpp
+	)
 target_link_libraries(ldp
-    ${GPROFFLAG}
-    ${CURL_LIBRARIES}
-    ${ODBC_LIBRARY}
-    ${PostgreSQL_LIBRARY}
-    ${SQLite3_LIBRARY}
-    ${FSLIB}
-)
+	${GPROFFLAG}
+	${CURL_LIBRARIES}
+	${ODBC_LIBRARY}
+	${PostgreSQL_LIBRARY}
+	${SQLite3_LIBRARY}
+	${FSLIB}
+	)
 
 INSTALL(PROGRAMS ldp DESTINATION /usr/local/bin)
 

@@ -19,6 +19,8 @@ public:
     void makeSK(const string& table, const char* id, string* sk);
     void syncCommit();
     void vacuum();
+    static void addIndexes(etymon::OdbcDbc* conn, Log* log);
+    static void removeIndexes(etymon::OdbcDbc* conn, Log* log);
     static void schemaUpgradeRemoveNewColumn(const string& datadir);
 private:
     void syncDown();
@@ -35,7 +37,9 @@ private:
     Log* log;
     etymon::Sqlite3* cache;
     int64_t nextvalSK;
-    double timeMakeSK;
+#ifdef PERF
+    double makeSKTime;
+#endif
 };
 
 #endif
