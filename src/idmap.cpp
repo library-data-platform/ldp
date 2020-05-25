@@ -325,9 +325,6 @@ void IDMap::makeSK(const string& table, const char* id, string* sk)
         // The sk was not found; so we add it.
         *sk = to_string(nextvalSK);
         nextvalSK++;
-
-        // TODO Use prepared statement.
-
         sql =
             "INSERT INTO idmap_cache (id, sk)\n"
             "    VALUES ('" + string(id) + "', " + *sk + ");";

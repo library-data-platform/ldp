@@ -2,28 +2,6 @@
 
 #include "schema.h"
 
-/*
-void deriveTableName(const string& table, string* tableName)
-{
-    tableName->clear();
-    const char* p = strrchr(table.c_str(), '/');
-    if (p == nullptr)
-        return;
-    while (true) {
-        p++;
-        switch (*p) {
-        case '\0':
-            return;
-        case '-':
-            (*tableName) += '_';
-            break;
-        default:
-            (*tableName) += *p;
-        }
-    }
-}
-*/
-
 void Schema::MakeDefaultSchema(Schema* schema)
 {
     schema->tables.clear();
@@ -283,7 +261,6 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.tableName = "inventory_holdings_note_types";
     schema->tables.push_back(table);
 
-    // large data
     table.sourcePath = "/holdings-storage/holdings";
     table.directSourceTable = "mod_inventory_storage.holdings_record";
     table.tableName = "inventory_holdings";
@@ -321,7 +298,6 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.tableName = "inventory_instance_relationships";
     schema->tables.push_back(table);
 
-    // large data
     table.sourcePath = "/instance-storage/instances";
     table.directSourceTable = "mod_inventory_storage.instance";
     table.tableName = "inventory_instances";
@@ -339,7 +315,6 @@ void Schema::MakeDefaultSchema(Schema* schema)
     table.tableName = "inventory_item_note_types";
     schema->tables.push_back(table);
 
-    // large data
     table.sourcePath = "/item-storage/items";
     table.directSourceTable = "mod_inventory_storage.item";
     table.tableName = "inventory_items";
@@ -502,8 +477,6 @@ void Schema::MakeDefaultSchema(Schema* schema)
 
     ///////////////////////////////////////////////////////////////////////////
     //table.moduleName = "mod-source-record-storage";
-
-    // TODO Disable deletion of table.
 
     //table.sourceType = SourceType::rmbMarc;
     //table.sourcePath = "/source-storage/records";

@@ -380,9 +380,6 @@ void runUpdate(const Options& opt)
     //    }
     //}
 
-    // TODO Check if needed for history tables; if so, move into loop above.
-    //vacuumAnalyzeAll(opt, &schema, &db);
-
     log.log(Level::debug, "server", "", "Completed full update",
             fullUpdateTimer.elapsedTime());
 
