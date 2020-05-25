@@ -14,7 +14,6 @@
 #include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/postgres.h"
 #include "config_json.h"
-#include "dbcontext.h"
 #include "dbtype.h"
 #include "init.h"
 #include "log.h"
@@ -186,13 +185,8 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
 
 void server(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
 {
-    {
-        etymon::OdbcDbc dbc(odbc, opt.db);
-        DBType dbt(&dbc);
-        DBContext db(&dbc, &dbt, log);
-        initUpgrade(odbc, opt.db, &db, opt.ldpUser, opt.ldpconfigUser,
-                opt.datadir);
-    }
+    init_upgrade(odbc, opt.db, opt.ldpUser, opt.ldpconfigUser, opt.datadir,
+            log);
 
     log->log(Level::info, "server", "",
             string("Server started") + (opt.cliMode ? " (CLI mode)" : ""), -1);

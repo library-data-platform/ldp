@@ -7,7 +7,6 @@
 #include <sys/types.h>
 
 #include "../etymoncpp/include/curl.h"
-#include "dbcontext.h"
 #include "extract.h"
 #include "init.h"
 #include "log.h"
@@ -196,13 +195,8 @@ void runUpdate(const Options& opt)
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
 
-    {
-        etymon::OdbcDbc dbc(&odbc, opt.db);
-        DBType dbt(&dbc);
-        DBContext db(&dbc, &dbt, &log);
-        initUpgrade(&odbc, opt.db, &db, opt.ldpUser, opt.ldpconfigUser,
-                opt.datadir);
-    }
+    init_upgrade(&odbc, opt.db, opt.ldpUser, opt.ldpconfigUser, opt.datadir,
+            &log);
 
     ExtractionFiles extractionDir(opt);
 

@@ -52,7 +52,6 @@ add_executable(ldp
 	anonymize.cpp
 	camelcase.cpp
 	config_json.cpp
-	dbcontext.cpp
 	dbtype.cpp
 	extract.cpp
 	idmap.cpp

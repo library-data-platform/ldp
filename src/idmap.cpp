@@ -163,31 +163,35 @@ void IDMap::down(int64_t startSK)
     }
 }
 
-void IDMap::addIndexes(etymon::OdbcDbc* conn, Log* log)
+void IDMap::addIndexes(etymon::OdbcDbc* conn, Log* lg)
 {
     string sql =
         "ALTER TABLE ldpsystem.idmap\n"
         "    ADD CONSTRAINT idmap_pkey PRIMARY KEY (sk);";
-    log->detail(sql);
+    if (lg != nullptr)
+        lg->detail(sql);
     conn->execDirect(nullptr, sql);
 
     sql =
         "ALTER TABLE ldpsystem.idmap\n"
         "    ADD CONSTRAINT idmap_id_key UNIQUE (id);";
-    log->detail(sql);
+    if (lg != nullptr)
+        lg->detail(sql);
     conn->execDirect(nullptr, sql);
 }
 
-void IDMap::removeIndexes(etymon::OdbcDbc* conn, Log* log)
+void IDMap::removeIndexes(etymon::OdbcDbc* conn, Log* lg)
 {
     string sql =
         "ALTER TABLE ldpsystem.idmap DROP CONSTRAINT idmap_id_key;";
-    log->detail(sql);
+    if (lg != nullptr)
+        lg->detail(sql);
     conn->execDirect(nullptr, sql);
 
     sql =
         "ALTER TABLE ldpsystem.idmap DROP CONSTRAINT idmap_pkey;";
-    log->detail(sql);
+    if (lg != nullptr)
+        lg->detail(sql);
     conn->execDirect(nullptr, sql);
 }
 

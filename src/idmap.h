@@ -17,8 +17,8 @@ public:
     void makeSK(const string& table, const char* id, string* sk);
     void syncCommit();
     void vacuum();
-    static void addIndexes(etymon::OdbcDbc* conn, Log* log);
-    static void removeIndexes(etymon::OdbcDbc* conn, Log* log);
+    static void addIndexes(etymon::OdbcDbc* conn, Log* lg);
+    static void removeIndexes(etymon::OdbcDbc* conn, Log* lg);
     static void schemaUpgradeRemoveNewColumn(const string& datadir);
 private:
     void syncDown();
