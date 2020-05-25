@@ -76,7 +76,7 @@ void IDMap::schemaUpgradeRemoveNewColumn(const string& datadir)
     makeCachePath(datadir, &filename);
     if (!fs::exists(filename))
         return;
-    etymon::Sqlite3 cache(filename);
+    etymon::sqlite_db cache(filename);
     string sql = "PRAGMA synchronous = EXTRA;";
     cache.exec(sql);
     sql = "PRAGMA locking_mode = EXCLUSIVE;";
@@ -201,7 +201,6 @@ void IDMap::up(int64_t startSK)
     syncData.sync();  // Sync any remaining data.
 }
 
-// TODO Remove indexes if (cacheMaxSK - ldpMaxSK) > ldpMaxSK
 void IDMap::syncUp()
 {
     int64_t cacheMaxSK = cacheSelectMaxSK();
@@ -271,7 +270,7 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
 
     string filename;
     makeCachePath(datadir, &filename);
-    cache = new etymon::Sqlite3(filename);
+    cache = new etymon::sqlite_db(filename);
     string sql = "PRAGMA synchronous = EXTRA;";
     log->detail(sql);
     cache->exec(sql);

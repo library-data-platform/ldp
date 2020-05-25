@@ -9,8 +9,6 @@
 #include "extract.h"
 #include "log.h"
 
-using namespace std;
-
 class IDMap {
 public:
     IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
@@ -33,9 +31,8 @@ private:
     void createCache(const string& cacheFile);
     etymon::OdbcDbc* dbc;
     DBType* dbt;
-    //etymon::OdbcTx* tx;
     Log* log;
-    etymon::Sqlite3* cache;
+    etymon::sqlite_db* cache;
     int64_t nextvalSK;
 #ifdef PERF
     double makeSKTime;

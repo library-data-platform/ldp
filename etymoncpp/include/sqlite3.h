@@ -8,12 +8,12 @@ using namespace std;
 
 namespace etymon {
 
-class Sqlite3 {
+class sqlite_db {
 public:
     sqlite3* db;
     string filename;
-    Sqlite3(const string& filename);
-    ~Sqlite3();
+    sqlite_db(const string& filename);
+    ~sqlite_db();
     void exec(const string& sql);
     void exec(const string& sql, int (*callback)(void*,int,char**,char**),
             void* data);
