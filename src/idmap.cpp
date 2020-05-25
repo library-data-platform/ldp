@@ -81,8 +81,6 @@ void IDMap::schemaUpgradeRemoveNewColumn(const string& datadir)
     cache.exec(sql);
     sql = "PRAGMA locking_mode = EXCLUSIVE;";
     cache.exec(sql);
-    //sql = "PRAGMA cache_size = -1000000;";
-    //cache.exec(sql);
     sql = "BEGIN;";
     cache.exec(sql);
     sql = "ALTER TABLE idmap_cache RENAME TO old_idmap;";
@@ -280,9 +278,6 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
     sql = "PRAGMA locking_mode = EXCLUSIVE;";
     log->detail(sql);
     cache->exec(sql);
-    //sql = "PRAGMA cache_size = -1000000;";
-    //log->detail(sql);
-    //cache->exec(sql);
     sql =
         "CREATE TABLE IF NOT EXISTS idmap_cache (\n"
         "    id VARCHAR(65535) NOT NULL,\n"
