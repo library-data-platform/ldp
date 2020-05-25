@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "../etymoncpp/include/curl.h"
 #include "dbcontext.h"
 #include "extract.h"
 #include "init.h"
@@ -15,6 +16,7 @@
 #include "timer.h"
 #include "update.h"
 
+using namespace etymon;
 namespace fs = std::experimental::filesystem;
 
 void makeUpdateTmpDir(const Options& opt, string* loaddir)
@@ -174,11 +176,10 @@ void selectConfigGeneral(etymon::OdbcDbc* dbc, Log* log,
     *forceReferentialConstraints = forceReferentialConstraintsStr == "1";
 }
 
-
 void runUpdate(const Options& opt)
 {
-    // TODO Wrap curl_global_init() in a class.
-    CURLcode cc = curl_global_init(CURL_GLOBAL_ALL);
+    CURLcode cc;
+    curl_global curl_env(CURL_GLOBAL_ALL, &cc);
     if (cc) {
         throw runtime_error(string("Error initializing curl: ") +
                 curl_easy_strerror(cc));
@@ -421,8 +422,6 @@ void runUpdate(const Options& opt)
     idmap.vacuum();
     log.log(Level::debug, "update", "", "Optimized cache",
             idmapTimer3.elapsedTime());
-
-    curl_global_cleanup();  // Clean-up after curl_global_init().
 }
 
 void runUpdateProcess(const Options& opt)
