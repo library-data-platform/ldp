@@ -4,6 +4,7 @@
 #include <memory>
 #include <regex>
 
+#include "../etymoncpp/include/mallocptr.h"
 #include "../etymoncpp/include/postgres.h"
 #include "../etymoncpp/include/util.h"
 #include "anonymize.h"
@@ -21,6 +22,7 @@
 #include "util.h"
 
 //using namespace std;
+using namespace etymon;
 namespace json = rapidjson;
 
 constexpr json::ParseFlag pflags = json::kParseTrailingCommasFlag;
@@ -319,14 +321,11 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
 
         record += '}';
 
-        //if (opt.logLevel == Level::trace)
-        //    fprintf(opt.err, 
-        //            "New record parsed for \"%s\":\n%s\n",
-        //            tableSchema.tableName.c_str(),
-        //            record.c_str());
+        log->detail("New record parsed for table: " + tableSchema.tableName +
+                ":\n" + record);
 
-        // TODO Wrap buffer in a class.
         char* buffer = strdup(record.c_str());
+        malloc_ptr bufferptr(buffer);
 
         json::Document doc;
         doc.ParseInsitu<pflags>(buffer);
@@ -356,8 +355,6 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
             writeTuple(opt, log, dbt, idmap, tableSchema, doc, &recordCount,
                     &totalRecordCount, &insertBuffer);
         }
-
-        free(buffer);
 
     } else {
         if (level > 3)
