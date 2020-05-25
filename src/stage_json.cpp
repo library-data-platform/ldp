@@ -345,8 +345,8 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
 
         if (pass == 2) {
 
-            //if (insertBuffer.length() > 16500000) {
-            if (insertBuffer.length() > 10000000) {
+            if (insertBuffer.length() > 16500000) {
+            //if (insertBuffer.length() > 10000000) {
                 endInserts(opt, log, tableSchema.tableName, &insertBuffer, dbc);
                 beginInserts(tableSchema.tableName, &insertBuffer);
                 recordCount = 0;
