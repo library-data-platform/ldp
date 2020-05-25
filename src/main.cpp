@@ -231,8 +231,6 @@ void server(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
 
 void runServer(const Options& opt)
 {
-    fprintf(stderr, "%s: Initializing\n", opt.prog);
-
     etymon::OdbcEnv odbc;
 
     //runPreloadTests(opt, odbc);
@@ -249,10 +247,16 @@ void runServer(const Options& opt)
     lockConn.execDirect(nullptr, sql);
 
     {
+        if (opt.logLevel == Level::trace || opt.logLevel == Level::detail)
+            fprintf(stderr, "%s: Acquiring server lock\n", opt.prog);
+
         etymon::OdbcTx tx(&lockConn);
         sql = "LOCK ldpsystem.server_lock;";
         log.logDetail(sql);
         lockConn.execDirect(nullptr, sql);
+
+        if (opt.logLevel == Level::trace || opt.logLevel == Level::detail)
+            fprintf(stderr, "%s: Initializing\n", opt.prog);
 
         server(opt, &odbc, &log);
     }
