@@ -54,7 +54,8 @@ void catalogAddTable(etymon::OdbcDbc* dbc, Log* log, const string& table)
     string sql =
         "INSERT INTO ldpsystem.tables (table_name) VALUES\n"
         "    ('" + table + "');";
-    log->logDetail(sql);
+    if (log != nullptr)
+        log->detail(sql);
     dbc->execDirect(nullptr, sql);
 }
 
@@ -328,7 +329,6 @@ void initSchema(DBContext* db, const string& ldpUser,
 class SchemaUpgradeOptions {
 public:
     etymon::OdbcDbc* dbc;
-    Log* log;
     string ldpUser;
     string ldpconfigUser;
     string datadir;
@@ -346,11 +346,9 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
         "CREATE TABLE ldpsystem.tables (\n"
         "    table_name VARCHAR(63) NOT NULL\n"
         ");";
-    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.tables TO " + opt->ldpUser + ";";
-    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     const char *table[] = {
@@ -447,7 +445,7 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
     };
     for (int x = 0; table[x] != nullptr; x++) {
         // Add table to the catalog.
-        catalogAddTable(opt->dbc, opt->log, table[x]);
+        catalogAddTable(opt->dbc, nullptr, table[x]);
         // Create stub table if it doesn't exist.
         sql =
             "CREATE TABLE IF NOT EXISTS " + string(table[x]) + " (\n"
@@ -457,18 +455,15 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
             "    data " + dbt.jsonType() + ",\n"
             "    tenant_id SMALLINT NOT NULL\n"
             ");";
-        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         sql =
             "GRANT SELECT ON\n"
             "    " + string(table[x]) + "\n"
             "    TO " + opt->ldpUser + ";";
-        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         // Recreate history table.
         sql = "DROP TABLE IF EXISTS\n"
             "    history." + string(table[x]) + ";";
-        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         string rskeys;
         dbt.redshiftKeys("sk", "sk, updated", &rskeys);
@@ -487,13 +482,11 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
             "        history_" + table[x] + "_id_updated_key\n"
             "        UNIQUE (id, updated)\n"
             ")" + rskeys + ";";
-        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         sql =
             "GRANT SELECT ON\n"
             "    history." + string(table[x]) + "\n"
             "    TO " + opt->ldpUser + ";";
-        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         if (string(dbt.dbType()) == "PostgreSQL") {
             // Remove row_id columns.
@@ -501,7 +494,6 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
                 "ALTER TABLE \n"
                 "    " + string(table[x]) + "\n"
                 "    DROP COLUMN row_id;";
-            opt->log->logDetail(sql);
             opt->dbc->execDirect(nullptr, sql);
         }
     }
@@ -519,11 +511,9 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
         "        PRIMARY KEY (sk),\n"
         "        UNIQUE (id)\n"
         ")" + rskeys + ";";
-    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldpUser + ";";
-    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 }
 
@@ -625,13 +615,11 @@ void schemaUpgrade2(SchemaUpgradeOptions* opt)
         string sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
             "    DROP CONSTRAINT history_" + table[x] + "_pkey;";
-        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
         sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
             "    ADD CONSTRAINT history_" + table[x] + "_pkey\n"
             "    PRIMARY KEY (sk, updated);";
-        opt->log->logDetail(sql);
         opt->dbc->execDirect(nullptr, sql);
     }
 }
@@ -642,13 +630,11 @@ void schemaUpgrade3(SchemaUpgradeOptions* opt)
         "ALTER TABLE ldpconfig.general\n"
         "    ADD COLUMN log_referential_analysis\n"
         "        BOOLEAN NOT NULL DEFAULT FALSE;";
-    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
     sql =
         "ALTER TABLE ldpconfig.general\n"
         "    ADD COLUMN force_referential_constraints\n"
         "        BOOLEAN NOT NULL DEFAULT FALSE;";
-    opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 }
 
@@ -657,21 +643,18 @@ void schemaUpgrade4(SchemaUpgradeOptions* opt)
     DBType dbt(opt->dbc);
 
     string sql = "ALTER TABLE ldpsystem.log DROP COLUMN level;";
-    //opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql =
         "ALTER TABLE ldpsystem.log\n"
         "    ADD COLUMN level\n"
         "        VARCHAR(7) NOT NULL DEFAULT '';";
-    //opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql =
         "ALTER TABLE ldpsystem.idmap\n"
         "    ADD COLUMN table_name\n"
         "        VARCHAR(63) NOT NULL DEFAULT '';";
-    //opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     string rskeys;
@@ -685,12 +668,10 @@ void schemaUpgrade4(SchemaUpgradeOptions* opt)
         "    referenced_column VARCHAR(63) NOT NULL,\n"
         "        PRIMARY KEY (referencing_table, referencing_column)\n"
         ")" + rskeys + ";";
-    //opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + opt->ldpUser +
         ";";
-    //opt->log->logDetail(sql);
     opt->dbc->execDirect(nullptr, sql);
 }
 
@@ -734,40 +715,30 @@ void schemaUpgrade6(SchemaUpgradeOptions* opt)
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldpUser + ";";
-    opt->log->detail(sql);
     opt->dbc->execDirect(nullptr, sql);
     sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldpconfigUser + ";";
-    opt->log->detail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.log TO " + opt->ldpUser + ";";
-    opt->log->detail(sql);
     opt->dbc->execDirect(nullptr, sql);
     sql = "GRANT SELECT ON ldpsystem.log TO " + opt->ldpconfigUser + ";";
-    opt->log->detail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.main TO " + opt->ldpUser + ";";
-    opt->log->detail(sql);
     opt->dbc->execDirect(nullptr, sql);
     sql = "GRANT SELECT ON ldpsystem.main TO " + opt->ldpconfigUser + ";";
-    opt->log->detail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.referential_constraints TO " +
         opt->ldpUser + ";";
-    opt->log->detail(sql);
     opt->dbc->execDirect(nullptr, sql);
     sql = "GRANT SELECT ON ldpsystem.referential_constraints TO " +
         opt->ldpconfigUser + ";";
-    opt->log->detail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.tables TO " + opt->ldpUser + ";";
-    opt->log->detail(sql);
     opt->dbc->execDirect(nullptr, sql);
     sql = "GRANT SELECT ON ldpsystem.tables TO " + opt->ldpconfigUser + ";";
-    opt->log->detail(sql);
     opt->dbc->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + opt->ldpconfigUser + ";";
@@ -941,8 +912,6 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
         const string& ldpUser, const string& ldpconfigUser, int64_t version,
         int64_t thisSchemaVersion, Log* log, const string& datadir)
 {
-    // Do not using logging during schema upgrades.
-
     if (version < 0 || version > thisSchemaVersion)
         throw runtime_error(
                 "Unknown LDP schema version: " + to_string(version));
@@ -950,15 +919,13 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
     etymon::OdbcDbc dbc(odbc, dsn);
     etymon::OdbcTx tx(&dbc);
 
+    // Do not use logging during schema upgrade transaction, to avoid
+    // locking issues.
+
     bool upgraded = false;
     for (int v = version + 1; v <= thisSchemaVersion; v++) {
-        //if (upgraded == false)
-        //    fprintf(stderr, "Upgrading schema\n");
-        //log->log(Level::trace, "", "",
-        //        "Applying schema upgrade: " + to_string(v), -1);
         SchemaUpgradeOptions opt;
         opt.dbc = &dbc;
-        opt.log = log;
         opt.ldpUser = ldpUser;
         opt.ldpconfigUser = ldpconfigUser;
         opt.datadir = datadir;
@@ -968,14 +935,12 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
 
     string sql = "UPDATE ldpsystem.main SET ldp_schema_version = " +
         to_string(thisSchemaVersion) + ";";
-    //log->log(Level::detail, "", "", sql, -1);
     dbc.execDirect(nullptr, sql);
 
     tx.commit();
 
     if (upgraded)
-        log->log(Level::info, "server", "",
-                "Database upgraded to schema version: " +
+        log->log(Level::trace, "", "", "Database upgraded to schema version: " +
                 to_string(thisSchemaVersion), -1);
 }
 
@@ -1001,29 +966,14 @@ void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
         const string& datadir)
 {
     int64_t thisSchemaVersion = 8;
-
-    //db->log->log(Level::trace, "", "", "Initializing database", -1);
-
     int64_t version;
     bool versionFound = selectSchemaVersion(db, &version);
-    //db->log->log(Level::detail, "", "", "ldp_schema_version: " +
-    //        (versionFound ? to_string(version) : "(not found)"),
-    //        -1);
-
-    if (versionFound) {
+    if (versionFound)
         // Schema is present: check if it needs to be upgraded.
         upgradeSchema(odbc, dsn, ldpUser, ldpconfigUser, version,
                 thisSchemaVersion, db->log, datadir);
-    } else {
+    else
         // Schema is not present: create it.
-        fprintf(stderr, "ldp: Creating schema\n");
-        //db->log->log(Level::trace, "", "", "Creating schema", -1);
-        {
-            //etymon::OdbcTx tx(db->dbc);
-            initSchema(db, ldpUser, ldpconfigUser, thisSchemaVersion);
-            //tx.commit();
-            fprintf(stderr, "ldp: Logging enabled in table: ldpsystem.log\n");
-        }
-    }
+        initSchema(db, ldpUser, ldpconfigUser, thisSchemaVersion);
 }
 
