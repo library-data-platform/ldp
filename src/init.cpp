@@ -924,9 +924,10 @@ void init_upgrade(etymon::OdbcEnv* odbc, const string& dbname,
         const string& ldpUser, const string& ldpconfigUser,
         const string& datadir, Log* lg)
 {
+    int64_t this_schema_version = 8;
+
     etymon::OdbcDbc conn(odbc, dbname);
 
-    int64_t this_schema_version = 8;
     int64_t version;
     bool version_found = select_schema_version(&conn, &version);
 
