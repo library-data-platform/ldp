@@ -3,6 +3,6 @@
 
 #include "../etymoncpp/include/util.h"
 
-void run(const etymon::CommandArgs& cargs);
+int cli(int argc, char* argv[]);
 
 #endif

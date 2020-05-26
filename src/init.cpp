@@ -6,7 +6,7 @@
 #include "init.h"
 #include "log.h"
 
-/**
+/* *
  * \brief Looks up the schema version number in the LDP database.
  *
  * \param[in] db Database context.
@@ -54,7 +54,7 @@ static void catalogAddTable(etymon::OdbcDbc* dbc, const string& table)
     dbc->execDirect(nullptr, sql);
 }
 
-/**
+/* *
  * \brief Initializes a new database with the LDP schema.
  *
  * This function assumes that the database is empty, or at least
@@ -903,7 +903,7 @@ void upgrade_schema(etymon::OdbcDbc* conn, const string& ldpUser,
                 to_string(this_schema_version), -1);
 }
 
-/**
+/* *
  * \brief Initializes or upgrades an LDP database if needed.
  *
  * This function checks if the database has been previously

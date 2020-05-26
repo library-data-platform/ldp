@@ -5,6 +5,6 @@
 
 using namespace std;
 
-void decodeCamelCase(const char* str, string* newstr);
+void decode_camel_case(const char* str, string* newstr);
 
 #endif

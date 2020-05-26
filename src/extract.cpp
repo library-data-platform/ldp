@@ -69,7 +69,7 @@ size_t header_callback(char* buffer, size_t size, size_t nitems,
     return size * nitems;
 }
 
-/**
+/* *
  * \brief Performs the equivalent of a login to Okapi.
  *
  * \param[in] opt Options specifying okapiURL, okapiUser,

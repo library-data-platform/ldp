@@ -746,7 +746,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                 string typeStr;
                 ColumnSchema::columnTypeToString(column.columnType, &typeStr);
                 string newattr;
-                decodeCamelCase(field.c_str(), &newattr);
+                decode_camel_case(field.c_str(), &newattr);
                 log->log(Level::detail, "", "",
                         string("Column: ") + newattr + string(" ") + typeStr,
                         -1);
