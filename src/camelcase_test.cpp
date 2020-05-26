@@ -22,7 +22,7 @@ TEST_CASE( "Test decoding of camel case strings", "[camelcase]" ) {
         {"cCase", "c_case"},
         {"CamelC", "camel_c"},
         {"CamelCase", "camel_case"},
-        {"AcamelCase", "camel_case"},
+        {"camelCase", "camel_case"},
         {"Camelcase", "camelcase"},
         {"CAMELCase", "camel_case"},
         {"CamelCASE", "camel_case"},
