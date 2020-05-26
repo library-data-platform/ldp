@@ -218,8 +218,7 @@ void init_schema(etymon::OdbcDbc* conn, const string& ldpUser,
         "    referenced_table VARCHAR(63) NOT NULL,\n"
         "    referenced_column VARCHAR(63) NOT NULL\n"
         ");";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpUser + ";";
     conn->execDirect(nullptr, sql);
