@@ -43,8 +43,8 @@ find_package(RapidJSON REQUIRED)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-add_executable(ldp
-
+add_library(ldp_obj OBJECT
+	
 	../etymoncpp/src/curl.cpp
 	../etymoncpp/src/mallocptr.cpp
 	../etymoncpp/src/odbc.cpp
@@ -59,7 +59,6 @@ add_executable(ldp
 	idmap.cpp
 	init.cpp
 	log.cpp
-	main.cpp
 	merge.cpp
 	names.cpp
 	options.cpp
@@ -69,7 +68,12 @@ add_executable(ldp
 	timer.cpp
 	update.cpp
 	util.cpp
+	
+	)
 
+add_executable(ldp
+	$<TARGET_OBJECTS:ldp_obj>
+	main.cpp
 	)
 target_link_libraries(ldp
 	${GPROFFLAG}
@@ -81,32 +85,10 @@ target_link_libraries(ldp
 	)
 
 add_executable(test_ldp
+	$<TARGET_OBJECTS:ldp_obj>
 
-	../etymoncpp/src/curl.cpp
-	../etymoncpp/src/mallocptr.cpp
-	../etymoncpp/src/odbc.cpp
-	../etymoncpp/src/postgres.cpp
-	../etymoncpp/src/sqlite3.cpp
-	../etymoncpp/src/util.cpp
-	anonymize.cpp
-	camelcase.cpp
 	camelcase_test.cpp
-	config_json.cpp
-	dbtype.cpp
-	extract.cpp
-	idmap.cpp
-	init.cpp
-	log.cpp
 	main_test.cpp
-	merge.cpp
-	names.cpp
-	options.cpp
-	paging.cpp
-	schema.cpp
-	stage_json.cpp
-	timer.cpp
-	update.cpp
-	util.cpp
 
 	)
 target_link_libraries(test_ldp
