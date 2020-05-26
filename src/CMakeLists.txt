@@ -42,7 +42,9 @@ find_package(SQLite3 REQUIRED)
 find_package(RapidJSON REQUIRED)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-add_executable(ldp
+
+add_library(ldp_obj OBJECT
+	
 	../etymoncpp/src/curl.cpp
 	../etymoncpp/src/mallocptr.cpp
 	../etymoncpp/src/odbc.cpp
@@ -57,7 +59,6 @@ add_executable(ldp
 	idmap.cpp
 	init.cpp
 	log.cpp
-	main.cpp
 	merge.cpp
 	names.cpp
 	options.cpp
@@ -67,8 +68,30 @@ add_executable(ldp
 	timer.cpp
 	update.cpp
 	util.cpp
+	
+	)
+
+add_executable(ldp
+	$<TARGET_OBJECTS:ldp_obj>
+	main.cpp
 	)
 target_link_libraries(ldp
+	${GPROFFLAG}
+	${CURL_LIBRARIES}
+	${ODBC_LIBRARY}
+	${PostgreSQL_LIBRARY}
+	${SQLite3_LIBRARY}
+	${FSLIB}
+	)
+
+add_executable(test_ldp
+	$<TARGET_OBJECTS:ldp_obj>
+
+	camelcase_test.cpp
+	main_test.cpp
+
+	)
+target_link_libraries(test_ldp
 	${GPROFFLAG}
 	${CURL_LIBRARIES}
 	${ODBC_LIBRARY}
