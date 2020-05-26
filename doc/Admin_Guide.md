@@ -168,6 +168,12 @@ unpacked directory.  Then:
 $ ./all.sh
 ```
 
+If this succeeds, the end of the output should include:
+
+```shell
+All tests passed
+```
+
 The compiled executable file `ldp` should appear in `ldp/build/src/`:
 
 ```shell
