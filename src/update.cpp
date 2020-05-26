@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "dbcontext.h"
+#include "../etymoncpp/include/curl.h"
 #include "extract.h"
 #include "init.h"
 #include "log.h"
@@ -16,6 +16,7 @@
 #include "timer.h"
 #include "update.h"
 
+using namespace etymon;
 namespace fs = std::experimental::filesystem;
 
 void makeUpdateTmpDir(const Options& opt, string* loaddir)
@@ -201,11 +202,10 @@ void selectConfigGeneral(etymon::OdbcDbc* dbc, Log* log,
     *enableForeignKeyWarnings = (s3 == "1");
 }
 
-
 void runUpdate(const Options& opt)
 {
-    // TODO Wrap curl_global_init() in a class.
-    CURLcode cc = curl_global_init(CURL_GLOBAL_ALL);
+    CURLcode cc;
+    curl_global curl_env(CURL_GLOBAL_ALL, &cc);
     if (cc) {
         throw runtime_error(string("Error initializing curl: ") +
                 curl_easy_strerror(cc));
@@ -222,13 +222,8 @@ void runUpdate(const Options& opt)
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
 
-    {
-        etymon::OdbcDbc dbc(&odbc, opt.db);
-        DBType dbt(&dbc);
-        DBContext db(&dbc, &dbt, &log);
-        initUpgrade(&odbc, opt.db, &db, opt.ldpUser, opt.ldpconfigUser,
-                opt.datadir);
-    }
+    init_upgrade(&odbc, opt.db, opt.ldpUser, opt.ldpconfigUser, opt.datadir,
+            &log);
 
     ExtractionFiles extractionDir(opt);
 
@@ -406,9 +401,6 @@ void runUpdate(const Options& opt)
     //    }
     //}
 
-    // TODO Check if needed for history tables; if so, move into loop above.
-    //vacuumAnalyzeAll(opt, &schema, &db);
-
     log.log(Level::debug, "server", "", "Completed full update",
             fullUpdateTimer.elapsedTime());
 
@@ -475,8 +467,6 @@ void runUpdate(const Options& opt)
     idmap.vacuum();
     log.log(Level::debug, "update", "", "Optimized cache",
             idmapTimer3.elapsedTime());
-
-    curl_global_cleanup();  // Clean-up after curl_global_init().
 }
 
 void runUpdateProcess(const Options& opt)

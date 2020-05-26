@@ -181,11 +181,17 @@ Before using the LDP software, we have to create a database that will
 store the data.  This can be a local or cloud-based PostgreSQL
 database or a cloud-based Redshift database.
 
+#### PostgreSQL
+
+For libraries that deploy LDP with PostgreSQL, whether local or
+hosted, we recommend setting:
+
+* `max_wal_size`: `10GB` (`10000`)
+
 #### PostgreSQL hosted in RDS
 
 For libraries that deploy LDP with cloud-based PostgreSQL using Amazon
-Relational Database Service (RDS), these configuration settings are
-suggested as a starting point:
+Relational Database Service (RDS), we recommend setting:
 
 * Instance type:  `db.m5.large`
 * Number of instances:  `1`
@@ -194,8 +200,7 @@ suggested as a starting point:
 
 #### Redshift
 
-For libraries that deploy LDP with Redshift, these configuration
-settings are suggested as a starting point:
+For libraries that deploy LDP with Redshift, we recommend setting:
 
 * Node type:  `dc2.large`
 * Cluster type:  `Multiple Node`

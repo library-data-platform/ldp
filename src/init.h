@@ -1,13 +1,11 @@
 #ifndef LDP_INIT_H
 #define LDP_INIT_H
 
-//#include <string>
+#include "log.h"
 
-#include "dbcontext.h"
-
-void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
+void init_upgrade(etymon::OdbcEnv* odbc, const string& dbname,
         const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir);
+        const string& datadir, Log* lg);
 
 #endif
 

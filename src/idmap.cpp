@@ -76,13 +76,11 @@ void IDMap::schemaUpgradeRemoveNewColumn(const string& datadir)
     makeCachePath(datadir, &filename);
     if (!fs::exists(filename))
         return;
-    etymon::Sqlite3 cache(filename);
+    etymon::sqlite_db cache(filename);
     string sql = "PRAGMA synchronous = EXTRA;";
     cache.exec(sql);
     sql = "PRAGMA locking_mode = EXCLUSIVE;";
     cache.exec(sql);
-    //sql = "PRAGMA cache_size = -1000000;";
-    //cache.exec(sql);
     sql = "BEGIN;";
     cache.exec(sql);
     sql = "ALTER TABLE idmap_cache RENAME TO old_idmap;";
@@ -165,31 +163,35 @@ void IDMap::down(int64_t startSK)
     }
 }
 
-void IDMap::addIndexes(etymon::OdbcDbc* conn, Log* log)
+void IDMap::addIndexes(etymon::OdbcDbc* conn, Log* lg)
 {
     string sql =
         "ALTER TABLE ldpsystem.idmap\n"
         "    ADD CONSTRAINT idmap_pkey PRIMARY KEY (sk);";
-    log->detail(sql);
+    if (lg != nullptr)
+        lg->detail(sql);
     conn->execDirect(nullptr, sql);
 
     sql =
         "ALTER TABLE ldpsystem.idmap\n"
         "    ADD CONSTRAINT idmap_id_key UNIQUE (id);";
-    log->detail(sql);
+    if (lg != nullptr)
+        lg->detail(sql);
     conn->execDirect(nullptr, sql);
 }
 
-void IDMap::removeIndexes(etymon::OdbcDbc* conn, Log* log)
+void IDMap::removeIndexes(etymon::OdbcDbc* conn, Log* lg)
 {
     string sql =
         "ALTER TABLE ldpsystem.idmap DROP CONSTRAINT idmap_id_key;";
-    log->detail(sql);
+    if (lg != nullptr)
+        lg->detail(sql);
     conn->execDirect(nullptr, sql);
 
     sql =
         "ALTER TABLE ldpsystem.idmap DROP CONSTRAINT idmap_pkey;";
-    log->detail(sql);
+    if (lg != nullptr)
+        lg->detail(sql);
     conn->execDirect(nullptr, sql);
 }
 
@@ -203,7 +205,6 @@ void IDMap::up(int64_t startSK)
     syncData.sync();  // Sync any remaining data.
 }
 
-// TODO Remove indexes if (cacheMaxSK - ldpMaxSK) > ldpMaxSK
 void IDMap::syncUp()
 {
     int64_t cacheMaxSK = cacheSelectMaxSK();
@@ -273,16 +274,13 @@ IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
 
     string filename;
     makeCachePath(datadir, &filename);
-    cache = new etymon::Sqlite3(filename);
+    cache = new etymon::sqlite_db(filename);
     string sql = "PRAGMA synchronous = EXTRA;";
     log->detail(sql);
     cache->exec(sql);
     sql = "PRAGMA locking_mode = EXCLUSIVE;";
     log->detail(sql);
     cache->exec(sql);
-    //sql = "PRAGMA cache_size = -1000000;";
-    //log->detail(sql);
-    //cache->exec(sql);
     sql =
         "CREATE TABLE IF NOT EXISTS idmap_cache (\n"
         "    id VARCHAR(65535) NOT NULL,\n"
@@ -331,9 +329,6 @@ void IDMap::makeSK(const string& table, const char* id, string* sk)
         // The sk was not found; so we add it.
         *sk = to_string(nextvalSK);
         nextvalSK++;
-
-        // TODO Use prepared statement.
-
         sql =
             "INSERT INTO idmap_cache (id, sk)\n"
             "    VALUES ('" + string(id) + "', " + *sk + ");";
