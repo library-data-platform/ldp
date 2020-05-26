@@ -21,3 +21,5 @@ jobs:
       run: cmake .
     - name: make
       run: make
+    - name: run tests
+      run: ./src/test_ldp
