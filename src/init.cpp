@@ -14,31 +14,28 @@
  * \retval true The version number was retrieved.
  * \retval false The version number was not present in the database.
  */
-bool selectSchemaVersion(DBContext* db, int64_t* version)
+bool select_schema_version(etymon::OdbcDbc* conn, int64_t* version)
 {
     string sql = "SELECT ldp_schema_version FROM ldpsystem.main;";
-    //db->log->log(Level::detail, "", "", sql, -1);
-    etymon::OdbcStmt stmt(db->dbc);
+    etymon::OdbcStmt stmt(conn);
     try {
-        db->dbc->execDirect(&stmt, sql);
+        conn->execDirect(&stmt, sql);
     } catch (runtime_error& e) {
         // This could happen if the table does not exist.
         return false;
     }
-    if (db->dbc->fetch(&stmt) == false) {
+    if (conn->fetch(&stmt) == false) {
         // This means there are no rows.  Do not try to recover
         // automatically from this problem.
         string e = "No rows could be read from table: ldpsystem.main";
-        //db->log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
     string ldpSchemaVersion;
-    db->dbc->getData(&stmt, 1, &ldpSchemaVersion);
-    if (db->dbc->fetch(&stmt)) {
+    conn->getData(&stmt, 1, &ldpSchemaVersion);
+    if (conn->fetch(&stmt)) {
         // This means there is more than one row.  Do not try to
         // recover automatically from this problem.
         string e = "Too many rows in table: ldpsystem.main";
-        //db->log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
     //*version = stol(ldpSchemaVersion);
@@ -49,13 +46,11 @@ bool selectSchemaVersion(DBContext* db, int64_t* version)
     return true;
 }
 
-void catalogAddTable(etymon::OdbcDbc* dbc, Log* log, const string& table)
+static void catalogAddTable(etymon::OdbcDbc* dbc, const string& table)
 {
     string sql =
         "INSERT INTO ldpsystem.tables (table_name) VALUES\n"
         "    ('" + table + "');";
-    if (log != nullptr)
-        log->detail(sql);
     dbc->execDirect(nullptr, sql);
 }
 
@@ -70,9 +65,11 @@ void catalogAddTable(etymon::OdbcDbc* dbc, Log* log, const string& table)
  *
  * \param[in] db Database context.
  */
-void initSchema(DBContext* db, const string& ldpUser,
+void init_schema(etymon::OdbcDbc* conn, const string& ldpUser,
         const string& ldpconfigUser, int64_t thisSchemaVersion)
 {
+    DBType dbt(conn);
+
     // TODO This should probably be passed into the function as a parameter.
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
@@ -83,20 +80,18 @@ void initSchema(DBContext* db, const string& ldpUser,
     //db->dbc->execDirect(nullptr, sql);
 
     string sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpUser + ";";
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpconfigUser + ";";
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     sql =
         "CREATE TABLE ldpsystem.main (\n"
         "    ldp_schema_version BIGINT NOT NULL\n"
         ");";
-    //db->log->log(Level::detail, "", "", sql, -1);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     sql = "INSERT INTO ldpsystem.main (ldp_schema_version) VALUES (" +
         to_string(thisSchemaVersion) + ");";
-    //db->log->log(Level::detail, "", "", sql, -1);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     sql =
         "CREATE TABLE ldpsystem.log (\n"
@@ -108,22 +103,20 @@ void initSchema(DBContext* db, const string& ldpUser,
         "    message VARCHAR(65535) NOT NULL,\n"
         "    elapsed_time REAL\n"
         ");";
-    db->dbc->execDirect(nullptr, sql);
-    //db->log->log(Level::detail, "", "", sql, -1);
+    conn->execDirect(nullptr, sql);
 
     string rskeys;
-    db->dbt->redshiftKeys("sk", "sk", &rskeys);
+    dbt.redshiftKeys("sk", "sk", &rskeys);
     string autoInc;
-    db->dbt->autoIncrementType(1, false, "", &autoInc);
+    dbt.autoIncrementType(1, false, "", &autoInc);
     sql =
         "CREATE TABLE ldpsystem.idmap (\n"
         "    sk BIGINT NOT NULL,\n"
         "    id VARCHAR(65535) NOT NULL\n"
         ")" + rskeys + ";";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
-    IDMap::addIndexes(db->dbc, db->log);
+    IDMap::addIndexes(conn, nullptr);
 
     // Table: ldpsystem.tables
 
@@ -136,14 +129,13 @@ void initSchema(DBContext* db, const string& ldpUser,
         "    documentation VARCHAR(65535),\n"
         "    documentation_url VARCHAR(65535)\n"
         ");";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     // Add tables to the catalog.
     for (auto& table : schema.tables)
-        catalogAddTable(db->dbc, db->log, table.tableName);
+        catalogAddTable(conn, table.tableName);
 
-    db->dbt->redshiftKeys("referencing_table",
+    dbt.redshiftKeys("referencing_table",
             "referencing_table, referencing_column", &rskeys);
     sql =
         "CREATE TABLE ldpsystem.referential_constraints (\n"
@@ -153,66 +145,50 @@ void initSchema(DBContext* db, const string& ldpUser,
         "    referenced_column VARCHAR(63) NOT NULL,\n"
         "        PRIMARY KEY (referencing_table, referencing_column)\n"
         ")" + rskeys + ";";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpUser + ";";
-    //db->log->logDetail(sql);
-    //db->dbc->execDirect(nullptr, sql);
+    //conn->execDirect(nullptr, sql);
     //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpconfigUser +
     //    ";";
-    //db->log->logDetail(sql);
-    //db->dbc->execDirect(nullptr, sql);
+    //conn->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.idmap TO " + ldpUser + ";";
-    db->log->detail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     sql = "GRANT SELECT ON ldpsystem.idmap TO " + ldpconfigUser + ";";
-    db->log->detail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.log TO " + ldpUser + ";";
-    db->log->detail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     sql = "GRANT SELECT ON ldpsystem.log TO " + ldpconfigUser + ";";
-    db->log->detail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.main TO " + ldpUser + ";";
-    db->log->detail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     sql = "GRANT SELECT ON ldpsystem.main TO " + ldpconfigUser + ";";
-    db->log->detail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.referential_constraints TO " + ldpUser +
         ";";
-    db->log->detail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     sql = "GRANT SELECT ON ldpsystem.referential_constraints TO " +
         ldpconfigUser + ";";
-    db->log->detail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.tables TO " + ldpUser + ";";
-    db->log->detail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     sql = "GRANT SELECT ON ldpsystem.tables TO " + ldpconfigUser + ";";
-    db->log->detail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     // Schema: ldpconfig
 
     sql = "CREATE SCHEMA ldpconfig;";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldpUser + ";";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldpconfigUser + ";";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     sql =
         "CREATE TABLE ldpconfig.general (\n"
@@ -222,52 +198,43 @@ void initSchema(DBContext* db, const string& ldpUser,
         "    force_referential_constraints BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    disable_anonymization BOOLEAN NOT NULL DEFAULT FALSE\n"
         ");";
-    db->dbc->execDirect(nullptr, sql);
-    db->log->log(Level::detail, "", "", sql, -1);
+    conn->execDirect(nullptr, sql);
     sql = "DELETE FROM ldpconfig.general;";  // Temporary: pre-LDP-1.0
-    db->log->log(Level::detail, "", "", sql, -1);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     sql =
         "INSERT INTO ldpconfig.general\n"
         "    (full_update_enabled, next_full_update)\n"
         "    VALUES\n"
-        "    (TRUE, " + string(db->dbt->currentTimestamp()) + ");";
-    db->log->log(Level::detail, "", "", sql, -1);
-    db->dbc->execDirect(nullptr, sql);
+        "    (TRUE, " + string(dbt.currentTimestamp()) + ");";
+    conn->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpUser + ";";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpconfigUser +
         ";";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     sql = "GRANT UPDATE ON ldpconfig.general TO " + ldpconfigUser + ";";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     // Schema: history
 
     sql = "CREATE SCHEMA history;";
-    db->log->log(Level::detail, "", "", sql, -1);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     sql = "GRANT USAGE ON SCHEMA history TO " + ldpUser + ";";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     sql = "GRANT USAGE ON SCHEMA history TO " + ldpconfigUser + ";";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     for (auto& table : schema.tables) {
         string rskeys;
-        db->dbt->redshiftKeys("sk", "sk, updated", &rskeys);
+        dbt.redshiftKeys("sk", "sk, updated", &rskeys);
         string sql =
             "CREATE TABLE IF NOT EXISTS\n"
             "    history." + table.tableName + " (\n"
             "    sk BIGINT NOT NULL,\n"
             "    id VARCHAR(65535) NOT NULL,\n"
-            "    data " + db->dbt->jsonType() + " NOT NULL,\n"
+            "    data " + dbt.jsonType() + " NOT NULL,\n"
             "    updated TIMESTAMP WITH TIME ZONE NOT NULL,\n"
             "    tenant_id SMALLINT NOT NULL,\n"
             "    CONSTRAINT\n"
@@ -277,53 +244,46 @@ void initSchema(DBContext* db, const string& ldpUser,
             "        history_" + table.tableName + "_id_updated_key\n"
             "        UNIQUE (id, updated)\n"
             ")" + rskeys + ";";
-        db->log->log(Level::detail, "", "", sql, -1);
-        db->dbc->execDirect(nullptr, sql);
+        conn->execDirect(nullptr, sql);
 
         sql =
             "GRANT SELECT ON\n"
             "    history." + table.tableName + "\n"
             "    TO " + ldpUser + ";";
-        db->log->logDetail(sql);
-        db->dbc->execDirect(nullptr, sql);
+        conn->execDirect(nullptr, sql);
         sql =
             "GRANT SELECT ON\n"
             "    history." + table.tableName + "\n"
             "    TO " + ldpconfigUser + ";";
-        db->log->logDetail(sql);
-        db->dbc->execDirect(nullptr, sql);
+        conn->execDirect(nullptr, sql);
     }
 
     // Schema: public
 
     for (auto& table : schema.tables) {
         string rskeys;
-        db->dbt->redshiftKeys("sk", "sk", &rskeys);
+        dbt.redshiftKeys("sk", "sk", &rskeys);
         sql =
             "CREATE TABLE " + table.tableName + " (\n"
             "    sk BIGINT NOT NULL,\n"
             "    id VARCHAR(65535) NOT NULL,\n"
-            "    data " + db->dbt->jsonType() + ",\n"
+            "    data " + dbt.jsonType() + ",\n"
             "    tenant_id SMALLINT NOT NULL,\n"
             "    PRIMARY KEY (sk),\n"
             "    UNIQUE (id)\n"
         ")" + rskeys + ";";
-        db->log->logDetail(sql);
-        db->dbc->execDirect(nullptr, sql);
+        conn->execDirect(nullptr, sql);
     }
 
     // Schema: local
 
     sql = "CREATE SCHEMA local;";
-    db->log->log(Level::detail, "", "", sql, -1);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + ldpUser + ";";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     sql = "GRANT USAGE ON SCHEMA local TO " + ldpconfigUser + ";";
-    db->log->logDetail(sql);
-    db->dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 }
 
 class SchemaUpgradeOptions {
@@ -445,7 +405,7 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
     };
     for (int x = 0; table[x] != nullptr; x++) {
         // Add table to the catalog.
-        catalogAddTable(opt->dbc, nullptr, table[x]);
+        catalogAddTable(opt->dbc, table[x]);
         // Create stub table if it doesn't exist.
         sql =
             "CREATE TABLE IF NOT EXISTS " + string(table[x]) + " (\n"
@@ -908,24 +868,23 @@ SchemaUpgrade schemaUpgrade[] = {
     schemaUpgrade8
 };
 
-void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
-        const string& ldpUser, const string& ldpconfigUser, int64_t version,
-        int64_t thisSchemaVersion, Log* log, const string& datadir)
+void upgrade_schema(etymon::OdbcDbc* conn, const string& ldpUser,
+        const string& ldpconfigUser, int64_t version,
+        int64_t this_schema_version, const string& datadir, Log* lg)
 {
-    if (version < 0 || version > thisSchemaVersion)
+    if (version < 0 || version > this_schema_version)
         throw runtime_error(
                 "Unknown LDP schema version: " + to_string(version));
 
-    etymon::OdbcDbc dbc(odbc, dsn);
-    etymon::OdbcTx tx(&dbc);
+    etymon::OdbcTx tx(conn);
 
     // Do not use logging during schema upgrade transaction, to avoid
     // locking issues.
 
     bool upgraded = false;
-    for (int v = version + 1; v <= thisSchemaVersion; v++) {
+    for (int v = version + 1; v <= this_schema_version; v++) {
         SchemaUpgradeOptions opt;
-        opt.dbc = &dbc;
+        opt.dbc = conn;
         opt.ldpUser = ldpUser;
         opt.ldpconfigUser = ldpconfigUser;
         opt.datadir = datadir;
@@ -934,14 +893,14 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
     }
 
     string sql = "UPDATE ldpsystem.main SET ldp_schema_version = " +
-        to_string(thisSchemaVersion) + ";";
-    dbc.execDirect(nullptr, sql);
+        to_string(this_schema_version) + ";";
+    conn->execDirect(nullptr, sql);
 
     tx.commit();
 
     if (upgraded)
-        log->log(Level::trace, "", "", "Database upgraded to schema version: " +
-                to_string(thisSchemaVersion), -1);
+        lg->log(Level::trace, "", "", "Database upgraded to schema version: " +
+                to_string(this_schema_version), -1);
 }
 
 /**
@@ -961,19 +920,23 @@ void upgradeSchema(etymon::OdbcEnv* odbc, const string& dsn,
  * \param[in] odbc ODBC environment.
  * \param[in] db Database context.
  */
-void initUpgrade(etymon::OdbcEnv* odbc, const string& dsn, DBContext* db,
+void init_upgrade(etymon::OdbcEnv* odbc, const string& dbname,
         const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir)
+        const string& datadir, Log* lg)
 {
-    int64_t thisSchemaVersion = 8;
+    int64_t this_schema_version = 8;
+
+    etymon::OdbcDbc conn(odbc, dbname);
+
     int64_t version;
-    bool versionFound = selectSchemaVersion(db, &version);
-    if (versionFound)
+    bool version_found = select_schema_version(&conn, &version);
+
+    if (version_found)
         // Schema is present: check if it needs to be upgraded.
-        upgradeSchema(odbc, dsn, ldpUser, ldpconfigUser, version,
-                thisSchemaVersion, db->log, datadir);
+        upgrade_schema(&conn, ldpUser, ldpconfigUser, version,
+                this_schema_version, datadir, lg);
     else
         // Schema is not present: create it.
-        initSchema(db, ldpUser, ldpconfigUser, thisSchemaVersion);
+        init_schema(&conn, ldpUser, ldpconfigUser, this_schema_version);
 }
 

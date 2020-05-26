@@ -43,6 +43,8 @@ find_package(RapidJSON REQUIRED)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 add_executable(ldp
+	../etymoncpp/src/curl.cpp
+	../etymoncpp/src/mallocptr.cpp
 	../etymoncpp/src/odbc.cpp
 	../etymoncpp/src/postgres.cpp
 	../etymoncpp/src/sqlite3.cpp
@@ -50,7 +52,6 @@ add_executable(ldp
 	anonymize.cpp
 	camelcase.cpp
 	config_json.cpp
-	dbcontext.cpp
 	dbtype.cpp
 	extract.cpp
 	idmap.cpp

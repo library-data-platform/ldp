@@ -9,8 +9,6 @@
 #include "extract.h"
 #include "log.h"
 
-using namespace std;
-
 class IDMap {
 public:
     IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
@@ -19,8 +17,8 @@ public:
     void makeSK(const string& table, const char* id, string* sk);
     void syncCommit();
     void vacuum();
-    static void addIndexes(etymon::OdbcDbc* conn, Log* log);
-    static void removeIndexes(etymon::OdbcDbc* conn, Log* log);
+    static void addIndexes(etymon::OdbcDbc* conn, Log* lg);
+    static void removeIndexes(etymon::OdbcDbc* conn, Log* lg);
     static void schemaUpgradeRemoveNewColumn(const string& datadir);
 private:
     void syncDown();
@@ -33,9 +31,8 @@ private:
     void createCache(const string& cacheFile);
     etymon::OdbcDbc* dbc;
     DBType* dbt;
-    //etymon::OdbcTx* tx;
     Log* log;
-    etymon::Sqlite3* cache;
+    etymon::sqlite_db* cache;
     int64_t nextvalSK;
 #ifdef PERF
     double makeSKTime;
