@@ -260,48 +260,53 @@ void foreign_key_constraint_name(const string& referencing_table,
 
 void create_foreign_key_constraints(odbc_conn* conn, Log* lg)
 {
-    etymon::odbc_tx tx(conn);
     vector<reference> refs;
     select_enabled_foreign_keys(conn, lg, &refs);
     for (auto& ref : refs) {
-        string sql =
-            "DELETE FROM\n"
-            "    " + ref.referencing_table + "\n"
-            "    WHERE " + ref.referencing_column + "\n"
-            "    NOT IN (\n"
-            "        SELECT " + ref.referenced_column + "\n"
-            "            FROM " + ref.referenced_table + "\n"
-            "    );";
-        lg->detail(sql);
-        conn->exec(sql);
-        //string constraint_name =
-        //    ref.referencing_table + "_" + ref.referencing_column + "_fkey";
+        string sql;
+        try {
+            sql =
+                "DELETE FROM\n"
+                "    " + ref.referencing_table + "\n"
+                "    WHERE " + ref.referencing_column + "\n"
+                "    NOT IN (\n"
+                "        SELECT " + ref.referenced_column + "\n"
+                "            FROM " + ref.referenced_table + "\n"
+                "    );";
+            lg->detail(sql);
+            conn->exec(sql);
+        } catch (runtime_error& e) {
+            // TODO Log warning
+        }
         string constraint_name;
         foreign_key_constraint_name(ref.referencing_table,
                 ref.referencing_column, &constraint_name);
-        sql =
-            "ALTER TABLE " + ref.referencing_table + "\n"
-            "    ADD CONSTRAINT\n"
-            "    " + constraint_name + "\n"
-            "    FOREIGN KEY (" + ref.referencing_column + ")\n"
-            "    REFERENCES " + ref.referenced_table + " (" +
-            ref.referenced_column + ");";
-        lg->detail(sql);
-        conn->exec(sql);
-        sql =
-            "INSERT INTO ldpsystem.foreign_key_constraints\n"
-            "    (referencing_table, referencing_column, referenced_table,\n"
-            "     referenced_column, constraint_name)\n"
-            "    VALUES\n"
-            "    ('" + ref.referencing_table + "',\n"
-            "     '" + ref.referencing_column + "',\n"
-            "     '" + ref.referenced_table + "',\n"
-            "     '" + ref.referenced_column + "',\n"
-            "     '" + constraint_name + "');";
-        lg->detail(sql);
-        conn->exec(sql);
+        try {
+            sql =
+                "ALTER TABLE " + ref.referencing_table + "\n"
+                "    ADD CONSTRAINT\n"
+                "    " + constraint_name + "\n"
+                "    FOREIGN KEY (" + ref.referencing_column + ")\n"
+                "    REFERENCES " + ref.referenced_table + " (" +
+                ref.referenced_column + ");";
+            lg->detail(sql);
+            conn->exec(sql);
+            sql =
+                "INSERT INTO ldpsystem.foreign_key_constraints\n"
+                "    (referencing_table, referencing_column,\n"
+                "     referenced_table, referenced_column, constraint_name)\n"
+                "    VALUES\n"
+                "    ('" + ref.referencing_table + "',\n"
+                "     '" + ref.referencing_column + "',\n"
+                "     '" + ref.referenced_table + "',\n"
+                "     '" + ref.referenced_column + "',\n"
+                "     '" + constraint_name + "');";
+            lg->detail(sql);
+            conn->exec(sql);
+        } catch (runtime_error& e) {
+            // TODO Log warning
+        }
     }
-    tx.commit();
 }
 
 void select_config_general(etymon::odbc_conn* conn, Log* log,
