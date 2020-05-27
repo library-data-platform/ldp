@@ -870,10 +870,10 @@ void schemaUpgrade8(SchemaUpgradeOptions* opt)
 
 void schemaUpgrade9(SchemaUpgradeOptions* opt)
 {
-    DBType dbt(opt->dbc);
+    DBType dbt(opt->conn);
 
     string sql = "DROP TABLE ldpsystem.referential_constraints;";
-    opt->dbc->exec(sql);
+    opt->conn->exec(sql);
 
     string rskeys;
     dbt.redshiftKeys("referencing_table",
@@ -887,34 +887,34 @@ void schemaUpgrade9(SchemaUpgradeOptions* opt)
         "    constraint_name VARCHAR(63) NOT NULL,\n"
         "        PRIMARY KEY (referencing_table, referencing_column)\n"
         ")" + rskeys + ";";
-    opt->dbc->exec(sql);
+    opt->conn->exec(sql);
 
     sql =
         "ALTER TABLE ldpconfig.general\n"
         "    RENAME COLUMN full_update_enabled TO enable_full_updates;";
-    opt->dbc->exec(sql);
+    opt->conn->exec(sql);
 
     sql =
         "ALTER TABLE ldpconfig.general\n"
         "    RENAME COLUMN log_referential_analysis TO detect_foreign_keys;";
-    opt->dbc->exec(sql);
+    opt->conn->exec(sql);
 
     sql =
         "ALTER TABLE ldpconfig.general\n"
         "    DROP COLUMN force_referential_constraints;";
-    opt->dbc->exec(sql);
+    opt->conn->exec(sql);
 
     sql =
         "ALTER TABLE ldpconfig.general\n"
         "    ADD COLUMN force_foreign_key_constraints\n"
         "    BOOLEAN NOT NULL DEFAULT FALSE;";
-    opt->dbc->exec(sql);
+    opt->conn->exec(sql);
 
     sql =
         "ALTER TABLE ldpconfig.general\n"
         "    ADD COLUMN enable_foreign_key_warnings\n"
         "    BOOLEAN NOT NULL DEFAULT FALSE;";
-    opt->dbc->exec(sql);
+    opt->conn->exec(sql);
 
     sql =
         "CREATE TABLE ldpconfig.foreign_keys (\n"
@@ -924,7 +924,7 @@ void schemaUpgrade9(SchemaUpgradeOptions* opt)
         "    referenced_table VARCHAR(63) NOT NULL,\n"
         "    referenced_column VARCHAR(63) NOT NULL\n"
         ");";
-    opt->dbc->exec(sql);
+    opt->conn->exec(sql);
 }
 
 SchemaUpgrade schemaUpgrade[] = {

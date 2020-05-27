@@ -26,7 +26,7 @@ public:
     string dsn;
     odbc_conn(odbc_env* odbcEnv, const string& dataSourceName);
     ~odbc_conn();
-    void getDbmsName(string* dbmsName);
+    void get_dbms_name(string* dbms_name);
     void exec(const string& sql);
     void execDirect(odbc_stmt* stmt, const string& sql);
     bool fetch(odbc_stmt* stmt);

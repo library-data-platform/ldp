@@ -139,7 +139,7 @@ public:
 };
 
 void processReferentialPaths(etymon::odbc_env* odbc, const string& dbName,
-        etymon::odbc_dbc* conn, Log* log, const Schema& schema,
+        etymon::odbc_conn* conn, Log* log, const Schema& schema,
         const TableSchema& table, bool detectForeignKeys,
         map<string, vector<Reference>>* refs)
 {
@@ -179,7 +179,7 @@ void processReferentialPaths(etymon::odbc_env* odbc, const string& dbName,
     }
 }
 
-void selectConfigGeneral(etymon::odbc_dbc* conn, Log* log,
+void selectConfigGeneral(etymon::odbc_conn* conn, Log* log,
         bool* detectForeignKeys, bool* forceForeignKeyConstraints,
         bool* enableForeignKeyWarnings)
 {
@@ -411,7 +411,7 @@ void runUpdate(const Options& opt)
         bool detectForeignKeys = false;
         bool forceForeignKeyConstraints = false;
         bool enableForeignKeyWarnings = false;
-        selectConfigGeneral(&dbc, &log, &detectForeignKeys,
+        selectConfigGeneral(&conn, &log, &detectForeignKeys,
                 &forceForeignKeyConstraints, &enableForeignKeyWarnings);
 
         if (detectForeignKeys) {
