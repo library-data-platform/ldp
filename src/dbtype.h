@@ -15,7 +15,7 @@ enum class DBT {
 
 class DBType {
 public:
-    DBType(etymon::OdbcDbc* dbc);
+    DBType(etymon::odbc_conn* conn);
     const char* jsonType() const;
     const char* currentTimestamp() const;
     void renameSequence(const string& sequenceName,
@@ -31,7 +31,7 @@ public:
     void redshiftKeys(const char* distkey, const char* sortkey,
             string* sql) const;
 private:
-    void setType(const string& dbtype);
+    void set_type(const string& dbtype);
     DBT dbt;
 };
 

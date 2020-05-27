@@ -5,7 +5,7 @@
 #include "util.h"
 
 void mergeTable(const Options& opt, Log* log, const TableSchema& table,
-        etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, const DBType& dbt)
+        etymon::odbc_env* odbc, etymon::odbc_conn* conn, const DBType& dbt)
 {
     // Update history tables.
 
@@ -29,7 +29,7 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
         "                  h1.updated < h2.updated\n"
         "      );";
     log->log(Level::detail, "", "", sql, -1);
-    dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
@@ -51,19 +51,19 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
         "          ( h.sk IS NULL OR\n"
         "            (s.data)::VARCHAR <> (h.data)::VARCHAR );";
     log->log(Level::detail, "", "", sql, -1);
-    dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 }
 
 void dropTable(const Options& opt, Log* log, const string& tableName,
-        etymon::OdbcDbc* dbc)
+        etymon::odbc_conn* conn)
 {
     string sql = "DROP TABLE IF EXISTS " + tableName + ";";
     log->logDetail(sql);
-    dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 }
 
 void placeTable(const Options& opt, Log* log, const TableSchema& table,
-        etymon::OdbcDbc* dbc)
+        etymon::odbc_conn* conn)
 {
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
@@ -71,6 +71,6 @@ void placeTable(const Options& opt, Log* log, const TableSchema& table,
         "ALTER TABLE " + loadingTable + "\n"
         "    RENAME TO " + table.tableName + ";";
     log->log(Level::detail, "", "", sql, -1);
-    dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 }
 

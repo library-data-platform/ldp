@@ -168,6 +168,12 @@ unpacked directory.  Then:
 $ ./all.sh
 ```
 
+If this succeeds, the end of the output should include:
+
+```shell
+All tests passed
+```
+
 The compiled executable file `ldp` should appear in `ldp/build/src/`:
 
 ```shell
@@ -227,7 +233,7 @@ using the `ldpconfigUser` configuration setting in `ldpconf.json`.
   modified using the `ldpUser` configuration setting in
 `ldpconf.json`.
 
-If more than one LDP instance will be hosted in a single PostgreSQL
+If more than one LDP instance will be hosted with a single database
 server, the `ldpconfig` and `ldp` user names should for security
 reasons be configured to be different for each LDP instance.  This is
 done by including within `ldpconf.json` the `ldpconfigUser` and

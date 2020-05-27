@@ -5,13 +5,14 @@
 #include "../etymoncpp/include/util.h"
 #include "log.h"
 
-Log::Log(etymon::OdbcDbc* dbc, Level level, bool console, const char* program)
+Log::Log(etymon::odbc_conn* conn, Level level, bool console,
+        const char* program)
 {
-    this->dbc = dbc;
+    this->conn = conn;
     this->level = level;
     this->console = console;
     this->program = program;
-    dbt = new DBType(dbc);
+    dbt = new DBType(conn);
 }
 
 Log::~Log()
@@ -22,14 +23,6 @@ Log::~Log()
 void Log::log(Level level, const char* type, const string& table,
         const string& message, double elapsed_time)
 {
-    //if (level == Level::detail) {
-    //    console(message);
-    //    return;
-    //}
-
-    //if (cons)
-    //    console(message);
-
     // Add a prefix to highlight error states.
     string logmsg;
     switch (level) {
@@ -114,7 +107,7 @@ void Log::log(Level level, const char* type, const string& table,
         "    (" + string(dbt->currentTimestamp()) + ", " + to_string(getpid()) +
         ", '" + levelStr + "', '" + type + "', '" + table + "', " +
         logmsgEncoded + ", " + elapsed_time_str + ");";
-    dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
 }
 
 void Log::trace(const string& message)
@@ -136,17 +129,4 @@ void Log::perf(const string& message, double elapsed_time)
 {
     log(Level::debug, "perf", "", message, elapsed_time);
 }
-
-//void Log::console(const string& sql)
-//{
-//    if (cons)
-//        fprintf(stderr, "%s\n", sql.c_str());
-//}
-
-//void Log::error(const string& message)
-//{
-//    log(Level::error, "server", "", message, -1);
-//    throw runtime_error(message);
-//}
-
 

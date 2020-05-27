@@ -3,7 +3,7 @@
 
 #include "log.h"
 
-void init_upgrade(etymon::OdbcEnv* odbc, const string& dbname,
+void init_upgrade(etymon::odbc_env* odbc, const string& dbname,
         const string& ldpUser, const string& ldpconfigUser,
         const string& datadir, Log* lg);
 
