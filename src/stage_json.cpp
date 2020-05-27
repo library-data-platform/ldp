@@ -665,7 +665,15 @@ static void createLoadingTable(const Options& opt, Log* log,
         conn->execDirect(nullptr, sql);
     }
 
-    sql = "GRANT SELECT ON " + loadingTable + " TO " + opt.ldpUser + ";";
+    sql =
+        "GRANT SELECT ON " + loadingTable + "\n"
+        "    TO " + opt.ldpconfigUser + ";";
+    log->logDetail(sql);
+    conn->execDirect(nullptr, sql);
+
+    sql =
+        "GRANT SELECT ON " + loadingTable + "\n"
+        "    TO " + opt.ldpUser + ";";
     log->logDetail(sql);
     conn->execDirect(nullptr, sql);
 }

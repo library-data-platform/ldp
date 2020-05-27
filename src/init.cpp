@@ -285,6 +285,14 @@ void init_schema(etymon::odbc_conn* conn, const string& ldpUser,
             "    UNIQUE (id)\n"
         ")" + rskeys + ";";
         conn->execDirect(nullptr, sql);
+        sql =
+            "GRANT SELECT ON " + table.tableName + "\n"
+            "    TO " + ldpconfigUser + ";";
+        conn->execDirect(nullptr, sql);
+        sql =
+            "GRANT SELECT ON " + table.tableName + "\n"
+            "    TO " + ldpUser + ";";
+        conn->execDirect(nullptr, sql);
     }
 
     // Schema: local
