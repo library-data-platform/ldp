@@ -12,6 +12,65 @@
 
 namespace fs = std::experimental::filesystem;
 
+static void make_cache_path(const string& datadir, string* path)
+{
+    fs::path dd = datadir;
+    fs::path cachedir = dd / "cache";
+    fs::create_directories(cachedir);
+    fs::path cachepath = cachedir / "idmap.db";
+    *path = cachepath;
+}
+
+idmap::idmap(etymon::odbc_env* odbc, const string& dbname, Log* log,
+        const string& datadir)
+{
+    nextvalSK = 1;
+    conn = new etymon::odbc_conn(odbc, dbname);
+    dbt = new DBType(conn);
+    this->log = log;
+#ifdef PERF
+    make_sk_time = 0;
+#endif
+
+    string filename;
+    make_cache_path(datadir, &filename);
+    cache = new etymon::sqlite_db(filename);
+    string sql = "PRAGMA synchronous = EXTRA;";
+    log->detail(sql);
+    cache->exec(sql);
+    sql = "PRAGMA locking_mode = EXCLUSIVE;";
+    log->detail(sql);
+    cache->exec(sql);
+    sql =
+        "CREATE TABLE IF NOT EXISTS idmap_cache (\n"
+        "    id VARCHAR(65535) NOT NULL,\n"
+        "    sk BIGINT NOT NULL,\n"
+        "    PRIMARY KEY (id),\n"
+        "    UNIQUE (sk)\n"
+        ");";
+    log->detail(sql);
+    cache->exec(sql);
+
+    sql = "BEGIN;";
+    cache->exec(sql);
+    syncDown();
+    sql = "COMMIT;";
+    cache->exec(sql);
+
+    sql = "BEGIN;";
+    cache->exec(sql);
+}
+
+idmap::~idmap()
+{
+#ifdef PERF
+    log->perf("make_sk", make_sk_time);
+#endif
+    delete dbt;
+    delete conn;
+    delete cache;
+}
+
 static int lookupSK(void *data, int argc, char **argv, char **azColName){
     *((string*) data) = argv[0];
     return 0;
@@ -20,9 +79,9 @@ static int lookupSK(void *data, int argc, char **argv, char **azColName){
 class SyncData {
 public:
     vector<pair<string, string>> data;
-    etymon::OdbcDbc* dbc;
+    etymon::odbc_conn* conn;
     Log* log;
-    SyncData(etymon::OdbcDbc* dbc, Log* log) : dbc(dbc), log(log) {}
+    SyncData(etymon::odbc_conn* conn, Log* log) : conn(conn), log(log) {}
     void sync();
 };
 
@@ -41,7 +100,7 @@ void SyncData::sync()
         sql += "\n(" + d.first + ",'" + d.second + "')";
     }
     sql += ";";
-    dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     data.clear();
 }
 
@@ -61,19 +120,10 @@ static int selectMaxSK(void* data, int argc, char** argv, char** azColName)
     return 0;
 }
 
-static void makeCachePath(const string& datadir, string* path)
-{
-    fs::path dd = datadir;
-    fs::path cachedir = dd / "cache";
-    fs::create_directories(cachedir);
-    fs::path cachepath = cachedir / "idmap.db";
-    *path = cachepath;
-}
-
-void IDMap::schemaUpgradeRemoveNewColumn(const string& datadir)
+void idmap::schemaUpgradeRemoveNewColumn(const string& datadir)
 {
     string filename;
-    makeCachePath(datadir, &filename);
+    make_cache_path(datadir, &filename);
     if (!fs::exists(filename))
         return;
     etymon::sqlite_db cache(filename);
@@ -103,16 +153,16 @@ void IDMap::schemaUpgradeRemoveNewColumn(const string& datadir)
     cache.exec(sql);
 }
 
-int64_t IDMap::ldpSelectMaxSK()
+int64_t idmap::ldpSelectMaxSK()
 {
     string sql = "SELECT MAX(sk) FROM ldpsystem.idmap;";
     log->detail(sql);
-    etymon::OdbcStmt stmt(dbc);
-    dbc->execDirect(&stmt, sql);
+    etymon::odbc_stmt stmt(conn);
+    conn->execDirect(&stmt, sql);
     int64_t maxSK = 0;
-    if (dbc->fetch(&stmt)) {
+    if (conn->fetch(&stmt)) {
         string msk;
-        dbc->getData(&stmt, 1, &msk);
+        conn->getData(&stmt, 1, &msk);
         {
             stringstream stream(msk);
             stream >> maxSK;
@@ -121,7 +171,7 @@ int64_t IDMap::ldpSelectMaxSK()
     return maxSK;
 }
 
-int64_t IDMap::cacheSelectMaxSK()
+int64_t idmap::cacheSelectMaxSK()
 {
     string sql = "SELECT MAX(sk) FROM idmap_cache;";
     log->detail(sql);
@@ -137,19 +187,19 @@ int64_t IDMap::cacheSelectMaxSK()
     return maxSK;
 }
 
-void IDMap::down(int64_t startSK)
+void idmap::down(int64_t startSK)
 {
     string sql =
         "SELECT sk, id FROM ldpsystem.idmap WHERE sk >= " +
         to_string(startSK) + ";";
     log->detail(sql);
     {
-        etymon::OdbcStmt stmt(dbc);
-        dbc->execDirect(&stmt, sql);
+        etymon::odbc_stmt stmt(conn);
+        conn->execDirect(&stmt, sql);
         string sk, id;
-        while (dbc->fetch(&stmt)) {
-            dbc->getData(&stmt, 1, &sk);
-            dbc->getData(&stmt, 2, &id);
+        while (conn->fetch(&stmt)) {
+            conn->getData(&stmt, 1, &sk);
+            conn->getData(&stmt, 2, &id);
             int64_t skl;
             {
                 stringstream stream(sk);
@@ -163,7 +213,7 @@ void IDMap::down(int64_t startSK)
     }
 }
 
-void IDMap::addIndexes(etymon::OdbcDbc* conn, Log* lg)
+void idmap::addIndexes(etymon::odbc_conn* conn, Log* lg)
 {
     string sql =
         "ALTER TABLE ldpsystem.idmap\n"
@@ -180,7 +230,7 @@ void IDMap::addIndexes(etymon::OdbcDbc* conn, Log* lg)
     conn->execDirect(nullptr, sql);
 }
 
-void IDMap::removeIndexes(etymon::OdbcDbc* conn, Log* lg)
+void idmap::removeIndexes(etymon::odbc_conn* conn, Log* lg)
 {
     string sql =
         "ALTER TABLE ldpsystem.idmap DROP CONSTRAINT idmap_id_key;";
@@ -195,17 +245,17 @@ void IDMap::removeIndexes(etymon::OdbcDbc* conn, Log* lg)
     conn->execDirect(nullptr, sql);
 }
 
-void IDMap::up(int64_t startSK)
+void idmap::up(int64_t startSK)
 {
     string sql = "SELECT id, sk FROM idmap_cache WHERE sk >= " +
         to_string(startSK) + ";";
     log->detail(sql);
-    SyncData syncData(dbc, log);
+    SyncData syncData(conn, log);
     cache->exec(sql, selectAllNew, (void*) &syncData);
     syncData.sync();  // Sync any remaining data.
 }
 
-void IDMap::syncUp()
+void idmap::syncUp()
 {
     int64_t cacheMaxSK = cacheSelectMaxSK();
     int64_t ldpMaxSK = ldpSelectMaxSK();
@@ -222,19 +272,19 @@ void IDMap::syncUp()
     } else {
         log->trace("Cache (idmap): sync up: " +
                 to_string(cacheMaxSK - ldpMaxSK));
-        etymon::OdbcTx tx(dbc);
+        etymon::odbc_tx tx(conn);
         bool withoutIndexes = (cacheMaxSK - ldpMaxSK) > ldpMaxSK;
         if (withoutIndexes)
-            IDMap::removeIndexes(dbc, log);
+            idmap::removeIndexes(conn, log);
         up(ldpMaxSK + 1);
         if (withoutIndexes)
-            IDMap::addIndexes(dbc, log);
+            idmap::addIndexes(conn, log);
         nextvalSK = cacheMaxSK + 1;
         tx.commit();
     }
 }
 
-void IDMap::syncDown()
+void idmap::syncDown()
 {
     int64_t cacheMaxSK = cacheSelectMaxSK();
     int64_t ldpMaxSK = ldpSelectMaxSK();
@@ -261,57 +311,7 @@ void IDMap::syncDown()
     }
 }
 
-IDMap::IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
-        const string& tempPath, const string& datadir)
-{
-    nextvalSK = 1;
-    dbc = new etymon::OdbcDbc(odbc, databaseDSN);
-    dbt = new DBType(dbc);
-    this->log = log;
-#ifdef PERF
-    makeSKTime = 0;
-#endif
-
-    string filename;
-    makeCachePath(datadir, &filename);
-    cache = new etymon::sqlite_db(filename);
-    string sql = "PRAGMA synchronous = EXTRA;";
-    log->detail(sql);
-    cache->exec(sql);
-    sql = "PRAGMA locking_mode = EXCLUSIVE;";
-    log->detail(sql);
-    cache->exec(sql);
-    sql =
-        "CREATE TABLE IF NOT EXISTS idmap_cache (\n"
-        "    id VARCHAR(65535) NOT NULL,\n"
-        "    sk BIGINT NOT NULL,\n"
-        "    PRIMARY KEY (id),\n"
-        "    UNIQUE (sk)\n"
-        ");";
-    log->detail(sql);
-    cache->exec(sql);
-
-    sql = "BEGIN;";
-    cache->exec(sql);
-    syncDown();
-    sql = "COMMIT;";
-    cache->exec(sql);
-
-    sql = "BEGIN;";
-    cache->exec(sql);
-}
-
-IDMap::~IDMap()
-{
-#ifdef PERF
-    log->perf("makeSK", makeSKTime);
-#endif
-    delete dbt;
-    delete dbc;
-    delete cache;
-}
-
-void IDMap::makeSK(const string& table, const char* id, string* sk)
+void idmap::make_sk(const string& table, const char* id, string* sk)
 {
 #ifdef PERF
     Timer timer;
@@ -337,18 +337,18 @@ void IDMap::makeSK(const string& table, const char* id, string* sk)
     }
 
 #ifdef PERF
-    makeSKTime += timer.elapsedTime();
+    make_sk_time += timer.elapsedTime();
 #endif
 }
 
-void IDMap::syncCommit()
+void idmap::syncCommit()
 {
     string sql = "COMMIT;";
     cache->exec(sql);
     syncUp();
 }
 
-void IDMap::vacuum()
+void idmap::vacuum()
 {
     log->trace("Rewriting cache: idmap");
     string sql = "VACUUM;";

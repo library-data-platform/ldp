@@ -39,7 +39,7 @@ void makeUpdateTmpDir(const Options& opt, string* loaddir)
     //        S_IROTH | S_IXOTH);
 }
 
-bool isForeignKey(etymon::OdbcDbc* dbc, Log* log, const TableSchema& table2,
+bool isForeignKey(etymon::odbc_conn* conn, Log* log, const TableSchema& table2,
         const ColumnSchema& column2, const TableSchema& table1)
 {
     string sql =
@@ -49,16 +49,16 @@ bool isForeignKey(etymon::OdbcDbc* dbc, Log* log, const TableSchema& table2,
         "            ON r2." + column2.columnName + "_sk = r1.sk\n"
         "    LIMIT 1;";
     log->logDetail(sql);
-    etymon::OdbcStmt stmt(dbc);
+    etymon::odbc_stmt stmt(conn);
     try {
-        dbc->execDirect(&stmt, sql);
+        conn->execDirect(&stmt, sql);
     } catch (runtime_error& e) {
         return false;
     }
-    return dbc->fetch(&stmt);
+    return conn->fetch(&stmt);
 }
 
-void analyzeReferentialPaths(etymon::OdbcDbc* dbc, Log* log,
+void analyzeReferentialPaths(etymon::odbc_conn* conn, Log* log,
         const TableSchema& table2, const ColumnSchema& column2,
         const TableSchema& table1, bool logAnalysis, bool forceConstraints)
 {
@@ -71,15 +71,15 @@ void analyzeReferentialPaths(etymon::OdbcDbc* dbc, Log* log,
         "    );";
     log->logDetail(sql);
     // Assume the tables exist.
-    //etymon::OdbcDbc deleteDBC(odbc, dbName);
+    //etymon::odbc_conn deleteDBC(odbc, dbName);
     vector<string> fkeys;
     {
-        etymon::OdbcStmt stmt(dbc);
-        dbc->execDirect(&stmt, sql);
-        while (dbc->fetch(&stmt)) {
+        etymon::odbc_stmt stmt(conn);
+        conn->execDirect(&stmt, sql);
+        while (conn->fetch(&stmt)) {
             string fkeySK, fkeyID;
-            dbc->getData(&stmt, 1, &fkeySK);
-            dbc->getData(&stmt, 2, &fkeyID);
+            conn->getData(&stmt, 1, &fkeySK);
+            conn->getData(&stmt, 2, &fkeyID);
             if (forceConstraints)
                 fkeys.push_back(fkeySK);
             if (logAnalysis)
@@ -102,7 +102,7 @@ void analyzeReferentialPaths(etymon::OdbcDbc* dbc, Log* log,
                 "    " + table2.tableName + "\n"
                 "    WHERE " + column2.columnName + "_sk = '" + fkey + "';";
             log->logDetail(sql);
-            dbc->execDirect(nullptr, sql);
+            conn->execDirect(nullptr, sql);
         }
         sql =
             "INSERT INTO ldpsystem.referential_constraints\n"
@@ -114,7 +114,7 @@ void analyzeReferentialPaths(etymon::OdbcDbc* dbc, Log* log,
             "        '" + table1.tableName + "',\n"
             "        'sk');";
         log->logDetail(sql);
-        dbc->execDirect(nullptr, sql);
+        conn->execDirect(nullptr, sql);
         sql =
             "ALTER TABLE\n"
             "    " + table2.tableName + "\n"
@@ -126,7 +126,7 @@ void analyzeReferentialPaths(etymon::OdbcDbc* dbc, Log* log,
             "        " + table1.tableName + "\n"
             "        (sk);";
         log->logDetail(sql);
-        dbc->execDirect(nullptr, sql);
+        conn->execDirect(nullptr, sql);
     }
 }
 
@@ -138,12 +138,12 @@ public:
     string referencedColumn;
 };
 
-void processReferentialPaths(etymon::OdbcEnv* odbc, const string& dbName,
-        etymon::OdbcDbc* dbc, Log* log, const Schema& schema,
+void processReferentialPaths(etymon::odbc_env* odbc, const string& dbName,
+        etymon::odbc_dbc* conn, Log* log, const Schema& schema,
         const TableSchema& table, bool detectForeignKeys,
         map<string, vector<Reference>>* refs)
 {
-    etymon::OdbcDbc queryDBC(odbc, dbName);
+    etymon::odbc_conn queryDBC(odbc, dbName);
     log->logDetail("Searching for foreign keys in table: " + table.tableName);
     //printf("Table: %s\n", table.tableName.c_str());
     for (auto& column : table.columns) {
@@ -179,7 +179,7 @@ void processReferentialPaths(etymon::OdbcEnv* odbc, const string& dbName,
     }
 }
 
-void selectConfigGeneral(etymon::OdbcDbc* dbc, Log* log,
+void selectConfigGeneral(etymon::odbc_dbc* conn, Log* log,
         bool* detectForeignKeys, bool* forceForeignKeyConstraints,
         bool* enableForeignKeyWarnings)
 {
@@ -189,14 +189,14 @@ void selectConfigGeneral(etymon::OdbcDbc* dbc, Log* log,
         "       enable_foreign_key_warnings\n"
         "    FROM ldpconfig.general;";
     log->logDetail(sql);
-    etymon::OdbcStmt stmt(dbc);
-    dbc->execDirect(&stmt, sql);
-    dbc->fetch(&stmt);
+    etymon::odbc_stmt stmt(conn);
+    conn->execDirect(&stmt, sql);
+    conn->fetch(&stmt);
     string s1, s2, s3;
-    dbc->getData(&stmt, 1, &s1);
-    dbc->getData(&stmt, 2, &s2);
-    dbc->getData(&stmt, 3, &s3);
-    dbc->fetch(&stmt);
+    conn->getData(&stmt, 1, &s1);
+    conn->getData(&stmt, 2, &s2);
+    conn->getData(&stmt, 3, &s3);
+    conn->fetch(&stmt);
     *detectForeignKeys = (s1 == "1");
     *forceForeignKeyConstraints = (s2 == "1");
     *enableForeignKeyWarnings = (s3 == "1");
@@ -211,9 +211,9 @@ void runUpdate(const Options& opt)
                 curl_easy_strerror(cc));
     }
 
-    etymon::OdbcEnv odbc;
+    etymon::odbc_env odbc;
 
-    etymon::OdbcDbc logDbc(&odbc, opt.db);
+    etymon::odbc_conn logDbc(&odbc, opt.db);
     Log log(&logDbc, opt.logLevel, opt.console, opt.prog);
 
     log.log(Level::debug, "server", "", "Starting full update", -1);
@@ -259,21 +259,21 @@ void runUpdate(const Options& opt)
         curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
     }
 
-    Timer idmapTimer1(opt);
-    IDMap idmap(&odbc, opt.db, &log, loadDir, opt.datadir);
+    Timer idmpTimer1(opt);
+    idmap idmp(&odbc, opt.db, &log, opt.datadir);
     log.log(Level::debug, "update", "", "Synchronized cache",
-            idmapTimer1.elapsedTime());
+            idmpTimer1.elapsedTime());
 
     string ldpconfigDisableAnonymization;
     {
-        etymon::OdbcDbc dbc(&odbc, opt.db);
+        etymon::odbc_conn conn(&odbc, opt.db);
         string sql = "SELECT disable_anonymization FROM ldpconfig.general;";
         log.logDetail(sql);
         {
-            etymon::OdbcStmt stmt(&dbc);
-            dbc.execDirect(&stmt, sql);
-            dbc.fetch(&stmt);
-            dbc.getData(&stmt, 1, &ldpconfigDisableAnonymization);
+            etymon::odbc_stmt stmt(&conn);
+            conn.execDirect(&stmt, sql);
+            conn.fetch(&stmt);
+            conn.getData(&stmt, 1, &ldpconfigDisableAnonymization);
         }
     }
 
@@ -314,35 +314,35 @@ void runUpdate(const Options& opt)
         if (table.skip || opt.extractOnly)
             continue;
 
-        etymon::OdbcDbc dbc(&odbc, opt.db);
+        etymon::odbc_conn conn(&odbc, opt.db);
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
-        DBType dbt(&dbc);
+        DBType dbt(&conn);
 
         {
-            etymon::OdbcTx tx(&dbc);
+            etymon::odbc_tx tx(&conn);
 
             log.log(Level::trace, "", "",
                     "Staging table: " + table.tableName, -1);
-            stageTable(opt, &log, &table, &odbc, &dbc, &dbt, loadDir, &idmap);
+            stageTable(opt, &log, &table, &odbc, &conn, &dbt, loadDir, &idmp);
 
             log.log(Level::trace, "", "",
                     "Merging table: " + table.tableName, -1);
-            mergeTable(opt, &log, table, &odbc, &dbc, dbt);
+            mergeTable(opt, &log, table, &odbc, &conn, dbt);
 
             log.log(Level::trace, "", "",
                     "Replacing table: " + table.tableName, -1);
 
-            dropTable(opt, &log, table.tableName, &dbc);
+            dropTable(opt, &log, table.tableName, &conn);
 
-            placeTable(opt, &log, table, &dbc);
-            //updateStatus(opt, table, &dbc);
+            placeTable(opt, &log, table, &conn);
+            //updateStatus(opt, table, &conn);
 
-            //updateDBPermissions(opt, &log, &dbc);
+            //updateDBPermissions(opt, &log, &conn);
 
             tx.commit();
         }
 
-        //vacuumAnalyzeTable(opt, table, &dbc);
+        //vacuumAnalyzeTable(opt, table, &conn);
 
         string sql = 
             "SELECT COUNT(*) FROM\n"
@@ -350,10 +350,10 @@ void runUpdate(const Options& opt)
         log.logDetail(sql);
         string rowCount;
         {
-            etymon::OdbcStmt stmt(&dbc);
-            dbc.execDirect(&stmt, sql);
-            dbc.fetch(&stmt);
-            dbc.getData(&stmt, 1, &rowCount);
+            etymon::odbc_stmt stmt(&conn);
+            conn.execDirect(&stmt, sql);
+            conn.fetch(&stmt);
+            conn.getData(&stmt, 1, &rowCount);
         }
         sql = 
             "SELECT COUNT(*) FROM\n"
@@ -361,10 +361,10 @@ void runUpdate(const Options& opt)
         log.logDetail(sql);
         string historyRowCount;
         {
-            etymon::OdbcStmt stmt(&dbc);
-            dbc.execDirect(&stmt, sql);
-            dbc.fetch(&stmt);
-            dbc.getData(&stmt, 1, &historyRowCount);
+            etymon::odbc_stmt stmt(&conn);
+            conn.execDirect(&stmt, sql);
+            conn.fetch(&stmt);
+            conn.getData(&stmt, 1, &historyRowCount);
         }
         sql =
             "UPDATE ldpsystem.tables\n"
@@ -377,7 +377,7 @@ void runUpdate(const Options& opt)
             + table.moduleName + "'\n"
             "    WHERE table_name = '" + table.tableName + "';";
         log.logDetail(sql);
-        dbc.execDirect(nullptr, sql);
+        conn.execDirect(nullptr, sql);
 
         log.log(Level::debug, "update", table.tableName,
                 "Updated table: " + table.tableName,
@@ -387,16 +387,16 @@ void runUpdate(const Options& opt)
         //    loadTimer.print("load time");
     } // for
 
-    Timer idmapTimer2(opt);
-    idmap.syncCommit();
+    Timer idmpTimer2(opt);
+    idmp.syncCommit();
     log.log(Level::debug, "update", "", "Synchronized cache",
-            idmapTimer2.elapsedTime());
+            idmpTimer2.elapsedTime());
 
     //{
-    //    etymon::OdbcDbc dbc(&odbc, opt.db);
+    //    etymon::odbc_conn conn(&odbc, opt.db);
     //    {
-    //        etymon::OdbcTx tx(&dbc);
-    //        dropOldTables(opt, &log, &dbc);
+    //        etymon::odbc_tx tx(&conn);
+    //        dropOldTables(opt, &log, &conn);
     //        tx.commit();
     //    }
     //}
@@ -406,7 +406,7 @@ void runUpdate(const Options& opt)
 
     // TODO Move analysis and constraints out of update process.
     {
-        etymon::OdbcDbc dbc(&odbc, opt.db);
+        etymon::odbc_conn conn(&odbc, opt.db);
 
         bool detectForeignKeys = false;
         bool forceForeignKeyConstraints = false;
@@ -421,16 +421,16 @@ void runUpdate(const Options& opt)
 
             Timer refTimer(opt);
 
-            etymon::OdbcTx tx(&dbc);
+            etymon::odbc_tx tx(&conn);
 
             map<string, vector<Reference>> refs;
             for (auto& table : schema.tables)
-                processReferentialPaths(&odbc, opt.db, &dbc, &log, schema,
+                processReferentialPaths(&odbc, opt.db, &conn, &log, schema,
                         table, detectForeignKeys, &refs);
 
             string sql = "DELETE FROM ldpconfig.foreign_keys;";
             log.detail(sql);
-            dbc.exec(sql);
+            conn.exec(sql);
 
             for (pair<string, vector<Reference>> p : refs) {
                 bool enable = (p.second.size() == 1);
@@ -447,7 +447,7 @@ void runUpdate(const Options& opt)
                         "        '" + r.referencedTable + "',\n"
                         "        '" + r.referencedColumn + "');";
                     log.detail(sql);
-                    dbc.exec(sql);
+                    conn.exec(sql);
                 }
             }
 
@@ -463,10 +463,10 @@ void runUpdate(const Options& opt)
 
     }
 
-    Timer idmapTimer3(opt);
-    idmap.vacuum();
+    Timer idmpTimer3(opt);
+    idmp.vacuum();
     log.log(Level::debug, "update", "", "Optimized cache",
-            idmapTimer3.elapsedTime());
+            idmpTimer3.elapsedTime());
 }
 
 void runUpdateProcess(const Options& opt)
@@ -483,8 +483,8 @@ void runUpdateProcess(const Options& opt)
         string s = e.what();
         if ( !(s.empty()) && s.back() == '\n' )
             s.pop_back();
-        etymon::OdbcEnv odbc;
-        etymon::OdbcDbc logDbc(&odbc, opt.db);
+        etymon::odbc_env odbc;
+        etymon::odbc_conn logDbc(&odbc, opt.db);
         Log log(&logDbc, opt.logLevel, opt.console, opt.prog);
         log.log(Level::error, "server", "", s, -1);
         exit(1);

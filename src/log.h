@@ -22,7 +22,8 @@ enum class Level {
 
 class Log {
 public:
-    Log(etymon::OdbcDbc* dbc, Level level, bool console, const char* program);
+    Log(etymon::odbc_conn* conn, Level level, bool console,
+            const char* program);
     ~Log();
     void log(Level level, const char* type, const string& table,
             const string& message, double elapsed_time);
@@ -30,12 +31,10 @@ public:
     void logDetail(const string& sql);
     void detail(const string& sql);
     void perf(const string& message, double elapsed_time);
-    //void console(const string& sql);
-    //void error(const string& message);
 private:
     Level level;
     bool console = false;
-    etymon::OdbcDbc* dbc;
+    etymon::odbc_conn* conn;
     DBType* dbt;
     string program;
 };

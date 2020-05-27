@@ -2,8 +2,6 @@
 
 #include "camelcase.h"
 
-using namespace std;
-
 TEST_CASE( "Test decoding of camel case strings", "[camelcase]" ) {
     vector<pair<string, string>> tests = {
         {"", ""},
@@ -31,7 +29,7 @@ TEST_CASE( "Test decoding of camel case strings", "[camelcase]" ) {
     };
     for (auto& t : tests) {
         string s;
-        decodeCamelCase(t.first.c_str(), &s);
+        decode_camel_case(t.first.c_str(), &s);
         REQUIRE(s == t.second);
     }
 }

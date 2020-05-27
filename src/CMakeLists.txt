@@ -64,6 +64,7 @@ add_library(ldp_obj OBJECT
 	options.cpp
 	paging.cpp
 	schema.cpp
+	server.cpp
 	stage_json.cpp
 	timer.cpp
 	update.cpp
