@@ -124,7 +124,7 @@ void processJSONRecord(json::Document* root, json::Value* node,
     }
 }
 
-/**
+/* *
   * \brief  Main ETL processor for JSON data.
   *
   * This class handles most of the ETL processing for a FOLIO interface.
@@ -154,15 +154,15 @@ public:
     // Loading to database
     etymon::OdbcDbc* dbc;
     const DBType& dbt;
-    IDMap* idmap;
+    idmap* idmp;
     size_t recordCount = 0;
     size_t totalRecordCount = 0;
     string insertBuffer;
     JSONHandler(int pass, const Options& options, Log* log,
             const TableSchema& table, etymon::OdbcDbc* dbc, const DBType& dbt,
-            IDMap* idmap, map<string,Counts>* statistics) :
+            idmap* idmp, map<string,Counts>* statistics) :
         pass(pass), opt(options), log(log), tableSchema(table),
-        stats(statistics), dbc(dbc), dbt(dbt), idmap(idmap) {}
+        stats(statistics), dbc(dbc), dbt(dbt), idmp(idmp) {}
     bool StartObject();
     bool EndObject(json::SizeType memberCount);
     bool StartArray();
@@ -207,7 +207,7 @@ static void endInserts(const Options& opt, Log* log, const string& table,
 }
 
 static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
-        IDMap* idmap, const TableSchema& table, const json::Document& doc,
+        idmap* idmp, const TableSchema& table, const json::Document& doc,
         size_t* recordCount, size_t* totalRecordCount, string* insertBuffer)
 {
     if (*recordCount > 0)
@@ -219,7 +219,7 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
     const char* id = doc["id"].GetString();
     // sk
     string sk;
-    idmap->makeSK(table.tableName, id, &sk);
+    idmp->make_sk(table.tableName, id, &sk);
     *insertBuffer += sk;
     *insertBuffer += ',';
     // id
@@ -257,7 +257,7 @@ static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
             *insertBuffer += to_string(jsonValue.GetDouble());
             break;
         case ColumnType::id:
-            idmap->makeSK("", jsonValue.GetString(), &s);
+            idmp->make_sk("", jsonValue.GetString(), &s);
             *insertBuffer += s;
             *insertBuffer += ",";
         case ColumnType::timestamptz:
@@ -352,7 +352,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
                 recordCount = 0;
             }
 
-            writeTuple(opt, log, dbt, idmap, tableSchema, doc, &recordCount,
+            writeTuple(opt, log, dbt, idmp, tableSchema, doc, &recordCount,
                     &totalRecordCount, &insertBuffer);
         }
 
@@ -535,12 +535,12 @@ static void stagePage(const Options& opt, Log* log, int pass,
         const TableSchema& tableSchema, etymon::OdbcEnv* odbc,
         etymon::OdbcDbc* dbc, const DBType &dbt, map<string,Counts>* stats,
         const string& filename, char* readBuffer, size_t readBufferSize,
-        IDMap* idmap)
+        idmap* idmp)
 {
     json::Reader reader;
     etymon::File f(filename, "r");
     json::FileReadStream is(f.file, readBuffer, readBufferSize);
-    JSONHandler handler(pass, opt, log, tableSchema, dbc, dbt, idmap, stats);
+    JSONHandler handler(pass, opt, log, tableSchema, dbc, dbt, idmp, stats);
     reader.Parse(is, handler);
 }
 
@@ -672,7 +672,7 @@ static void createLoadingTable(const Options& opt, Log* log,
 
 void stageTable(const Options& opt, Log* log, TableSchema* table,
         etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, DBType* dbt,
-        const string& loadDir, IDMap* idmap)
+        const string& loadDir, idmap* idmp)
 {
     size_t pageCount = readPageCount(opt, log, loadDir, table->tableName);
 
@@ -702,7 +702,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                     (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                     to_string(page), -1);
             stagePage(opt, log, pass, *table, odbc, dbc, *dbt, &stats, path,
-                    readBuffer, sizeof readBuffer, idmap);
+                    readBuffer, sizeof readBuffer, idmp);
         }
 
         if (opt.loadFromDir != "") {
@@ -714,7 +714,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                         (pass == 1 ?  ": analyze" : ": load") +
                         ": test file", -1);
                 stagePage(opt, log, pass, *table, odbc, dbc, *dbt, &stats, path,
-                        readBuffer, sizeof readBuffer, idmap);
+                        readBuffer, sizeof readBuffer, idmp);
             }
         }
 

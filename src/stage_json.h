@@ -7,7 +7,7 @@
 
 void stageTable(const Options& opt, Log* log, TableSchema* table,
         etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, DBType* dbt,
-        const string& loadDir, IDMap* idmap);
+        const string& loadDir, idmap* idm);
 
 //void stageAll(const Options& o, Schema* schema, etymon::Postgres* db,
 //        const string& loadDir);

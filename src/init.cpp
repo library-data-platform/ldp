@@ -116,7 +116,7 @@ void init_schema(etymon::OdbcDbc* conn, const string& ldpUser,
         ")" + rskeys + ";";
     conn->execDirect(nullptr, sql);
 
-    IDMap::addIndexes(conn, nullptr);
+    idmap::addIndexes(conn, nullptr);
 
     // Table: ldpsystem.tables
 
@@ -853,7 +853,7 @@ void schemaUpgrade7(SchemaUpgradeOptions* opt)
 
 void schemaUpgrade8(SchemaUpgradeOptions* opt)
 {
-    IDMap::schemaUpgradeRemoveNewColumn(opt->datadir);
+    idmap::schemaUpgradeRemoveNewColumn(opt->datadir);
 }
 
 SchemaUpgrade schemaUpgrade[] = {

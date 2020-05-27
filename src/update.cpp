@@ -232,10 +232,10 @@ void runUpdate(const Options& opt)
         curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
     }
 
-    Timer idmapTimer1(opt);
-    IDMap idmap(&odbc, opt.db, &log, loadDir, opt.datadir);
+    Timer idmpTimer1(opt);
+    idmap idmp(&odbc, opt.db, &log, opt.datadir);
     log.log(Level::debug, "update", "", "Synchronized cache",
-            idmapTimer1.elapsedTime());
+            idmpTimer1.elapsedTime());
 
     string ldpconfigDisableAnonymization;
     {
@@ -296,7 +296,7 @@ void runUpdate(const Options& opt)
 
             log.log(Level::trace, "", "",
                     "Staging table: " + table.tableName, -1);
-            stageTable(opt, &log, &table, &odbc, &dbc, &dbt, loadDir, &idmap);
+            stageTable(opt, &log, &table, &odbc, &dbc, &dbt, loadDir, &idmp);
 
             log.log(Level::trace, "", "",
                     "Merging table: " + table.tableName, -1);
@@ -360,10 +360,10 @@ void runUpdate(const Options& opt)
         //    loadTimer.print("load time");
     } // for
 
-    Timer idmapTimer2(opt);
-    idmap.syncCommit();
+    Timer idmpTimer2(opt);
+    idmp.syncCommit();
     log.log(Level::debug, "update", "", "Synchronized cache",
-            idmapTimer2.elapsedTime());
+            idmpTimer2.elapsedTime());
 
     //{
     //    etymon::OdbcDbc dbc(&odbc, opt.db);
@@ -409,10 +409,10 @@ void runUpdate(const Options& opt)
 
     }
 
-    Timer idmapTimer3(opt);
-    idmap.vacuum();
+    Timer idmpTimer3(opt);
+    idmp.vacuum();
     log.log(Level::debug, "update", "", "Optimized cache",
-            idmapTimer3.elapsedTime());
+            idmpTimer3.elapsedTime());
 }
 
 void runUpdateProcess(const Options& opt)

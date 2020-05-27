@@ -9,12 +9,26 @@
 #include "extract.h"
 #include "log.h"
 
-class IDMap {
+/**
+ * \brief Cache for mapping between identifiers and surrogate keys.
+ *
+ * Data updates involve many lookups of native identifiers to find or
+ * create integer surrogate keys.  The mapping is stored in the main
+ * database, but it is also cached by the server.  This class handles
+ * cache creation and synchronization, and provides a lookup method.
+ *
+ * When this class is instantiated, it immediately creates or
+ * synchronizes the cache.  The make_sk() method can then be called
+ * repeatedly to look up or create surrogate keys.  Finally,
+ * sync_commit() should be called to resynchronize the cache with the
+ * main database.
+ */
+class idmap {
 public:
-    IDMap(etymon::OdbcEnv* odbc, const string& databaseDSN, Log* log,
-            const string& tempPath, const string& datadir);
-    ~IDMap();
-    void makeSK(const string& table, const char* id, string* sk);
+    idmap(etymon::OdbcEnv* odbc, const string& dbname, Log* log,
+            const string& datadir);
+    ~idmap();
+    void make_sk(const string& table, const char* id, string* sk);
     void syncCommit();
     void vacuum();
     static void addIndexes(etymon::OdbcDbc* conn, Log* lg);
@@ -35,7 +49,7 @@ private:
     etymon::sqlite_db* cache;
     int64_t nextvalSK;
 #ifdef PERF
-    double makeSKTime;
+    double make_sk_time;
 #endif
 };
 
