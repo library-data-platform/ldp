@@ -25,14 +25,14 @@
  */
 class idmap {
 public:
-    idmap(etymon::OdbcEnv* odbc, const string& dbname, Log* log,
+    idmap(etymon::odbc_env* odbc, const string& dbname, Log* log,
             const string& datadir);
     ~idmap();
     void make_sk(const string& table, const char* id, string* sk);
     void syncCommit();
     void vacuum();
-    static void addIndexes(etymon::OdbcDbc* conn, Log* lg);
-    static void removeIndexes(etymon::OdbcDbc* conn, Log* lg);
+    static void addIndexes(etymon::odbc_conn* conn, Log* lg);
+    static void removeIndexes(etymon::odbc_conn* conn, Log* lg);
     static void schemaUpgradeRemoveNewColumn(const string& datadir);
 private:
     void syncDown();
@@ -43,7 +43,7 @@ private:
     void up(int64_t startSK);
     void openCache(const string& filename);
     void createCache(const string& cacheFile);
-    etymon::OdbcDbc* dbc;
+    etymon::odbc_conn* conn;
     DBType* dbt;
     Log* log;
     etymon::sqlite_db* cache;

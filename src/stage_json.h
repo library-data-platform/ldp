@@ -6,7 +6,7 @@
 #include "options.h"
 
 void stageTable(const Options& opt, Log* log, TableSchema* table,
-        etymon::OdbcEnv* odbc, etymon::OdbcDbc* dbc, DBType* dbt,
+        etymon::odbc_env* odbc, etymon::odbc_conn* conn, DBType* dbt,
         const string& loadDir, idmap* idm);
 
 //void stageAll(const Options& o, Schema* schema, etymon::Postgres* db,

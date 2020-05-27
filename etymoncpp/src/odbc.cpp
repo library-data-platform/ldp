@@ -26,52 +26,53 @@ const char* odbcStrError(SQLRETURN rc)
     }
 }
 
-OdbcEnv::OdbcEnv()
+odbc_env::odbc_env()
 {
     SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env);
     SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION, (void *) SQL_OV_ODBC3, 0);
 }
 
-OdbcEnv::~OdbcEnv()
+odbc_env::~odbc_env()
 {
     SQLFreeHandle(SQL_HANDLE_ENV, env);
 }
 
-OdbcDbc::OdbcDbc(OdbcEnv* odbcEnv, const string& dataSourceName)
+odbc_conn::odbc_conn(odbc_env* env, const string& data_source_name)
 {
-    SQLAllocHandle(SQL_HANDLE_DBC, odbcEnv->env, &dbc);
-    string connStr = "DSN=" + dataSourceName + ";";
-    SQLRETURN rc = SQLDriverConnect(dbc, NULL, (SQLCHAR *) connStr.c_str(),
+    SQLAllocHandle(SQL_HANDLE_DBC, env->env, &conn);
+    string conn_str = "DSN=" + data_source_name + ";";
+    SQLRETURN rc = SQLDriverConnect(conn, NULL, (SQLCHAR *) conn_str.c_str(),
             SQL_NTS, NULL, 0, NULL, SQL_DRIVER_COMPLETE);
     if (!SQL_SUCCEEDED(rc))
-        throw runtime_error("failed to connect to database: " + dataSourceName);
+        throw runtime_error("failed to connect to database: " +
+                data_source_name);
 
     // Set isolation level to serializable.
-    rc = SQLSetConnectAttr(dbc, SQL_ATTR_TXN_ISOLATION,
+    rc = SQLSetConnectAttr(conn, SQL_ATTR_TXN_ISOLATION,
             (SQLPOINTER) SQL_TXN_SERIALIZABLE, SQL_IS_UINTEGER);
     if (!SQL_SUCCEEDED(rc))
         throw runtime_error(
                 "error setting transaction isolation level in database: " +
-                dataSourceName);
+                data_source_name);
 
-    dsn = dataSourceName;
+    dsn = data_source_name;
 }
 
-OdbcDbc::~OdbcDbc()
+odbc_conn::~odbc_conn()
 {
     rollback();
-    SQLDisconnect(dbc);
-    SQLFreeHandle(SQL_HANDLE_DBC, dbc);
+    SQLDisconnect(conn);
+    SQLFreeHandle(SQL_HANDLE_DBC, conn);
 }
 
-void OdbcDbc::getDbmsName(string* dbmsName)
+void odbc_conn::get_dbms_name(string* dbms_name)
 {
     SQLCHAR dn[256];
-    SQLGetInfo(dbc, SQL_DBMS_NAME, (SQLPOINTER) dn, sizeof(dn), NULL);
-    *dbmsName = (char*) dn;
+    SQLGetInfo(conn, SQL_DBMS_NAME, (SQLPOINTER) dn, sizeof(dn), NULL);
+    *dbms_name = (char*) dn;
 }
 
-void OdbcDbc::execDirectStmt(OdbcStmt* stmt, const string& sql)
+void odbc_conn::execDirectStmt(odbc_stmt* stmt, const string& sql)
 {
     SQLRETURN rc = SQLExecDirect(stmt->stmt, (SQLCHAR *) sql.c_str(),
             SQL_NTS);
@@ -83,17 +84,17 @@ void OdbcDbc::execDirectStmt(OdbcStmt* stmt, const string& sql)
     }
 }
 
-void OdbcDbc::execDirect(OdbcStmt* stmt, const string& sql)
+void odbc_conn::execDirect(odbc_stmt* stmt, const string& sql)
 {
     if (stmt == nullptr) {
-        OdbcStmt st(this);
+        odbc_stmt st(this);
         execDirectStmt(&st, sql);
     } else {
         execDirectStmt(stmt, sql);
     }
 }
 
-bool OdbcDbc::fetch(OdbcStmt* stmt)
+bool odbc_conn::fetch(odbc_stmt* stmt)
 {
     SQLRETURN rc = SQLFetch(stmt->stmt);
     if (rc == SQL_NO_DATA)
@@ -104,7 +105,7 @@ bool OdbcDbc::fetch(OdbcStmt* stmt)
     return true;
 }
 
-void OdbcDbc::getData(OdbcStmt* stmt, uint16_t column, string* data)
+void odbc_conn::getData(odbc_stmt* stmt, uint16_t column, string* data)
 {
     SQLLEN indicator;
     char buffer[65535];
@@ -118,14 +119,14 @@ void OdbcDbc::getData(OdbcStmt* stmt, uint16_t column, string* data)
         *data = buffer;
 }
 
-void OdbcDbc::startTransaction()
+void odbc_conn::startTransaction()
 {
     setAutoCommit(false);
 }
 
-void OdbcDbc::commit()
+void odbc_conn::commit()
 {
-    SQLRETURN rc = SQLEndTran(SQL_HANDLE_DBC, dbc, SQL_COMMIT);
+    SQLRETURN rc = SQLEndTran(SQL_HANDLE_DBC, conn, SQL_COMMIT);
     try {
         setAutoCommit(true);
     } catch (runtime_error& e) {}
@@ -133,9 +134,9 @@ void OdbcDbc::commit()
         throw runtime_error("error committing transaction in database: " + dsn);
 }
 
-void OdbcDbc::rollback()
+void odbc_conn::rollback()
 {
-    SQLRETURN rc = SQLEndTran(SQL_HANDLE_DBC, dbc, SQL_ROLLBACK);
+    SQLRETURN rc = SQLEndTran(SQL_HANDLE_DBC, conn, SQL_ROLLBACK);
     try {
         setAutoCommit(true);
     } catch (runtime_error& e) {}
@@ -144,9 +145,9 @@ void OdbcDbc::rollback()
                 dsn);
 }
 
-void OdbcDbc::setAutoCommit(bool autoCommit)
+void odbc_conn::setAutoCommit(bool autoCommit)
 {
-    SQLRETURN rc = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT,
+    SQLRETURN rc = SQLSetConnectAttr(conn, SQL_ATTR_AUTOCOMMIT,
             autoCommit ?
             (SQLPOINTER) SQL_AUTOCOMMIT_ON : (SQLPOINTER) SQL_AUTOCOMMIT_OFF,
             SQL_IS_UINTEGER);
@@ -154,38 +155,38 @@ void OdbcDbc::setAutoCommit(bool autoCommit)
         throw runtime_error("error setting autocommit in database: " + dsn);
 }
 
-OdbcStmt::OdbcStmt(OdbcDbc* odbcDbc)
+odbc_stmt::odbc_stmt(odbc_conn* odbcDbc)
 {
-    SQLAllocHandle(SQL_HANDLE_STMT, odbcDbc->dbc, &stmt);
+    SQLAllocHandle(SQL_HANDLE_STMT, odbcDbc->conn, &stmt);
 }
 
-OdbcStmt::~OdbcStmt()
+odbc_stmt::~odbc_stmt()
 {
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 }
 
-OdbcTx::OdbcTx(OdbcDbc* odbcDbc)
+odbc_tx::odbc_tx(odbc_conn* odbcDbc)
 {
-    dbc = odbcDbc;
+    conn = odbcDbc;
     completed = false;
-    dbc->startTransaction();
+    conn->startTransaction();
 }
 
-OdbcTx::~OdbcTx()
+odbc_tx::~odbc_tx()
 {
     if (!completed)
-        dbc->rollback();
+        conn->rollback();
 }
 
-void OdbcTx::commit()
+void odbc_tx::commit()
 {
-    dbc->commit();
+    conn->commit();
     completed = true;
 }
 
-void OdbcTx::rollback()
+void odbc_tx::rollback()
 {
-    dbc->rollback();
+    conn->rollback();
     completed = true;
 }
 

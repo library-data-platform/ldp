@@ -9,47 +9,47 @@ using namespace std;
 
 namespace etymon {
 
-const char* odbcStrError(SQLRETURN rc);
+const char* odbc_str_error(SQLRETURN rc);
 
-class OdbcEnv {
+class odbc_env {
 public:
     SQLHENV env;
-    OdbcEnv();
-    ~OdbcEnv();
+    odbc_env();
+    ~odbc_env();
 };
 
-class OdbcStmt;
+class odbc_stmt;
 
-class OdbcDbc {
+class odbc_conn {
 public:
-    SQLHDBC dbc;
+    SQLHDBC conn;
     string dsn;
-    OdbcDbc(OdbcEnv* odbcEnv, const string& dataSourceName);
-    ~OdbcDbc();
-    void getDbmsName(string* dbmsName);
-    void execDirect(OdbcStmt* stmt, const string& sql);
-    bool fetch(OdbcStmt* stmt);
-    void getData(OdbcStmt* stmt, uint16_t column, string* data);
+    odbc_conn(odbc_env* env, const string& data_source_name);
+    ~odbc_conn();
+    void get_dbms_name(string* dbms_name);
+    void execDirect(odbc_stmt* stmt, const string& sql);
+    bool fetch(odbc_stmt* stmt);
+    void getData(odbc_stmt* stmt, uint16_t column, string* data);
     void startTransaction();
     void commit();
     void rollback();
 private:
     void setAutoCommit(bool autoCommit);
-    void execDirectStmt(OdbcStmt* stmt, const string& sql);
+    void execDirectStmt(odbc_stmt* stmt, const string& sql);
 };
 
-class OdbcStmt {
+class odbc_stmt {
 public:
     SQLHSTMT stmt;
-    OdbcStmt(OdbcDbc* odbcDbc);
-    ~OdbcStmt();
+    odbc_stmt(odbc_conn* odbcDbc);
+    ~odbc_stmt();
 };
 
-class OdbcTx {
+class odbc_tx {
 public:
-    OdbcDbc* dbc;
-    OdbcTx(OdbcDbc* odbcDbc);
-    ~OdbcTx();
+    odbc_conn* conn;
+    odbc_tx(odbc_conn* odbcDbc);
+    ~odbc_tx();
     void commit();
     void rollback();
 private:

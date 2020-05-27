@@ -81,23 +81,23 @@ void vacuumAnalyzeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
 // Check for obvious problems that could show up later in the loading
 // process.
 /*
-static void runPreloadTests(const Options& opt, etymon::OdbcEnv* odbc)
+static void runPreloadTests(const Options& opt, etymon::odbc_env* odbc)
 {
     //print(Print::verbose, opt, "running pre-load checks");
 
     // Check database connection.
-    etymon::OdbcDbc dbc(odbc, opt.db);
+    etymon::odbc_conn conn(odbc, opt.db);
     // TODO Check if a time-out is used here, for example if the client
     // connection hangs due to a firewall.  Non-verbose output does not
     // communicate any problem while frozen.
 
     {
-        etymon::OdbcTx tx(&dbc);
+        etymon::odbc_tx tx(&conn);
         // Check that ldpUser is a valid user.
         string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
             opt.ldpUser + ";";
         printSQL(Print::debug, opt, sql);
-        dbc.execDirect(nullptr, sql);
+        conn.execDirect(nullptr, sql);
         tx.rollback();
     }
 }
@@ -108,13 +108,13 @@ static void runPreloadTests(const Options& opt, etymon::OdbcEnv* odbc)
  * is time to run a full update.
  *
  * \param[in] opt
- * \param[in] dbc
+ * \param[in] conn
  * \param[in] dbt
  * \param[in] log
  * \retval true The full update should be run as soon as possible.
  * \retval false The full update should not be run at this time.
  */
-bool timeForFullUpdate(const Options& opt, etymon::OdbcDbc* dbc, DBType* dbt,
+bool timeForFullUpdate(const Options& opt, etymon::odbc_conn* conn, DBType* dbt,
         Log* log)
 {
     string sql =
@@ -123,17 +123,17 @@ bool timeForFullUpdate(const Options& opt, etymon::OdbcDbc* dbc, DBType* dbt,
         string(dbt->currentTimestamp()) + ") AS update_now\n"
         "    FROM ldpconfig.general;";
     log->log(Level::detail, "", "", sql, -1);
-    etymon::OdbcStmt stmt(dbc);
-    dbc->execDirect(&stmt, sql);
-    if (dbc->fetch(&stmt) == false) {
+    etymon::odbc_stmt stmt(conn);
+    conn->execDirect(&stmt, sql);
+    if (conn->fetch(&stmt) == false) {
         string e = "No rows could be read from table: ldpconfig.general";
         log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
     string fullUpdateEnabled, updateNow;
-    dbc->getData(&stmt, 1, &fullUpdateEnabled);
-    dbc->getData(&stmt, 2, &updateNow);
-    if (dbc->fetch(&stmt)) {
+    conn->getData(&stmt, 1, &fullUpdateEnabled);
+    conn->getData(&stmt, 2, &updateNow);
+    if (conn->fetch(&stmt)) {
         string e = "Too many rows in table: ldpconfig.general";
         log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
@@ -146,11 +146,11 @@ bool timeForFullUpdate(const Options& opt, etymon::OdbcDbc* dbc, DBType* dbt,
  * retaining the same time.
  *
  * \param[in] opt
- * \param[in] dbc
+ * \param[in] conn
  * \param[in] dbt
  * \param[in] log
  */
-void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
+void rescheduleNextDailyLoad(const Options& opt, etymon::odbc_conn* conn,
         DBType* dbt, Log* log)
 {
     string updateInFuture;
@@ -160,22 +160,22 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
             "UPDATE ldpconfig.general SET next_full_update =\n"
             "    next_full_update + INTERVAL '1 day';";
         log->log(Level::detail, "", "", sql, -1);
-        dbc->execDirect(nullptr, sql);
+        conn->execDirect(nullptr, sql);
         // Check if next_full_update is now in the future.
         sql =
             "SELECT (next_full_update > " + string(dbt->currentTimestamp()) +
             ") AS update_in_future\n"
             "    FROM ldpconfig.general;";
         log->log(Level::detail, "", "", sql, -1);
-        etymon::OdbcStmt stmt(dbc);
-        dbc->execDirect(&stmt, sql);
-        if (dbc->fetch(&stmt) == false) {
+        etymon::odbc_stmt stmt(conn);
+        conn->execDirect(&stmt, sql);
+        if (conn->fetch(&stmt) == false) {
             string e = "No rows could be read from table: ldpconfig.general";
             log->log(Level::error, "", "", e, -1);
             throw runtime_error(e);
         }
-        dbc->getData(&stmt, 1, &updateInFuture);
-        if (dbc->fetch(&stmt)) {
+        conn->getData(&stmt, 1, &updateInFuture);
+        if (conn->fetch(&stmt)) {
             string e = "Too many rows in table: ldpconfig.general";
             log->log(Level::error, "", "", e, -1);
             throw runtime_error(e);
@@ -183,7 +183,7 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::OdbcDbc* dbc,
     } while (updateInFuture == "0");
 }
 
-void server(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
+void server(const Options& opt, etymon::odbc_env* odbc, Log* log)
 {
     init_upgrade(odbc, opt.db, opt.ldpUser, opt.ldpconfigUser, opt.datadir,
             log);
@@ -191,12 +191,12 @@ void server(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
     log->log(Level::info, "server", "",
             string("Server started") + (opt.cliMode ? " (CLI mode)" : ""), -1);
 
-    etymon::OdbcDbc dbc(odbc, opt.db);
-    DBType dbt(&dbc);
+    etymon::odbc_conn conn(odbc, opt.db);
+    DBType dbt(&conn);
 
     do {
-        if (opt.cliMode || timeForFullUpdate(opt, &dbc, &dbt, log) ) {
-            rescheduleNextDailyLoad(opt, &dbc, &dbt, log);
+        if (opt.cliMode || timeForFullUpdate(opt, &conn, &dbt, log) ) {
+            rescheduleNextDailyLoad(opt, &conn, &dbt, log);
             pid_t pid = fork();
             if (pid == 0)
                 runUpdateProcess(opt);
@@ -225,14 +225,14 @@ void server(const Options& opt, etymon::OdbcEnv* odbc, Log* log)
 
 void runServer(const Options& opt)
 {
-    etymon::OdbcEnv odbc;
+    etymon::odbc_env odbc;
 
     //runPreloadTests(opt, odbc);
 
-    etymon::OdbcDbc logConn(&odbc, opt.db);
+    etymon::odbc_conn logConn(&odbc, opt.db);
     Log log(&logConn, opt.logLevel, opt.console, opt.prog);
 
-    etymon::OdbcDbc lockConn(&odbc, opt.db);
+    etymon::odbc_conn lockConn(&odbc, opt.db);
     string sql = "CREATE SCHEMA IF NOT EXISTS ldpsystem;";
     log.logDetail(sql);
     lockConn.execDirect(nullptr, sql);
@@ -244,7 +244,7 @@ void runServer(const Options& opt)
         if (opt.logLevel == Level::trace || opt.logLevel == Level::detail)
             fprintf(stderr, "%s: Acquiring server lock\n", opt.prog);
 
-        etymon::OdbcTx tx(&lockConn);
+        etymon::odbc_tx tx(&lockConn);
         sql = "LOCK ldpsystem.server_lock;";
         log.logDetail(sql);
         lockConn.execDirect(nullptr, sql);

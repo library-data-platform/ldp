@@ -21,12 +21,12 @@ static void make_cache_path(const string& datadir, string* path)
     *path = cachepath;
 }
 
-idmap::idmap(etymon::OdbcEnv* odbc, const string& dbname, Log* log,
+idmap::idmap(etymon::odbc_env* odbc, const string& dbname, Log* log,
         const string& datadir)
 {
     nextvalSK = 1;
-    dbc = new etymon::OdbcDbc(odbc, dbname);
-    dbt = new DBType(dbc);
+    conn = new etymon::odbc_conn(odbc, dbname);
+    dbt = new DBType(conn);
     this->log = log;
 #ifdef PERF
     make_sk_time = 0;
@@ -67,7 +67,7 @@ idmap::~idmap()
     log->perf("make_sk", make_sk_time);
 #endif
     delete dbt;
-    delete dbc;
+    delete conn;
     delete cache;
 }
 
@@ -79,9 +79,9 @@ static int lookupSK(void *data, int argc, char **argv, char **azColName){
 class SyncData {
 public:
     vector<pair<string, string>> data;
-    etymon::OdbcDbc* dbc;
+    etymon::odbc_conn* conn;
     Log* log;
-    SyncData(etymon::OdbcDbc* dbc, Log* log) : dbc(dbc), log(log) {}
+    SyncData(etymon::odbc_conn* conn, Log* log) : conn(conn), log(log) {}
     void sync();
 };
 
@@ -100,7 +100,7 @@ void SyncData::sync()
         sql += "\n(" + d.first + ",'" + d.second + "')";
     }
     sql += ";";
-    dbc->execDirect(nullptr, sql);
+    conn->execDirect(nullptr, sql);
     data.clear();
 }
 
@@ -157,12 +157,12 @@ int64_t idmap::ldpSelectMaxSK()
 {
     string sql = "SELECT MAX(sk) FROM ldpsystem.idmap;";
     log->detail(sql);
-    etymon::OdbcStmt stmt(dbc);
-    dbc->execDirect(&stmt, sql);
+    etymon::odbc_stmt stmt(conn);
+    conn->execDirect(&stmt, sql);
     int64_t maxSK = 0;
-    if (dbc->fetch(&stmt)) {
+    if (conn->fetch(&stmt)) {
         string msk;
-        dbc->getData(&stmt, 1, &msk);
+        conn->getData(&stmt, 1, &msk);
         {
             stringstream stream(msk);
             stream >> maxSK;
@@ -194,12 +194,12 @@ void idmap::down(int64_t startSK)
         to_string(startSK) + ";";
     log->detail(sql);
     {
-        etymon::OdbcStmt stmt(dbc);
-        dbc->execDirect(&stmt, sql);
+        etymon::odbc_stmt stmt(conn);
+        conn->execDirect(&stmt, sql);
         string sk, id;
-        while (dbc->fetch(&stmt)) {
-            dbc->getData(&stmt, 1, &sk);
-            dbc->getData(&stmt, 2, &id);
+        while (conn->fetch(&stmt)) {
+            conn->getData(&stmt, 1, &sk);
+            conn->getData(&stmt, 2, &id);
             int64_t skl;
             {
                 stringstream stream(sk);
@@ -213,7 +213,7 @@ void idmap::down(int64_t startSK)
     }
 }
 
-void idmap::addIndexes(etymon::OdbcDbc* conn, Log* lg)
+void idmap::addIndexes(etymon::odbc_conn* conn, Log* lg)
 {
     string sql =
         "ALTER TABLE ldpsystem.idmap\n"
@@ -230,7 +230,7 @@ void idmap::addIndexes(etymon::OdbcDbc* conn, Log* lg)
     conn->execDirect(nullptr, sql);
 }
 
-void idmap::removeIndexes(etymon::OdbcDbc* conn, Log* lg)
+void idmap::removeIndexes(etymon::odbc_conn* conn, Log* lg)
 {
     string sql =
         "ALTER TABLE ldpsystem.idmap DROP CONSTRAINT idmap_id_key;";
@@ -250,7 +250,7 @@ void idmap::up(int64_t startSK)
     string sql = "SELECT id, sk FROM idmap_cache WHERE sk >= " +
         to_string(startSK) + ";";
     log->detail(sql);
-    SyncData syncData(dbc, log);
+    SyncData syncData(conn, log);
     cache->exec(sql, selectAllNew, (void*) &syncData);
     syncData.sync();  // Sync any remaining data.
 }
@@ -272,13 +272,13 @@ void idmap::syncUp()
     } else {
         log->trace("Cache (idmap): sync up: " +
                 to_string(cacheMaxSK - ldpMaxSK));
-        etymon::OdbcTx tx(dbc);
+        etymon::odbc_tx tx(conn);
         bool withoutIndexes = (cacheMaxSK - ldpMaxSK) > ldpMaxSK;
         if (withoutIndexes)
-            idmap::removeIndexes(dbc, log);
+            idmap::removeIndexes(conn, log);
         up(ldpMaxSK + 1);
         if (withoutIndexes)
-            idmap::addIndexes(dbc, log);
+            idmap::addIndexes(conn, log);
         nextvalSK = cacheMaxSK + 1;
         tx.commit();
     }

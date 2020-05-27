@@ -2,14 +2,14 @@
 
 #include "dbtype.h"
 
-DBType::DBType(etymon::OdbcDbc* dbc)
+DBType::DBType(etymon::odbc_conn* conn)
 {
-    string dbmsName;
-    dbc->getDbmsName(&dbmsName);
-    setType(dbmsName);
+    string dbms_name;
+    conn->get_dbms_name(&dbms_name);
+    set_type(dbms_name);
 }
 
-void DBType::setType(const string& dbms)
+void DBType::set_type(const string& dbms)
 {
     if (dbms == "PostgreSQL") {
         dbt = DBT::postgresql;
