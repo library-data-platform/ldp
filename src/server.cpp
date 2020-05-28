@@ -346,14 +346,10 @@ void run(const etymon::CommandArgs& cargs)
         return;
     }
 
-    //Config config(opt.config);
     Config config(opt.datadir + "/ldpconf.json");
     fillOptions(config, &opt);
     if (opt.command == "update")
         opt.console = true;
-
-    //if (opt.logLevel == Level::trace)
-    //    debugOptions(opt);
 
     if (opt.command == "server") {
         do {
@@ -385,14 +381,6 @@ void run(const etymon::CommandArgs& cargs)
         runServer(opt);
         return;
     }
-
-    //if (opt.command == "update") {
-    //    Timer t(opt);
-    //    runLoad(opt);
-    //    if (opt.logLevel == Level::trace)
-    //        t.print("total time");
-    //    return;
-    //}
 }
 
 int cli(int argc, char* argv[])
