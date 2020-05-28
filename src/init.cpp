@@ -1085,11 +1085,16 @@ void upgrade_schema(etymon::odbc_conn* conn, const string& ldpUser,
 
     bool upgraded = false;
     for (int64_t v = version + 1; v <= this_schema_version; v++) {
-        if (!upgraded)
+        if (!upgraded) {
+            fprintf(err,
+                    "%s: ==========================================================================\n", prog);
             fprintf(err,
                     "%s: Upgrading database: "
                     "Do not interrupt the upgrade process\n",
                     prog);
+            fprintf(err,
+                    "%s: ==========================================================================\n", prog);
+        }
         fprintf(err, "%s: Upgrading: %s\n", prog, to_string(v).c_str());
         SchemaUpgradeOptions opt;
         opt.conn = conn;
@@ -1107,8 +1112,10 @@ void upgrade_schema(etymon::odbc_conn* conn, const string& ldpUser,
     if (upgraded) {
         fprintf(err, "%s: Database upgrade completed\n", prog);
         Log lg(conn, Level::info, false, prog);
-        lg.log(Level::info, "", "", "Database upgraded: " +
+        lg.log(Level::info, "", "", "Upgraded to database version: " +
                 to_string(this_schema_version), -1);
+    } else {
+        fprintf(err, "%s: Database version is up to date\n", prog);
     }
 }
 

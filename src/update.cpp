@@ -352,8 +352,8 @@ void runUpdate(const Options& opt)
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
 
-    init_upgrade(&odbc, opt.db, opt.ldpUser, opt.ldpconfigUser, opt.datadir,
-            opt.err, opt.prog);
+    //init_upgrade(&odbc, opt.db, opt.ldpUser, opt.ldpconfigUser, opt.datadir,
+    //        opt.err, opt.prog);
 
     ExtractionFiles extractionDir(opt);
 

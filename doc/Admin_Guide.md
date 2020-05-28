@@ -371,6 +371,21 @@ supported data updates.  Full updates can be scheduled at a preferred
 time of day using the table `ldpconfig.general`.  See the
 [Configuration Guide](Config_Guide.md) for more information.
 
+### Upgrading the database
+
+When upgrading to a new version of LDP, the database should be backed
+up and then "upgraded" before starting the server.
+
+To upgrade the database, use the `upgrade-database` command:
+
+```shell
+$ ldp upgrade-database -D /var/lib/ldp
+```
+
+Do not interrupt this process.  Some schema changes use DDL statements
+that cannot be run within a transaction, and interrupting them may
+leave the database in an unknown state.
+
 
 6\. Direct extraction
 ---------------------
