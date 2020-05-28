@@ -27,8 +27,10 @@
 
 static const char* optionHelp =
 "Usage:  ldp <command> <options>\n"
-"  e.g.  ldp server -D /usr/local/ldp/data\n"
+"  e.g.  ldp init -D /usr/local/ldp/data\n"
+"        ldp server -D /usr/local/ldp/data\n"
 "Commands:\n"
+"  init                - Initialize or upgrade the LDP database\n"
 "  server              - Run the LDP server\n"
 "  update              - Run a full update and exit\n"
 "  help                - Display help information\n"
@@ -187,6 +189,8 @@ void server(const Options& opt, etymon::odbc_env* odbc)
 {
     init_upgrade(odbc, opt.db, opt.ldpUser, opt.ldpconfigUser, opt.datadir,
             opt.err, opt.prog);
+    if (opt.init)
+        return;
 
     etymon::odbc_conn logConn(odbc, opt.db);
     Log lg(&logConn, opt.logLevel, opt.console, opt.prog);
@@ -375,6 +379,11 @@ void run(const etymon::CommandArgs& cargs)
     }
 
     if (opt.command == "update") {
+        runServer(opt);
+        return;
+    }
+
+    if (opt.command == "init") {
         runServer(opt);
         return;
     }

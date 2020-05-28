@@ -23,6 +23,7 @@ class Options {
 public:
     string command;
     bool cliMode = false;
+    bool init = false;
     string datadir;
     bool extractOnly = false;
     string loadFromDir;
