@@ -5,7 +5,7 @@
 
 void init_upgrade(etymon::odbc_env* odbc, const string& dbname,
         const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir, Log* lg);
+        const string& datadir, FILE* err, const char* prog);
 
 #endif
 

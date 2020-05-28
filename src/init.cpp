@@ -66,8 +66,11 @@ static void catalogAddTable(etymon::odbc_conn* conn, const string& table)
  * \param[in] db Database context.
  */
 void init_schema(etymon::odbc_conn* conn, const string& ldpUser,
-        const string& ldpconfigUser, int64_t thisSchemaVersion)
+        const string& ldpconfigUser, int64_t thisSchemaVersion, FILE* err,
+        const char* prog)
 {
+    fprintf(err, "%s: Initializing database\n", prog);
+
     DBType dbt(conn);
 
     // TODO This should probably be passed into the function as a parameter.
@@ -1061,11 +1064,12 @@ SchemaUpgrade schemaUpgrade[] = {
 
 void upgrade_schema(etymon::odbc_conn* conn, const string& ldpUser,
         const string& ldpconfigUser, int64_t version,
-        int64_t this_schema_version, const string& datadir, Log* lg)
+        int64_t this_schema_version, const string& datadir, FILE* err,
+        const char* prog)
 {
     if (version < 0 || version > this_schema_version)
         throw runtime_error(
-                "Unknown LDP schema version: " + to_string(version));
+                "Unknown LDP database version: " + to_string(version));
 
     etymon::odbc_tx tx(conn);
 
@@ -1074,6 +1078,8 @@ void upgrade_schema(etymon::odbc_conn* conn, const string& ldpUser,
 
     bool upgraded = false;
     for (int v = version + 1; v <= this_schema_version; v++) {
+        fprintf(err, "%s: Upgrading database version: %s\n", prog,
+                to_string(this_schema_version).c_str());
         SchemaUpgradeOptions opt;
         opt.conn = conn;
         opt.ldpUser = ldpUser;
@@ -1089,9 +1095,11 @@ void upgrade_schema(etymon::odbc_conn* conn, const string& ldpUser,
 
     tx.commit();
 
-    if (upgraded)
-        lg->log(Level::trace, "", "", "Database upgraded to schema version: " +
+    if (upgraded) {
+        Log lg(conn, Level::info, false, prog);
+        lg.log(Level::info, "", "", "Database upgraded version: " +
                 to_string(this_schema_version), -1);
+    }
 }
 
 /* *
@@ -1113,7 +1121,7 @@ void upgrade_schema(etymon::odbc_conn* conn, const string& ldpUser,
  */
 void init_upgrade(etymon::odbc_env* odbc, const string& dbname,
         const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir, Log* lg)
+        const string& datadir, FILE* err, const char* prog)
 {
     int64_t this_schema_version = 10;
 
@@ -1125,9 +1133,10 @@ void init_upgrade(etymon::odbc_env* odbc, const string& dbname,
     if (version_found)
         // Schema is present: check if it needs to be upgraded.
         upgrade_schema(&conn, ldpUser, ldpconfigUser, version,
-                this_schema_version, datadir, lg);
+                this_schema_version, datadir, err, prog);
     else
         // Schema is not present: create it.
-        init_schema(&conn, ldpUser, ldpconfigUser, this_schema_version);
+        init_schema(&conn, ldpUser, ldpconfigUser, this_schema_version, err,
+                prog);
 }
 
