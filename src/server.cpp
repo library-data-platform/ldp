@@ -119,7 +119,7 @@ bool timeForFullUpdate(const Options& opt, etymon::odbc_conn* conn, DBType* dbt,
         Log* log)
 {
     string sql =
-        "SELECT full_update_enabled,\n"
+        "SELECT enable_full_updates,\n"
         "       (next_full_update <= " +
         string(dbt->currentTimestamp()) + ") AS update_now\n"
         "    FROM ldpconfig.general;";
