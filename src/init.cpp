@@ -1032,20 +1032,32 @@ void schemaUpgrade10(SchemaUpgradeOptions* opt)
         "user_users",
         nullptr
     };
+
+    etymon::odbc_tx tx1(opt->conn);
     for (int x = 0; table[x] != nullptr; x++) {
         string sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
             "    DROP CONSTRAINT history_" + table[x] + "_id_updated_key;";
         opt->conn->exec(sql);
-        sql =
+    }
+    tx1.commit();
+
+    for (int x = 0; table[x] != nullptr; x++) {
+        string sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
             "    ALTER COLUMN id TYPE VARCHAR(36);";
         opt->conn->exec(sql);
-        sql =
+    }
+
+    etymon::odbc_tx tx2(opt->conn);
+    for (int x = 0; table[x] != nullptr; x++) {
+        string sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
             "    ADD CONSTRAINT history_" + table[x] + "_id_updated_key\n"
             "    UNIQUE (id, updated);";
+        opt->conn->exec(sql);
     }
+    tx2.commit();
 }
 
 SchemaUpgrade schemaUpgrade[] = {
@@ -1071,14 +1083,14 @@ void upgrade_schema(etymon::odbc_conn* conn, const string& ldpUser,
         throw runtime_error(
                 "Unknown LDP database version: " + to_string(version));
 
-    etymon::odbc_tx tx(conn);
-
-    // Do not use logging during schema upgrade transaction, to avoid
-    // locking issues.
-
     bool upgraded = false;
     for (int v = version + 1; v <= this_schema_version; v++) {
-        fprintf(err, "%s: Upgrading database version: %s\n", prog,
+        if (!upgraded)
+            fprintf(err,
+                    "%s: Upgrading database: "
+                    "Do not interrupt the upgrade process\n",
+                    prog);
+        fprintf(err, "%s: Upgrading: %s\n", prog,
                 to_string(this_schema_version).c_str());
         SchemaUpgradeOptions opt;
         opt.conn = conn;
@@ -1093,11 +1105,10 @@ void upgrade_schema(etymon::odbc_conn* conn, const string& ldpUser,
         to_string(this_schema_version) + ";";
     conn->execDirect(nullptr, sql);
 
-    tx.commit();
-
     if (upgraded) {
+        fprintf(err, "%s: Database upgrade completed\n", prog);
         Log lg(conn, Level::info, false, prog);
-        lg.log(Level::info, "", "", "Database upgraded version: " +
+        lg.log(Level::info, "", "", "Database upgraded: " +
                 to_string(this_schema_version), -1);
     }
 }
