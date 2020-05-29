@@ -319,12 +319,6 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
         throw runtime_error(
                 "Unknown LDP database version: " + to_string(version));
 
-    {
-        Log lg(conn, Level::info, false, prog);
-        lg.log(Level::info, "", "", "Testing upgrade to database version: " +
-                to_string(this_schema_version), -1);
-    }
-
     fs::path log_path = fs::path(datadir) / "log";
     fs::create_directories(log_path);
     fs::path ulog_path = log_path / "database_upgrade.sql";
