@@ -188,6 +188,13 @@ void database_upgrade_1(database_upgrade_options* opt)
 
     sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldp_user + ";";
     opt->conn->execDirect(nullptr, sql);
+
+    sql = "UPDATE ldpsystem.main SET ldp_schema_version = 1;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
 }
 
 void database_upgrade_2(database_upgrade_options* opt)
@@ -295,6 +302,13 @@ void database_upgrade_2(database_upgrade_options* opt)
             "    PRIMARY KEY (sk, updated);";
         opt->conn->execDirect(nullptr, sql);
     }
+
+    string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 2;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
 }
 
 void database_upgrade_3(database_upgrade_options* opt)
@@ -309,6 +323,13 @@ void database_upgrade_3(database_upgrade_options* opt)
         "    ADD COLUMN force_referential_constraints\n"
         "        BOOLEAN NOT NULL DEFAULT FALSE;";
     opt->conn->execDirect(nullptr, sql);
+
+    sql = "UPDATE ldpsystem.main SET ldp_schema_version = 3;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
 }
 
 void database_upgrade_4(database_upgrade_options* opt)
@@ -346,6 +367,13 @@ void database_upgrade_4(database_upgrade_options* opt)
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + opt->ldp_user +
         ";";
     opt->conn->execDirect(nullptr, sql);
+
+    sql = "UPDATE ldpsystem.main SET ldp_schema_version = 4;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
 }
 
 void database_upgrade_5(database_upgrade_options* opt)
@@ -379,6 +407,13 @@ void database_upgrade_5(database_upgrade_options* opt)
 
     sql = "DROP TABLE ldpsystem.idmap_old;";
     opt->conn->execDirect(nullptr, sql);
+
+    sql = "UPDATE ldpsystem.main SET ldp_schema_version = 5;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
 }
 
 void database_upgrade_6(database_upgrade_options* opt)
@@ -529,6 +564,13 @@ void database_upgrade_6(database_upgrade_options* opt)
 
     sql = "GRANT USAGE ON SCHEMA local TO " + opt->ldpconfig_user + ";";
     opt->conn->execDirect(nullptr, sql);
+
+    sql = "UPDATE ldpsystem.main SET ldp_schema_version = 6;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
 }
 
 void database_upgrade_7(database_upgrade_options* opt)
@@ -562,11 +604,25 @@ void database_upgrade_7(database_upgrade_options* opt)
         "ALTER TABLE ldpconfig.general\n"
         "    ADD COLUMN disable_anonymization BOOLEAN NOT NULL DEFAULT FALSE;";
     opt->conn->execDirect(nullptr, sql);
+
+    sql = "UPDATE ldpsystem.main SET ldp_schema_version = 7;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
 }
 
 void database_upgrade_8(database_upgrade_options* opt)
 {
     //idmap::schemaUpgradeRemoveNewColumn(opt->datadir);
+
+    string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 8;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
 }
 
 void database_upgrade_9(database_upgrade_options* opt)
@@ -626,6 +682,13 @@ void database_upgrade_9(database_upgrade_options* opt)
         "    referenced_column VARCHAR(63) NOT NULL\n"
         ");";
     opt->conn->exec(sql);
+
+    sql = "UPDATE ldpsystem.main SET ldp_schema_version = 9;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
 }
 
 void database_upgrade_10(database_upgrade_options* opt)
@@ -723,9 +786,6 @@ void database_upgrade_10(database_upgrade_options* opt)
         nullptr
     };
 
-    fprintf(opt->ulog, "START TRANSACTION;\n");
-    fflush(opt->ulog);
-    etymon::odbc_tx tx1(opt->conn);
     for (int x = 0; table[x] != nullptr; x++) {
         string sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
@@ -733,12 +793,9 @@ void database_upgrade_10(database_upgrade_options* opt)
         fprintf(opt->ulog, "%s\n", sql.c_str());
         fflush(opt->ulog);
         opt->conn->exec(sql);
+        fprintf(opt->ulog, "-- Committed\n");
+        fflush(opt->ulog);
     }
-    fprintf(opt->ulog, "COMMIT;\n");
-    fflush(opt->ulog);
-    tx1.commit();
-    fprintf(opt->ulog, "-- Committed\n");
-    fflush(opt->ulog);
 
     for (int x = 0; table[x] != nullptr; x++) {
         string sql =
@@ -751,9 +808,6 @@ void database_upgrade_10(database_upgrade_options* opt)
         fflush(opt->ulog);
     }
 
-    fprintf(opt->ulog, "START TRANSACTION;\n");
-    fflush(opt->ulog);
-    etymon::odbc_tx tx2(opt->conn);
     for (int x = 0; table[x] != nullptr; x++) {
         string sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
@@ -762,10 +816,14 @@ void database_upgrade_10(database_upgrade_options* opt)
         fprintf(opt->ulog, "%s\n", sql.c_str());
         fflush(opt->ulog);
         opt->conn->exec(sql);
+        fprintf(opt->ulog, "-- Committed\n");
+        fflush(opt->ulog);
     }
-    fprintf(opt->ulog, "COMMIT;\n");
+
+    string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 10;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
     fflush(opt->ulog);
-    tx2.commit();
+    opt->conn->exec(sql);
     fprintf(opt->ulog, "-- Committed\n");
     fflush(opt->ulog);
 }
