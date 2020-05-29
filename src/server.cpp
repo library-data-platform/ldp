@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <signal.h>
 #include <stdexcept>
 #include <string>
 #include <sys/wait.h>
@@ -388,8 +389,23 @@ void run(const etymon::CommandArgs& cargs)
     }
 }
 
+static void sigint_handler(int signum)
+{
+    // NOP
+}
+
+static void setup_signal_handlers()
+{
+    struct sigaction sa;
+    sa.sa_handler = sigint_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    sigaction(SIGINT, &sa, NULL);
+}
+
 int cli(int argc, char* argv[])
 {
+    setup_signal_handlers();
     etymon::CommandArgs cargs(argc, argv);
     try {
         run(cargs);
