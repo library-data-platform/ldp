@@ -44,6 +44,13 @@ Reference
 * `next_full_update` (TIMESTAMP WITH TIME ZONE) is the date and time
   of the next full update.  Once the full update begins, this value is
 automatically incremented to the next day at the same time.
+* `detect_foreign_keys` (BOOLEAN) enables experimental features that
+  are not yet supported.
+* `force_foreign_key_constraints` (BOOLEAN) enables experimental
+  features that are not yet supported.
+* `enable_foreign_key_warnings` (BOOLEAN) enables experimental
+  features that are not yet supported.
+<!--
 * `detect_foreign_keys` (BOOLEAN) when set to `TRUE`, enables an
   experimental feature that attempts to detect or infer the presence
 of foreign key relationships.  This process is run after a full
@@ -59,6 +66,7 @@ should be used with care in a production system.  Note that history
 tables generally retain all rows including those deleted by this
 process.
 * `enable_foreign_key_warnings` (BOOLEAN) is not currently supported.
+-->
 * `disable_anonymization` (BOOLEAN) when set to `TRUE`, disables
   anonymization of personal data.  Please read the section on "Data
 privacy" in the [Administrator Guide](Admin_Guide.md) before changing
