@@ -50,7 +50,6 @@ class odbc_tx {
 public:
     odbc_conn* conn;
     odbc_tx(odbc_conn* odbcDbc);
-    ~odbc_tx();
     void commit();
     void rollback();
 private:
