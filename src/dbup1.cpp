@@ -723,6 +723,7 @@ void database_upgrade_10(database_upgrade_options* opt)
         nullptr
     };
 
+    fprintf(opt->ulog, "START TRANSACTION;\n");
     etymon::odbc_tx tx1(opt->conn);
     for (int x = 0; table[x] != nullptr; x++) {
         string sql =
@@ -731,8 +732,9 @@ void database_upgrade_10(database_upgrade_options* opt)
         fprintf(opt->ulog, "%s\n", sql.c_str());
         opt->conn->exec(sql);
     }
+    fprintf(opt->ulog, "COMMIT;\n");
     tx1.commit();
-    fprintf(opt->ulog, "-- OK\n");
+    fprintf(opt->ulog, "-- Committed\n");
 
     for (int x = 0; table[x] != nullptr; x++) {
         string sql =
@@ -740,9 +742,10 @@ void database_upgrade_10(database_upgrade_options* opt)
             "    ALTER COLUMN id TYPE VARCHAR(36);";
         fprintf(opt->ulog, "%s\n", sql.c_str());
         opt->conn->exec(sql);
-        fprintf(opt->ulog, "-- OK\n");
+        fprintf(opt->ulog, "-- Committed\n");
     }
 
+    fprintf(opt->ulog, "START TRANSACTION;\n");
     etymon::odbc_tx tx2(opt->conn);
     for (int x = 0; table[x] != nullptr; x++) {
         string sql =
@@ -752,8 +755,9 @@ void database_upgrade_10(database_upgrade_options* opt)
         fprintf(opt->ulog, "%s\n", sql.c_str());
         opt->conn->exec(sql);
     }
+    fprintf(opt->ulog, "COMMIT;\n");
     tx2.commit();
-    fprintf(opt->ulog, "-- OK\n");
+    fprintf(opt->ulog, "-- Committed\n");
 }
 
 void database_upgrade_11(database_upgrade_options* opt)
@@ -851,6 +855,7 @@ void database_upgrade_11(database_upgrade_options* opt)
         nullptr
     };
 
+    fprintf(opt->ulog, "START TRANSACTION;\n");
     etymon::odbc_tx tx(opt->conn);
 
     string sql = "DROP TABLE ldpsystem.idmap;";
@@ -880,10 +885,12 @@ void database_upgrade_11(database_upgrade_options* opt)
 
     }
 
-    tx.commit();
-    fprintf(opt->ulog, "-- OK\n");
+    sql = "UPDATE ldpsystem.main SET ldp_schema_version = 11;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    opt->conn->exec(sql);
 
-    fs::path cache_path = fs::path(opt->datadir) / "cache";
-    fs::remove_all(cache_path);
+    fprintf(opt->ulog, "COMMIT;\n");
+    tx.commit();
+    fprintf(opt->ulog, "-- Committed\n");
 }
 

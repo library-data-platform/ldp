@@ -357,10 +357,6 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
         fputc('\n', ulogFile.file);
     }
 
-    string sql = "UPDATE ldpsystem.main SET ldp_schema_version = " +
-        to_string(this_schema_version) + ";";
-    conn->execDirect(nullptr, sql);
-
     if (upgraded) {
         fprintf(err, "%s: ", prog);
         print_banner_line(err, '=', 74);
