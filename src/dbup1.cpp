@@ -848,7 +848,7 @@ void database_upgrade_11(database_upgrade_options* opt)
         nullptr
     };
 
-    etymon::odbc_tx tx1(opt->conn);
+    etymon::odbc_tx tx(opt->conn);
 
     string sql = "DROP TABLE ldpsystem.idmap;";
     fprintf(opt->ulog, "%s\n", sql.c_str());
@@ -877,7 +877,7 @@ void database_upgrade_11(database_upgrade_options* opt)
 
     }
 
-    tx1.commit();
+    tx.commit();
     fprintf(opt->ulog, "-- OK\n");
 }
 

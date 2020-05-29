@@ -39,14 +39,15 @@ void makeUpdateTmpDir(const Options& opt, string* loaddir)
     //        S_IROTH | S_IXOTH);
 }
 
-bool isForeignKey(etymon::odbc_conn* conn, Log* log, const TableSchema& table2,
-        const ColumnSchema& column2, const TableSchema& table1)
+bool is_foreign_key(etymon::odbc_conn* conn, Log* log,
+        const TableSchema& table2, const ColumnSchema& column2,
+        const TableSchema& table1)
 {
     string sql =
         "SELECT 1\n"
         "    FROM " + table2.tableName + " AS r2\n"
         "        JOIN " + table1.tableName + " AS r1\n"
-        "            ON r2." + column2.columnName + "_sk = r1.sk\n"
+        "            ON r2." + column2.columnName + " = r1.id\n"
         "    LIMIT 1;";
     log->logDetail(sql);
     etymon::odbc_stmt stmt(conn);
@@ -58,6 +59,7 @@ bool isForeignKey(etymon::odbc_conn* conn, Log* log, const TableSchema& table2,
     return conn->fetch(&stmt);
 }
 
+/*
 void analyzeReferentialPaths(etymon::odbc_conn* conn, Log* log,
         const TableSchema& table2, const ColumnSchema& column2,
         const TableSchema& table1, bool logAnalysis, bool forceConstraints)
@@ -129,6 +131,7 @@ void analyzeReferentialPaths(etymon::odbc_conn* conn, Log* log,
         conn->execDirect(nullptr, sql);
     }
 }
+*/
 
 class reference {
 public:
@@ -154,14 +157,14 @@ void search_table_foreign_keys(etymon::odbc_env* odbc, const string& dbName,
             continue;
         //printf("    Column: %s\n", column.columnName.c_str());
         for (auto& table1 : schema.tables) {
-            if (isForeignKey(&queryDBC, log, table, column, table1)) {
+            if (is_foreign_key(&queryDBC, log, table, column, table1)) {
 
-                string key = table.tableName + "." + column.columnName + "_sk";
+                string key = table.tableName + "." + column.columnName;
                 reference ref = {
                     table.tableName,
-                    column.columnName + "_sk",
+                    column.columnName,
                     table1.tableName,
-                    "sk"
+                    "id"
                 };
 
                 //fprintf(stderr, "%s(%s) -> %s(%s)\n",
@@ -172,9 +175,6 @@ void search_table_foreign_keys(etymon::odbc_env* odbc, const string& dbName,
 
                 (*refs)[key].push_back(ref);
 
-                //printf("        -> %s\n", table1.tableName.c_str());
-                //analyzeReferentialPaths([>odbc, dbName,<] dbc, log, table,
-                //        column, table1, logAnalysis, forceConstraints);
             }
         }
     }

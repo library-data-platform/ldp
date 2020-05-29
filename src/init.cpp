@@ -96,6 +96,8 @@ void init_schema(etymon::odbc_conn* conn, const string& ldpUser,
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
 
+    etymon::odbc_tx tx(conn);
+
     // Schema: ldpsystem
 
     //string sql = "CREATE SCHEMA ldpsystem;";
@@ -164,10 +166,6 @@ void init_schema(etymon::odbc_conn* conn, const string& ldpUser,
     //    ";";
     //conn->execDirect(nullptr, sql);
 
-    sql = "GRANT SELECT ON ldpsystem.idmap TO " + ldpUser + ";";
-    conn->execDirect(nullptr, sql);
-    sql = "GRANT SELECT ON ldpsystem.idmap TO " + ldpconfigUser + ";";
-    conn->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.log TO " + ldpUser + ";";
     conn->execDirect(nullptr, sql);
@@ -310,6 +308,8 @@ void init_schema(etymon::odbc_conn* conn, const string& ldpUser,
     conn->execDirect(nullptr, sql);
     sql = "GRANT USAGE ON SCHEMA local TO " + ldpconfigUser + ";";
     conn->execDirect(nullptr, sql);
+
+    tx.commit();
 }
 
 void upgrade_schema(etymon::odbc_conn* conn, const string& ldpUser,
