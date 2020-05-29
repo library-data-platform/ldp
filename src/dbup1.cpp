@@ -3,11 +3,10 @@
 
 #include "dbtype.h"
 #include "dbup1.h"
-#include "idmap.h"
 #include "init.h"
 #include "log.h"
 
-void schemaUpgrade1(SchemaUpgradeOptions* opt)
+void database_upgrade_1(database_upgrade_options* opt)
 {
     DBType dbt(opt->conn);
 
@@ -19,7 +18,7 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
         ");";
     opt->conn->execDirect(nullptr, sql);
 
-    sql = "GRANT SELECT ON ldpsystem.tables TO " + opt->ldpUser + ";";
+    sql = "GRANT SELECT ON ldpsystem.tables TO " + opt->ldp_user + ";";
     opt->conn->execDirect(nullptr, sql);
 
     const char *table[] = {
@@ -130,7 +129,7 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
         sql =
             "GRANT SELECT ON\n"
             "    " + string(table[x]) + "\n"
-            "    TO " + opt->ldpUser + ";";
+            "    TO " + opt->ldp_user + ";";
         opt->conn->execDirect(nullptr, sql);
         // Recreate history table.
         sql = "DROP TABLE IF EXISTS\n"
@@ -157,7 +156,7 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
         sql =
             "GRANT SELECT ON\n"
             "    history." + string(table[x]) + "\n"
-            "    TO " + opt->ldpUser + ";";
+            "    TO " + opt->ldp_user + ";";
         opt->conn->execDirect(nullptr, sql);
         if (string(dbt.dbType()) == "PostgreSQL") {
             // Remove row_id columns.
@@ -184,11 +183,11 @@ void schemaUpgrade1(SchemaUpgradeOptions* opt)
         ")" + rskeys + ";";
     opt->conn->execDirect(nullptr, sql);
 
-    sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldpUser + ";";
+    sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldp_user + ";";
     opt->conn->execDirect(nullptr, sql);
 }
 
-void schemaUpgrade2(SchemaUpgradeOptions* opt)
+void database_upgrade_2(database_upgrade_options* opt)
 {
     const char *table[] = {
         "circulation_cancellation_reasons",
@@ -295,7 +294,7 @@ void schemaUpgrade2(SchemaUpgradeOptions* opt)
     }
 }
 
-void schemaUpgrade3(SchemaUpgradeOptions* opt)
+void database_upgrade_3(database_upgrade_options* opt)
 {
     string sql =
         "ALTER TABLE ldpconfig.general\n"
@@ -309,7 +308,7 @@ void schemaUpgrade3(SchemaUpgradeOptions* opt)
     opt->conn->execDirect(nullptr, sql);
 }
 
-void schemaUpgrade4(SchemaUpgradeOptions* opt)
+void database_upgrade_4(database_upgrade_options* opt)
 {
     DBType dbt(opt->conn);
 
@@ -341,12 +340,12 @@ void schemaUpgrade4(SchemaUpgradeOptions* opt)
         ")" + rskeys + ";";
     opt->conn->execDirect(nullptr, sql);
 
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + opt->ldpUser +
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + opt->ldp_user +
         ";";
     opt->conn->execDirect(nullptr, sql);
 }
 
-void schemaUpgrade5(SchemaUpgradeOptions* opt)
+void database_upgrade_5(database_upgrade_options* opt)
 {
     DBType dbt(opt->conn);
 
@@ -379,50 +378,50 @@ void schemaUpgrade5(SchemaUpgradeOptions* opt)
     opt->conn->execDirect(nullptr, sql);
 }
 
-void schemaUpgrade6(SchemaUpgradeOptions* opt)
+void database_upgrade_6(database_upgrade_options* opt)
 {
-    string sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + opt->ldpconfigUser +
+    string sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + opt->ldpconfig_user +
         ";";
     opt->conn->execDirect(nullptr, sql);
 
-    sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldpUser + ";";
+    sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldp_user + ";";
     opt->conn->execDirect(nullptr, sql);
-    sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldpconfigUser + ";";
-    opt->conn->execDirect(nullptr, sql);
-
-    sql = "GRANT SELECT ON ldpsystem.log TO " + opt->ldpUser + ";";
-    opt->conn->execDirect(nullptr, sql);
-    sql = "GRANT SELECT ON ldpsystem.log TO " + opt->ldpconfigUser + ";";
+    sql = "GRANT SELECT ON ldpsystem.idmap TO " + opt->ldpconfig_user + ";";
     opt->conn->execDirect(nullptr, sql);
 
-    sql = "GRANT SELECT ON ldpsystem.main TO " + opt->ldpUser + ";";
+    sql = "GRANT SELECT ON ldpsystem.log TO " + opt->ldp_user + ";";
     opt->conn->execDirect(nullptr, sql);
-    sql = "GRANT SELECT ON ldpsystem.main TO " + opt->ldpconfigUser + ";";
+    sql = "GRANT SELECT ON ldpsystem.log TO " + opt->ldpconfig_user + ";";
+    opt->conn->execDirect(nullptr, sql);
+
+    sql = "GRANT SELECT ON ldpsystem.main TO " + opt->ldp_user + ";";
+    opt->conn->execDirect(nullptr, sql);
+    sql = "GRANT SELECT ON ldpsystem.main TO " + opt->ldpconfig_user + ";";
     opt->conn->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ldpsystem.referential_constraints TO " +
-        opt->ldpUser + ";";
+        opt->ldp_user + ";";
     opt->conn->execDirect(nullptr, sql);
     sql = "GRANT SELECT ON ldpsystem.referential_constraints TO " +
-        opt->ldpconfigUser + ";";
+        opt->ldpconfig_user + ";";
     opt->conn->execDirect(nullptr, sql);
 
-    sql = "GRANT SELECT ON ldpsystem.tables TO " + opt->ldpUser + ";";
+    sql = "GRANT SELECT ON ldpsystem.tables TO " + opt->ldp_user + ";";
     opt->conn->execDirect(nullptr, sql);
-    sql = "GRANT SELECT ON ldpsystem.tables TO " + opt->ldpconfigUser + ";";
+    sql = "GRANT SELECT ON ldpsystem.tables TO " + opt->ldpconfig_user + ";";
     opt->conn->execDirect(nullptr, sql);
 
-    sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + opt->ldpconfigUser + ";";
+    sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + opt->ldpconfig_user + ";";
     opt->conn->execDirect(nullptr, sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " +
-        opt->ldpconfigUser + ";";
+        opt->ldpconfig_user + ";";
     opt->conn->execDirect(nullptr, sql);
 
-    sql = "GRANT UPDATE ON ldpconfig.general TO " + opt->ldpconfigUser + ";";
+    sql = "GRANT UPDATE ON ldpconfig.general TO " + opt->ldpconfig_user + ";";
     opt->conn->execDirect(nullptr, sql);
 
-    sql = "GRANT USAGE ON SCHEMA history TO " + opt->ldpconfigUser + ";";
+    sql = "GRANT USAGE ON SCHEMA history TO " + opt->ldpconfig_user + ";";
     opt->conn->execDirect(nullptr, sql);
 
     const char *table[] = {
@@ -521,15 +520,15 @@ void schemaUpgrade6(SchemaUpgradeOptions* opt)
         string sql =
             "GRANT SELECT ON\n"
             "    history." + string(table[x]) + "\n"
-            "    TO " + opt->ldpconfigUser + ";";
+            "    TO " + opt->ldpconfig_user + ";";
         opt->conn->execDirect(nullptr, sql);
     }
 
-    sql = "GRANT USAGE ON SCHEMA local TO " + opt->ldpconfigUser + ";";
+    sql = "GRANT USAGE ON SCHEMA local TO " + opt->ldpconfig_user + ";";
     opt->conn->execDirect(nullptr, sql);
 }
 
-void schemaUpgrade7(SchemaUpgradeOptions* opt)
+void database_upgrade_7(database_upgrade_options* opt)
 {
     string sql =
         "ALTER TABLE ldpsystem.tables\n"
@@ -562,12 +561,12 @@ void schemaUpgrade7(SchemaUpgradeOptions* opt)
     opt->conn->execDirect(nullptr, sql);
 }
 
-void schemaUpgrade8(SchemaUpgradeOptions* opt)
+void database_upgrade_8(database_upgrade_options* opt)
 {
-    idmap::schemaUpgradeRemoveNewColumn(opt->datadir);
+    //idmap::schemaUpgradeRemoveNewColumn(opt->datadir);
 }
 
-void schemaUpgrade9(SchemaUpgradeOptions* opt)
+void database_upgrade_9(database_upgrade_options* opt)
 {
     DBType dbt(opt->conn);
 
@@ -626,7 +625,7 @@ void schemaUpgrade9(SchemaUpgradeOptions* opt)
     opt->conn->exec(sql);
 }
 
-void schemaUpgrade10(SchemaUpgradeOptions* opt)
+void database_upgrade_10(database_upgrade_options* opt)
 {
     const char *table[] = {
         "circulation_cancellation_reasons",
@@ -751,6 +750,134 @@ void schemaUpgrade10(SchemaUpgradeOptions* opt)
         opt->conn->exec(sql);
     }
     tx2.commit();
+    fprintf(opt->ulog, "-- OK\n");
+}
+
+void database_upgrade_11(database_upgrade_options* opt)
+{
+    const char *table[] = {
+        "circulation_cancellation_reasons",
+        "circulation_fixed_due_date_schedules",
+        "circulation_loan_policies",
+        "circulation_loans",
+        "circulation_loan_history",
+        "circulation_patron_action_sessions",
+        "circulation_patron_notice_policies",
+        "circulation_request_policies",
+        "circulation_requests",
+        "circulation_scheduled_notices",
+        "circulation_staff_slips",
+        "feesfines_accounts",
+        "feesfines_comments",
+        "feesfines_feefines",
+        "feesfines_feefineactions",
+        "feesfines_lost_item_fees_policies",
+        "feesfines_manualblocks",
+        "feesfines_overdue_fines_policies",
+        "feesfines_owners",
+        "feesfines_payments",
+        "feesfines_refunds",
+        "feesfines_transfer_criterias",
+        "feesfines_transfers",
+        "feesfines_waives",
+        "finance_budgets",
+        "finance_fiscal_years",
+        "finance_fund_types",
+        "finance_funds",
+        "finance_group_fund_fiscal_years",
+        "finance_groups",
+        "finance_ledgers",
+        "finance_transactions",
+        "inventory_alternative_title_types",
+        "inventory_call_number_types",
+        "inventory_classification_types",
+        "inventory_contributor_name_types",
+        "inventory_contributor_types",
+        "inventory_electronic_access_relationships",
+        "inventory_holdings_note_types",
+        "inventory_holdings",
+        "inventory_holdings_types",
+        "inventory_identifier_types",
+        "inventory_ill_policies",
+        "inventory_instance_formats",
+        "inventory_instance_note_types",
+        "inventory_instance_relationship_types",
+        "inventory_instance_statuses",
+        "inventory_instance_relationships",
+        "inventory_instances",
+        "inventory_instance_types",
+        "inventory_item_damaged_statuses",
+        "inventory_item_note_types",
+        "inventory_items",
+        "inventory_campuses",
+        "inventory_institutions",
+        "inventory_libraries",
+        "inventory_loan_types",
+        "inventory_locations",
+        "inventory_material_types",
+        "inventory_modes_of_issuance",
+        "inventory_nature_of_content_terms",
+        "inventory_service_points",
+        "inventory_service_points_users",
+        "inventory_statistical_code_types",
+        "inventory_statistical_codes",
+        "invoice_lines",
+        "invoice_invoices",
+        "invoice_voucher_lines",
+        "invoice_vouchers",
+        "acquisitions_memberships",
+        "acquisitions_units",
+        "po_alerts",
+        "po_order_invoice_relns",
+        "po_order_templates",
+        "po_pieces",
+        "po_lines",
+        "po_purchase_orders",
+        "po_receiving_history",
+        "po_reporting_codes",
+        "organization_addresses",
+        "organization_categories",
+        "organization_contacts",
+        "organization_emails",
+        "organization_interfaces",
+        "organization_organizations",
+        "organization_phone_numbers",
+        "organization_urls",
+        "user_groups",
+        "user_users",
+        nullptr
+    };
+
+    etymon::odbc_tx tx1(opt->conn);
+
+    string sql = "DROP TABLE ldpsystem.idmap;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    opt->conn->exec(sql);
+
+    for (int x = 0; table[x] != nullptr; x++) {
+
+        sql =
+            "ALTER TABLE history." + string(table[x]) + "\n"
+            "    DROP COLUMN sk;";
+        fprintf(opt->ulog, "%s\n", sql.c_str());
+        opt->conn->exec(sql);
+
+        sql =
+            "ALTER TABLE history." + string(table[x]) + "\n"
+            "    DROP CONSTRAINT history_" + table[x] + "_id_updated_key;";
+        fprintf(opt->ulog, "%s\n", sql.c_str());
+        opt->conn->exec(sql);
+
+        sql =
+            "ALTER TABLE history." + string(table[x]) + "\n"
+            "    ADD CONSTRAINT history_" + table[x] + "_pkey\n"
+            "    PRIMARY KEY (id, updated);";
+        fprintf(opt->ulog, "%s\n", sql.c_str());
+        opt->conn->exec(sql);
+
+    }
+
+    tx1.commit();
     fprintf(opt->ulog, "-- OK\n");
 }
 

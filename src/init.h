@@ -3,16 +3,16 @@
 
 #include "log.h"
 
-class SchemaUpgradeOptions {
+class database_upgrade_options {
 public:
     FILE* ulog;
     etymon::odbc_conn* conn;
-    string ldpUser;
-    string ldpconfigUser;
+    string ldp_user;
+    string ldpconfig_user;
     string datadir;
 };
 
-typedef void (*SchemaUpgrade)(SchemaUpgradeOptions* opt);
+typedef void (*database_upgrade_array)(database_upgrade_options* opt);
 
 void init_upgrade(etymon::odbc_env* odbc, const string& dbname,
         const string& ldpUser, const string& ldpconfigUser,

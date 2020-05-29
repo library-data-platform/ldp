@@ -57,7 +57,6 @@ add_library(ldp_obj OBJECT
 	dbtype.cpp
 	dbup1.cpp
 	extract.cpp
-	idmap.cpp
 	init.cpp
 	log.cpp
 	merge.cpp

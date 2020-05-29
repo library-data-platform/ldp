@@ -4,12 +4,26 @@
 
 #include "dbtype.h"
 #include "dbup1.h"
-#include "idmap.h"
 #include "init.h"
 #include "log.h"
 #include "util.h"
 
 namespace fs = std::experimental::filesystem;
+
+database_upgrade_array database_upgrades[] = {
+    nullptr,  // Version 0 has no migration.
+    database_upgrade_1,
+    database_upgrade_2,
+    database_upgrade_3,
+    database_upgrade_4,
+    database_upgrade_5,
+    database_upgrade_6,
+    database_upgrade_7,
+    database_upgrade_8,
+    database_upgrade_9,
+    database_upgrade_10,
+    database_upgrade_11
+};
 
 /* *
  * \brief Looks up the schema version number in the LDP database.
@@ -113,19 +127,6 @@ void init_schema(etymon::odbc_conn* conn, const string& ldpUser,
         ");";
     conn->execDirect(nullptr, sql);
 
-    string rskeys;
-    dbt.redshiftKeys("sk", "sk", &rskeys);
-    string autoInc;
-    dbt.autoIncrementType(1, false, "", &autoInc);
-    sql =
-        "CREATE TABLE ldpsystem.idmap (\n"
-        "    sk BIGINT NOT NULL,\n"
-        "    id VARCHAR(65535) NOT NULL\n"
-        ")" + rskeys + ";";
-    conn->execDirect(nullptr, sql);
-
-    idmap::addIndexes(conn, nullptr);
-
     // Table: ldpsystem.tables
 
     sql =
@@ -143,6 +144,7 @@ void init_schema(etymon::odbc_conn* conn, const string& ldpUser,
     for (auto& table : schema.tables)
         catalog_add_table(conn, table.tableName);
 
+    string rskeys;
     dbt.redshiftKeys("referencing_table",
             "referencing_table, referencing_column", &rskeys);
     sql =
@@ -252,17 +254,13 @@ void init_schema(etymon::odbc_conn* conn, const string& ldpUser,
         string sql =
             "CREATE TABLE IF NOT EXISTS\n"
             "    history." + table.tableName + " (\n"
-            "    sk BIGINT NOT NULL,\n"
             "    id VARCHAR(36) NOT NULL,\n"
             "    data " + dbt.jsonType() + " NOT NULL,\n"
             "    updated TIMESTAMP WITH TIME ZONE NOT NULL,\n"
             "    tenant_id SMALLINT NOT NULL,\n"
             "    CONSTRAINT\n"
             "        history_" + table.tableName + "_pkey\n"
-            "        PRIMARY KEY (sk, updated),\n"
-            "    CONSTRAINT\n"
-            "        history_" + table.tableName + "_id_updated_key\n"
-            "        UNIQUE (id, updated)\n"
+            "        PRIMARY KEY (id, updated)\n"
             ")" + rskeys + ";";
         conn->execDirect(nullptr, sql);
 
@@ -314,20 +312,6 @@ void init_schema(etymon::odbc_conn* conn, const string& ldpUser,
     conn->execDirect(nullptr, sql);
 }
 
-SchemaUpgrade schemaUpgrade[] = {
-    nullptr,  // Version 0 has no migration.
-    schemaUpgrade1,
-    schemaUpgrade2,
-    schemaUpgrade3,
-    schemaUpgrade4,
-    schemaUpgrade5,
-    schemaUpgrade6,
-    schemaUpgrade7,
-    schemaUpgrade8,
-    schemaUpgrade9,
-    schemaUpgrade10
-};
-
 void upgrade_schema(etymon::odbc_conn* conn, const string& ldpUser,
         const string& ldpconfigUser, int64_t version,
         int64_t this_schema_version, const string& datadir, FILE* err,
@@ -358,13 +342,13 @@ void upgrade_schema(etymon::odbc_conn* conn, const string& ldpUser,
         print_banner_line(ulogFile.file, '-', 79);
         fprintf(ulogFile.file, "-- Upgrading: %s\n", to_string(v).c_str());
         print_banner_line(ulogFile.file, '-', 79);
-        SchemaUpgradeOptions opt;
+        database_upgrade_options opt;
         opt.ulog = ulogFile.file;
         opt.conn = conn;
-        opt.ldpUser = ldpUser;
-        opt.ldpconfigUser = ldpconfigUser;
+        opt.ldp_user = ldpUser;
+        opt.ldpconfig_user = ldpconfigUser;
         opt.datadir = datadir;
-        schemaUpgrade[v](&opt);
+        database_upgrades[v](&opt);
         upgraded = true;
         print_banner_line(ulogFile.file, '-', 79);
         fprintf(ulogFile.file, "-- Completed upgrade: %s\n",
@@ -412,7 +396,7 @@ void init_upgrade(etymon::odbc_env* odbc, const string& dbname,
         const string& ldpUser, const string& ldpconfigUser,
         const string& datadir, FILE* err, const char* prog)
 {
-    int64_t this_schema_version = 10;
+    int64_t this_schema_version = 11;
 
     etymon::odbc_conn conn(odbc, dbname);
 
