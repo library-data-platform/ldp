@@ -248,7 +248,7 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
 
     for (auto& table : schema.tables) {
         string rskeys;
-        dbt.redshiftKeys("sk", "sk, updated", &rskeys);
+        dbt.redshiftKeys("id", "id, updated", &rskeys);
         string sql =
             "CREATE TABLE IF NOT EXISTS\n"
             "    history." + table.tableName + " (\n"
@@ -278,15 +278,13 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
 
     for (auto& table : schema.tables) {
         string rskeys;
-        dbt.redshiftKeys("sk", "sk", &rskeys);
+        dbt.redshiftKeys("id", "id", &rskeys);
         sql =
             "CREATE TABLE " + table.tableName + " (\n"
-            "    sk BIGINT NOT NULL,\n"
             "    id VARCHAR(65535) NOT NULL,\n"
             "    data " + dbt.jsonType() + ",\n"
             "    tenant_id SMALLINT NOT NULL,\n"
-            "    PRIMARY KEY (sk),\n"
-            "    UNIQUE (id)\n"
+            "    PRIMARY KEY (id)\n"
         ")" + rskeys + ";";
         conn->execDirect(nullptr, sql);
         sql =
@@ -321,6 +319,12 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
         throw runtime_error(
                 "Unknown LDP database version: " + to_string(version));
 
+    {
+        Log lg(conn, Level::info, false, prog);
+        lg.log(Level::info, "", "", "Testing upgrade to database version: " +
+                to_string(this_schema_version), -1);
+    }
+
     fs::path log_path = fs::path(datadir) / "log";
     fs::create_directories(log_path);
     fs::path ulog_path = log_path / "database_upgrade.sql";
@@ -349,12 +353,12 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
         opt.ldpconfig_user = ldpconfigUser;
         opt.datadir = datadir;
         database_upgrades[v](&opt);
-        upgraded = true;
         print_banner_line(ulogFile.file, '-', 79);
         fprintf(ulogFile.file, "-- Completed upgrade: %s\n",
                 to_string(v).c_str());
         print_banner_line(ulogFile.file, '-', 79);
         fputc('\n', ulogFile.file);
+        upgraded = true;
     }
 
     if (upgraded) {
@@ -364,7 +368,7 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
         fprintf(err, "%s: ", prog);
         print_banner_line(err, '=', 74);
         Log lg(conn, Level::info, false, prog);
-        lg.log(Level::info, "", "", "Upgraded to database version: " +
+        lg.log(Level::info, "server", "", "Upgraded to database version: " +
                 to_string(this_schema_version), -1);
     } else {
         fprintf(err, "%s: Database version is up to date\n", prog);

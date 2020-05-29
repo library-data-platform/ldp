@@ -724,28 +724,35 @@ void database_upgrade_10(database_upgrade_options* opt)
     };
 
     fprintf(opt->ulog, "START TRANSACTION;\n");
+    fflush(opt->ulog);
     etymon::odbc_tx tx1(opt->conn);
     for (int x = 0; table[x] != nullptr; x++) {
         string sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
             "    DROP CONSTRAINT history_" + table[x] + "_id_updated_key;";
         fprintf(opt->ulog, "%s\n", sql.c_str());
+        fflush(opt->ulog);
         opt->conn->exec(sql);
     }
     fprintf(opt->ulog, "COMMIT;\n");
+    fflush(opt->ulog);
     tx1.commit();
     fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
 
     for (int x = 0; table[x] != nullptr; x++) {
         string sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
             "    ALTER COLUMN id TYPE VARCHAR(36);";
         fprintf(opt->ulog, "%s\n", sql.c_str());
+        fflush(opt->ulog);
         opt->conn->exec(sql);
         fprintf(opt->ulog, "-- Committed\n");
+        fflush(opt->ulog);
     }
 
     fprintf(opt->ulog, "START TRANSACTION;\n");
+    fflush(opt->ulog);
     etymon::odbc_tx tx2(opt->conn);
     for (int x = 0; table[x] != nullptr; x++) {
         string sql =
@@ -753,11 +760,14 @@ void database_upgrade_10(database_upgrade_options* opt)
             "    ADD CONSTRAINT history_" + table[x] + "_id_updated_key\n"
             "    UNIQUE (id, updated);";
         fprintf(opt->ulog, "%s\n", sql.c_str());
+        fflush(opt->ulog);
         opt->conn->exec(sql);
     }
     fprintf(opt->ulog, "COMMIT;\n");
+    fflush(opt->ulog);
     tx2.commit();
     fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
 }
 
 void database_upgrade_11(database_upgrade_options* opt)
@@ -855,42 +865,73 @@ void database_upgrade_11(database_upgrade_options* opt)
         nullptr
     };
 
-    fprintf(opt->ulog, "START TRANSACTION;\n");
-    etymon::odbc_tx tx(opt->conn);
+    DBType dbt(opt->conn);
 
     string sql = "DROP TABLE ldpsystem.idmap;";
     fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
     opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
 
     for (int x = 0; table[x] != nullptr; x++) {
 
+        if (string(dbt.dbType()) == "Redshift") {
+
+            sql =
+                "ALTER TABLE history." + string(table[x]) + "\n"
+                "    ALTER DISTKEY id;";
+            fprintf(opt->ulog, "%s\n", sql.c_str());
+            fflush(opt->ulog);
+            opt->conn->exec(sql);
+            fprintf(opt->ulog, "-- Committed\n");
+            fflush(opt->ulog);
+
+            sql =
+                "ALTER TABLE history." + string(table[x]) + "\n"
+                "    ALTER COMPOUND SORTKEY (id, updated);";
+            fprintf(opt->ulog, "%s\n", sql.c_str());
+            fflush(opt->ulog);
+            opt->conn->exec(sql);
+            fprintf(opt->ulog, "-- Committed\n");
+            fflush(opt->ulog);
+        }
+
         sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
-            "    DROP COLUMN sk;";
+            "    DROP COLUMN sk CASCADE;";
         fprintf(opt->ulog, "%s\n", sql.c_str());
+        fflush(opt->ulog);
         opt->conn->exec(sql);
+        fprintf(opt->ulog, "-- Committed\n");
+        fflush(opt->ulog);
 
         sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
             "    DROP CONSTRAINT history_" + table[x] + "_id_updated_key;";
         fprintf(opt->ulog, "%s\n", sql.c_str());
+        fflush(opt->ulog);
         opt->conn->exec(sql);
+        fprintf(opt->ulog, "-- Committed\n");
+        fflush(opt->ulog);
 
         sql =
             "ALTER TABLE history." + string(table[x]) + "\n"
             "    ADD CONSTRAINT history_" + table[x] + "_pkey\n"
             "    PRIMARY KEY (id, updated);";
         fprintf(opt->ulog, "%s\n", sql.c_str());
+        fflush(opt->ulog);
         opt->conn->exec(sql);
+        fprintf(opt->ulog, "-- Committed\n");
+        fflush(opt->ulog);
 
     }
 
     sql = "UPDATE ldpsystem.main SET ldp_schema_version = 11;";
     fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
     opt->conn->exec(sql);
-
-    fprintf(opt->ulog, "COMMIT;\n");
-    tx.commit();
     fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
 }
 
