@@ -384,7 +384,10 @@ $ ldp upgrade-database -D /var/lib/ldp
 
 Do not interrupt this process.  Some schema changes use DDL statements
 that cannot be run within a transaction, and interrupting them may
-leave the database in an unknown state.
+leave the database in an intermediate state.  In case this might
+happen, database statements used to perform the upgrade are logged to
+the file `database_upgrade.sql` located in the data directory under
+`log/`.
 
 
 6\. Direct extraction

@@ -11,6 +11,8 @@ using namespace std;
 
 bool isUUID(const char* str);
 
+void print_banner_line(FILE* stream, char ch, int width);
+
 ////////////////////////////////////////////////////////////////////////////
 // Old error printing functions
 
