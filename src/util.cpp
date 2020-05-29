@@ -45,6 +45,13 @@ bool isUUID(const char* str)
     return true;
 }
 
+void print_banner_line(FILE* stream, char ch, int width)
+{
+    for (int x = 0; x < width; x++)
+        fputc(ch, stream);
+    fputc('\n', stream);
+}
+
 ////////////////////////////////////////////////////////////////////////////
 // Old error printing functions
 

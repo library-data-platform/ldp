@@ -55,6 +55,7 @@ add_library(ldp_obj OBJECT
 	camelcase.cpp
 	config_json.cpp
 	dbtype.cpp
+	dbup1.cpp
 	extract.cpp
 	idmap.cpp
 	init.cpp

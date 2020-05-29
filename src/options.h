@@ -23,6 +23,7 @@ class Options {
 public:
     string command;
     bool cliMode = false;
+    bool upgradeDatabase = false;
     string datadir;
     bool extractOnly = false;
     string loadFromDir;
@@ -64,7 +65,6 @@ public:
     bool console = false;
     //bool version = false;
     size_t pageSize = 1000;
-    //string config;
     int nargc = 0;
     char **nargv = nullptr;
     const char* prog = "ldp";

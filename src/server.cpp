@@ -30,6 +30,7 @@ static const char* optionHelp =
 "  e.g.  ldp server -D /usr/local/ldp/data\n"
 "Commands:\n"
 "  server              - Run the LDP server\n"
+"  upgrade-database    - Upgrade the LDP database to the current version\n"
 "  update              - Run a full update and exit\n"
 "  help                - Display help information\n"
 "Options:\n"
@@ -118,7 +119,7 @@ bool timeForFullUpdate(const Options& opt, etymon::odbc_conn* conn, DBType* dbt,
         Log* log)
 {
     string sql =
-        "SELECT full_update_enabled,\n"
+        "SELECT enable_full_updates,\n"
         "       (next_full_update <= " +
         string(dbt->currentTimestamp()) + ") AS update_now\n"
         "    FROM ldpconfig.general;";
@@ -183,20 +184,25 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::odbc_conn* conn,
     } while (updateInFuture == "0");
 }
 
-void server(const Options& opt, etymon::odbc_env* odbc, Log* log)
+void server(const Options& opt, etymon::odbc_env* odbc)
 {
     init_upgrade(odbc, opt.db, opt.ldpUser, opt.ldpconfigUser, opt.datadir,
-            log);
+            opt.err, opt.prog);
+    if (opt.upgradeDatabase)
+        return;
 
-    log->log(Level::info, "server", "",
+    etymon::odbc_conn logConn(odbc, opt.db);
+    Log lg(&logConn, opt.logLevel, opt.console, opt.prog);
+
+    lg.log(Level::info, "server", "",
             string("Server started") + (opt.cliMode ? " (CLI mode)" : ""), -1);
 
     etymon::odbc_conn conn(odbc, opt.db);
     DBType dbt(&conn);
 
     do {
-        if (opt.cliMode || timeForFullUpdate(opt, &conn, &dbt, log) ) {
-            rescheduleNextDailyLoad(opt, &conn, &dbt, log);
+        if (opt.cliMode || timeForFullUpdate(opt, &conn, &dbt, &lg) ) {
+            rescheduleNextDailyLoad(opt, &conn, &dbt, &lg);
             pid_t pid = fork();
             if (pid == 0)
                 runUpdateProcess(opt);
@@ -204,11 +210,11 @@ void server(const Options& opt, etymon::odbc_env* odbc, Log* log)
                 int stat;
                 waitpid(pid, &stat, 0);
                 if (WIFEXITED(stat))
-                    log->log(Level::trace, "", "",
+                    lg.log(Level::trace, "", "",
                             "Status code of full update: " +
                             to_string(WEXITSTATUS(stat)), -1);
                 else
-                    log->log(Level::trace, "", "",
+                    lg.log(Level::trace, "", "",
                             "Full update did not terminate normally", -1);
             }
             if (pid < 0)
@@ -219,7 +225,7 @@ void server(const Options& opt, etymon::odbc_env* odbc, Log* log)
             std::this_thread::sleep_for(std::chrono::seconds(60));
     } while (!opt.cliMode);
 
-    log->log(Level::info, "server", "",
+    lg.log(Level::info, "server", "",
             string("Server stopped") + (opt.cliMode ? " (CLI mode)" : ""), -1);
 }
 
@@ -229,30 +235,24 @@ void runServer(const Options& opt)
 
     //runPreloadTests(opt, odbc);
 
-    etymon::odbc_conn logConn(&odbc, opt.db);
-    Log log(&logConn, opt.logLevel, opt.console, opt.prog);
-
     etymon::odbc_conn lockConn(&odbc, opt.db);
     string sql = "CREATE SCHEMA IF NOT EXISTS ldpsystem;";
-    log.logDetail(sql);
     lockConn.execDirect(nullptr, sql);
     sql = "CREATE TABLE IF NOT EXISTS ldpsystem.server_lock (b BOOLEAN);";
-    log.logDetail(sql);
     lockConn.execDirect(nullptr, sql);
 
     {
         if (opt.logLevel == Level::trace || opt.logLevel == Level::detail)
-            fprintf(stderr, "%s: Acquiring server lock\n", opt.prog);
+            fprintf(opt.err, "%s: Acquiring server lock\n", opt.prog);
 
         etymon::odbc_tx tx(&lockConn);
         sql = "LOCK ldpsystem.server_lock;";
-        log.logDetail(sql);
         lockConn.execDirect(nullptr, sql);
 
         if (opt.logLevel == Level::trace || opt.logLevel == Level::detail)
-            fprintf(stderr, "%s: Initializing\n", opt.prog);
+            fprintf(opt.err, "%s: Initializing\n", opt.prog);
 
-        server(opt, &odbc, &log);
+        server(opt, &odbc);
     }
 }
 
@@ -346,14 +346,10 @@ void run(const etymon::CommandArgs& cargs)
         return;
     }
 
-    //Config config(opt.config);
     Config config(opt.datadir + "/ldpconf.json");
     fillOptions(config, &opt);
     if (opt.command == "update")
         opt.console = true;
-
-    //if (opt.logLevel == Level::trace)
-    //    debugOptions(opt);
 
     if (opt.command == "server") {
         do {
@@ -386,13 +382,10 @@ void run(const etymon::CommandArgs& cargs)
         return;
     }
 
-    //if (opt.command == "update") {
-    //    Timer t(opt);
-    //    runLoad(opt);
-    //    if (opt.logLevel == Level::trace)
-    //        t.print("total time");
-    //    return;
-    //}
+    if (opt.command == "upgrade-database") {
+        runServer(opt);
+        return;
+    }
 }
 
 int cli(int argc, char* argv[])

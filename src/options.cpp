@@ -31,6 +31,7 @@ static void validate(const Options& opt)
     }
 
     if (opt.command != "server" &&
+            opt.command != "upgrade-database" &&
             opt.command != "update" &&
             opt.command != "help" &&
             opt.command != "")
@@ -144,6 +145,8 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
         opt->command = "update";
     if (opt->command != "server")
         opt->cliMode = true;
+    if (opt->command == "upgrade-database")
+        opt->upgradeDatabase = true;
 
     while (1) {
         int longindex = 0;

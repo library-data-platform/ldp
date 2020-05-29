@@ -524,6 +524,8 @@ void ColumnSchema::columnTypeToString(ColumnType type, string* str)
         *str = "TIMESTAMPTZ";
         break;
     case ColumnType::id:
+        *str = "VARCHAR(36)";
+        break;
     case ColumnType::varchar:
         *str = "VARCHAR(65535)";
         break;

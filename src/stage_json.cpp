@@ -618,7 +618,7 @@ static void createLoadingTable(const Options& opt, Log* log,
     sql += loadingTable;
     sql += " (\n"
         "    sk BIGINT NOT NULL,\n"
-        "    id VARCHAR(65535) NOT NULL,\n";
+        "    id VARCHAR(36) NOT NULL,\n";
     string columnType;
     for (const auto& column : table.columns) {
         if (column.columnName != "id") {

@@ -60,7 +60,6 @@ odbc_conn::odbc_conn(odbc_env* env, const string& data_source_name)
 
 odbc_conn::~odbc_conn()
 {
-    rollback();
     SQLDisconnect(conn);
     SQLFreeHandle(SQL_HANDLE_DBC, conn);
 }
@@ -174,12 +173,6 @@ odbc_tx::odbc_tx(odbc_conn* odbcDbc)
     conn = odbcDbc;
     completed = false;
     conn->startTransaction();
-}
-
-odbc_tx::~odbc_tx()
-{
-    if (!completed)
-        conn->rollback();
 }
 
 void odbc_tx::commit()
