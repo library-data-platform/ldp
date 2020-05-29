@@ -1,3 +1,4 @@
+#include <experimental/filesystem>
 #include <sstream>
 #include <stdexcept>
 
@@ -5,6 +6,8 @@
 #include "dbup1.h"
 #include "init.h"
 #include "log.h"
+
+namespace fs = std::experimental::filesystem;
 
 void database_upgrade_1(database_upgrade_options* opt)
 {
@@ -879,5 +882,8 @@ void database_upgrade_11(database_upgrade_options* opt)
 
     tx.commit();
     fprintf(opt->ulog, "-- OK\n");
+
+    fs::path cache_path = fs::path(opt->datadir) / "cache";
+    fs::remove_all(cache_path);
 }
 
