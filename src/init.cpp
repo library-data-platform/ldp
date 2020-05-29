@@ -33,7 +33,7 @@ database_upgrade_array database_upgrades[] = {
  * \retval true The version number was retrieved.
  * \retval false The version number was not present in the database.
  */
-bool select_schema_version(etymon::odbc_conn* conn, int64_t* version)
+bool select_database_version(etymon::odbc_conn* conn, int64_t* version)
 {
     string sql = "SELECT ldp_schema_version FROM ldpsystem.main;";
     etymon::odbc_stmt stmt(conn);
@@ -84,7 +84,7 @@ void catalog_add_table(etymon::odbc_conn* conn, const string& table)
  *
  * \param[in] db Database context.
  */
-void init_schema(etymon::odbc_conn* conn, const string& ldpUser,
+void init_database(etymon::odbc_conn* conn, const string& ldpUser,
         const string& ldpconfigUser, int64_t thisSchemaVersion, FILE* err,
         const char* prog)
 {
@@ -312,7 +312,7 @@ void init_schema(etymon::odbc_conn* conn, const string& ldpUser,
     tx.commit();
 }
 
-void upgrade_schema(etymon::odbc_conn* conn, const string& ldpUser,
+void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
         const string& ldpconfigUser, int64_t version,
         int64_t this_schema_version, const string& datadir, FILE* err,
         const char* prog)
@@ -401,15 +401,15 @@ void init_upgrade(etymon::odbc_env* odbc, const string& dbname,
     etymon::odbc_conn conn(odbc, dbname);
 
     int64_t version;
-    bool version_found = select_schema_version(&conn, &version);
+    bool version_found = select_database_version(&conn, &version);
 
     if (version_found)
         // Schema is present: check if it needs to be upgraded.
-        upgrade_schema(&conn, ldpUser, ldpconfigUser, version,
+        upgrade_database(&conn, ldpUser, ldpconfigUser, version,
                 this_schema_version, datadir, err, prog);
     else
         // Schema is not present: create it.
-        init_schema(&conn, ldpUser, ldpconfigUser, this_schema_version, err,
+        init_database(&conn, ldpUser, ldpconfigUser, this_schema_version, err,
                 prog);
 }
 
