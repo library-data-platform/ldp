@@ -50,17 +50,14 @@ attributes:
 SELECT * FROM circulation_loans LIMIT 1;
 ```
 ```
-sk            | 5326
 id            | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
 action        | checkedin
 due_date      | 2017-02-17 08:43:15+00
-item_id_sk    | 5089
 item_id       | 459afaba-5b39-468d-9072-eb1685e0ddf4
 item_status   | Available
 loan_date     | 2017-02-03 08:43:15+00
 renewal_count | 0
 return_date   | 2017-03-01 11:35:12+00
-user_id_sk    | 462
 user_id       | ab579dc3-219b-4f5b-8068-ab1c7a55c402
 data          | {                                                          
               |     "id": "0bab56e5-1ab6-4ac2-afdf-8b2df0434378",          
@@ -83,11 +80,6 @@ tenant_id     | 1
 The relational attributes are provided to simplify writing queries and to
 improve query performance.  The JSON fields offer access to the complete
 extracted source data.
-
-In addition, attributes called `sk` or ending in `_sk` are surrogate
-keys, which can be used as an alternative to the source identifiers
-such as `id`.  The table `ldpsystem.idmap` contains all surrogate keys
-used in the database and their corresponding IDs.
 
 One additional attribute, `tenant_id`, is reserved for future use in
 consortial reporting.
@@ -224,7 +216,6 @@ the library by analyzing trends over time.
 
 History tables contain these attributes:
 
-* `sk` is the surrogate key.
 * `id` is the record ID.
 * `data` is the source data, usually a JSON object.
 * `updated` is the date and time when the data were loaded.
@@ -236,7 +227,6 @@ For example:
 SELECT * FROM history.circulation_loans LIMIT 1;
 ```
 ```
-sk        | 29201
 id        | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
 data      | {                                                          
           |     "id": "0bab56e5-1ab6-4ac2-afdf-8b2df0434378",          

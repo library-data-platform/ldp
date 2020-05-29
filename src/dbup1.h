@@ -3,16 +3,17 @@
 
 #include "init.h"
 
-void schemaUpgrade1(SchemaUpgradeOptions* opt);
-void schemaUpgrade2(SchemaUpgradeOptions* opt);
-void schemaUpgrade3(SchemaUpgradeOptions* opt);
-void schemaUpgrade4(SchemaUpgradeOptions* opt);
-void schemaUpgrade5(SchemaUpgradeOptions* opt);
-void schemaUpgrade6(SchemaUpgradeOptions* opt);
-void schemaUpgrade7(SchemaUpgradeOptions* opt);
-void schemaUpgrade8(SchemaUpgradeOptions* opt);
-void schemaUpgrade9(SchemaUpgradeOptions* opt);
-void schemaUpgrade10(SchemaUpgradeOptions* opt);
+void database_upgrade_1(database_upgrade_options* opt);
+void database_upgrade_2(database_upgrade_options* opt);
+void database_upgrade_3(database_upgrade_options* opt);
+void database_upgrade_4(database_upgrade_options* opt);
+void database_upgrade_5(database_upgrade_options* opt);
+void database_upgrade_6(database_upgrade_options* opt);
+void database_upgrade_7(database_upgrade_options* opt);
+void database_upgrade_8(database_upgrade_options* opt);
+void database_upgrade_9(database_upgrade_options* opt);
+void database_upgrade_10(database_upgrade_options* opt);
+void database_upgrade_11(database_upgrade_options* opt);
 
 #endif
 

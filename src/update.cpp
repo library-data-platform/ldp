@@ -39,14 +39,15 @@ void makeUpdateTmpDir(const Options& opt, string* loaddir)
     //        S_IROTH | S_IXOTH);
 }
 
-bool isForeignKey(etymon::odbc_conn* conn, Log* log, const TableSchema& table2,
-        const ColumnSchema& column2, const TableSchema& table1)
+bool is_foreign_key(etymon::odbc_conn* conn, Log* log,
+        const TableSchema& table2, const ColumnSchema& column2,
+        const TableSchema& table1)
 {
     string sql =
         "SELECT 1\n"
         "    FROM " + table2.tableName + " AS r2\n"
         "        JOIN " + table1.tableName + " AS r1\n"
-        "            ON r2." + column2.columnName + "_sk = r1.sk\n"
+        "            ON r2." + column2.columnName + " = r1.id\n"
         "    LIMIT 1;";
     log->logDetail(sql);
     etymon::odbc_stmt stmt(conn);
@@ -56,78 +57,6 @@ bool isForeignKey(etymon::odbc_conn* conn, Log* log, const TableSchema& table2,
         return false;
     }
     return conn->fetch(&stmt);
-}
-
-void analyzeReferentialPaths(etymon::odbc_conn* conn, Log* log,
-        const TableSchema& table2, const ColumnSchema& column2,
-        const TableSchema& table1, bool logAnalysis, bool forceConstraints)
-{
-    string sql =
-        "SELECT " + column2.columnName + "_sk AS fkey_sk,\n"
-        "       " + column2.columnName + " AS fkey_id\n"
-        "    FROM " + table2.tableName + "\n"
-        "    WHERE " + column2.columnName + "_sk NOT IN (\n"
-        "        SELECT sk FROM " + table1.tableName + "\n"
-        "    );";
-    log->logDetail(sql);
-    // Assume the tables exist.
-    //etymon::odbc_conn deleteDBC(odbc, dbName);
-    vector<string> fkeys;
-    {
-        etymon::odbc_stmt stmt(conn);
-        conn->execDirect(&stmt, sql);
-        while (conn->fetch(&stmt)) {
-            string fkeySK, fkeyID;
-            conn->getData(&stmt, 1, &fkeySK);
-            conn->getData(&stmt, 2, &fkeyID);
-            if (forceConstraints)
-                fkeys.push_back(fkeySK);
-            if (logAnalysis)
-                log->log(Level::debug, "", table2.tableName,
-                        "Nonexistent key in referential path:\n"
-                        "    Referencing table: " + table2.tableName + "\n"
-                        "    Referencing column: " + column2.columnName + "\n"
-                        "    Referencing column (sk): " + fkeySK + "\n"
-                        "    Referencing column (id): " + fkeyID + "\n"
-                        "    Referenced table: " + table1.tableName + "\n"
-                        "    Action: " +
-                        (forceConstraints ? "Deleted (cascading)" : "Ignored"),
-                        -1);
-        }
-    }
-    if (forceConstraints) {
-        for (auto& fkey : fkeys) {
-            sql =
-                "DELETE FROM\n"
-                "    " + table2.tableName + "\n"
-                "    WHERE " + column2.columnName + "_sk = '" + fkey + "';";
-            log->logDetail(sql);
-            conn->execDirect(nullptr, sql);
-        }
-        sql =
-            "INSERT INTO ldpsystem.referential_constraints\n"
-            "    (referencing_table, referencing_column,\n"
-            "        referenced_table, referenced_column)\n"
-            "    VALUES\n"
-            "    ('" + table2.tableName + "',\n"
-            "        '" + column2.columnName + "',\n"
-            "        '" + table1.tableName + "',\n"
-            "        'sk');";
-        log->logDetail(sql);
-        conn->execDirect(nullptr, sql);
-        sql =
-            "ALTER TABLE\n"
-            "    " + table2.tableName + "\n"
-            "    ADD CONSTRAINT\n"
-            "        " + table2.tableName + "_" + column2.columnName +
-            "_sk_fkey\n"
-            "        FOREIGN KEY (" + column2.columnName + "_sk)\n"
-            "        REFERENCES\n"
-            "        " + table1.tableName + "\n"
-            "        (sk);";
-        log->logDetail(sql);
-        conn->execDirect(nullptr, sql);
-    }
 }
 
 class reference {
@@ -154,14 +83,14 @@ void search_table_foreign_keys(etymon::odbc_env* odbc, const string& dbName,
             continue;
         //printf("    Column: %s\n", column.columnName.c_str());
         for (auto& table1 : schema.tables) {
-            if (isForeignKey(&queryDBC, log, table, column, table1)) {
+            if (is_foreign_key(&queryDBC, log, table, column, table1)) {
 
-                string key = table.tableName + "." + column.columnName + "_sk";
+                string key = table.tableName + "." + column.columnName;
                 reference ref = {
                     table.tableName,
-                    column.columnName + "_sk",
+                    column.columnName,
                     table1.tableName,
-                    "sk"
+                    "id"
                 };
 
                 //fprintf(stderr, "%s(%s) -> %s(%s)\n",
@@ -172,9 +101,6 @@ void search_table_foreign_keys(etymon::odbc_env* odbc, const string& dbName,
 
                 (*refs)[key].push_back(ref);
 
-                //printf("        -> %s\n", table1.tableName.c_str());
-                //analyzeReferentialPaths([>odbc, dbName,<] dbc, log, table,
-                //        column, table1, logAnalysis, forceConstraints);
             }
         }
     }
@@ -247,7 +173,7 @@ void select_enabled_foreign_keys(odbc_conn* conn, Log* lg,
     }
 }
 
-void foreign_key_constraint_name(const string& referencing_table,
+void make_foreign_key_constraint_name(const string& referencing_table,
         const string& referencing_column, string* constraint_name)
 {
     const char* p = referencing_table.c_str();
@@ -279,7 +205,7 @@ void create_foreign_key_constraints(odbc_conn* conn, Log* lg)
             // TODO Log warning
         }
         string constraint_name;
-        foreign_key_constraint_name(ref.referencing_table,
+        make_foreign_key_constraint_name(ref.referencing_table,
                 ref.referencing_column, &constraint_name);
         try {
             sql =
@@ -389,11 +315,6 @@ void runUpdate(const Options& opt)
         curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
     }
 
-    Timer idmpTimer1(opt);
-    idmap idmp(&odbc, opt.db, &log, opt.datadir);
-    log.log(Level::debug, "update", "", "Synchronized cache",
-            idmpTimer1.elapsedTime());
-
     string ldpconfigDisableAnonymization;
     {
         etymon::odbc_conn conn(&odbc, opt.db);
@@ -453,7 +374,7 @@ void runUpdate(const Options& opt)
 
             log.log(Level::trace, "", "",
                     "Staging table: " + table.tableName, -1);
-            stageTable(opt, &log, &table, &odbc, &conn, &dbt, loadDir, &idmp);
+            stageTable(opt, &log, &table, &odbc, &conn, &dbt, loadDir);
 
             log.log(Level::trace, "", "",
                     "Merging table: " + table.tableName, -1);
@@ -517,11 +438,6 @@ void runUpdate(const Options& opt)
         //if (opt.logLevel == Level::trace)
         //    loadTimer.print("load time");
     } // for
-
-    Timer idmpTimer2(opt);
-    idmp.syncCommit();
-    log.log(Level::debug, "update", "", "Synchronized cache",
-            idmpTimer2.elapsedTime());
 
     //{
     //    etymon::odbc_conn conn(&odbc, opt.db);
@@ -605,10 +521,6 @@ void runUpdate(const Options& opt)
 
     }
 
-    Timer idmpTimer3(opt);
-    idmp.vacuum();
-    log.log(Level::debug, "update", "", "Optimized cache",
-            idmpTimer3.elapsedTime());
 }
 
 void runUpdateProcess(const Options& opt)

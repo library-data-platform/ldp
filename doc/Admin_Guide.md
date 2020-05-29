@@ -371,7 +371,33 @@ supported data updates.  Full updates can be scheduled at a preferred
 time of day using the table `ldpconfig.general`.  See the
 [Configuration Guide](Config_Guide.md) for more information.
 
-### Upgrading the database
+### Upgrading to a new version
+
+When installing a new version of LDP, the database should be
+"upgraded" before starting the new server:
+
+1. Confirm that the new version of LDP builds without errors.
+
+2. Make a backup of the database.
+
+3. Stop the old version of the server.
+
+4. Use the `upgrade-database` command in the new version of LDP to
+   perform the upgrade, e.g.:
+
+```shell
+$ ldp upgrade-database -D /var/lib/ldp
+```
+
+Do not interrupt this process.  Some schema changes use DDL statements
+that cannot be run within a transaction, and interrupting them may
+leave the database in an intermediate state.  For debugging purposes,
+database statements used to perform the upgrade are logged to the file
+`database_upgrade.sql` located in the data directory under `log/`.
+
+5. Start the new version of the server.
+
+<!--
 
 When upgrading to a new version of LDP, the database should be backed
 up and then "upgraded" before starting the server.
@@ -384,10 +410,11 @@ $ ldp upgrade-database -D /var/lib/ldp
 
 Do not interrupt this process.  Some schema changes use DDL statements
 that cannot be run within a transaction, and interrupting them may
-leave the database in an intermediate state.  In case this might
-happen, database statements used to perform the upgrade are logged to
-the file `database_upgrade.sql` located in the data directory under
-`log/`.
+leave the database in an intermediate state.  For debugging purposes,
+database statements used to perform the upgrade are logged to the file
+`database_upgrade.sql` located in the data directory under `log/`.
+
+-->
 
 
 6\. Direct extraction
