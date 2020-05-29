@@ -173,7 +173,7 @@ void select_enabled_foreign_keys(odbc_conn* conn, Log* lg,
     }
 }
 
-void foreign_key_constraint_name(const string& referencing_table,
+void make_foreign_key_constraint_name(const string& referencing_table,
         const string& referencing_column, string* constraint_name)
 {
     const char* p = referencing_table.c_str();
@@ -205,7 +205,7 @@ void create_foreign_key_constraints(odbc_conn* conn, Log* lg)
             // TODO Log warning
         }
         string constraint_name;
-        foreign_key_constraint_name(ref.referencing_table,
+        make_foreign_key_constraint_name(ref.referencing_table,
                 ref.referencing_column, &constraint_name);
         try {
             sql =

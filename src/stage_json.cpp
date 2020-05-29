@@ -537,16 +537,31 @@ static void composeDataFilePath(const string& loadDir,
 }
 
 static void indexLoadingTable(Log* log, const TableSchema& table,
-        etymon::odbc_conn* conn)
+        etymon::odbc_conn* conn, DBType* dbt)
 {
     log->trace("Creating indexes on table: " + table.tableName);
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
-    string sql =
-        "ALTER TABLE " + loadingTable + "\n"
-        "    ADD PRIMARY KEY (id);";
-    log->detail(sql);
-    conn->execDirect(nullptr, sql);
+    for (const auto& column : table.columns) {
+        if (column.columnType == ColumnType::id) {
+            if (column.columnName == "id") {
+                string sql =
+                    "ALTER TABLE " + loadingTable + "\n"
+                    "    ADD PRIMARY KEY (id);";
+                log->detail(sql);
+                conn->exec(sql);
+            } else {
+                if (string(dbt->dbType()) == "PostgreSQL") {
+                    string sql =
+                        "CREATE INDEX ON\n"
+                        "    " + loadingTable + "\n"
+                        "    (" + column.columnName + ");";
+                    log->detail(sql);
+                    conn->exec(sql);
+                }
+            }
+        }
+    }
 }
 
 static void createLoadingTable(const Options& opt, Log* log,
@@ -697,7 +712,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
         }
 
         if (pass == 2)
-            indexLoadingTable(log, *table, conn);
+            indexLoadingTable(log, *table, conn, dbt);
     }
 
 }
