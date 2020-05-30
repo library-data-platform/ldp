@@ -204,7 +204,7 @@ for the LDP testbed instance should be defined as `development`, and
 the tests are run as:
 
 ```shell
-$ ./build/src/itest_ldp -D <datadir>
+$ ./build/src/itest_ldp -s -D <datadir>
 ```
 
 where `<datadir>` is the data directory for the test database.  See

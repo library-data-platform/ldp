@@ -335,6 +335,37 @@ void fillOptions(const Config& config, Options* opt)
     opt->disableAnonymization = disableAnonymization;
 }
 
+static void sigint_handler(int signum)
+{
+    // NOP
+}
+
+static void sigquit_handler(int signum)
+{
+    // NOP
+}
+
+static void sigterm_handler(int signum)
+{
+    // NOP
+}
+
+static void setup_signal_handler(int sig, void (*handler)(int))
+{
+    struct sigaction sa;
+    sa.sa_handler = handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    sigaction(sig, &sa, NULL);
+}
+
+static void disable_termination_signals()
+{
+    setup_signal_handler(SIGINT, sigint_handler);
+    setup_signal_handler(SIGQUIT, sigquit_handler);
+    setup_signal_handler(SIGTERM, sigterm_handler);
+}
+
 void run_opt(Options* opt)
 {
     Config config(opt->datadir + "/ldpconf.json");
@@ -374,6 +405,7 @@ void run_opt(Options* opt)
     }
 
     if (opt->command == "upgrade-database") {
+        disable_termination_signals();
         runServer(*opt);
         return;
     }
@@ -394,25 +426,8 @@ void run(const etymon::CommandArgs& cargs)
     run_opt(&opt);
 }
 
-/*
-static void sigint_handler(int signum)
-{
-    // NOP
-}
-
-static void setup_signal_handlers()
-{
-    struct sigaction sa;
-    sa.sa_handler = sigint_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    sigaction(SIGINT, &sa, NULL);
-}
-*/
-
 int main_cli(int argc, char* const argv[])
 {
-    //setup_signal_handlers();
     etymon::CommandArgs cargs(argc, argv);
     try {
         run(cargs);
