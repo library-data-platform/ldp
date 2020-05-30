@@ -1,5 +1,5 @@
 #include "../etymoncpp/include/util.h"
-#include "config_json.h"
+#include "config.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/pointer.h"
 #include "rapidjson/prettywriter.h"

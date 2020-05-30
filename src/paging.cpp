@@ -17,7 +17,7 @@
 #include "rapidjson/stringbuffer.h"
 #include "schema.h"
 #include "util.h"
-#include "stage_json.h"
+#include "stage.h"
 
 namespace json = rapidjson;
 

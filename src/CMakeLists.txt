@@ -53,7 +53,7 @@ add_library(ldp_obj OBJECT
 	../etymoncpp/src/util.cpp
 	anonymize.cpp
 	camelcase.cpp
-	config_json.cpp
+	config.cpp
 	dbtype.cpp
 	dbup1.cpp
 	extract.cpp
@@ -65,7 +65,7 @@ add_library(ldp_obj OBJECT
 	paging.cpp
 	schema.cpp
 	server.cpp
-	stage_json.cpp
+	stage.cpp
 	timer.cpp
 	update.cpp
 	util.cpp

@@ -12,7 +12,7 @@
 #include "init.h"
 #include "log.h"
 #include "merge.h"
-#include "stage_json.h"
+#include "stage.h"
 #include "timer.h"
 #include "update.h"
 

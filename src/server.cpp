@@ -14,7 +14,7 @@
 
 #include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/postgres.h"
-#include "config_json.h"
+#include "config.h"
 #include "dbtype.h"
 #include "init.h"
 #include "log.h"

@@ -18,7 +18,7 @@
 #include "rapidjson/reader.h"
 #include "rapidjson/stringbuffer.h"
 #include "schema.h"
-#include "stage_json.h"
+#include "stage.h"
 #include "util.h"
 
 //using namespace std;
