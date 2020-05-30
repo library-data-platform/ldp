@@ -36,26 +36,6 @@ static void validate(const options& opt)
             opt.command != "help" &&
             opt.command != "")
         throw runtime_error("unknown command: " + opt.command);
-
-    //if (opt.command == "update") {
-    //    if (opt.source == "" && opt.loadFromDir == "")
-    //        throw runtime_error("update requires --source or --sourcedir");
-    //}
-
-    //if (opt.nossl && !opt.unsafe)
-    //    throw runtime_error("--nossl requires --unsafe");
-    if (opt.extract_only && !opt.unsafe)
-        throw runtime_error("--extract-only requires --unsafe");
-    if (opt.savetemps && !opt.unsafe)
-        throw runtime_error("--savetemps requires --unsafe");
-    if (opt.load_from_dir != "" && !opt.unsafe)
-        throw runtime_error("--sourcedir requires --unsafe");
-    if (opt.table != "" && !opt.unsafe)
-        throw runtime_error("--table requires --unsafe");
-
-    //if (opt.loadFromDir != "" && opt.source != "")
-    //    throw runtime_error(
-    //            "--source and --sourcedir cannot both be specified");
 }
 
 static void evaloptlong(char *name, char *arg, options* opt)
@@ -72,26 +52,6 @@ static void evaloptlong(char *name, char *arg, options* opt)
         opt->table = arg;
         return;
     }
-    //if (!strcmp(name, "source")) {
-    //    opt->source = arg;
-    //    return;
-    //}
-    if (!strcmp(name, "target")) {
-        opt->target = arg;
-        return;
-    }
-    //if (!strcmp(name, "config")) {
-    //    opt->config = arg;
-    //    return;
-    //}
-    if (!strcmp(name, "unsafe")) {
-        opt->unsafe = true;
-        return;
-    }
-    //if (!strcmp(name, "nossl")) {
-    //    opt->nossl = true;
-    //    return;
-    //}
     if (!strcmp(name, "savetemps")) {
         opt->savetemps = true;
         return;
@@ -118,7 +78,7 @@ static void evaloptlong(char *name, char *arg, options* opt)
     }
 }
 
-int evalopt(const etymon::CommandArgs& cargs, options *opt)
+int evalopt(const etymon::command_args& cargs, options *opt)
 {
     static struct option longopts[] = {
         { "extract-only", no_argument,       NULL, 0   },
@@ -129,7 +89,7 @@ int evalopt(const etymon::CommandArgs& cargs, options *opt)
         { "trace",        no_argument,       NULL, 0   },
         { "detail",       no_argument,       NULL, 0   },
         { "console",      no_argument,       NULL, 0   },
-        { "unsafe",       no_argument,       NULL, 0   },
+        //{ "unsafe",       no_argument,       NULL, 0   },
         { "savetemps",    no_argument,       NULL, 0   },
         { "quiet",        no_argument,       NULL, 0   },
         { 0,              0,                 0,    0   }
@@ -182,5 +142,18 @@ int evalopt(const etymon::CommandArgs& cargs, options *opt)
     }
     validate(*opt);
     return 0;
+}
+
+void config_set_environment(const string& env_str, deployment_environment* env)
+{
+    if (env_str == "production") {
+        *env = deployment_environment::production;
+        return;
+    }
+    if (env_str == "development") {
+        *env = deployment_environment::development;
+        return;
+    }
+    throw runtime_error("Unknown deployment environment: " + env_str);
 }
 

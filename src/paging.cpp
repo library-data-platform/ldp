@@ -122,8 +122,8 @@ bool pageIsEmpty(const options& opt, const string& filename)
     PagingJSONHandler handler(opt);
     json::Reader reader;
     char readBuffer[65536];
-    etymon::File f(filename, "r");
-    json::FileReadStream is(f.file, readBuffer, sizeof(readBuffer));
+    etymon::file f(filename, "r");
+    json::FileReadStream is(f.fp, readBuffer, sizeof(readBuffer));
     reader.Parse(is, handler);
     return !(handler.foundRecord);
 }

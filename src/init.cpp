@@ -1,4 +1,5 @@
 #include <experimental/filesystem>
+#include <signal.h>
 #include <sstream>
 #include <stdexcept>
 
@@ -310,6 +311,37 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
     tx.commit();
 }
 
+static void sigint_handler(int signum)
+{
+    // NOP
+}
+
+static void sigquit_handler(int signum)
+{
+    // NOP
+}
+
+static void sigterm_handler(int signum)
+{
+    // NOP
+}
+
+static void setup_signal_handler(int sig, void (*handler)(int))
+{
+    struct sigaction sa;
+    sa.sa_handler = handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    sigaction(sig, &sa, NULL);
+}
+
+static void disable_termination_signals()
+{
+    setup_signal_handler(SIGINT, sigint_handler);
+    setup_signal_handler(SIGQUIT, sigquit_handler);
+    setup_signal_handler(SIGTERM, sigterm_handler);
+}
+
 void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
         const string& ldpconfigUser, int64_t version,
         int64_t this_schema_version, const string& datadir, FILE* err,
@@ -322,7 +354,7 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
     fs::path log_path = fs::path(datadir) / "log";
     fs::create_directories(log_path);
     fs::path ulog_path = log_path / "database_upgrade.sql";
-    etymon::File ulogFile(ulog_path, "a");
+    etymon::file ulogFile(ulog_path, "a");
 
     bool upgraded = false;
     for (int64_t v = version + 1; v <= this_schema_version; v++) {
@@ -335,23 +367,24 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
                     prog);
             fprintf(err, "%s: ", prog);
             print_banner_line(err, '=', 74);
+            disable_termination_signals();
         }
         fprintf(err, "%s: Upgrading: %s\n", prog, to_string(v).c_str());
-        print_banner_line(ulogFile.file, '-', 79);
-        fprintf(ulogFile.file, "-- Upgrading: %s\n", to_string(v).c_str());
-        print_banner_line(ulogFile.file, '-', 79);
+        print_banner_line(ulogFile.fp, '-', 79);
+        fprintf(ulogFile.fp, "-- Upgrading: %s\n", to_string(v).c_str());
+        print_banner_line(ulogFile.fp, '-', 79);
         database_upgrade_options opt;
-        opt.ulog = ulogFile.file;
+        opt.ulog = ulogFile.fp;
         opt.conn = conn;
         opt.ldp_user = ldpUser;
         opt.ldpconfig_user = ldpconfigUser;
         opt.datadir = datadir;
         database_upgrades[v](&opt);
-        print_banner_line(ulogFile.file, '-', 79);
-        fprintf(ulogFile.file, "-- Completed upgrade: %s\n",
+        print_banner_line(ulogFile.fp, '-', 79);
+        fprintf(ulogFile.fp, "-- Completed upgrade: %s\n",
                 to_string(v).c_str());
-        print_banner_line(ulogFile.file, '-', 79);
-        fputc('\n', ulogFile.file);
+        print_banner_line(ulogFile.fp, '-', 79);
+        fputc('\n', ulogFile.fp);
         upgraded = true;
     }
 
@@ -389,22 +422,33 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
  */
 void init_upgrade(etymon::odbc_env* odbc, const string& dbname,
         const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir, FILE* err, const char* prog, bool quiet)
+        const string& datadir, FILE* err, const char* prog, bool quiet,
+        bool upgrade_database_command)
 {
     int64_t this_schema_version = 11;
 
     etymon::odbc_conn conn(odbc, dbname);
 
-    int64_t version;
-    bool version_found = select_database_version(&conn, &version);
+    int64_t database_version;
+    bool version_found = select_database_version(&conn, &database_version);
 
     if (version_found)
         // Schema is present: check if it needs to be upgraded.
-        upgrade_database(&conn, ldpUser, ldpconfigUser, version,
+        upgrade_database(&conn, ldpUser, ldpconfigUser, database_version,
                 this_schema_version, datadir, err, prog, quiet);
     else
         // Schema is not present: create it.
         init_database(&conn, ldpUser, ldpconfigUser, this_schema_version, err,
                 prog);
+
+    if (database_version < this_schema_version && !upgrade_database_command) {
+        fprintf(stderr, "ldp: ");
+        print_banner_line(stderr, '=', 74);
+        fprintf(stderr,
+                "ldp: Warning: Automatic database upgrades are deprecated\n"
+                "ldp: Please use the new \"upgrade-database\" command\n");
+        fprintf(stderr, "ldp: ");
+        print_banner_line(stderr, '=', 74);
+    }
 }
 

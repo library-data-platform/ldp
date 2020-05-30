@@ -9,6 +9,11 @@
 
 using namespace std;
 
+enum class deployment_environment {
+    production,
+    development
+};
+
 class direct_extraction {
 public:
     vector<string> table_names;
@@ -32,30 +37,13 @@ public:
     string okapi_tenant;
     string okapi_user;
     string okapi_password;
-    //string extractDir;
     direct_extraction direct;
+    deployment_environment environment;
     string db;
-    // Temporary
-    string target = "(ldp database)";
-    string database_name = "ldpdev";
-    string database_type = "postgresql";
-    string database_host = "localhost";
-    string database_port = "5432";
-    string ldp_admin = "ldpadmin";
-    string ldp_admin_password = "nassargres";
-    //string target;
-    //string databaseName;
-    //string databaseType;
-    //string databaseHost;
-    //string databasePort;
-    //string ldpAdmin;
-    //string ldpAdminPassword;
     string ldp_user = "ldp";
     string ldpconfig_user = "ldpconfig";
-    //DBType dbtype;
-    bool unsafe = false;
+    //bool unsafe = false;
     string table;
-    //bool nossl = false;
     bool disable_anonymization;
     bool savetemps = false;
     FILE* err = stderr;
@@ -64,14 +52,14 @@ public:
     Level log_level = Level::debug;
     bool console = false;
     bool quiet = false;
-    //bool version = false;
     size_t page_size = 1000;
     int nargc = 0;
     char **nargv = nullptr;
     const char* prog = "ldp";
 };
 
-int evalopt(const etymon::CommandArgs& cargs, options* opt);
+int evalopt(const etymon::command_args& cargs, options* opt);
 void debug_options(const options& o);
+void config_set_environment(const string& env_str, deployment_environment* env);
 
 #endif

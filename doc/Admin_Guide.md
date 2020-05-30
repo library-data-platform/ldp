@@ -197,11 +197,11 @@ $ ./build/src/test_ldp
 ```
 
 Running the integration tests requires a FOLIO instance, as well as an
-LDP testbed instance with a spare PostgreSQL or Redshift database.
-Any contents of the LDP testbed database will be destroyed by these
-tests; so please be careful.  The `environment` configuration setting
-for the LDP testbed instance should be defined as `development`, and
-the tests are run as:
+empty LDP testbed instance with a spare PostgreSQL or Redshift
+database.  Any contents of the LDP testbed database will be destroyed
+by these tests; so please be careful.  The `environment` configuration
+setting for the LDP testbed instance should be defined as
+`development`, and the tests are run as:
 
 ```shell
 $ ./build/src/itest_ldp -s -D <datadir>
@@ -505,7 +505,10 @@ Reference
 * `environment` (string; required) is the deployment environment of
   the LDP instance.  Supported values are `production` and
 `development`.  The `production` environment is recommended for all
-deployments.
+deployments.  The `development` environment allows unsafe operations
+that never should be run on a production instance, such as running
+integration tests on the instance, or updating from data in local
+files.
 * `ldpDatabase` (object; required) is a group of database-related
   settings.
   * `odbcDatabase` (string; required) is the ODBC "data source name"

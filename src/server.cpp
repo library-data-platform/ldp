@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <signal.h>
 #include <stdexcept>
 #include <string>
 #include <sys/wait.h>
@@ -37,14 +36,14 @@ static const char* optionHelp =
 "  -D <path>           - Use <path> as the data directory\n"
 "  --trace             - Enable detailed logging\n"
 "  --quiet             - Reduce console output\n"
-"Development options:\n"
-"  --unsafe            - Enable functions used for development and testing\n"
+"Development options (supported only for \"development\" environments):\n"
+//"  --unsafe            - Enable functions used for development and testing\n"
 "  --extract-only      - Extract data in the data directory, but do not\n"
-"                        update them in the database (unsafe)\n"
+"                        update them in the database\n"
 "  --savetemps         - Disable deletion of temporary files containing\n"
-"                        extracted data (unsafe)\n"
+"                        extracted data\n"
 "  --sourcedir <path>  - Update data from directory <path> instead of\n"
-"                        from source (unsafe)\n";
+"                        from source\n";
 
 void debugNoticeProcessor(void *arg, const char *message)
 {
@@ -188,7 +187,7 @@ void rescheduleNextDailyLoad(const options& opt, etymon::odbc_conn* conn,
 void server(const options& opt, etymon::odbc_env* odbc)
 {
     init_upgrade(odbc, opt.db, opt.ldp_user, opt.ldpconfig_user, opt.datadir,
-            opt.err, opt.prog, opt.quiet);
+            opt.err, opt.prog, opt.quiet, opt.upgrade_database);
     if (opt.upgrade_database)
         return;
 
@@ -280,6 +279,25 @@ void fillDirectOptions(const Config& config, const string& base, options* opt)
 
 void fillOptions(const Config& config, options* opt)
 {
+    string environment;
+    ///////////////////////////////////////////////////////////////////////////
+    //config.getRequired("/environment", &environment);
+    ///////////////////////////////////////////////////////////////////////////
+    config.get("/environment", &environment);
+    if (environment == "") {
+        fprintf(stderr, "ldp: ");
+        print_banner_line(stderr, '=', 74);
+        fprintf(stderr,
+                "ldp: Warning: Deployment environment should be set in "
+                "ldpconf.json\n"
+                "ldp: Defaulting to: production\n");
+        fprintf(stderr, "ldp: ");
+        print_banner_line(stderr, '=', 74);
+        environment = "production";
+    }
+    ///////////////////////////////////////////////////////////////////////////
+    config_set_environment(environment, &(opt->environment));
+
     string target = "/ldpDatabase/";
     config.getRequired(target + "odbcDatabase", &(opt->db));
     config.get(target + "ldpconfigUser", &(opt->ldpconfig_user));
@@ -307,37 +325,6 @@ void fillOptions(const Config& config, options* opt)
     bool disable_anonymization;
     config.getBool("/disableAnonymization", &disable_anonymization);
     opt->disable_anonymization = disable_anonymization;
-}
-
-static void sigint_handler(int signum)
-{
-    // NOP
-}
-
-static void sigquit_handler(int signum)
-{
-    // NOP
-}
-
-static void sigterm_handler(int signum)
-{
-    // NOP
-}
-
-static void setup_signal_handler(int sig, void (*handler)(int))
-{
-    struct sigaction sa;
-    sa.sa_handler = handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    sigaction(sig, &sa, NULL);
-}
-
-static void disable_termination_signals()
-{
-    setup_signal_handler(SIGINT, sigint_handler);
-    setup_signal_handler(SIGQUIT, sigquit_handler);
-    setup_signal_handler(SIGTERM, sigterm_handler);
 }
 
 void run_opt(options* opt)
@@ -379,13 +366,12 @@ void run_opt(options* opt)
     }
 
     if (opt->command == "upgrade-database") {
-        disable_termination_signals();
         runServer(*opt);
         return;
     }
 }
 
-void run(const etymon::CommandArgs& cargs)
+void run(const etymon::command_args& cargs)
 {
     options opt;
 
@@ -402,7 +388,7 @@ void run(const etymon::CommandArgs& cargs)
 
 int main_cli(int argc, char* const argv[])
 {
-    etymon::CommandArgs cargs(argc, argv);
+    etymon::command_args cargs(argc, argv);
     try {
         run(cargs);
     } catch (runtime_error& e) {

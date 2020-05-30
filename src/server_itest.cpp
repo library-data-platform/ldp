@@ -11,7 +11,6 @@ TEST_CASE( "Test update", "[update]" ) {
     opt.quiet = true;
     opt.command = "update";
     opt.datadir = datadir.data();
-    opt.unsafe = true;
     opt.table = "user_groups";
     CHECK_NOTHROW( run_opt(&opt) );
     fs::path update_dir = fs::path(datadir) / "tmp" / "update";
@@ -24,7 +23,6 @@ TEST_CASE( "Test update with savetemps", "[update]" ) {
     opt.quiet = true;
     opt.command = "update";
     opt.datadir = datadir.data();
-    opt.unsafe = true;
     opt.table = "user_groups";
     opt.savetemps = true;
     CHECK_NOTHROW( run_opt(&opt) );

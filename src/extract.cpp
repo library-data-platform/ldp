@@ -178,7 +178,7 @@ static PageStatus retrieve(const Curl& c, const options& opt, Log* lg,
     output += "_" + to_string(page) + ".json";
 
     {
-        etymon::File f(output, "wb");
+        etymon::file f(output, "wb");
         extractionFiles->files.push_back(output);
 
         // testing
@@ -186,7 +186,7 @@ static PageStatus retrieve(const Curl& c, const options& opt, Log* lg,
         //curl_easy_setopt(c.curl, CURLOPT_CONNECTTIMEOUT, 100000);
 
         curl_easy_setopt(c.curl, CURLOPT_URL, path.c_str());
-        curl_easy_setopt(c.curl, CURLOPT_WRITEDATA, f.file);
+        curl_easy_setopt(c.curl, CURLOPT_WRITEDATA, f.fp);
 
         lg->log(Level::detail, "", "",
                 "Retrieving from:\n"
@@ -228,10 +228,10 @@ static void writeCountFile(const string& loadDir, const string& tableName,
     string countFile = loadDir;
     etymon::join(&countFile, tableName);
     countFile += "_count.txt";
-    etymon::File f(countFile, "w");
+    etymon::file f(countFile, "w");
     extractionFiles->files.push_back(countFile);
     string pageStr = to_string(page) + "\n";
-    fputs(pageStr.c_str(), f.file);
+    fputs(pageStr.c_str(), f.fp);
 }
 
 bool retrievePages(const Curl& c, const options& opt, Log* lg,
@@ -296,10 +296,10 @@ bool retrieveDirect(const options& opt, Log* lg, const TableSchema& table,
 
     string output = loadDir;
     etymon::join(&output, table.tableName + "_0.json");
-    etymon::File f(output, "w");
+    etymon::file f(output, "w");
     extractionFiles->files.push_back(output);
 
-    fprintf(f.file, "{\n  \"a\": [\n");
+    fprintf(f.fp, "{\n  \"a\": [\n");
 
     int row = 0;
     while (true) {
@@ -311,14 +311,14 @@ bool retrieveDirect(const options& opt, Log* lg, const TableSchema& table,
         //if (j == nullptr)
         //    break;
         if (row > 0)
-            fprintf(f.file, ",\n");
-        fprintf(f.file, "%s\n", j);
+            fprintf(f.fp, ",\n");
+        fprintf(f.fp, "%s\n", j);
         row++;
     }
     if (row == 0)
         return false;
 
-    fprintf(f.file, "\n  ]\n}\n");
+    fprintf(f.fp, "\n  ]\n}\n");
 
     // Write 1 to count file.
     writeCountFile(loadDir, table.tableName, extractionFiles, 1);

@@ -29,7 +29,7 @@ TEST_CASE( "Test decoding of camel case strings", "[camelcase]" ) {
     for (auto& t : tests) {
         string s;
         decode_camel_case(t.first.c_str(), &s);
-        CHECK(s == t.second);
+        CHECK( s == t.second );
     }
 }
 

@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdio>
+#include <experimental/filesystem>
 #include <map>
 #include <memory>
 #include <regex>
@@ -22,6 +23,7 @@
 #include "util.h"
 
 //using namespace std;
+namespace fs = std::experimental::filesystem;
 using namespace etymon;
 namespace json = rapidjson;
 
@@ -504,13 +506,13 @@ size_t readPageCount(const options& opt, Log* log, const string& loadDir,
     string filename = loadDir;
     etymon::join(&filename, tableName);
     filename += "_count.txt";
-    if ( !(etymon::fileExists(filename)) ) {
+    if ( !(fs::exists(filename)) ) {
         log->log(Level::warning, "", "", "File not found: " + filename, -1);
         return 0;
     }
-    etymon::File f(filename, "r");
+    etymon::file f(filename, "r");
     size_t count;
-    int r = fscanf(f.file, "%zu", &count);
+    int r = fscanf(f.fp, "%zu", &count);
     if (r < 1 || r == EOF)
         throw runtime_error("unable to read page count from " + filename);
     return count;
@@ -522,8 +524,8 @@ static void stagePage(const options& opt, Log* log, int pass,
         const string& filename, char* readBuffer, size_t readBufferSize)
 {
     json::Reader reader;
-    etymon::File f(filename, "r");
-    json::FileReadStream is(f.file, readBuffer, readBufferSize);
+    etymon::file f(filename, "r");
+    json::FileReadStream is(f.fp, readBuffer, readBufferSize);
     JSONHandler handler(pass, opt, log, tableSchema, conn, dbt, stats);
     reader.Parse(is, handler);
 }
@@ -662,7 +664,7 @@ void stageTable(const options& opt, Log* log, TableSchema* table,
         if (opt.load_from_dir != "") {
             string path;
             composeDataFilePath(loadDir, *table, "_test.json", &path);
-            if (etymon::fileExists(path)) {
+            if (fs::exists(path)) {
                 log->log(Level::detail, "", "",
                         "Staging: " + table->tableName +
                         (pass == 1 ?  ": analyze" : ": load") +
