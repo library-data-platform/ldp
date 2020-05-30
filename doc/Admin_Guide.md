@@ -168,7 +168,15 @@ unpacked directory.  Then:
 $ ./all.sh
 ```
 
-If this succeeds, the end of the output should include:
+The `all.sh` script builds three executables in `ldp/build/src/`:
+
+* `ldp`: the LDP software
+* `test_ldp`: self-contained unit tests
+* `itest_ldp`: integration tests
+
+The script also runs `test_ldp`.
+
+If there are no errors, the end of the output will include:
 
 ```shell
 All tests passed
@@ -180,13 +188,9 @@ The compiled executable file `ldp` should appear in `ldp/build/src/`:
 $ ./build/src/ldp
 ```
 
-<!--
-
 ### Running tests
 
-The `all.sh` script used above builds both unit tests and integration
-tests.  It then runs the unit tests but not the integration tests.
-The unit tests can also be run separately if needed with:
+The unit tests can be run separately if needed:
 
 ```shell
 $ ./build/src/test_ldp
@@ -205,8 +209,6 @@ $ ./build/src/itest_ldp -D <datadir>
 
 where `<datadir>` is the data directory for the test database.  See
 below for an explanation of LDP data directories and configuration.
-
--->
 
 
 4\. Database configuration
