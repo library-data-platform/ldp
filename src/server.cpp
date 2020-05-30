@@ -18,7 +18,6 @@
 #include "dbtype.h"
 #include "init.h"
 #include "log.h"
-#include "options.h"
 #include "timer.h"
 #include "update.h"
 #include "util.h"
@@ -35,8 +34,9 @@ static const char* optionHelp =
 "  update              - Run a full update and exit\n"
 "  help                - Display help information\n"
 "Options:\n"
-"  -D <path>           - Store data and configuration in directory <path>\n"
+"  -D <path>           - Use <path> as the data directory\n"
 "  --trace             - Enable detailed logging\n"
+"  --quiet             - Reduce console output\n"
 "Development options:\n"
 "  --unsafe            - Enable functions used for development and testing\n"
 "  --extract-only      - Extract data in the data directory, but do not\n"
@@ -188,12 +188,12 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::odbc_conn* conn,
 void server(const Options& opt, etymon::odbc_env* odbc)
 {
     init_upgrade(odbc, opt.db, opt.ldpUser, opt.ldpconfigUser, opt.datadir,
-            opt.err, opt.prog);
+            opt.err, opt.prog, opt.quiet);
     if (opt.upgradeDatabase)
         return;
 
     etymon::odbc_conn logConn(odbc, opt.db);
-    Log lg(&logConn, opt.logLevel, opt.console, opt.prog);
+    Log lg(&logConn, opt.logLevel, opt.console, opt.quiet, opt.prog);
 
     lg.log(Level::info, "server", "",
             string("Server started") + (opt.cliMode ? " (CLI mode)" : ""), -1);
@@ -206,7 +206,7 @@ void server(const Options& opt, etymon::odbc_env* odbc)
             rescheduleNextDailyLoad(opt, &conn, &dbt, &lg);
             pid_t pid = fork();
             if (pid == 0)
-                runUpdateProcess(opt);
+                run_update_process(opt);
             if (pid > 0) {
                 int stat;
                 waitpid(pid, &stat, 0);
@@ -335,28 +335,18 @@ void fillOptions(const Config& config, Options* opt)
     opt->disableAnonymization = disableAnonymization;
 }
 
-void run(const etymon::CommandArgs& cargs)
+void run_opt(Options* opt)
 {
-    Options opt;
+    Config config(opt->datadir + "/ldpconf.json");
+    fillOptions(config, opt);
+    if (opt->command == "update")
+        opt->console = true;
 
-    if (evalopt(cargs, &opt) < 0)
-        throw runtime_error("unable to parse command line options");
-
-    if (cargs.argc < 2 || opt.command == "help") {
-        printf("%s", optionHelp);
-        return;
-    }
-
-    Config config(opt.datadir + "/ldpconf.json");
-    fillOptions(config, &opt);
-    if (opt.command == "update")
-        opt.console = true;
-
-    if (opt.command == "server") {
+    if (opt->command == "server") {
         do {
-            Timer timer(opt);
+            Timer timer(*opt);
             try {
-                runServer(opt);
+                runServer(*opt);
             } catch (runtime_error& e) {
                 string s = e.what();
                 if ( !(s.empty()) && s.back() == '\n' )
@@ -378,17 +368,33 @@ void run(const etymon::CommandArgs& cargs)
         return;
     }
 
-    if (opt.command == "update") {
-        runServer(opt);
+    if (opt->command == "update") {
+        runServer(*opt);
         return;
     }
 
-    if (opt.command == "upgrade-database") {
-        runServer(opt);
+    if (opt->command == "upgrade-database") {
+        runServer(*opt);
         return;
     }
 }
 
+void run(const etymon::CommandArgs& cargs)
+{
+    Options opt;
+
+    if (evalopt(cargs, &opt) < 0)
+        throw runtime_error("unable to parse command line options");
+
+    if (cargs.argc < 2 || opt.command == "help") {
+        printf("%s", optionHelp);
+        return;
+    }
+
+    run_opt(&opt);
+}
+
+/*
 static void sigint_handler(int signum)
 {
     // NOP
@@ -402,10 +408,11 @@ static void setup_signal_handlers()
     sa.sa_flags = SA_RESTART;
     sigaction(SIGINT, &sa, NULL);
 }
+*/
 
-int cli(int argc, char* argv[])
+int main_cli(int argc, char* const argv[])
 {
-    setup_signal_handlers();
+    //setup_signal_handlers();
     etymon::CommandArgs cargs(argc, argv);
     try {
         run(cargs);

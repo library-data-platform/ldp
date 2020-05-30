@@ -5,12 +5,13 @@
 #include "../etymoncpp/include/util.h"
 #include "log.h"
 
-Log::Log(etymon::odbc_conn* conn, Level level, bool console,
+Log::Log(etymon::odbc_conn* conn, Level level, bool console, bool quiet,
         const char* program)
 {
     this->conn = conn;
     this->level = level;
     this->console = console;
+    this->quiet = quiet;
     this->program = program;
     dbt = new DBType(conn);
 }
@@ -59,40 +60,44 @@ void Log::log(Level level, const char* type, const string& table,
     const char* levelStr;
     switch (level) {
     case Level::fatal:
-        fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
+        if (!quiet)
+            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
         levelStr = "fatal";
         break;
     case Level::error:
-        fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
+        if (!quiet)
+            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
         levelStr = "error";
         break;
     case Level::warning:
-        fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
+        if (!quiet)
+            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
         levelStr = "warning";
         break;
     case Level::info:
-        fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
+        if (!quiet)
+            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
         levelStr = "info";
         break;
     case Level::debug:
         if (this->level != Level::debug && this->level != Level::trace &&
                 this->level != Level::detail)
             return;
-        if (console)
+        if (console && !quiet)
             fprintf(stderr, "%s\n", printmsg.c_str());
         levelStr = "debug";
         break;
     case Level::trace:
         if (this->level != Level::trace && this->level != Level::detail)
             return;
-        if (console)
+        if (console && !quiet)
             fprintf(stderr, "%s\n", printmsg.c_str());
         levelStr = "trace";
         break;
     case Level::detail:
         if (this->level != Level::detail)
             return;
-        if (console)
+        if (console && !quiet)
             fprintf(stderr, "%s\n", printmsg.c_str());
         return;
     }

@@ -22,7 +22,7 @@ enum class Level {
 
 class Log {
 public:
-    Log(etymon::odbc_conn* conn, Level level, bool console,
+    Log(etymon::odbc_conn* conn, Level level, bool console, bool quiet,
             const char* program);
     ~Log();
     void log(Level level, const char* type, const string& table,
@@ -34,6 +34,7 @@ public:
 private:
     Level level;
     bool console = false;
+    bool quiet = false;
     etymon::odbc_conn* conn;
     DBType* dbt;
     string program;

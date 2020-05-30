@@ -112,10 +112,10 @@ static void evaloptlong(char *name, char *arg, Options* opt)
         opt->console = true;
         return;
     }
-    //if (!strcmp(name, "version")) {
-    //    opt->version = true;
-    //    return;
-    //}
+    if (!strcmp(name, "quiet")) {
+        opt->quiet = true;
+        return;
+    }
 }
 
 int evalopt(const etymon::CommandArgs& cargs, Options *opt)
@@ -135,7 +135,7 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
         { "unsafe",       no_argument,       NULL, 0   },
         //{ "nossl",     no_argument,       NULL, 0   },
         { "savetemps",    no_argument,       NULL, 0   },
-        //{ "version",   no_argument,       NULL, 0   },
+        { "quiet",        no_argument,       NULL, 0   },
         { 0,              0,                 0,    0   }
     };
     int g, x;

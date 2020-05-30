@@ -258,7 +258,7 @@ void select_config_general(etymon::odbc_conn* conn, Log* log,
     *enable_foreign_key_warnings = (s3 == "1");
 }
 
-void runUpdate(const Options& opt)
+void run_update(const Options& opt)
 {
     CURLcode cc;
     curl_global curl_env(CURL_GLOBAL_ALL, &cc);
@@ -270,7 +270,7 @@ void runUpdate(const Options& opt)
     etymon::odbc_env odbc;
 
     etymon::odbc_conn logDbc(&odbc, opt.db);
-    Log log(&logDbc, opt.logLevel, opt.console, opt.prog);
+    Log log(&logDbc, opt.logLevel, opt.console, opt.quiet, opt.prog);
 
     log.log(Level::debug, "server", "", "Starting full update", -1);
     Timer fullUpdateTimer(opt);
@@ -523,7 +523,7 @@ void runUpdate(const Options& opt)
 
 }
 
-void runUpdateProcess(const Options& opt)
+void run_update_process(const Options& opt)
 {
 #ifdef GPROF
     string updateDir = "./update-gprof";
@@ -531,7 +531,7 @@ void runUpdateProcess(const Options& opt)
     chdir(updateDir.c_str());
 #endif
     try {
-        runUpdate(opt);
+        run_update(opt);
         exit(0);
     } catch (runtime_error& e) {
         string s = e.what();
@@ -539,7 +539,7 @@ void runUpdateProcess(const Options& opt)
             s.pop_back();
         etymon::odbc_env odbc;
         etymon::odbc_conn logDbc(&odbc, opt.db);
-        Log log(&logDbc, opt.logLevel, opt.console, opt.prog);
+        Log log(&logDbc, opt.logLevel, opt.console, opt.quiet, opt.prog);
         log.log(Level::error, "server", "", s, -1);
         exit(1);
     }

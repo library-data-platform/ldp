@@ -63,6 +63,7 @@ public:
     bool debug = false;  // Deprecated.
     Level logLevel = Level::debug;
     bool console = false;
+    bool quiet = false;
     //bool version = false;
     size_t pageSize = 1000;
     int nargc = 0;

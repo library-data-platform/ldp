@@ -101,5 +101,21 @@ target_link_libraries(test_ldp
 	${FSLIB}
 	)
 
+add_executable(itest_ldp
+	$<TARGET_OBJECTS:ldp_obj>
+
+	main_itest.cpp
+	server_itest.cpp
+
+	)
+target_link_libraries(itest_ldp
+	${GPROFFLAG}
+	${CURL_LIBRARIES}
+	${ODBC_LIBRARY}
+	${PostgreSQL_LIBRARY}
+	${SQLite3_LIBRARY}
+	${FSLIB}
+	)
+
 INSTALL(PROGRAMS ldp DESTINATION /usr/local/bin)
 

@@ -2,7 +2,10 @@
 #define LDP_SERVER_H
 
 #include "../etymoncpp/include/util.h"
+#include "options.h"
 
-int cli(int argc, char* argv[]);
+int main_cli(int argc, char* const argv[]);
+
+void run_opt(Options* opt);
 
 #endif

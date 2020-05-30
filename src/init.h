@@ -16,7 +16,7 @@ typedef void (*database_upgrade_array)(database_upgrade_options* opt);
 
 void init_upgrade(etymon::odbc_env* odbc, const string& dbname,
         const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir, FILE* err, const char* prog);
+        const string& datadir, FILE* err, const char* prog, bool quiet);
 
 void catalog_add_table(etymon::odbc_conn* conn, const string& table);
 

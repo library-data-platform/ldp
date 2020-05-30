@@ -4,6 +4,6 @@
 
 int main(int argc, char* argv[])
 {
-    return cli(argc, argv);
+    return main_cli(argc, argv);
 }
 

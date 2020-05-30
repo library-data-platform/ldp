@@ -313,7 +313,7 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
 void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
         const string& ldpconfigUser, int64_t version,
         int64_t this_schema_version, const string& datadir, FILE* err,
-        const char* prog)
+        const char* prog, bool quiet)
 {
     if (version < 0 || version > this_schema_version)
         throw runtime_error(
@@ -361,11 +361,12 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
         fprintf(err, "%s: Database upgrade completed\n", prog);
         fprintf(err, "%s: ", prog);
         print_banner_line(err, '=', 74);
-        Log lg(conn, Level::info, false, prog);
+        Log lg(conn, Level::info, false, quiet, prog);
         lg.log(Level::info, "server", "", "Upgraded to database version: " +
                 to_string(this_schema_version), -1);
     } else {
-        fprintf(err, "%s: Database version is up to date\n", prog);
+        if (!quiet)
+            fprintf(err, "%s: Database version is up to date\n", prog);
     }
 }
 
@@ -388,7 +389,7 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
  */
 void init_upgrade(etymon::odbc_env* odbc, const string& dbname,
         const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir, FILE* err, const char* prog)
+        const string& datadir, FILE* err, const char* prog, bool quiet)
 {
     int64_t this_schema_version = 11;
 
@@ -400,7 +401,7 @@ void init_upgrade(etymon::odbc_env* odbc, const string& dbname,
     if (version_found)
         // Schema is present: check if it needs to be upgraded.
         upgrade_database(&conn, ldpUser, ldpconfigUser, version,
-                this_schema_version, datadir, err, prog);
+                this_schema_version, datadir, err, prog, quiet);
     else
         // Schema is not present: create it.
         init_database(&conn, ldpUser, ldpconfigUser, this_schema_version, err,
