@@ -5,7 +5,6 @@
 #include <string>
 
 #include "../etymoncpp/include/odbc.h"
-#include "schema.h"
 #include "dbtype.h"
 
 using namespace std;

@@ -626,7 +626,7 @@ static void createLoadingTable(const options& opt, Log* log,
     conn->execDirect(nullptr, sql);
 }
 
-void stageTable(const options& opt, Log* log, TableSchema* table,
+bool stageTable(const options& opt, Log* log, TableSchema* table,
         etymon::odbc_env* odbc, etymon::odbc_conn* conn, DBType* dbt,
         const string& loadDir)
 {
@@ -698,7 +698,12 @@ void stageTable(const options& opt, Log* log, TableSchema* table,
         if (pass == 1) {
             for (const auto& [field, counts] : stats) {
                 ColumnSchema column;
-                column.columnType = ColumnSchema::selectColumnType(counts);
+                bool ok =
+                    ColumnSchema::selectColumnType(log, table->tableName,
+                            table->sourcePath, field, counts,
+                            &column.columnType);
+                if (!ok)
+                    return false;
                 string typeStr;
                 ColumnSchema::columnTypeToString(column.columnType, &typeStr);
                 string newattr;
@@ -717,5 +722,6 @@ void stageTable(const options& opt, Log* log, TableSchema* table,
             indexLoadingTable(log, *table, conn, dbt);
     }
 
+    return true;
 }
 
