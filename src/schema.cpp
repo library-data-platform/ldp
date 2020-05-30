@@ -534,27 +534,52 @@ void ColumnSchema::columnTypeToString(ColumnType type, string* str)
     }
 }
 
-ColumnType ColumnSchema::selectColumnType(const Counts& counts)
+bool ColumnSchema::selectColumnType(Log* lg, const string& table,
+        const string& source_path, const string& field, const Counts& counts,
+        ColumnType* ctype)
 {
+    // Check for incompatible types.
+    if (counts.string > 0 && counts.number > 0) {
+        lg->log(Level::error, "", "",
+                "Inconsistent data types in source data:\n"
+                "    Table: " + table + "\n"
+                "    Source path: " + source_path + "\n"
+                "    Field: " + field + "\n"
+                "    Data types found: number, string\n"
+                "    Action: Table not updated",
+                -1);
+        return false;
+    }
+    // Select a type.
     if (counts.string > 0) {
         if (counts.string == counts.uuid) {
-            return ColumnType::id;
+            *ctype = ColumnType::id;
+            return true;
         } else {
-            if (counts.string == counts.dateTime)
-                return ColumnType::timestamptz;
-            else
-                return ColumnType::varchar;
+            if (counts.string == counts.dateTime) {
+                *ctype = ColumnType::timestamptz;
+                return true;
+            } else {
+                *ctype = ColumnType::varchar;
+                return true;
+            }
         }
     }
     if (counts.number > 0) {
-        if (counts.floating > 0)
-            return ColumnType::numeric;
-        else
-            return ColumnType::bigint;
+        if (counts.floating > 0) {
+            *ctype = ColumnType::numeric;
+            return true;
+        } else {
+            *ctype = ColumnType::bigint;
+            return true;
+        }
     }
-    if (counts.boolean > 0)
-        return ColumnType::boolean;
-    return ColumnType::varchar;
+    if (counts.boolean > 0) {
+        *ctype = ColumnType::boolean;
+        return true;
+    }
+    *ctype = ColumnType::varchar;
+    return true;
 }
 
 

@@ -76,20 +76,20 @@ size_t header_callback(char* buffer, size_t size, size_t nitems,
  * okapiPassword, and okapiTenant.
  * \param[out] token The authentication token received from Okapi.
  */
-void okapiLogin(const Options& opt, Log* lg, string* token)
+void okapiLogin(const options& opt, Log* lg, string* token)
 {
     Timer timer(opt);
 
     string login;
-    encodeLogin(opt.okapiUser, opt.okapiPassword, &login);
+    encodeLogin(opt.okapi_user, opt.okapi_password, &login);
 
-    string path = opt.okapiURL;
+    string path = opt.okapi_url;
     etymon::join(&path, "/authn/login");
 
     lg->log(Level::detail, "", "", "Retrieving: " + path, -1);
 
     string tenantHeader = "X-Okapi-Tenant: ";
-    tenantHeader += opt.okapiTenant;
+    tenantHeader += opt.okapi_tenant;
     string bodyData;
     string tokenData;
 
@@ -150,22 +150,22 @@ enum class PageStatus {
     containsRecords
 };
 
-static PageStatus retrieve(const Curl& c, const Options& opt, Log* lg,
+static PageStatus retrieve(const Curl& c, const options& opt, Log* lg,
         const string& token, const TableSchema& table, const string& loadDir,
         ExtractionFiles* extractionFiles, size_t page)
 {
     // TODO move timing code to calling function and re-enable
     //Timer timer(opt);
 
-    string path = opt.okapiURL;
+    string path = opt.okapi_url;
     etymon::join(&path, table.sourcePath);
 
     //path += "?offset=" + to_string(page * opt.pageSize) +
     //    "&limit=" + to_string(opt.pageSize) +
     //    "&query=cql.allRecords%3d1%20sortby%20id";
 
-    string query = "?offset=" + to_string(page * opt.pageSize) +
-        "&limit=" + to_string(opt.pageSize) +
+    string query = "?offset=" + to_string(page * opt.page_size) +
+        "&limit=" + to_string(opt.page_size) +
         "&query=cql.allRecords%3d1%20sortby%20id";
     path += query;
 
@@ -178,7 +178,7 @@ static PageStatus retrieve(const Curl& c, const Options& opt, Log* lg,
     output += "_" + to_string(page) + ".json";
 
     {
-        etymon::File f(output, "wb");
+        etymon::file f(output, "wb");
         extractionFiles->files.push_back(output);
 
         // testing
@@ -186,7 +186,7 @@ static PageStatus retrieve(const Curl& c, const Options& opt, Log* lg,
         //curl_easy_setopt(c.curl, CURLOPT_CONNECTTIMEOUT, 100000);
 
         curl_easy_setopt(c.curl, CURLOPT_URL, path.c_str());
-        curl_easy_setopt(c.curl, CURLOPT_WRITEDATA, f.file);
+        curl_easy_setopt(c.curl, CURLOPT_WRITEDATA, f.fp);
 
         lg->log(Level::detail, "", "",
                 "Retrieving from:\n"
@@ -228,13 +228,13 @@ static void writeCountFile(const string& loadDir, const string& tableName,
     string countFile = loadDir;
     etymon::join(&countFile, tableName);
     countFile += "_count.txt";
-    etymon::File f(countFile, "w");
+    etymon::file f(countFile, "w");
     extractionFiles->files.push_back(countFile);
     string pageStr = to_string(page) + "\n";
-    fputs(pageStr.c_str(), f.file);
+    fputs(pageStr.c_str(), f.fp);
 }
 
-bool retrievePages(const Curl& c, const Options& opt, Log* lg,
+bool retrievePages(const Curl& c, const options& opt, Log* lg,
         const string& token, const TableSchema& table, const string& loadDir,
         ExtractionFiles* extractionFiles)
 {
@@ -259,16 +259,16 @@ bool retrievePages(const Curl& c, const Options& opt, Log* lg,
     }
 }
 
-bool directOverride(const Options& opt, const string& tableName)
+bool directOverride(const options& opt, const string& tableName)
 {
-    for (auto& t : opt.direct.tableNames) {
+    for (auto& t : opt.direct.table_names) {
         if (t == tableName)
             return true;
     }
     return false;
 }
 
-bool retrieveDirect(const Options& opt, Log* lg, const TableSchema& table,
+bool retrieveDirect(const options& opt, Log* lg, const TableSchema& table,
         const string& loadDir, ExtractionFiles* extractionFiles)
 {
     lg->log(Level::trace, "", "",
@@ -280,11 +280,11 @@ bool retrieveDirect(const Options& opt, Log* lg, const TableSchema& table,
     }
 
     // Select jsonb from table.directSourceTable and write to JSON file.
-    etymon::Postgres db(opt.direct.databaseHost, opt.direct.databasePort,
-            opt.direct.databaseUser, opt.direct.databasePassword,
-            opt.direct.databaseName, "require");
+    etymon::Postgres db(opt.direct.database_host, opt.direct.database_port,
+            opt.direct.database_user, opt.direct.database_password,
+            opt.direct.database_name, "require");
     string sql = "SELECT jsonb FROM " +
-        opt.okapiTenant + "_" + table.directSourceTable + ";";
+        opt.okapi_tenant + "_" + table.directSourceTable + ";";
     lg->log(Level::detail, "", "", sql, -1);
 
     if (PQsendQuery(db.conn, sql.c_str()) == 0) {
@@ -296,10 +296,10 @@ bool retrieveDirect(const Options& opt, Log* lg, const TableSchema& table,
 
     string output = loadDir;
     etymon::join(&output, table.tableName + "_0.json");
-    etymon::File f(output, "w");
+    etymon::file f(output, "w");
     extractionFiles->files.push_back(output);
 
-    fprintf(f.file, "{\n  \"a\": [\n");
+    fprintf(f.fp, "{\n  \"a\": [\n");
 
     int row = 0;
     while (true) {
@@ -311,49 +311,18 @@ bool retrieveDirect(const Options& opt, Log* lg, const TableSchema& table,
         //if (j == nullptr)
         //    break;
         if (row > 0)
-            fprintf(f.file, ",\n");
-        fprintf(f.file, "%s\n", j);
+            fprintf(f.fp, ",\n");
+        fprintf(f.fp, "%s\n", j);
         row++;
     }
     if (row == 0)
         return false;
 
-    fprintf(f.file, "\n  ]\n}\n");
+    fprintf(f.fp, "\n  ]\n}\n");
 
     // Write 1 to count file.
     writeCountFile(loadDir, table.tableName, extractionFiles, 1);
 
     return true;
 }
-
-//void extract(const Options& opt, Schema* schema, const string& token,
-//        const string& loadDir, ExtractionFiles* extractionFiles)
-//{
-//    Curl c;
-//    if (c.curl) {
-
-//        string tenantHeader = "X-Okapi-Tenant: ";
-//        tenantHeader + opt.okapiTenant;
-
-//        string tokenHeader = "X-Okapi-Token: ";
-//        tokenHeader += token;
-
-//        c.headers = curl_slist_append(c.headers, tenantHeader.c_str());
-//        c.headers = curl_slist_append(c.headers, tokenHeader.c_str());
-//        c.headers = curl_slist_append(c.headers,
-//                "Accept: application/json,text/plain");
-//        curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
-
-//        print(Print::verbose, opt,
-//                "extracting data from source: " + opt.source);
-//        for (auto& table : schema->tables) {
-//            print(Print::verbose, opt, "extracting: " + table.sourcePath);
-//            bool foundData = directOverride(opt, table.sourcePath) ?
-//                retrieveDirect(opt, table, loadDir, extractionFiles) :
-//                retrievePages(c, opt, token, table, loadDir, extractionFiles);
-//            if (!foundData)
-//                table.skip = true;
-//        }
-//    }
-//}
 

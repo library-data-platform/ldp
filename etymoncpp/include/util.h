@@ -8,30 +8,30 @@ using namespace std;
 
 namespace etymon {
 
-class File {
+class file {
 public:
-    FILE* file;
-    File(const string& pathname, const char* mode);
-    ~File();
+    FILE* fp;
+    file(const string& pathname, const char* mode);
+    ~file();
 };
 
-class CommandArgs {
+class command_args {
 public:
     string command;
     int argc;
     char** argv;
-    CommandArgs(int argc, char* const argv[]);
-    ~CommandArgs();
+    command_args(int argc, char* const argv[]);
+    ~command_args();
 };
 
-bool fileExists(const string& filename);
+//bool fileExists(const string& filename);
 
 void join(string* s1, const string& s2);
 void trim(string* s);
-void toLower(string* s);
-void toUpper(string* s);
+void to_lower(string* s);
+void to_upper(string* s);
 void split(const string& str, char delim, vector<string>* v);
-void prefixLines(string* str, const char* prefix);
+void prefix_lines(string* str, const char* prefix);
 
 }
 

@@ -1,5 +1,4 @@
-#include <catch2/catch.hpp>
-
+#include "test.h"
 #include "camelcase.h"
 
 TEST_CASE( "Test decoding of camel case strings", "[camelcase]" ) {
@@ -30,7 +29,7 @@ TEST_CASE( "Test decoding of camel case strings", "[camelcase]" ) {
     for (auto& t : tests) {
         string s;
         decode_camel_case(t.first.c_str(), &s);
-        REQUIRE(s == t.second);
+        CHECK( s == t.second );
     }
 }
 

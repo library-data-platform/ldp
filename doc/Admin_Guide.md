@@ -168,7 +168,15 @@ unpacked directory.  Then:
 $ ./all.sh
 ```
 
-If this succeeds, the end of the output should include:
+The `all.sh` script builds three executables in `ldp/build/src/`:
+
+* `ldp`: the LDP software
+* `test_ldp`: self-contained unit tests
+* `itest_ldp`: integration tests
+
+The script also runs `test_ldp`.
+
+If there are no errors, the end of the output will include:
 
 ```shell
 All tests passed
@@ -177,9 +185,30 @@ All tests passed
 The compiled executable file `ldp` should appear in `ldp/build/src/`:
 
 ```shell
-$ cd build/src/
-$ ./ldp
+$ ./build/src/ldp
 ```
+
+### Running tests
+
+The unit tests can be run separately if needed:
+
+```shell
+$ ./build/src/test_ldp
+```
+
+Running the integration tests requires a FOLIO instance, as well as an
+empty LDP testbed instance with a spare PostgreSQL or Redshift
+database.  Any contents of the LDP testbed database will be destroyed
+by these tests; so please be careful.  The `environment` configuration
+setting for the LDP testbed instance should be defined as
+`development`, and the tests are run as:
+
+```shell
+$ ./build/src/itest_ldp -s -D <datadir>
+```
+
+where `<datadir>` is the data directory for the test database.  See
+below for an explanation of LDP data directories and configuration.
 
 
 4\. Database configuration
@@ -335,8 +364,9 @@ can be used as a template.
 __ldpconf.json__
 ```
 {
+    "environment": "production",
     "ldpDatabase": {
-        "odbcDatabase": "ldpdemo"
+        "odbcDatabase": "ldp"
     },
     "enableSources": ["myLibrary"],
     "sources": {
@@ -348,6 +378,7 @@ __ldpconf.json__
         }
     }
 }
+
 ```
 
 ### Starting the server
@@ -376,33 +407,15 @@ time of day using the table `ldpconfig.general`.  See the
 When installing a new version of LDP, the database should be
 "upgraded" before starting the new server:
 
-1. Confirm that the new version of LDP builds without errors.
+* First, confirm that the new version of LDP builds without errors in
+  the installation environment.
 
-2. Make a backup of the database.
+* Make a backup of the database.
 
-3. Stop the old version of the server.
+* Stop the old version of the server.
 
-4. Use the `upgrade-database` command in the new version of LDP to
-   perform the upgrade, e.g.:
-
-```shell
-$ ldp upgrade-database -D /var/lib/ldp
-```
-
-Do not interrupt this process.  Some schema changes use DDL statements
-that cannot be run within a transaction, and interrupting them may
-leave the database in an intermediate state.  For debugging purposes,
-database statements used to perform the upgrade are logged to the file
-`database_upgrade.sql` located in the data directory under `log/`.
-
-5. Start the new version of the server.
-
-<!--
-
-When upgrading to a new version of LDP, the database should be backed
-up and then "upgraded" before starting the server.
-
-To upgrade the database, use the `upgrade-database` command:
+* Use the `upgrade-database` command in the new version of LDP to
+  perform the upgrade, e.g.:
 
 ```shell
 $ ldp upgrade-database -D /var/lib/ldp
@@ -414,7 +427,7 @@ leave the database in an intermediate state.  For debugging purposes,
 database statements used to perform the upgrade are logged to the file
 `database_upgrade.sql` located in the data directory under `log/`.
 
--->
+* Start the new version of the server.
 
 
 6\. Direct extraction
@@ -489,6 +502,13 @@ Reference
 
 ### Configuration file: ldpconf.json
 
+* `environment` (string; required) is the deployment environment of
+  the LDP instance.  Supported values are `production` and
+`development`.  The `production` environment is recommended for all
+deployments.  The `development` environment allows unsafe operations
+that never should be run on a production instance, such as running
+integration tests on the instance, or updating from data in local
+files.
 * `ldpDatabase` (object; required) is a group of database-related
   settings.
   * `odbcDatabase` (string; required) is the ODBC "data source name"

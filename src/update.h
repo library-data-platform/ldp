@@ -7,6 +7,6 @@
 
 using namespace std;
 
-void runUpdateProcess(const Options& opt);
+void run_update_process(const options& opt);
 
 #endif

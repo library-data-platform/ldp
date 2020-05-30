@@ -4,7 +4,7 @@
 #include "names.h"
 #include "util.h"
 
-void mergeTable(const Options& opt, Log* log, const TableSchema& table,
+void mergeTable(const options& opt, Log* log, const TableSchema& table,
         etymon::odbc_env* odbc, etymon::odbc_conn* conn, const DBType& dbt)
 {
     // Update history tables.
@@ -53,7 +53,7 @@ void mergeTable(const Options& opt, Log* log, const TableSchema& table,
     conn->execDirect(nullptr, sql);
 }
 
-void dropTable(const Options& opt, Log* log, const string& tableName,
+void dropTable(const options& opt, Log* log, const string& tableName,
         etymon::odbc_conn* conn)
 {
     string sql = "DROP TABLE IF EXISTS " + tableName + ";";
@@ -61,7 +61,7 @@ void dropTable(const Options& opt, Log* log, const string& tableName,
     conn->execDirect(nullptr, sql);
 }
 
-void placeTable(const Options& opt, Log* log, const TableSchema& table,
+void placeTable(const options& opt, Log* log, const TableSchema& table,
         etymon::odbc_conn* conn)
 {
     string loadingTable;

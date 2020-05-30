@@ -53,7 +53,7 @@ add_library(ldp_obj OBJECT
 	../etymoncpp/src/util.cpp
 	anonymize.cpp
 	camelcase.cpp
-	config_json.cpp
+	config.cpp
 	dbtype.cpp
 	dbup1.cpp
 	extract.cpp
@@ -65,7 +65,7 @@ add_library(ldp_obj OBJECT
 	paging.cpp
 	schema.cpp
 	server.cpp
-	stage_json.cpp
+	stage.cpp
 	timer.cpp
 	update.cpp
 	util.cpp
@@ -93,6 +93,22 @@ add_executable(test_ldp
 
 	)
 target_link_libraries(test_ldp
+	${GPROFFLAG}
+	${CURL_LIBRARIES}
+	${ODBC_LIBRARY}
+	${PostgreSQL_LIBRARY}
+	${SQLite3_LIBRARY}
+	${FSLIB}
+	)
+
+add_executable(itest_ldp
+	$<TARGET_OBJECTS:ldp_obj>
+
+	main_itest.cpp
+	server_itest.cpp
+
+	)
+target_link_libraries(itest_ldp
 	${GPROFFLAG}
 	${CURL_LIBRARIES}
 	${ODBC_LIBRARY}

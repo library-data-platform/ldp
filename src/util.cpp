@@ -55,7 +55,7 @@ void print_banner_line(FILE* stream, char ch, int width)
 ////////////////////////////////////////////////////////////////////////////
 // Old error printing functions
 
-void print(Print level, const Options& opt, const string& str)
+void print(Print level, const options& opt, const string& str)
 {
     string s = str;
     etymon::trim(&s);
@@ -70,17 +70,17 @@ void print(Print level, const Options& opt, const string& str)
     //    fprintf(opt.err, "%s: %s\n", opt.prog, s.c_str());
     //    break;
     case Print::verbose:
-        if (opt.logLevel == Level::trace)
+        if (opt.log_level == Level::trace)
             fprintf(opt.err, "%s: %s\n", opt.prog, s.c_str());
         break;
     case Print::debug:
-        if (opt.logLevel == Level::trace)
+        if (opt.log_level == Level::trace)
             fprintf(opt.err, "%s: %s\n", opt.prog, s.c_str());
         break;
     }
 }
 
-void printSQL(Print level, const Options& opt, const string& sql)
+void printSQL(Print level, const options& opt, const string& sql)
 {
     print(level, opt, string("sql:\n") + sql);
 }

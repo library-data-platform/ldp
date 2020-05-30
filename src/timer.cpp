@@ -14,7 +14,7 @@ Timer::Timer()
 //    this->prog = prog;
 //}
 
-Timer::Timer(const Options& options)
+Timer::Timer(const options& options)
 {
     restart();
     err = options.err;

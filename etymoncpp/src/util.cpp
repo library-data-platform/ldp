@@ -8,21 +8,21 @@
 
 namespace etymon {
 
-File::File(const string& pathname, const char* mode)
+file::file(const string& pathname, const char* mode)
 {
-    file = fopen(pathname.c_str(), mode);
-    if (file == NULL)
+    fp = fopen(pathname.c_str(), mode);
+    if (fp == NULL)
         throw runtime_error("Error opening file: " + pathname + ": " +
                 string(strerror(errno)));
 }
 
-File::~File()
+file::~file()
 {
-    if (file)
-        fclose(file);
+    if (fp)
+        fclose(fp);
 }
 
-CommandArgs::CommandArgs(int argc, char* const argv[])
+command_args::command_args(int argc, char* const argv[])
 {
     this->argc = argc - 1;
     this->argv = (char**) malloc(sizeof(char*) * this->argc);
@@ -32,18 +32,18 @@ CommandArgs::CommandArgs(int argc, char* const argv[])
         this->argv[x - 1] = argv[x];
 }
 
-CommandArgs::~CommandArgs()
+command_args::~command_args()
 {
     free(argv);
 }
 
-bool fileExists(const string& filename) {
-    struct stat st;   
-    if (stat(filename.c_str(), &st) == 0)
-        return true;
-    else
-        return false;
-}
+//bool fileExists(const string& filename) {
+//    struct stat st;   
+//    if (stat(filename.c_str(), &st) == 0)
+//        return true;
+//    else
+//        return false;
+//}
 
 void join(string* s1, const string& s2)
 {
@@ -111,13 +111,13 @@ void trim(string* s)
     free(tmp);
 }
 
-void toLower(string* s)
+void to_lower(string* s)
 {
     for (char& c: *s)
         c = tolower(c);
 }
 
-void toUpper(string* s)
+void to_upper(string* s)
 {
     for (char& c: *s)
         c = toupper(c);
@@ -141,7 +141,7 @@ void split(const string& str, char delim, vector<string>* v)
     v->push_back(s);
 }
 
-void prefixLines(string* str, const char* prefix)
+void prefix_lines(string* str, const char* prefix)
 {
     trim(str);
     vector<string> v;

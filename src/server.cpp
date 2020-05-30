@@ -13,11 +13,10 @@
 
 #include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/postgres.h"
-#include "config_json.h"
+#include "config.h"
 #include "dbtype.h"
 #include "init.h"
 #include "log.h"
-#include "options.h"
 #include "timer.h"
 #include "update.h"
 #include "util.h"
@@ -34,20 +33,21 @@ static const char* optionHelp =
 "  update              - Run a full update and exit\n"
 "  help                - Display help information\n"
 "Options:\n"
-"  -D <path>           - Store data and configuration in directory <path>\n"
+"  -D <path>           - Use <path> as the data directory\n"
 "  --trace             - Enable detailed logging\n"
-"Development options:\n"
-"  --unsafe            - Enable functions used for development and testing\n"
+"  --quiet             - Reduce console output\n"
+"Development options (supported only for \"development\" environments):\n"
+//"  --unsafe            - Enable functions used for development and testing\n"
 "  --extract-only      - Extract data in the data directory, but do not\n"
-"                        update them in the database (unsafe)\n"
+"                        update them in the database\n"
 "  --savetemps         - Disable deletion of temporary files containing\n"
-"                        extracted data (unsafe)\n"
+"                        extracted data\n"
 "  --sourcedir <path>  - Update data from directory <path> instead of\n"
-"                        from source (unsafe)\n";
+"                        from source\n";
 
 void debugNoticeProcessor(void *arg, const char *message)
 {
-    const Options* opt = (const Options*) arg;
+    const options* opt = (const options*) arg;
     print(Print::debug, *opt,
             string("database response: ") + string(message));
 }
@@ -57,7 +57,7 @@ void debugNoticeProcessor(void *arg, const char *message)
 //    return nossl ? "disable" : "require";
 //}
 
-static void vacuumAnalyzeTable(const Options& opt, const TableSchema& table,
+static void vacuumAnalyzeTable(const options& opt, const TableSchema& table,
         etymon::Postgres* db)
 {
     string sql = "VACUUM " + table.tableName + ";\n";
@@ -69,7 +69,7 @@ static void vacuumAnalyzeTable(const Options& opt, const TableSchema& table,
     { etymon::PostgresResult result(db, sql); }
 }
 
-void vacuumAnalyzeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
+void vacuumAnalyzeAll(const options& opt, Schema* schema, etymon::Postgres* db)
 {
     print(Print::verbose, opt, "vacuum/analyze");
     for (auto& table : schema->tables) {
@@ -82,7 +82,7 @@ void vacuumAnalyzeAll(const Options& opt, Schema* schema, etymon::Postgres* db)
 // Check for obvious problems that could show up later in the loading
 // process.
 /*
-static void runPreloadTests(const Options& opt, etymon::odbc_env* odbc)
+static void runPreloadTests(const options& opt, etymon::odbc_env* odbc)
 {
     //print(Print::verbose, opt, "running pre-load checks");
 
@@ -115,7 +115,7 @@ static void runPreloadTests(const Options& opt, etymon::odbc_env* odbc)
  * \retval true The full update should be run as soon as possible.
  * \retval false The full update should not be run at this time.
  */
-bool timeForFullUpdate(const Options& opt, etymon::odbc_conn* conn, DBType* dbt,
+bool timeForFullUpdate(const options& opt, etymon::odbc_conn* conn, DBType* dbt,
         Log* log)
 {
     string sql =
@@ -151,7 +151,7 @@ bool timeForFullUpdate(const Options& opt, etymon::odbc_conn* conn, DBType* dbt,
  * \param[in] dbt
  * \param[in] log
  */
-void rescheduleNextDailyLoad(const Options& opt, etymon::odbc_conn* conn,
+void rescheduleNextDailyLoad(const options& opt, etymon::odbc_conn* conn,
         DBType* dbt, Log* log)
 {
     string updateInFuture;
@@ -184,28 +184,28 @@ void rescheduleNextDailyLoad(const Options& opt, etymon::odbc_conn* conn,
     } while (updateInFuture == "0");
 }
 
-void server(const Options& opt, etymon::odbc_env* odbc)
+void server(const options& opt, etymon::odbc_env* odbc)
 {
-    init_upgrade(odbc, opt.db, opt.ldpUser, opt.ldpconfigUser, opt.datadir,
-            opt.err, opt.prog);
-    if (opt.upgradeDatabase)
+    init_upgrade(odbc, opt.db, opt.ldp_user, opt.ldpconfig_user, opt.datadir,
+            opt.err, opt.prog, opt.quiet, opt.upgrade_database);
+    if (opt.upgrade_database)
         return;
 
     etymon::odbc_conn logConn(odbc, opt.db);
-    Log lg(&logConn, opt.logLevel, opt.console, opt.prog);
+    Log lg(&logConn, opt.log_level, opt.console, opt.quiet, opt.prog);
 
     lg.log(Level::info, "server", "",
-            string("Server started") + (opt.cliMode ? " (CLI mode)" : ""), -1);
+            string("Server started") + (opt.cli_mode ? " (CLI mode)" : ""), -1);
 
     etymon::odbc_conn conn(odbc, opt.db);
     DBType dbt(&conn);
 
     do {
-        if (opt.cliMode || timeForFullUpdate(opt, &conn, &dbt, &lg) ) {
+        if (opt.cli_mode || timeForFullUpdate(opt, &conn, &dbt, &lg) ) {
             rescheduleNextDailyLoad(opt, &conn, &dbt, &lg);
             pid_t pid = fork();
             if (pid == 0)
-                runUpdateProcess(opt);
+                run_update_process(opt);
             if (pid > 0) {
                 int stat;
                 waitpid(pid, &stat, 0);
@@ -221,15 +221,15 @@ void server(const Options& opt, etymon::odbc_env* odbc)
                 throw runtime_error("Error starting child process");
         }
 
-        if (!opt.cliMode)
+        if (!opt.cli_mode)
             std::this_thread::sleep_for(std::chrono::seconds(60));
-    } while (!opt.cliMode);
+    } while (!opt.cli_mode);
 
     lg.log(Level::info, "server", "",
-            string("Server stopped") + (opt.cliMode ? " (CLI mode)" : ""), -1);
+            string("Server stopped") + (opt.cli_mode ? " (CLI mode)" : ""), -1);
 }
 
-void runServer(const Options& opt)
+void runServer(const options& opt)
 {
     etymon::odbc_env odbc;
 
@@ -242,21 +242,21 @@ void runServer(const Options& opt)
     lockConn.execDirect(nullptr, sql);
 
     {
-        if (opt.logLevel == Level::trace || opt.logLevel == Level::detail)
+        if (opt.log_level == Level::trace || opt.log_level == Level::detail)
             fprintf(opt.err, "%s: Acquiring server lock\n", opt.prog);
 
         etymon::odbc_tx tx(&lockConn);
         sql = "LOCK ldpsystem.server_lock;";
         lockConn.execDirect(nullptr, sql);
 
-        if (opt.logLevel == Level::trace || opt.logLevel == Level::detail)
+        if (opt.log_level == Level::trace || opt.log_level == Level::detail)
             fprintf(opt.err, "%s: Initializing\n", opt.prog);
 
         server(opt, &odbc);
     }
 }
 
-void fillDirectOptions(const Config& config, const string& base, Options* opt)
+void fillDirectOptions(const Config& config, const string& base, options* opt)
 {
     int x = 0;
     string directTables = base + "directTables/";
@@ -264,47 +264,46 @@ void fillDirectOptions(const Config& config, const string& base, Options* opt)
         string t;
         if (!config.get(directTables + to_string(x), &t))
             break;
-        opt->direct.tableNames.push_back(t);
+        opt->direct.table_names.push_back(t);
         x++;
     }
-    config.get(base + "directDatabaseName", &(opt->direct.databaseName));
-    config.get(base + "directDatabaseHost", &(opt->direct.databaseHost));
+    config.get(base + "directDatabaseName", &(opt->direct.database_name));
+    config.get(base + "directDatabaseHost", &(opt->direct.database_host));
     int port = 0;
     config.getInt(base + "directDatabasePort", &port);
-    opt->direct.databasePort = to_string(port);
-    config.get(base + "directDatabaseUser", &(opt->direct.databaseUser));
+    opt->direct.database_port = to_string(port);
+    config.get(base + "directDatabaseUser", &(opt->direct.database_user));
     config.get(base + "directDatabasePassword",
-            &(opt->direct.databasePassword));
+            &(opt->direct.database_password));
 }
 
-//void checkForOldParameters(const Options& opt, const Config& config,
-//        const string& target)
-//{
-//    string s;
-//    if (!config.get(target + "ldpAdmin", &s) &&
-//            config.get(target + "databaseUser", &s))
-//        fprintf(opt.err, "\n"
-//                "The target configuration parameter \"databaseUser\" "
-//                "is no longer supported;\n"
-//                "it has been renamed to \"ldpAdmin\".\n"
-//                "Please make this change in your configuration file.\n\n");
-//    if (!config.get(target + "ldpAdminPassword", &s) &&
-//            config.get(target + "databasePassword", &s))
-//        fprintf(opt.err, "\n"
-//                "The target configuration parameter \"databasePassword\" "
-//                "is no longer supported;\n"
-//                "it has been renamed to \"ldpAdminPassword\".\n"
-//                "Please make this change in your configuration file.\n\n");
-//}
-
-void fillOptions(const Config& config, Options* opt)
+void fillOptions(const Config& config, options* opt)
 {
+    string environment;
+    ///////////////////////////////////////////////////////////////////////////
+    //config.getRequired("/environment", &environment);
+    ///////////////////////////////////////////////////////////////////////////
+    config.get("/environment", &environment);
+    if (environment == "") {
+        fprintf(stderr, "ldp: ");
+        print_banner_line(stderr, '=', 74);
+        fprintf(stderr,
+                "ldp: Warning: Deployment environment should be set in "
+                "ldpconf.json\n"
+                "ldp: Defaulting to: production\n");
+        fprintf(stderr, "ldp: ");
+        print_banner_line(stderr, '=', 74);
+        environment = "production";
+    }
+    ///////////////////////////////////////////////////////////////////////////
+    config_set_environment(environment, &(opt->environment));
+
     string target = "/ldpDatabase/";
     config.getRequired(target + "odbcDatabase", &(opt->db));
-    config.get(target + "ldpconfigUser", &(opt->ldpconfigUser));
-    config.get(target + "ldpUser", &(opt->ldpUser));
+    config.get(target + "ldpconfigUser", &(opt->ldpconfig_user));
+    config.get(target + "ldpUser", &(opt->ldp_user));
 
-    if (opt->loadFromDir == "") {
+    if (opt->load_from_dir == "") {
         string enableSource;
         config.getRequired("/enableSources/0", &enableSource);
         string secondSource;
@@ -316,46 +315,30 @@ void fillOptions(const Config& config, Options* opt)
                     "    Attribute: enableSources\n"
                     "    Value: " + secondSource);
         string source = "/sources/" + enableSource + "/";
-        config.getRequired(source + "okapiURL", &(opt->okapiURL));
-        config.getRequired(source + "okapiTenant", &(opt->okapiTenant));
-        config.getRequired(source + "okapiUser", &(opt->okapiUser));
-        config.getRequired(source + "okapiPassword", &(opt->okapiPassword));
-        //config.getRequired(source + "extractDir", &(opt->extractDir));
+        config.getRequired(source + "okapiURL", &(opt->okapi_url));
+        config.getRequired(source + "okapiTenant", &(opt->okapi_tenant));
+        config.getRequired(source + "okapiUser", &(opt->okapi_user));
+        config.getRequired(source + "okapiPassword", &(opt->okapi_password));
         fillDirectOptions(config, source, opt);
     }
 
-    //string disableAnonymization;
-    bool disableAnonymization;
-    config.getBool("/disableAnonymization", &disableAnonymization);
-    //if (disableAnonymization != "") {
-    //    etymon::toLower(&disableAnonymization);
-    //    opt->disableAnonymization = (disableAnonymization == "true");
-    //}
-    opt->disableAnonymization = disableAnonymization;
+    bool disable_anonymization;
+    config.getBool("/disableAnonymization", &disable_anonymization);
+    opt->disable_anonymization = disable_anonymization;
 }
 
-void run(const etymon::CommandArgs& cargs)
+void run_opt(options* opt)
 {
-    Options opt;
+    Config config(opt->datadir + "/ldpconf.json");
+    fillOptions(config, opt);
+    if (opt->command == "update")
+        opt->console = true;
 
-    if (evalopt(cargs, &opt) < 0)
-        throw runtime_error("unable to parse command line options");
-
-    if (cargs.argc < 2 || opt.command == "help") {
-        printf("%s", optionHelp);
-        return;
-    }
-
-    Config config(opt.datadir + "/ldpconf.json");
-    fillOptions(config, &opt);
-    if (opt.command == "update")
-        opt.console = true;
-
-    if (opt.command == "server") {
+    if (opt->command == "server") {
         do {
-            Timer timer(opt);
+            Timer timer(*opt);
             try {
-                runServer(opt);
+                runServer(*opt);
             } catch (runtime_error& e) {
                 string s = e.what();
                 if ( !(s.empty()) && s.back() == '\n' )
@@ -377,20 +360,35 @@ void run(const etymon::CommandArgs& cargs)
         return;
     }
 
-    if (opt.command == "update") {
-        runServer(opt);
+    if (opt->command == "update") {
+        runServer(*opt);
         return;
     }
 
-    if (opt.command == "upgrade-database") {
-        runServer(opt);
+    if (opt->command == "upgrade-database") {
+        runServer(*opt);
         return;
     }
 }
 
-int cli(int argc, char* argv[])
+void run(const etymon::command_args& cargs)
 {
-    etymon::CommandArgs cargs(argc, argv);
+    options opt;
+
+    if (evalopt(cargs, &opt) < 0)
+        throw runtime_error("unable to parse command line options");
+
+    if (cargs.argc < 2 || opt.command == "help") {
+        printf("%s", optionHelp);
+        return;
+    }
+
+    run_opt(&opt);
+}
+
+int main_cli(int argc, char* const argv[])
+{
+    etymon::command_args cargs(argc, argv);
     try {
         run(cargs);
     } catch (runtime_error& e) {

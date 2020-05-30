@@ -12,31 +12,21 @@
 #include "init.h"
 #include "log.h"
 #include "merge.h"
-#include "stage_json.h"
+#include "stage.h"
 #include "timer.h"
 #include "update.h"
 
 using namespace etymon;
 namespace fs = std::experimental::filesystem;
 
-void makeUpdateTmpDir(const Options& opt, string* loaddir)
+void makeUpdateTmpDir(const options& opt, string* loaddir)
 {
     fs::path datadir = opt.datadir;
     fs::path tmp = datadir / "tmp";
-    //fs::path tmppath = tmp / ("update_" + to_string(time(nullptr)));
     fs::path tmppath = tmp / "update";
     fs::remove_all(tmppath);
     fs::create_directories(tmppath);
     *loaddir = tmppath;
-
-    //*loaddir = opt.datadir;
-    //etymon::join(loaddir, "tmp");
-    //mkdir(loaddir->c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP |
-    //        S_IROTH | S_IXOTH);
-    //string filename = "tmp_ldp_" + to_string(time(nullptr));
-    //etymon::join(loaddir, filename);
-    //mkdir(loaddir->c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP |
-    //        S_IROTH | S_IXOTH);
 }
 
 bool is_foreign_key(etymon::odbc_conn* conn, Log* log,
@@ -258,7 +248,7 @@ void select_config_general(etymon::odbc_conn* conn, Log* log,
     *enable_foreign_key_warnings = (s3 == "1");
 }
 
-void runUpdate(const Options& opt)
+void run_update(const options& opt)
 {
     CURLcode cc;
     curl_global curl_env(CURL_GLOBAL_ALL, &cc);
@@ -270,16 +260,13 @@ void runUpdate(const Options& opt)
     etymon::odbc_env odbc;
 
     etymon::odbc_conn logDbc(&odbc, opt.db);
-    Log log(&logDbc, opt.logLevel, opt.console, opt.prog);
+    Log log(&logDbc, opt.log_level, opt.console, opt.quiet, opt.prog);
 
     log.log(Level::debug, "server", "", "Starting full update", -1);
     Timer fullUpdateTimer(opt);
 
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
-
-    //init_upgrade(&odbc, opt.db, opt.ldpUser, opt.ldpconfigUser, opt.datadir,
-    //        opt.err, opt.prog);
 
     ExtractionFiles extractionDir(opt);
 
@@ -291,11 +278,11 @@ void runUpdate(const Options& opt)
     //}
     string token, tenantHeader, tokenHeader;
 
-    if (opt.loadFromDir != "") {
+    if (opt.load_from_dir != "") {
         //if (opt.logLevel == Level::trace)
         //    fprintf(opt.err, "%s: Reading data from directory: %s\n",
         //            opt.prog, opt.loadFromDir.c_str());
-        loadDir = opt.loadFromDir;
+        loadDir = opt.load_from_dir;
     } else {
         log.log(Level::trace, "", "", "Logging in to Okapi service", -1);
 
@@ -305,7 +292,7 @@ void runUpdate(const Options& opt)
         extractionDir.dir = loadDir;
 
         tenantHeader = "X-Okapi-Tenant: ";
-        tenantHeader + opt.okapiTenant;
+        tenantHeader + opt.okapi_tenant;
         tokenHeader = "X-Okapi-Token: ";
         tokenHeader += token;
         c.headers = curl_slist_append(c.headers, tenantHeader.c_str());
@@ -334,7 +321,7 @@ void runUpdate(const Options& opt)
             continue;
 
         bool anonymizeTable = ( table.anonymize &&
-                (!opt.disableAnonymization ||
+                (!opt.disable_anonymization ||
                  ldpconfigDisableAnonymization != "1") );
 
         //printf("anonymize=%d\tfile_disable=%d\tdb_disable=%s\tA=%d\n",
@@ -351,7 +338,7 @@ void runUpdate(const Options& opt)
 
         ExtractionFiles extractionFiles(opt);
 
-        if (opt.loadFromDir == "") {
+        if (opt.load_from_dir == "") {
             log.log(Level::trace, "", "",
                     "Extracting: " + table.sourcePath, -1);
             bool foundData = directOverride(opt, table.tableName) ?
@@ -362,7 +349,7 @@ void runUpdate(const Options& opt)
                 table.skip = true;
         }
 
-        if (table.skip || opt.extractOnly)
+        if (table.skip || opt.extract_only)
             continue;
 
         etymon::odbc_conn conn(&odbc, opt.db);
@@ -374,7 +361,10 @@ void runUpdate(const Options& opt)
 
             log.log(Level::trace, "", "",
                     "Staging table: " + table.tableName, -1);
-            stageTable(opt, &log, &table, &odbc, &conn, &dbt, loadDir);
+            bool ok = stageTable(opt, &log, &table, &odbc, &conn, &dbt,
+                    loadDir);
+            if (!ok)
+                break;
 
             log.log(Level::trace, "", "",
                     "Merging table: " + table.tableName, -1);
@@ -523,7 +513,7 @@ void runUpdate(const Options& opt)
 
 }
 
-void runUpdateProcess(const Options& opt)
+void run_update_process(const options& opt)
 {
 #ifdef GPROF
     string updateDir = "./update-gprof";
@@ -531,7 +521,7 @@ void runUpdateProcess(const Options& opt)
     chdir(updateDir.c_str());
 #endif
     try {
-        runUpdate(opt);
+        run_update(opt);
         exit(0);
     } catch (runtime_error& e) {
         string s = e.what();
@@ -539,7 +529,7 @@ void runUpdateProcess(const Options& opt)
             s.pop_back();
         etymon::odbc_env odbc;
         etymon::odbc_conn logDbc(&odbc, opt.db);
-        Log log(&logDbc, opt.logLevel, opt.console, opt.prog);
+        Log log(&logDbc, opt.log_level, opt.console, opt.quiet, opt.prog);
         log.log(Level::error, "server", "", s, -1);
         exit(1);
     }

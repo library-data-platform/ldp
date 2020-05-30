@@ -1,6 +1,7 @@
 {
+    "environment": "production",
     "ldpDatabase": {
-        "odbcDatabase": "ldpdemo"
+        "odbcDatabase": "ldp"
     },
     "enableSources": ["myLibrary"],
     "sources": {

@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "log.h"
+
 using namespace std;
 
 enum class ColumnType {
@@ -33,7 +35,9 @@ public:
     ColumnType columnType;
     string sourceColumnName;
     static void columnTypeToString(ColumnType type, string* str);
-    static ColumnType selectColumnType(const Counts& counts);
+    static bool selectColumnType(Log* lg, const string& table,
+            const string& source_path, const string& field,
+            const Counts& counts, ColumnType* ctype);
 };
 
 enum class SourceType {

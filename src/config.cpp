@@ -1,5 +1,5 @@
 #include "../etymoncpp/include/util.h"
-#include "config_json.h"
+#include "config.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/pointer.h"
 #include "rapidjson/prettywriter.h"
@@ -21,9 +21,9 @@ Config::Config(const string& config)
             throw runtime_error("configuration file not specified");
     }
     // Load and parse JSON file.
-    etymon::File f(configFile, "r");
+    etymon::file f(configFile, "r");
     char readBuffer[65536];
-    json::FileReadStream is(f.file, readBuffer, sizeof(readBuffer));
+    json::FileReadStream is(f.fp, readBuffer, sizeof(readBuffer));
     jsondoc.ParseStream<pflags>(is);
 }
 
