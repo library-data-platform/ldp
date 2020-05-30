@@ -6,7 +6,7 @@
 #include "options.h"
 #include "err.h"
 
-static void validate(const Options& opt)
+static void validate(const options& opt)
 {
     if (opt.verbose) {
         fprintf(stderr, "ldp:    ---------------------------------------------"
@@ -44,11 +44,11 @@ static void validate(const Options& opt)
 
     //if (opt.nossl && !opt.unsafe)
     //    throw runtime_error("--nossl requires --unsafe");
-    if (opt.extractOnly && !opt.unsafe)
+    if (opt.extract_only && !opt.unsafe)
         throw runtime_error("--extract-only requires --unsafe");
     if (opt.savetemps && !opt.unsafe)
         throw runtime_error("--savetemps requires --unsafe");
-    if (opt.loadFromDir != "" && !opt.unsafe)
+    if (opt.load_from_dir != "" && !opt.unsafe)
         throw runtime_error("--sourcedir requires --unsafe");
     if (opt.table != "" && !opt.unsafe)
         throw runtime_error("--table requires --unsafe");
@@ -58,14 +58,14 @@ static void validate(const Options& opt)
     //            "--source and --sourcedir cannot both be specified");
 }
 
-static void evaloptlong(char *name, char *arg, Options* opt)
+static void evaloptlong(char *name, char *arg, options* opt)
 {
     if (!strcmp(name, "extract-only")) {
-        opt->extractOnly = true;
+        opt->extract_only = true;
         return;
     }
     if (!strcmp(name, "sourcedir")) {
-        opt->loadFromDir = arg;
+        opt->load_from_dir = arg;
         return;
     }
     if (!strcmp(name, "table")) {
@@ -101,11 +101,11 @@ static void evaloptlong(char *name, char *arg, Options* opt)
         return;
     }
     if (!strcmp(name, "trace")) {
-        opt->logLevel = Level::trace;
+        opt->log_level = Level::trace;
         return;
     }
     if (!strcmp(name, "detail")) {
-        opt->logLevel = Level::detail;
+        opt->log_level = Level::detail;
         return;
     }
     if (!strcmp(name, "console")) {
@@ -118,22 +118,18 @@ static void evaloptlong(char *name, char *arg, Options* opt)
     }
 }
 
-int evalopt(const etymon::CommandArgs& cargs, Options *opt)
+int evalopt(const etymon::CommandArgs& cargs, options *opt)
 {
     static struct option longopts[] = {
         { "extract-only", no_argument,       NULL, 0   },
         { "sourcedir",    required_argument, NULL, 0   },
         { "table",        required_argument, NULL, 0   },
-        //{ "source",    required_argument, NULL, 0   },
-        //{ "target",    required_argument, NULL, 0   },
-        //{ "config",    required_argument, NULL, 0   },
         { "verbose",      no_argument,       NULL, 'v' },
         { "debug",        no_argument,       NULL, 0   },
         { "trace",        no_argument,       NULL, 0   },
         { "detail",       no_argument,       NULL, 0   },
         { "console",      no_argument,       NULL, 0   },
         { "unsafe",       no_argument,       NULL, 0   },
-        //{ "nossl",     no_argument,       NULL, 0   },
         { "savetemps",    no_argument,       NULL, 0   },
         { "quiet",        no_argument,       NULL, 0   },
         { 0,              0,                 0,    0   }
@@ -144,9 +140,9 @@ int evalopt(const etymon::CommandArgs& cargs, Options *opt)
     if (opt->command == "load")
         opt->command = "update";
     if (opt->command != "server")
-        opt->cliMode = true;
+        opt->cli_mode = true;
     if (opt->command == "upgrade-database")
-        opt->upgradeDatabase = true;
+        opt->upgrade_database = true;
 
     while (1) {
         int longindex = 0;

@@ -6,6 +6,6 @@
 
 int main_cli(int argc, char* const argv[]);
 
-void run_opt(Options* opt);
+void run_opt(options* opt);
 
 #endif

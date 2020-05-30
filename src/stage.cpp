@@ -143,7 +143,7 @@ class JSONHandler :
     public json::BaseReaderHandler<json::UTF8<>, JSONHandler> {
 public:
     int pass;
-    const Options& opt;
+    const options& opt;
     Log* log;
     int level = 0;
     bool active = false;
@@ -157,7 +157,7 @@ public:
     size_t recordCount = 0;
     size_t totalRecordCount = 0;
     string insertBuffer;
-    JSONHandler(int pass, const Options& options, Log* log,
+    JSONHandler(int pass, const options& options, Log* log,
             const TableSchema& table, etymon::odbc_conn* conn,
             const DBType& dbt, map<string,Counts>* statistics) :
         pass(pass), opt(options), log(log), tableSchema(table),
@@ -196,7 +196,7 @@ static void beginInserts(const string& table, string* buffer)
     *buffer = "INSERT INTO " + loadingTable + " VALUES ";
 }
 
-static void endInserts(const Options& opt, Log* log, const string& table,
+static void endInserts(const options& opt, Log* log, const string& table,
         string* buffer, etymon::odbc_conn* conn)
 {
     *buffer += ";\n";
@@ -205,7 +205,7 @@ static void endInserts(const Options& opt, Log* log, const string& table,
     buffer->clear();
 }
 
-static void writeTuple(const Options& opt, Log* log, const DBType& dbt,
+static void writeTuple(const options& opt, Log* log, const DBType& dbt,
         const TableSchema& table, const json::Document& doc,
         size_t* recordCount, size_t* totalRecordCount, string* insertBuffer)
 {
@@ -498,7 +498,7 @@ bool JSONHandler::Null()
     return true;
 }
 
-size_t readPageCount(const Options& opt, Log* log, const string& loadDir,
+size_t readPageCount(const options& opt, Log* log, const string& loadDir,
         const string& tableName)
 {
     string filename = loadDir;
@@ -516,7 +516,7 @@ size_t readPageCount(const Options& opt, Log* log, const string& loadDir,
     return count;
 }
 
-static void stagePage(const Options& opt, Log* log, int pass,
+static void stagePage(const options& opt, Log* log, int pass,
         const TableSchema& tableSchema, etymon::odbc_env* odbc,
         etymon::odbc_conn* conn, const DBType &dbt, map<string,Counts>* stats,
         const string& filename, char* readBuffer, size_t readBufferSize)
@@ -564,7 +564,7 @@ static void indexLoadingTable(Log* log, const TableSchema& table,
     }
 }
 
-static void createLoadingTable(const Options& opt, Log* log,
+static void createLoadingTable(const options& opt, Log* log,
         const TableSchema& table, etymon::odbc_env* odbc, etymon::odbc_conn* conn,
         const DBType& dbt)
 {
@@ -613,18 +613,18 @@ static void createLoadingTable(const Options& opt, Log* log,
 
     sql =
         "GRANT SELECT ON " + loadingTable + "\n"
-        "    TO " + opt.ldpconfigUser + ";";
+        "    TO " + opt.ldpconfig_user + ";";
     log->logDetail(sql);
     conn->execDirect(nullptr, sql);
 
     sql =
         "GRANT SELECT ON " + loadingTable + "\n"
-        "    TO " + opt.ldpUser + ";";
+        "    TO " + opt.ldp_user + ";";
     log->logDetail(sql);
     conn->execDirect(nullptr, sql);
 }
 
-void stageTable(const Options& opt, Log* log, TableSchema* table,
+void stageTable(const options& opt, Log* log, TableSchema* table,
         etymon::odbc_env* odbc, etymon::odbc_conn* conn, DBType* dbt,
         const string& loadDir)
 {
@@ -659,7 +659,7 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
                     readBuffer, sizeof readBuffer);
         }
 
-        if (opt.loadFromDir != "") {
+        if (opt.load_from_dir != "") {
             string path;
             composeDataFilePath(loadDir, *table, "_test.json", &path);
             if (etymon::fileExists(path)) {
@@ -716,16 +716,4 @@ void stageTable(const Options& opt, Log* log, TableSchema* table,
     }
 
 }
-
-//void stageAll(const Options& opt, Schema* schema, etymon::Postgres* db,
-//        const string& loadDir)
-//{
-//    print(Print::verbose, opt, "staging in target: " + opt.target);
-//    for (auto& table : schema->tables) {
-//        if (table.skip)
-//            continue;
-//        print(Print::verbose, opt, "staging table: " + table.tableName);
-//        stageTable(opt, &table, db, loadDir);
-//    }
-//}
 

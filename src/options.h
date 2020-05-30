@@ -9,40 +9,40 @@
 
 using namespace std;
 
-class DirectExtraction {
+class direct_extraction {
 public:
-    vector<string> tableNames;
-    string databaseName;
-    string databaseHost;
-    string databasePort;
-    string databaseUser;
-    string databasePassword;
+    vector<string> table_names;
+    string database_name;
+    string database_host;
+    string database_port;
+    string database_user;
+    string database_password;
 };
 
-class Options {
+class options {
 public:
     string command;
-    bool cliMode = false;
-    bool upgradeDatabase = false;
+    bool cli_mode = false;
+    bool upgrade_database = false;
     string datadir;
-    bool extractOnly = false;
-    string loadFromDir;
+    bool extract_only = false;
+    string load_from_dir;
     string source;
-    string okapiURL;
-    string okapiTenant;
-    string okapiUser;
-    string okapiPassword;
+    string okapi_url;
+    string okapi_tenant;
+    string okapi_user;
+    string okapi_password;
     //string extractDir;
-    DirectExtraction direct;
+    direct_extraction direct;
     string db;
     // Temporary
     string target = "(ldp database)";
-    string databaseName = "ldpdev";
-    string databaseType = "postgresql";
-    string databaseHost = "localhost";
-    string databasePort = "5432";
-    string ldpAdmin = "ldpadmin";
-    string ldpAdminPassword = "nassargres";
+    string database_name = "ldpdev";
+    string database_type = "postgresql";
+    string database_host = "localhost";
+    string database_port = "5432";
+    string ldp_admin = "ldpadmin";
+    string ldp_admin_password = "nassargres";
     //string target;
     //string databaseName;
     //string databaseType;
@@ -50,28 +50,28 @@ public:
     //string databasePort;
     //string ldpAdmin;
     //string ldpAdminPassword;
-    string ldpUser = "ldp";
-    string ldpconfigUser = "ldpconfig";
+    string ldp_user = "ldp";
+    string ldpconfig_user = "ldpconfig";
     //DBType dbtype;
     bool unsafe = false;
     string table;
     //bool nossl = false;
-    bool disableAnonymization;
+    bool disable_anonymization;
     bool savetemps = false;
     FILE* err = stderr;
     bool verbose = false;  // Deprecated.
     bool debug = false;  // Deprecated.
-    Level logLevel = Level::debug;
+    Level log_level = Level::debug;
     bool console = false;
     bool quiet = false;
     //bool version = false;
-    size_t pageSize = 1000;
+    size_t page_size = 1000;
     int nargc = 0;
     char **nargv = nullptr;
     const char* prog = "ldp";
 };
 
-int evalopt(const etymon::CommandArgs& cargs, Options* opt);
-void debugOptions(const Options& o);
+int evalopt(const etymon::CommandArgs& cargs, options* opt);
+void debug_options(const options& o);
 
 #endif

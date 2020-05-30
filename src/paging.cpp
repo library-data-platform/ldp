@@ -26,8 +26,8 @@ class PagingJSONHandler :
 public:
     int level = 0;
     bool foundRecord = false;
-    const Options& opt;
-    PagingJSONHandler(const Options& options) : opt(options) { }
+    const options& opt;
+    PagingJSONHandler(const options& options) : opt(options) { }
     bool StartObject();
     bool EndObject(json::SizeType memberCount);
     bool StartArray();
@@ -117,7 +117,7 @@ bool PagingJSONHandler::Null()
     return true;
 }
 
-bool pageIsEmpty(const Options& opt, const string& filename)
+bool pageIsEmpty(const options& opt, const string& filename)
 {
     PagingJSONHandler handler(opt);
     json::Reader reader;

@@ -6,8 +6,8 @@
 namespace fs = std::experimental::filesystem;
 
 TEST_CASE( "Test update", "[update]" ) {
-    Options opt;
-    opt.cliMode = true;
+    options opt;
+    opt.cli_mode = true;
     opt.quiet = true;
     opt.command = "update";
     opt.datadir = datadir.data();
@@ -19,8 +19,8 @@ TEST_CASE( "Test update", "[update]" ) {
 }
 
 TEST_CASE( "Test update with savetemps", "[update]" ) {
-    Options opt;
-    opt.cliMode = true;
+    options opt;
+    opt.cli_mode = true;
     opt.quiet = true;
     opt.command = "update";
     opt.datadir = datadir.data();
