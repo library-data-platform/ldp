@@ -168,13 +168,13 @@ unpacked directory.  Then:
 $ ./all.sh
 ```
 
-The `all.sh` script builds three executables in `ldp/build/src/`:
+The `all.sh` script builds three executables in `build/`:
 
-* `ldp`: the LDP software
-* `test_ldp`: self-contained unit tests
-* `itest_ldp`: integration tests
+* `ldp` is the LDP software.
+* `test_ldp` runs self-contained unit tests.
+* `test_int_ldp` runs integration tests.
 
-The script also runs `test_ldp`.
+After building these executables, the script also runs `test_ldp`.
 
 If there are no errors, the end of the output will include:
 
@@ -182,29 +182,30 @@ If there are no errors, the end of the output will include:
 All tests passed
 ```
 
-The compiled executable file `ldp` should appear in `ldp/build/src/`:
+To run the LDP software:
 
 ```shell
-$ ./build/src/ldp
+$ ./build/ldp
 ```
 
 ### Running tests
 
-The unit tests can be run separately if needed:
+As mentioned above, the `all.sh` script runs the unit tests, but they
+can be run separately if needed:
 
 ```shell
-$ ./build/src/test_ldp
+$ ./build/test_ldp
 ```
 
 Running the integration tests requires a FOLIO instance, as well as an
-empty LDP testbed instance with a spare PostgreSQL or Redshift
-database.  Any contents of the LDP testbed database will be destroyed
-by these tests; so please be careful.  The `environment` configuration
-setting for the LDP testbed instance should be defined as
-`development`, and the tests are run as:
+LDP testbed instance with a PostgreSQL or Redshift database.  Any
+contents of the database will be destroyed by these tests; so please
+be careful.  The `environment` configuration setting for the LDP
+testbed instance should be defined as `development`, and the tests are
+run as:
 
 ```shell
-$ ./build/src/itest_ldp -s -D <datadir>
+$ ./build/test_int_ldp -s -D <datadir>
 ```
 
 where `<datadir>` is the data directory for the test database.  See
