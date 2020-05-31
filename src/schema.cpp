@@ -546,7 +546,7 @@ bool ColumnSchema::selectColumnType(Log* lg, const string& table,
                 "    Source path: " + source_path + "\n"
                 "    Field: " + field + "\n"
                 "    Data types found: number, string\n"
-                "    Action: Table not updated",
+                "    Action: Table update canceled",
                 -1);
         return false;
     }

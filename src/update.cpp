@@ -364,7 +364,7 @@ void run_update(const options& opt)
             bool ok = stageTable(opt, &log, &table, &odbc, &conn, &dbt,
                     loadDir);
             if (!ok)
-                break;
+                continue;
 
             log.log(Level::trace, "", "",
                     "Merging table: " + table.tableName, -1);
