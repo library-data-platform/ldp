@@ -174,6 +174,8 @@ The `all.sh` script builds three executables in `build/`:
 * `test_ldp` is self-contained unit tests.
 * `test_int_ldp` is integration tests.
 
+The script also runs `test_ldp`.
+
 If there are no errors, the end of the output will include:
 
 ```shell
@@ -188,8 +190,8 @@ $ ./build/ldp
 
 ### Running tests
 
-The `all.sh` script runs the unit tests, but they can be run
-separately if needed:
+As mentioned above, the `all.sh` script runs the unit tests, but they
+can be run separately if needed:
 
 ```shell
 $ ./build/test_ldp

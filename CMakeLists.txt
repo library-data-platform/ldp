@@ -113,8 +113,8 @@ target_link_libraries(test_ldp
 add_executable(test_int_ldp
 	$<TARGET_OBJECTS:ldp_obj>
 
-	itest/main_itest.cpp
-	itest/server_itest.cpp
+	test_int/main_test_int.cpp
+	test_int/server_test_int.cpp
 
 	)
 target_link_libraries(test_int_ldp
