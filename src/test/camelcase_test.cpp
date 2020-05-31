@@ -1,5 +1,5 @@
-#include "test.h"
-#include "camelcase.h"
+#include "../test.h"
+#include "../camelcase.h"
 
 TEST_CASE( "Test decoding of camel case strings", "[camelcase]" ) {
     vector<pair<string, string>> tests = {

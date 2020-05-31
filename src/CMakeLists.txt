@@ -88,8 +88,8 @@ target_link_libraries(ldp
 add_executable(test_ldp
 	$<TARGET_OBJECTS:ldp_obj>
 
-	camelcase_test.cpp
-	main_test.cpp
+	test/camelcase_test.cpp
+	test/main_test.cpp
 
 	)
 target_link_libraries(test_ldp
@@ -104,8 +104,8 @@ target_link_libraries(test_ldp
 add_executable(itest_ldp
 	$<TARGET_OBJECTS:ldp_obj>
 
-	main_itest.cpp
-	server_itest.cpp
+	itest/main_itest.cpp
+	itest/server_itest.cpp
 
 	)
 target_link_libraries(itest_ldp

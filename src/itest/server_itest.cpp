@@ -1,8 +1,8 @@
 #include <experimental/filesystem>
 
-#include "../etymoncpp/include/util.h"
-#include "server.h"
-#include "test.h"
+#include "../../etymoncpp/include/util.h"
+#include "../server.h"
+#include "../test.h"
 
 namespace fs = std::experimental::filesystem;
 
