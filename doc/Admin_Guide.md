@@ -218,10 +218,10 @@ configuration setting for the LDP testbed instance should be defined
 as `testing`, and the tests are run as:
 
 ```shell
-$ ./build/test_int_ldp -s -D <datadir>
+$ ./build/test_int_ldp -s -D DATADIR
 ```
 
-where `<datadir>` is the data directory for the test database.  See
+where `DATADIR` is the data directory for the test database.  See
 below for an explanation of LDP data directories and configuration.
 
 
@@ -421,30 +421,31 @@ time of day using the table `ldpconfig.general`.  See the
 When installing a new version of LDP, the database should be
 "upgraded" before starting the new server:
 
-* First, confirm that the new version of LDP builds without errors in
-  the installation environment.
+1. First, confirm that the new version of LDP builds without errors in
+   the installation environment.
 
-* Make a backup of the database.
+2. Make a backup of the database.
 
-* Stop the old version of the server.
+3. Stop the old version of the server.
 
-* Use the `upgrade-database` command in the new version of LDP to
-  perform the upgrade, e.g.:
+4. Use the `upgrade-database` command in the new version of LDP to
+   perform the upgrade, e.g.:
 
 ```shell
 $ ldp upgrade-database -D /var/lib/ldp
 ```
 
-Do not interrupt this process.  Some schema changes use DDL statements
-that cannot be run within a transaction, and interrupting them may
-leave the database in an intermediate state.  For debugging purposes,
-database statements used to perform the upgrade are logged to the file
-`database_upgrade.sql` located in the data directory under `log/`.
-
-* Start the new version of the server.
+5. Start the new version of the server.
 
 For automated deployment, the `upgrade-database` command can be run
 after `git pull`, whether or not any new changes were pulled.
+
+Do not interrupt the database upgrade process.  Some schema changes
+use DDL statements that cannot be run within a transaction, and
+interrupting them may leave the database in an intermediate state.
+For debugging purposes, database statements used to perform the
+upgrade are logged to the file `database_upgrade.sql` located in the
+data directory under `log/`.
 
 
 6\. Direct extraction
