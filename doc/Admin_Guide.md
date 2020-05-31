@@ -99,9 +99,9 @@ there are three kinds of branches that are relatively the most stable:
 example, `1.2-release` would point to the latest release of major
 version 1.2, such as 1.2.5.  These release branches are the most
 stable in the source repository.
-* Master branch (`master`):  This is the branch that new releases are
-  made from.  It contains recently added features that have had some
-testing.  It is less stable than release branches.
+* Master branch (`master`):  This is the branch that new major version
+  releases are made from.  It contains recently added features that
+have had some testing.  It is less stable than release branches.
 * Current branch (`current`):  This is for active development and
   tends to be unstable.  This is where new features are first added,
 before they are merged to the master branch.
@@ -111,7 +111,7 @@ LDP, two approaches might be suggested:
 
 * For a production or staging environment, it is safest to pull from a
   specific release branch, for example, `1.7-release`, which would
-mean that only bug fixes for the 1.7 release would be applied
+mean that only bug fixes for major version 1.7 would be applied
 automatically.
 * For a testing environment, which might be used to test new features
   not yet released, the latest version can be pulled from the `master`
@@ -283,9 +283,9 @@ guide.  In the following examples we will assume that the default user
 names are being used, but please substitute alternative names if you
 have configured them.
 
-In addition to creating these users, it is a good idea to restrict
-access permissions.  In PostgreSQL, this can be done on the command
-line, for example:
+In addition to creating these users, a few access permissions should
+be set.  In PostgreSQL, this can be done on the command line, for
+example:
 
 ```shell
 $ createuser ldpadmin --username=<admin_user> --pwprompt
