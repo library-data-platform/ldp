@@ -48,7 +48,6 @@ LDP instance.
   * [libpq](https://www.postgresql.org/) 11.5 or later
   * [libcurl](https://curl.haxx.se/) 7.64.0 or later
   * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
-  * [SQLite](https://sqlite.org/) 3.22.0 or later
 * Required to build from source code:
   * C++ compilers supported:
     * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
@@ -82,12 +81,11 @@ also can be increased as needed.
 ### Releases and branches
 
 LDP releases use version numbers in the form, _a_._b_._c_, where
-_a_._b_ is the release number and _c_ indicates a bug fix version.
-For example, suppose that LDP 1.3 has been released.  The first
-version of the 1.3 release will be 1.3.0.  Any subsequent versions
-with the same release number, for example, 1.3.1 or 1.3.2, will
-generally contain no new features but only bug fixes.  (This practice
-is less strictly observed in pre-releases prior to 0.9.)
+_a_._b_ is the major version and _c_ > 0 indicates a bug fix version.
+Suppose that LDP 1.3.0 has been released.  Any subsequent versions
+with the same major version number (1.3), for example, 1.3.1 or 1.3.2,
+will generally contain no new features but only bug fixes.  (This
+practice is less strictly observed in releases prior to 0.9.0.)
 
 Stable versions of LDP are available via the release branches
 described below and from the [releases
@@ -96,10 +94,11 @@ page](https://github.com/folio-org/ldp/releases).
 Within the [source code repository](https://github.com/folio-org/ldp)
 there are three kinds of branches that are relatively the most stable:
 
-* Release branches (`*-release`):  Beginning with LDP 0.9, a numbered
-  branch will be created for each release.  For example, `1.2-release`
-would point to the latest version of LDP 1.2, e.g. 1.2.5.  These
-release branches are the most stable in the source repository.
+* Release branches (`*-release`):  Beginning with LDP 0.9.0, a
+  numbered branch will be created for each major version.  For
+example, `1.2-release` would point to the latest release of major
+version 1.2, such as 1.2.5.  These release branches are the most
+stable in the source repository.
 * Master branch (`master`):  This is the branch that new releases are
   made from.  It contains recently added features that have had some
 testing.  It is less stable than release branches.
@@ -107,15 +106,15 @@ testing.  It is less stable than release branches.
   tends to be unstable.  This is where new features are first added,
 before they are merged to the master branch.
 
-If automation will be used for deploying new versions of LDP, two
-approaches might be suggested:
+If automated deployment will be used for upgrading to new versions of
+LDP, two approaches might be suggested:
 
 * For a production or staging environment, it is safest to pull from a
   specific release branch, for example, `1.7-release`, which would
 mean that only bug fixes for the 1.7 release would be applied
 automatically.
-* For a testing environment, which could be used to test new features
-  not yet released, the deployment would pull from the `master`
+* For a testing environment, which might be used to test new features
+  not yet released, the latest version can be pulled from the `master`
 branch.
 
 ### Installing software dependencies
@@ -127,8 +126,7 @@ a package manager on some platforms.
 
 ```shell
 $ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
-      postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev \
-      libsqlite3-dev
+      postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
@@ -144,7 +142,7 @@ source](https://github.com/catchorg/Catch2/blob/master/docs/cmake-integration.md
 
 ```shell
 $ sudo dnf install catch-devel cmake gcc-c++ libcurl-devel libpq-devel make \
-      postgresql-server-devel sqlite-devel unixODBC-devel
+      postgresql-server-devel unixODBC-devel
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
@@ -271,16 +269,16 @@ Three database users are required:
   settings in the `ldpconfig` schema.  It is intended to enable
 designated users to make changes to the server's operation, such as
 scheduling when data updates occur.  This user name can be modified
-using the `ldpconfigUser` configuration setting in `ldpconf.json`.
+using the `ldpconfig_user` configuration setting in `ldpconf.json`.
 * `ldp` is a general user of the LDP database.  This user name can be
-  modified using the `ldpUser` configuration setting in
+  modified using the `ldp_user` configuration setting in
 `ldpconf.json`.
 
 If more than one LDP instance will be hosted with a single database
 server, the `ldpconfig` and `ldp` user names should for security
 reasons be configured to be different for each LDP instance.  This is
-done by including within `ldpconf.json` the `ldpconfigUser` and
-`ldpUser` settings described below in the "Reference" section of this
+done by including within `ldpconf.json` the `ldpconfig_user` and
+`ldp_user` settings described below in the "Reference" section of this
 guide.  In the following examples we will assume that the default user
 names are being used, but please substitute alternative names if you
 have configured them.
@@ -340,7 +338,7 @@ FileUsage = 1
 
 __odbc.ini__
 ```
-[ldpdemo]
+[ldp]
 Description = ldp
 Driver = PostgreSQL
 Database = ldp
@@ -379,20 +377,19 @@ __ldpconf.json__
 ```
 {
     "environment": "production",
-    "ldpDatabase": {
-        "odbcDatabase": "ldp"
+    "ldp_database": {
+        "odbc_database": "ldp"
     },
-    "enableSources": ["myLibrary"],
+    "enable_sources": ["my_library"],
     "sources": {
-        "myLibrary": {
-            "okapiURL": "https://folio-release-okapi.aws.indexdata.com",
-            "okapiTenant": "diku",
-            "okapiUser": "diku_admin",
-            "okapiPassword": "(Okapi password here)"
+        "my_library": {
+            "okapi_url": "https://folio-release-okapi.aws.indexdata.com",
+            "okapi_tenant": "diku",
+            "okapi_user": "diku_admin",
+            "okapi_password": "(okapi password here)"
         }
     }
 }
-
 ```
 
 ### Starting the server
@@ -471,20 +468,20 @@ example:
     ( . . . )
 
     "sources": {
-        "okapi": {
+        "my_library": {
 
             ( . . . )
 
-	    "directTables": [
+	    "direct_tables": [
 	        "inventory_holdings",
 		"inventory_instances",
 		"inventory_items"
             ],
-            "directDatabaseName": "okapi",
-            "directDatabaseHost": "database.indexdata.com",
-            "directDatabasePort": 5432,
-            "directDatabaseUser": "folio_admin",
-            "directDatabasePassword": "(database password here)"
+            "direct_database_name": "okapi",
+            "direct_database_host": "database.indexdata.com",
+            "direct_database_port": 5432,
+            "direct_database_user": "folio_admin",
+            "direct_database_password": "(database password here)"
         }
     }
 }
@@ -504,7 +501,7 @@ from other tables.  This anonymization process is enabled unless LDP
 is otherwise configured.
 
 If it should be necessary to disable anonymization, this can be done
-by setting `disableAnonymization` to `true` in `ldpconf.json`, and by
+by setting `disable_anonymization` to `true` in `ldpconf.json`, and by
 setting `disable_anonymization` to `TRUE` in the table
 `ldpconfig.general`.  Both are required to be set in order to disable
 anonymization.
@@ -524,15 +521,15 @@ Reference
   the LDP instance.  Supported values are `production`, `staging`,
 `testing`, and `development`.  This setting is used to determine
 whether certain operations should be allowed to run on the instance.
-* `ldpDatabase` (object; required) is a group of database-related
+* `ldp_database` (object; required) is a group of database-related
   settings.
-  * `odbcDatabase` (string; required) is the ODBC "data source name"
+  * `odbc_database` (string; required) is the ODBC "data source name"
     of the LDP database.
-  * `ldpconfigUser` (string; optional) is the database user that is
+  * `ldpconfig_user` (string; optional) is the database user that is
     defined by default as `ldpconfig`.
-  * `ldpUser` (string; optional) is the database user that is defined
+  * `ldp_user` (string; optional) is the database user that is defined
     by default as `ldp`.
-* `enableSources` (array; required) is a list of sources that are
+* `enable_sources` (array; required) is a list of sources that are
   enabled for the LDP to extract data from.  The source names refer to
 a subset of those defined under `sources` (see below).  Only one
 source should be provided in the case of non-consortial deployments.
@@ -540,27 +537,27 @@ source should be provided in the case of non-consortial deployments.
   extract data from.  Only one source should be provided in the case
 of non-consortial deployments.  A source is defined by a source name
 and an associated object containing several settings:
-  * `okapiURL` (string; required) is the URL for the Okapi instance to
+  * `okapi_url` (string; required) is the URL for the Okapi instance to
     extract data from.
-  * `okapiTenant` (string; required) is the Okapi tenant.
-  * `okapiUser` (string; required) is the Okapi user name.
-  * `okapiPassword` (string; required) is the password for the
+  * `okapi_tenant` (string; required) is the Okapi tenant.
+  * `okapi_user` (string; required) is the Okapi user name.
+  * `okapi_password` (string; required) is the password for the
     specified Okapi user name.
-  * `directTables` (array; optional) is a list of tables that should
+  * `direct_tables` (array; optional) is a list of tables that should
     be updated using direct extraction.  Only these tables may be
 included: `inventory_holdings`, `inventory_instances`, and
 `inventory_items`.
-  * `directDatabaseName` (string; optional) is the FOLIO database
+  * `direct_database_name` (string; optional) is the FOLIO database
     name.
-  * `directDatabaseHost` (string; optional) is the FOLIO database host
+  * `direct_database_host` (string; optional) is the FOLIO database host
     name.
-  * `directDatabasePort` (integer; optional) is the FOLIO database
+  * `direct_database_port` (integer; optional) is the FOLIO database
     port.
-  * `directDatabaseUser` (string; optional) is the FOLIO database user
+  * `direct_database_user` (string; optional) is the FOLIO database user
     name.
-  * `directDatabasePassword` (string; optional) is the password for
+  * `direct_database_password` (string; optional) is the password for
     the specified FOLIO database user name.
-* `disableAnonymization` (Boolean; optional) when set to `true`,
+* `disable_anonymization` (Boolean; optional) when set to `true`,
   disables anonymization of personal data.  Please read the section on
 "Data privacy" above before changing this setting.  As a safety
 precaution, the configuration attribute `disable_anonymization` in

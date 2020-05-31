@@ -259,7 +259,7 @@ void runServer(const options& opt)
 void fillDirectOptions(const Config& config, const string& base, options* opt)
 {
     int x = 0;
-    string directTables = base + "directTables/";
+    string directTables = base + "direct_tables/";
     while (true) {
         string t;
         if (!config.get(directTables + to_string(x), &t))
@@ -267,13 +267,13 @@ void fillDirectOptions(const Config& config, const string& base, options* opt)
         opt->direct.table_names.push_back(t);
         x++;
     }
-    config.get(base + "directDatabaseName", &(opt->direct.database_name));
-    config.get(base + "directDatabaseHost", &(opt->direct.database_host));
+    config.get(base + "direct_database_name", &(opt->direct.database_name));
+    config.get(base + "direct_database_host", &(opt->direct.database_host));
     int port = 0;
-    config.getInt(base + "directDatabasePort", &port);
+    config.getInt(base + "direct_database_port", &port);
     opt->direct.database_port = to_string(port);
-    config.get(base + "directDatabaseUser", &(opt->direct.database_user));
-    config.get(base + "directDatabasePassword",
+    config.get(base + "direct_database_user", &(opt->direct.database_user));
+    config.get(base + "direct_database_password",
             &(opt->direct.database_password));
 }
 
@@ -298,32 +298,32 @@ void fillOptions(const Config& config, options* opt)
     ///////////////////////////////////////////////////////////////////////////
     config_set_environment(environment, &(opt->environment));
 
-    string target = "/ldpDatabase/";
-    config.getRequired(target + "odbcDatabase", &(opt->db));
-    config.get(target + "ldpconfigUser", &(opt->ldpconfig_user));
-    config.get(target + "ldpUser", &(opt->ldp_user));
+    string target = "/ldp_database/";
+    config.getRequired(target + "odbc_database", &(opt->db));
+    config.get(target + "ldpconfig_user", &(opt->ldpconfig_user));
+    config.get(target + "ldp_user", &(opt->ldp_user));
 
     if (opt->load_from_dir == "") {
         string enableSource;
-        config.getRequired("/enableSources/0", &enableSource);
+        config.getRequired("/enable_sources/0", &enableSource);
         string secondSource;
-        config.get("/enableSources/1", &secondSource);
+        config.get("/enable_sources/1", &secondSource);
         if (secondSource != "")
             throw runtime_error(
                     "Multiple sources not currently supported in "
                     "configuration:\n"
-                    "    Attribute: enableSources\n"
+                    "    Attribute: enable_sources\n"
                     "    Value: " + secondSource);
         string source = "/sources/" + enableSource + "/";
-        config.getRequired(source + "okapiURL", &(opt->okapi_url));
-        config.getRequired(source + "okapiTenant", &(opt->okapi_tenant));
-        config.getRequired(source + "okapiUser", &(opt->okapi_user));
-        config.getRequired(source + "okapiPassword", &(opt->okapi_password));
+        config.getRequired(source + "okapi_url", &(opt->okapi_url));
+        config.getRequired(source + "okapi_tenant", &(opt->okapi_tenant));
+        config.getRequired(source + "okapi_user", &(opt->okapi_user));
+        config.getRequired(source + "okapi_password", &(opt->okapi_password));
         fillDirectOptions(config, source, opt);
     }
 
     bool disable_anonymization;
-    config.getBool("/disableAnonymization", &disable_anonymization);
+    config.getBool("/disable_anonymization", &disable_anonymization);
     opt->disable_anonymization = disable_anonymization;
 }
 
