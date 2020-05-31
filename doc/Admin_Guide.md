@@ -171,10 +171,10 @@ $ ./all.sh
 The `all.sh` script builds three executables in `build/`:
 
 * `ldp` is the LDP software.
-* `test_ldp` is self-contained unit tests.
-* `test_int_ldp` is integration tests.
+* `test_ldp` runs self-contained unit tests.
+* `test_int_ldp` runs integration tests.
 
-The script also runs `test_ldp`.
+After building these executables, the script also runs `test_ldp`.
 
 If there are no errors, the end of the output will include:
 
@@ -182,7 +182,7 @@ If there are no errors, the end of the output will include:
 All tests passed
 ```
 
-The compiled executable file `ldp` should appear in `build/`:
+To run the LDP software:
 
 ```shell
 $ ./build/ldp
@@ -198,11 +198,11 @@ $ ./build/test_ldp
 ```
 
 Running the integration tests requires a FOLIO instance, as well as an
-LDP testbed instance with an empty PostgreSQL or Redshift database.
-Any contents of the database will be destroyed by these tests; so
-please be careful.  The `environment` configuration setting for the
-LDP testbed instance should be defined as `development`, and the tests
-are run as:
+LDP testbed instance with a PostgreSQL or Redshift database.  Any
+contents of the database will be destroyed by these tests; so please
+be careful.  The `environment` configuration setting for the LDP
+testbed instance should be defined as `development`, and the tests are
+run as:
 
 ```shell
 $ ./build/test_int_ldp -s -D <datadir>

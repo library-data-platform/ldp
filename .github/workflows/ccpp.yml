@@ -17,9 +17,5 @@ jobs:
       run: sudo ln -fs /usr/bin/gcc-8 /usr/bin/gcc
     - name: symbolic link g++
       run: sudo ln -fs /usr/bin/g++-8 /usr/bin/g++
-    - name: configure
-      run: cmake .
-    - name: make
-      run: make
-    - name: run tests
-      run: ./src/test_ldp
+    - name: build
+      run: ./all.sh
