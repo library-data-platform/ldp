@@ -89,12 +89,12 @@ with the same release number, for example, 1.3.1 or 1.3.2, will
 generally contain no new features but only bug fixes.  (This practice
 is less strictly observed in pre-releases prior to 0.9.)
 
-Stable versions of LDP are available from the [releases
-page](https://github.com/folio-org/ldp/releases) and via the
-`-release` branches described below.
+Stable versions of LDP are available via the release branches
+described below and from the [releases
+page](https://github.com/folio-org/ldp/releases).
 
 Within the [source code repository](https://github.com/folio-org/ldp)
-there are three kinds of branches:
+there are three kinds of branches that are relatively the most stable:
 
 * Release branches (`*-release`):  Beginning with LDP 0.9, a numbered
   branch will be created for each release.  For example, `1.2-release`
@@ -102,10 +102,10 @@ would point to the latest version of LDP 1.2, e.g. 1.2.5.  These
 release branches are the most stable in the source repository.
 * Master branch (`master`):  This is the branch that new releases are
   made from.  It contains recently added features that have had some
-testing.
+testing.  It is less stable than release branches.
 * Current branch (`current`):  This is for active development and
-  tends to be very unstable.  This is where new features are first
-added.
+  tends to be unstable.  This is where new features are first added,
+before they are merged to the master branch.
 
 If automation will be used for deploying new versions of LDP, two
 approaches might be suggested:
@@ -172,15 +172,16 @@ $ brew install psqlodbc
 
 ### Building the software
 
-To build the LDP software, download and unpack [a recent
-release](https://github.com/folio-org/ldp/releases) and `cd` into the
-unpacked directory.  Then:
+If the LDP software was built previously in the same directory, first
+remove the leftover `build/` subdirectory to ensure a clean compile.
+Then:
 
 ```shell
 $ ./all.sh
 ```
 
-The `all.sh` script builds three executables in `build/`:
+The `all.sh` script creates a `build/` subdirectory and builds three
+executables there:
 
 * `ldp` is the LDP software.
 * `test_ldp` runs self-contained unit tests.
@@ -441,6 +442,9 @@ database statements used to perform the upgrade are logged to the file
 `database_upgrade.sql` located in the data directory under `log/`.
 
 * Start the new version of the server.
+
+For automated deployment, the `upgrade-database` command can be run
+after `git pull`, whether or not any new changes were pulled.
 
 
 6\. Direct extraction
