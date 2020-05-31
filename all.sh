@@ -5,5 +5,5 @@ mkdir -p build
 cd build
 cmake ..
 make
-./src/test_ldp
+./test_ldp
 

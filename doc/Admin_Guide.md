@@ -168,7 +168,7 @@ unpacked directory.  Then:
 $ ./all.sh
 ```
 
-The `all.sh` script builds three executables in `ldp/build/src/`:
+The `all.sh` script builds three executables in `ldp/build/`:
 
 * `ldp`: the LDP software
 * `test_ldp`: self-contained unit tests
@@ -182,10 +182,10 @@ If there are no errors, the end of the output will include:
 All tests passed
 ```
 
-The compiled executable file `ldp` should appear in `ldp/build/src/`:
+The compiled executable file `ldp` should appear in `ldp/build/`:
 
 ```shell
-$ ./build/src/ldp
+$ ./build/ldp
 ```
 
 ### Running tests
@@ -193,7 +193,7 @@ $ ./build/src/ldp
 The unit tests can be run separately if needed:
 
 ```shell
-$ ./build/src/test_ldp
+$ ./build/test_ldp
 ```
 
 Running the integration tests requires a FOLIO instance, as well as an
@@ -204,7 +204,7 @@ setting for the LDP testbed instance should be defined as
 `development`, and the tests are run as:
 
 ```shell
-$ ./build/src/itest_ldp -s -D <datadir>
+$ ./build/itest_ldp -s -D <datadir>
 ```
 
 where `<datadir>` is the data directory for the test database.  See

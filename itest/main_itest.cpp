@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_RUNNER
 
-#include "../test.h"
+#include "../src/test.h"
 
 using namespace std;
 using namespace Catch::clara;
