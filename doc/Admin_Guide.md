@@ -118,7 +118,7 @@ automatically.
   not yet released, the deployment would pull from the `master`
 branch.
 
-### Before installation
+### Installing software dependencies
 
 Dependencies required for building the LDP software can be installed via
 a package manager on some platforms.
