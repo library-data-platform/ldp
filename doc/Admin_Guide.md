@@ -87,24 +87,36 @@ For example, suppose that LDP 1.3 has been released.  The first
 version of the 1.3 release will be 1.3.0.  Any subsequent versions
 with the same release number, for example, 1.3.1 or 1.3.2, will
 generally contain no new features but only bug fixes.  (This practice
-will be less strictly observed in pre-releases, i.e. prior to 1.0.)
+is less strictly observed in pre-releases prior to 0.9.)
 
 Stable versions of LDP are available from the [releases
 page](https://github.com/folio-org/ldp/releases) and via the
 `-release` branches described below.
 
 Within the [source code repository](https://github.com/folio-org/ldp)
-there are two main branches:
+there are three kinds of branches:
 
-* `master` is the branch that new releases are made from.  It contains
-  recently added features that have had some testing.
-* `current` is for active development and tends to be very unstable.
-  This is where new features are first added.
+* Release branches (`*-release`):  Beginning with LDP 0.9, a numbered
+  branch will be created for each release.  For example, `1.2-release`
+would point to the latest version of LDP 1.2, e.g. 1.2.5.  These
+release branches are the most stable in the source repository.
+* Master branch (`master`):  This is the branch that new releases are
+  made from.  It contains recently added features that have had some
+testing.
+* Current branch (`current`):  This is for active development and
+  tends to be very unstable.  This is where new features are first
+added.
 
-Beginning with LDP 1.0, a numbered branch will be created for each
-release; for example, `1.2-release` would point to the latest version
-of LDP 1.2, e.g. 1.2.5.  The `-release` branches are the most stable
-in the source repository.
+If automation will be used for deploying new versions of LDP, two
+approaches might be suggested:
+
+* For a production or staging environment, it is safest to pull from a
+  specific release branch, for example, `1.7-release`, which would
+mean that only bug fixes for the 1.7 release would be applied
+automatically.
+* For a testing environment, which could be used to test new features
+  not yet released, the deployment would pull from the `master`
+branch.
 
 ### Before installation
 
@@ -198,11 +210,11 @@ $ ./build/test_ldp
 ```
 
 Running the integration tests requires a FOLIO instance, as well as an
-LDP testbed instance with a PostgreSQL or Redshift database.  Any
+LDP testbed instance with a PostgreSQL or Redshift database.  The
 contents of the database will be destroyed by these tests; so please
-be careful.  The `environment` configuration setting for the LDP
-testbed instance should be defined as `development`, and the tests are
-run as:
+be careful that the correct database will be used.  The `environment`
+configuration setting for the LDP testbed instance should be defined
+as `testing`, and the tests are run as:
 
 ```shell
 $ ./build/test_int_ldp -s -D <datadir>
@@ -504,12 +516,9 @@ Reference
 ### Configuration file: ldpconf.json
 
 * `environment` (string; required) is the deployment environment of
-  the LDP instance.  Supported values are `production` and
-`development`.  The `production` environment is recommended for all
-deployments.  The `development` environment allows unsafe operations
-that never should be run on a production instance, such as running
-integration tests on the instance, or updating from data in local
-files.
+  the LDP instance.  Supported values are `production`, `staging`,
+`testing`, and `development`.  This setting is used to determine
+whether certain operations should be allowed to run on the instance.
 * `ldpDatabase` (object; required) is a group of database-related
   settings.
   * `odbcDatabase` (string; required) is the ODBC "data source name"

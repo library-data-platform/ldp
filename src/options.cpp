@@ -150,6 +150,14 @@ void config_set_environment(const string& env_str, deployment_environment* env)
         *env = deployment_environment::production;
         return;
     }
+    if (env_str == "staging") {
+        *env = deployment_environment::staging;
+        return;
+    }
+    if (env_str == "testing") {
+        *env = deployment_environment::testing;
+        return;
+    }
     if (env_str == "development") {
         *env = deployment_environment::development;
         return;

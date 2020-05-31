@@ -11,6 +11,8 @@ using namespace std;
 
 enum class deployment_environment {
     production,
+    staging,
+    testing,
     development
 };
 
