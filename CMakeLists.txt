@@ -110,14 +110,14 @@ target_link_libraries(test_ldp
 	${FSLIB}
 	)
 
-add_executable(itest_ldp
+add_executable(test_int_ldp
 	$<TARGET_OBJECTS:ldp_obj>
 
 	itest/main_itest.cpp
 	itest/server_itest.cpp
 
 	)
-target_link_libraries(itest_ldp
+target_link_libraries(test_int_ldp
 	${GPROFFLAG}
 	${CURL_LIBRARIES}
 	${ODBC_LIBRARY}
@@ -126,5 +126,5 @@ target_link_libraries(itest_ldp
 	${FSLIB}
 	)
 
-INSTALL(PROGRAMS ldp DESTINATION /usr/local/bin)
+#INSTALL(PROGRAMS ldp DESTINATION /usr/local/bin)
 
