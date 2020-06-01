@@ -11,7 +11,7 @@
 #include "timer.h"
 #include "util.h"
 
-ExtractionFiles::~ExtractionFiles()
+extraction_files::~extraction_files()
 {
     if (!opt.savetemps) {
         for (const auto& f : files)
@@ -76,7 +76,7 @@ size_t header_callback(char* buffer, size_t size, size_t nitems,
  * okapiPassword, and okapiTenant.
  * \param[out] token The authentication token received from Okapi.
  */
-void okapiLogin(const options& opt, log* lg, string* token)
+void okapi_login(const options& opt, log* lg, string* token)
 {
     //timer t(opt);
 
@@ -152,7 +152,7 @@ enum class PageStatus {
 
 static PageStatus retrieve(const Curl& c, const options& opt, log* lg,
         const string& token, const TableSchema& table, const string& loadDir,
-        ExtractionFiles* extractionFiles, size_t page)
+        extraction_files* ext_files, size_t page)
 {
     // TODO move timing code to calling function and re-enable
     //timer t(opt);
@@ -179,7 +179,7 @@ static PageStatus retrieve(const Curl& c, const options& opt, log* lg,
 
     {
         etymon::file f(output, "wb");
-        extractionFiles->files.push_back(output);
+        ext_files->files.push_back(output);
 
         // testing
         //curl_easy_setopt(c.curl, CURLOPT_TIMEOUT, 100000);
@@ -224,33 +224,33 @@ static PageStatus retrieve(const Curl& c, const options& opt, log* lg,
 }
 
 static void writeCountFile(const string& loadDir, const string& tableName,
-        ExtractionFiles* extractionFiles, size_t page) {
+        extraction_files* ext_files, size_t page) {
     string countFile = loadDir;
     etymon::join(&countFile, tableName);
     countFile += "_count.txt";
     etymon::file f(countFile, "w");
-    extractionFiles->files.push_back(countFile);
+    ext_files->files.push_back(countFile);
     string pageStr = to_string(page) + "\n";
     fputs(pageStr.c_str(), f.fp);
 }
 
 bool retrievePages(const Curl& c, const options& opt, log* lg,
         const string& token, const TableSchema& table, const string& loadDir,
-        ExtractionFiles* extractionFiles)
+        extraction_files* ext_files)
 {
     size_t page = 0;
     while (true) {
         lg->write(level::detail, "", "",
                 "Extracting page: " + to_string(page), -1);
         PageStatus status = retrieve(c, opt, lg, token, table, loadDir,
-                extractionFiles, page);
+                ext_files, page);
         switch (status) {
         case PageStatus::interfaceNotAvailable:
             lg->write(level::trace, "", "",
                     "Interface not available: " + table.sourcePath, -1);
             return false;
         case PageStatus::pageEmpty:
-            writeCountFile(loadDir, table.tableName, extractionFiles, page);
+            writeCountFile(loadDir, table.tableName, ext_files, page);
             return true;
         case PageStatus::containsRecords:
             break;
@@ -269,7 +269,7 @@ bool directOverride(const options& opt, const string& tableName)
 }
 
 bool retrieveDirect(const options& opt, log* lg, const TableSchema& table,
-        const string& loadDir, ExtractionFiles* extractionFiles)
+        const string& loadDir, extraction_files* ext_files)
 {
     lg->write(level::trace, "", "",
             "Direct from database: " + table.sourcePath, -1);
@@ -297,7 +297,7 @@ bool retrieveDirect(const options& opt, log* lg, const TableSchema& table,
     string output = loadDir;
     etymon::join(&output, table.tableName + "_0.json");
     etymon::file f(output, "w");
-    extractionFiles->files.push_back(output);
+    ext_files->files.push_back(output);
 
     fprintf(f.fp, "{\n  \"a\": [\n");
 
@@ -321,7 +321,7 @@ bool retrieveDirect(const options& opt, log* lg, const TableSchema& table,
     fprintf(f.fp, "\n  ]\n}\n");
 
     // Write 1 to count file.
-    writeCountFile(loadDir, table.tableName, extractionFiles, 1);
+    writeCountFile(loadDir, table.tableName, ext_files, 1);
 
     return true;
 }

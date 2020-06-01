@@ -2,7 +2,7 @@
 
 #include "schema.h"
 
-void Schema::MakeDefaultSchema(Schema* schema)
+void Schema::make_default_schema(Schema* schema)
 {
     schema->tables.clear();
 

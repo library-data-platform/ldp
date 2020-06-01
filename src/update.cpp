@@ -19,7 +19,7 @@
 using namespace etymon;
 namespace fs = std::experimental::filesystem;
 
-void makeUpdateTmpDir(const options& opt, string* loaddir)
+void make_update_tmp_dir(const options& opt, string* loaddir)
 {
     fs::path datadir = opt.datadir;
     fs::path tmp = datadir / "tmp";
@@ -266,9 +266,9 @@ void run_update(const options& opt)
     timer full_update_timer(opt);
 
     Schema schema;
-    Schema::MakeDefaultSchema(&schema);
+    Schema::make_default_schema(&schema);
 
-    ExtractionFiles extractionDir(opt);
+    extraction_files ext_dir(opt);
 
     string loadDir;
 
@@ -276,7 +276,7 @@ void run_update(const options& opt)
     //if (!c.curl) {
     //    // throw?
     //}
-    string token, tenantHeader, tokenHeader;
+    string token, tenant_header, token_header;
 
     if (opt.load_from_dir != "") {
         //if (opt.logLevel == level::trace)
@@ -286,23 +286,23 @@ void run_update(const options& opt)
     } else {
         lg.write(level::trace, "", "", "Logging in to Okapi service", -1);
 
-        okapiLogin(opt, &lg, &token);
+        okapi_login(opt, &lg, &token);
 
-        makeUpdateTmpDir(opt, &loadDir);
-        extractionDir.dir = loadDir;
+        make_update_tmp_dir(opt, &loadDir);
+        ext_dir.dir = loadDir;
 
-        tenantHeader = "X-Okapi-Tenant: ";
-        tenantHeader + opt.okapi_tenant;
-        tokenHeader = "X-Okapi-Token: ";
-        tokenHeader += token;
-        c.headers = curl_slist_append(c.headers, tenantHeader.c_str());
-        c.headers = curl_slist_append(c.headers, tokenHeader.c_str());
+        tenant_header = "X-Okapi-Tenant: ";
+        tenant_header + opt.okapi_tenant;
+        token_header = "X-Okapi-Token: ";
+        token_header += token;
+        c.headers = curl_slist_append(c.headers, tenant_header.c_str());
+        c.headers = curl_slist_append(c.headers, token_header.c_str());
         c.headers = curl_slist_append(c.headers,
                 "Accept: application/json,text/plain");
         curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
     }
 
-    string ldpconfigDisableAnonymization;
+    string ldpconfig_disable_anonymization;
     {
         etymon::odbc_conn conn(&odbc, opt.db);
         string sql = "SELECT disable_anonymization FROM ldpconfig.general;";
@@ -311,7 +311,7 @@ void run_update(const options& opt)
             etymon::odbc_stmt stmt(&conn);
             conn.exec_direct(&stmt, sql);
             conn.fetch(&stmt);
-            conn.get_data(&stmt, 1, &ldpconfigDisableAnonymization);
+            conn.get_data(&stmt, 1, &ldpconfig_disable_anonymization);
         }
     }
 
@@ -322,11 +322,11 @@ void run_update(const options& opt)
 
         bool anonymizeTable = ( table.anonymize &&
                 (!opt.disable_anonymization ||
-                 ldpconfigDisableAnonymization != "1") );
+                 ldpconfig_disable_anonymization != "1") );
 
         //printf("anonymize=%d\tfile_disable=%d\tdb_disable=%s\tA=%d\n",
         //        table.anonymize, opt.disableAnonymization,
-        //        ldpconfigDisableAnonymization.c_str(), anonymizeTable);
+        //        ldpconfig_disable_anonymization.c_str(), anonymizeTable);
 
         if (anonymizeTable)
             continue;
@@ -336,16 +336,16 @@ void run_update(const options& opt)
 
         timer update_timer(opt);
 
-        ExtractionFiles extractionFiles(opt);
+        extraction_files ext_files(opt);
 
         if (opt.load_from_dir == "") {
             lg.write(level::trace, "", "",
                     "Extracting: " + table.sourcePath, -1);
-            bool foundData = directOverride(opt, table.tableName) ?
-                retrieveDirect(opt, &lg, table, loadDir, &extractionFiles) :
+            bool found_data = directOverride(opt, table.tableName) ?
+                retrieveDirect(opt, &lg, table, loadDir, &ext_files) :
                 retrievePages(c, opt, &lg, token, table, loadDir,
-                        &extractionFiles);
-            if (!foundData)
+                        &ext_files);
+            if (!found_data)
                 table.skip = true;
         }
 
@@ -401,18 +401,18 @@ void run_update(const options& opt)
             "SELECT COUNT(*) FROM\n"
             "    history." + table.tableName + ";";
         lg.detail(sql);
-        string historyRowCount;
+        string history_row_count;
         {
             etymon::odbc_stmt stmt(&conn);
             conn.exec_direct(&stmt, sql);
             conn.fetch(&stmt);
-            conn.get_data(&stmt, 1, &historyRowCount);
+            conn.get_data(&stmt, 1, &history_row_count);
         }
         sql =
             "UPDATE ldpsystem.tables\n"
             "    SET updated = " + string(dbt.current_timestamp()) + ",\n"
             "        row_count = " + rowCount + ",\n"
-            "        history_row_count = " + historyRowCount + ",\n"
+            "        history_row_count = " + history_row_count + ",\n"
             "        documentation = '" + table.sourcePath + " in "
             + table.moduleName + "',\n"
             "        documentation_url = 'https://dev.folio.org/reference/api/#"

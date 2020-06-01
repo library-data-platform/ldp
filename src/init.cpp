@@ -95,7 +95,7 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
 
     // TODO This should probably be passed into the function as a parameter.
     Schema schema;
-    Schema::MakeDefaultSchema(&schema);
+    Schema::make_default_schema(&schema);
 
     etymon::odbc_tx tx(conn);
 

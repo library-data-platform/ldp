@@ -60,7 +60,7 @@ public:
 class Schema {
 public:
     vector<TableSchema> tables;
-    static void MakeDefaultSchema(Schema* schema);
+    static void make_default_schema(Schema* schema);
 };
 
 #endif

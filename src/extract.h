@@ -8,13 +8,13 @@
 #include "options.h"
 #include "schema.h"
 
-class ExtractionFiles {
+class extraction_files {
 public:
     string dir;
     vector<string> files;
     const options& opt;
-    ExtractionFiles(const options& options) : opt(options) {};
-    ~ExtractionFiles();
+    extraction_files(const options& options) : opt(options) {};
+    ~extraction_files();
 };
 
 class Curl {
@@ -25,17 +25,14 @@ public:
     ~Curl();
 };
 
-void okapiLogin(const options& o, log* lg, string* token);
+void okapi_login(const options& o, log* lg, string* token);
 
 bool directOverride(const options& opt, const string& sourcePath);
 bool retrieveDirect(const options& opt, log* lg, const TableSchema& table,
-        const string& loadDir, ExtractionFiles* extractionFiles);
+        const string& loadDir, extraction_files* ext_files);
 bool retrievePages(const Curl& c, const options& opt, log* lg,
         const string& token, const TableSchema& table, const string& loadDir,
-        ExtractionFiles* extractionFiles);
-
-//void extract(const options& o, Schema* spec, const string& token,
-//        const string& loadDir, ExtractionFiles* extractionFiles);
+        extraction_files* ext_files);
 
 #endif
 
