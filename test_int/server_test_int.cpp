@@ -10,7 +10,7 @@ TEST_CASE( "Test update", "[update]" ) {
     options opt;
     opt.cli_mode = true;
     opt.quiet = true;
-    opt.command = "update";
+    opt.command = ldp_command::update;
     opt.datadir = datadir.data();
     opt.table = "user_groups";
     CHECK_NOTHROW( run_opt(&opt) );
@@ -22,7 +22,7 @@ TEST_CASE( "Test update with savetemps", "[update]" ) {
     options opt;
     opt.cli_mode = true;
     opt.quiet = true;
-    opt.command = "update";
+    opt.command = ldp_command::update;
     opt.datadir = datadir.data();
     opt.table = "user_groups";
     opt.savetemps = true;
@@ -91,7 +91,7 @@ TEST_CASE( "Test inconsistent JSON data types", "[update]" ) {
     options opt;
     opt.cli_mode = true;
     opt.quiet = true;
-    opt.command = "update";
+    opt.command = ldp_command::update;
     opt.datadir = datadir.data();
     opt.table = "user_groups";
     opt.load_from_dir = update_dir;

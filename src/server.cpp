@@ -26,8 +26,9 @@
 
 static const char* optionHelp =
 "Usage:  ldp <command> <options>\n"
-"  e.g.  ldp server -D /usr/local/ldp/data\n"
+"  e.g.  ldp init -D /usr/local/ldp/data --profile folio\n"
 "Commands:\n"
+"  init                - Initialize a new LDP database\n"
 "  server              - Run the LDP server\n"
 "  upgrade-database    - Upgrade the LDP database to the current version\n"
 "  update              - Run a full update and exit\n"
@@ -36,6 +37,9 @@ static const char* optionHelp =
 "  -D <path>           - Use <path> as the data directory\n"
 "  --trace             - Enable detailed logging\n"
 "  --quiet             - Reduce console output\n"
+"Initialization (init) options\n"
+"  --profile <prof>    - Initialize the LDP database with profile <prof>\n"
+"                        (required)\n"
 "Development options (supported only for \"development\" environments):\n"
 //"  --unsafe            - Enable functions used for development and testing\n"
 "  --extract-only      - Extract data in the data directory, but do not\n"
@@ -187,8 +191,11 @@ void rescheduleNextDailyLoad(const options& opt, etymon::odbc_conn* conn,
 void server(const options& opt, etymon::odbc_env* odbc)
 {
     init_upgrade(odbc, opt.db, opt.ldp_user, opt.ldpconfig_user, opt.datadir,
-            opt.err, opt.prog, opt.quiet, opt.upgrade_database);
-    if (opt.upgrade_database)
+            opt.err, opt.prog, opt.quiet,
+            (opt.command == ldp_command::upgrade_database));
+    if (opt.command == ldp_command::upgrade_database)
+        return;
+    if (opt.command == ldp_command::init)
         return;
 
     etymon::odbc_conn logConn(odbc, opt.db);
@@ -331,10 +338,10 @@ void run_opt(options* opt)
 {
     Config config(opt->datadir + "/ldpconf.json");
     fillOptions(config, opt);
-    if (opt->command == "update")
+    if (opt->command == ldp_command::update)
         opt->console = true;
 
-    if (opt->command == "server") {
+    if (opt->command == ldp_command::server) {
         do {
             Timer timer(*opt);
             try {
@@ -360,12 +367,19 @@ void run_opt(options* opt)
         return;
     }
 
-    if (opt->command == "update") {
+    if (opt->command == ldp_command::upgrade_database) {
         runServer(*opt);
         return;
     }
 
-    if (opt->command == "upgrade-database") {
+    if (opt->command == ldp_command::init) {
+        if (opt->set_profile == profile::none)
+            throw runtime_error("Profile not specified");
+        runServer(*opt);
+        return;
+    }
+
+    if (opt->command == ldp_command::update) {
         runServer(*opt);
         return;
     }
@@ -378,7 +392,7 @@ void run(const etymon::command_args& cargs)
     if (evalopt(cargs, &opt) < 0)
         throw runtime_error("unable to parse command line options");
 
-    if (cargs.argc < 2 || opt.command == "help") {
+    if (cargs.argc < 2 || opt.command == ldp_command::help) {
         printf("%s", optionHelp);
         return;
     }

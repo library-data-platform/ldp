@@ -25,10 +25,10 @@ file::~file()
 command_args::command_args(int argc, char* const argv[])
 {
     this->argc = argc - 1;
-    this->argv = (char**) malloc(sizeof(char*) * this->argc);
+    this->argv = (char**) malloc(sizeof(char*) * (this->argc + 1));
     this->argv[0] = argv[0];
     this->command = argc >= 2 ? argv[1] : "";
-    for (int x = 2; x < argc; x++)
+    for (int x = 2; x <= argc; x++)
         this->argv[x - 1] = argv[x];
 }
 

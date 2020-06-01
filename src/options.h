@@ -9,6 +9,19 @@
 
 using namespace std;
 
+enum class ldp_command {
+    server,
+    upgrade_database,
+    init,
+    update,
+    help
+};
+
+enum class profile {
+    folio,
+    none
+};
+
 enum class deployment_environment {
     production,
     staging,
@@ -28,9 +41,9 @@ public:
 
 class options {
 public:
-    string command;
+    ldp_command command;
+    profile set_profile = profile::none;
     bool cli_mode = false;
-    bool upgrade_database = false;
     string datadir;
     bool extract_only = false;
     string load_from_dir;

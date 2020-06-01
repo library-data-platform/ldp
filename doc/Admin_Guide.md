@@ -394,6 +394,12 @@ __ldpconf.json__
 
 ### Starting the server
 
+If this is a new database, it should first be initialized:
+
+```shell
+$ ldp init -D /var/lib/ldp --profile folio
+```
+
 To start the LDP server:
 
 ```shell

@@ -46,7 +46,7 @@ find_package(PostgreSQL REQUIRED)
 include_directories(${PostgreSQL_INCLUDE_DIR})
 #set(LIBS ${LIBS} ${PostgreSQL_LIBRARY})
 
-find_package(SQLite3 REQUIRED)
+#find_package(SQLite3 REQUIRED)
 
 find_package(RapidJSON REQUIRED)
 
@@ -58,7 +58,6 @@ add_library(ldp_obj OBJECT
 	etymoncpp/src/mallocptr.cpp
 	etymoncpp/src/odbc.cpp
 	etymoncpp/src/postgres.cpp
-	etymoncpp/src/sqlite3.cpp
 	etymoncpp/src/util.cpp
 	src/anonymize.cpp
 	src/camelcase.cpp
@@ -90,7 +89,7 @@ target_link_libraries(ldp
 	${CURL_LIBRARIES}
 	${ODBC_LIBRARY}
 	${PostgreSQL_LIBRARY}
-	${SQLite3_LIBRARY}
+	#${SQLite3_LIBRARY}
 	${FSLIB}
 	)
 
@@ -106,7 +105,7 @@ target_link_libraries(test_ldp
 	${CURL_LIBRARIES}
 	${ODBC_LIBRARY}
 	${PostgreSQL_LIBRARY}
-	${SQLite3_LIBRARY}
+	#${SQLite3_LIBRARY}
 	${FSLIB}
 	)
 
@@ -122,7 +121,7 @@ target_link_libraries(test_int_ldp
 	${CURL_LIBRARIES}
 	${ODBC_LIBRARY}
 	${PostgreSQL_LIBRARY}
-	${SQLite3_LIBRARY}
+	#${SQLite3_LIBRARY}
 	${FSLIB}
 	)
 
