@@ -1,4 +1,4 @@
-#include "../src/test.h"
+#include "test.h"
 #include "../src/camelcase.h"
 
 TEST_CASE( "Test decoding of camel case strings", "[camelcase]" ) {

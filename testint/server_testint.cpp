@@ -2,7 +2,7 @@
 
 #include "../etymoncpp/include/util.h"
 #include "../src/server.h"
-#include "../src/test.h"
+#include "../test/test.h"
 
 namespace fs = std::experimental::filesystem;
 
