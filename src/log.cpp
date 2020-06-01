@@ -112,7 +112,7 @@ void Log::log(Level level, const char* type, const string& table,
         "    (" + string(dbt->currentTimestamp()) + ", " + to_string(getpid()) +
         ", '" + levelStr + "', '" + type + "', '" + table + "', " +
         logmsgEncoded + ", " + elapsed_time_str + ");";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 }
 
 void Log::trace(const string& message)

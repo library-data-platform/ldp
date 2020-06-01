@@ -42,7 +42,7 @@ bool is_foreign_key(etymon::odbc_conn* conn, Log* log,
     log->logDetail(sql);
     etymon::odbc_stmt stmt(conn);
     try {
-        conn->execDirect(&stmt, sql);
+        conn->exec_direct(&stmt, sql);
     } catch (runtime_error& e) {
         return false;
     }
@@ -109,14 +109,14 @@ void select_foreign_key_constraints(odbc_conn* conn, Log* lg,
         "    FROM ldpsystem.foreign_key_constraints;";
     lg->detail(sql);
     etymon::odbc_stmt stmt(conn);
-    conn->execDirect(&stmt, sql);
+    conn->exec_direct(&stmt, sql);
     while (conn->fetch(&stmt)) {
         reference ref;
-        conn->getData(&stmt, 1, &(ref.referencing_table));
-        conn->getData(&stmt, 2, &(ref.referencing_column));
-        conn->getData(&stmt, 3, &(ref.referenced_table));
-        conn->getData(&stmt, 4, &(ref.referenced_column));
-        conn->getData(&stmt, 5, &(ref.constraint_name));
+        conn->get_data(&stmt, 1, &(ref.referencing_table));
+        conn->get_data(&stmt, 2, &(ref.referencing_column));
+        conn->get_data(&stmt, 3, &(ref.referenced_table));
+        conn->get_data(&stmt, 4, &(ref.referenced_column));
+        conn->get_data(&stmt, 5, &(ref.constraint_name));
         refs->push_back(ref);
     }
 }
@@ -152,13 +152,13 @@ void select_enabled_foreign_keys(odbc_conn* conn, Log* lg,
         "    WHERE enable_constraint = TRUE;";
     lg->detail(sql);
     etymon::odbc_stmt stmt(conn);
-    conn->execDirect(&stmt, sql);
+    conn->exec_direct(&stmt, sql);
     while (conn->fetch(&stmt)) {
         reference ref;
-        conn->getData(&stmt, 1, &(ref.referencing_table));
-        conn->getData(&stmt, 2, &(ref.referencing_column));
-        conn->getData(&stmt, 3, &(ref.referenced_table));
-        conn->getData(&stmt, 4, &(ref.referenced_column));
+        conn->get_data(&stmt, 1, &(ref.referencing_table));
+        conn->get_data(&stmt, 2, &(ref.referencing_column));
+        conn->get_data(&stmt, 3, &(ref.referenced_table));
+        conn->get_data(&stmt, 4, &(ref.referenced_column));
         refs->push_back(ref);
     }
 }
@@ -236,12 +236,12 @@ void select_config_general(etymon::odbc_conn* conn, Log* log,
         "    FROM ldpconfig.general;";
     log->logDetail(sql);
     etymon::odbc_stmt stmt(conn);
-    conn->execDirect(&stmt, sql);
+    conn->exec_direct(&stmt, sql);
     conn->fetch(&stmt);
     string s1, s2, s3;
-    conn->getData(&stmt, 1, &s1);
-    conn->getData(&stmt, 2, &s2);
-    conn->getData(&stmt, 3, &s3);
+    conn->get_data(&stmt, 1, &s1);
+    conn->get_data(&stmt, 2, &s2);
+    conn->get_data(&stmt, 3, &s3);
     conn->fetch(&stmt);
     *detect_foreign_keys = (s1 == "1");
     *force_foreign_key_constraints = (s2 == "1");
@@ -263,7 +263,7 @@ void run_update(const options& opt)
     Log log(&logDbc, opt.log_level, opt.console, opt.quiet, opt.prog);
 
     log.log(Level::debug, "server", "", "Starting full update", -1);
-    Timer fullUpdateTimer(opt);
+    timer full_update_timer(opt);
 
     Schema schema;
     Schema::MakeDefaultSchema(&schema);
@@ -309,9 +309,9 @@ void run_update(const options& opt)
         log.logDetail(sql);
         {
             etymon::odbc_stmt stmt(&conn);
-            conn.execDirect(&stmt, sql);
+            conn.exec_direct(&stmt, sql);
             conn.fetch(&stmt);
-            conn.getData(&stmt, 1, &ldpconfigDisableAnonymization);
+            conn.get_data(&stmt, 1, &ldpconfigDisableAnonymization);
         }
     }
 
@@ -334,7 +334,7 @@ void run_update(const options& opt)
         log.log(Level::trace, "", "",
                 "Updating table: " + table.tableName, -1);
 
-        Timer updateTimer(opt);
+        timer update_timer(opt);
 
         ExtractionFiles extractionFiles(opt);
 
@@ -386,27 +386,27 @@ void run_update(const options& opt)
 
         //vacuumAnalyzeTable(opt, table, &conn);
 
-        string sql = 
+        string sql =
             "SELECT COUNT(*) FROM\n"
             "    " + table.tableName + ";";
         log.logDetail(sql);
         string rowCount;
         {
             etymon::odbc_stmt stmt(&conn);
-            conn.execDirect(&stmt, sql);
+            conn.exec_direct(&stmt, sql);
             conn.fetch(&stmt);
-            conn.getData(&stmt, 1, &rowCount);
+            conn.get_data(&stmt, 1, &rowCount);
         }
-        sql = 
+        sql =
             "SELECT COUNT(*) FROM\n"
             "    history." + table.tableName + ";";
         log.logDetail(sql);
         string historyRowCount;
         {
             etymon::odbc_stmt stmt(&conn);
-            conn.execDirect(&stmt, sql);
+            conn.exec_direct(&stmt, sql);
             conn.fetch(&stmt);
-            conn.getData(&stmt, 1, &historyRowCount);
+            conn.get_data(&stmt, 1, &historyRowCount);
         }
         sql =
             "UPDATE ldpsystem.tables\n"
@@ -419,11 +419,11 @@ void run_update(const options& opt)
             + table.moduleName + "'\n"
             "    WHERE table_name = '" + table.tableName + "';";
         log.logDetail(sql);
-        conn.execDirect(nullptr, sql);
+        conn.exec(sql);
 
         log.log(Level::debug, "update", table.tableName,
                 "Updated table: " + table.tableName,
-                updateTimer.elapsedTime());
+                update_timer.elapsed_time());
 
         //if (opt.logLevel == Level::trace)
         //    loadTimer.print("load time");
@@ -439,7 +439,7 @@ void run_update(const options& opt)
     //}
 
     log.log(Level::debug, "server", "", "Completed full update",
-            fullUpdateTimer.elapsedTime());
+            full_update_timer.elapsed_time());
 
     // TODO Move analysis and constraints out of update process.
     {
@@ -456,7 +456,7 @@ void run_update(const options& opt)
             log.log(Level::debug, "server", "",
                     "Detecting foreign keys", -1);
 
-            Timer refTimer(opt);
+            timer ref_timer(opt);
 
             etymon::odbc_tx tx(&conn);
 
@@ -492,7 +492,7 @@ void run_update(const options& opt)
 
             log.log(Level::debug, "server", "",
                     "Completed foreign key detection",
-                    refTimer.elapsedTime());
+                    ref_timer.elapsed_time());
         }
 
         if (force_foreign_key_constraints) {
@@ -500,13 +500,13 @@ void run_update(const options& opt)
             log.log(Level::debug, "server", "",
                     "Creating foreign key constraints", -1);
 
-            Timer refTimer(opt);
+            timer ref_timer(opt);
 
             create_foreign_key_constraints(&conn, &log);
 
             log.log(Level::debug, "server", "",
                     "Foreign key constraints created",
-                    refTimer.elapsedTime());
+                    ref_timer.elapsed_time());
         }
 
     }

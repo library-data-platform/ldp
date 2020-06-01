@@ -6,14 +6,14 @@
 using namespace std;
 namespace json = rapidjson;
 
-class Config {
+class config {
 public:
-    Config(const string& config);
+    config(const string& conf);
     bool get(const string& key, string* value) const;
-    bool getInt(const string& key, int* value) const;
-    bool getBool(const string& key, bool* value) const;
-    void getRequired(const string& key, string* value) const;
-    void getOptional(const string& key, string* value) const;
+    bool get_int(const string& key, int* value) const;
+    bool get_bool(const string& key, bool* value) const;
+    void get_required(const string& key, string* value) const;
+    void get_optional(const string& key, string* value) const;
 private:
     json::Document jsondoc;
 };

@@ -78,7 +78,7 @@ size_t header_callback(char* buffer, size_t size, size_t nitems,
  */
 void okapiLogin(const options& opt, Log* lg, string* token)
 {
-    Timer timer(opt);
+    //timer t(opt);
 
     string login;
     encodeLogin(opt.okapi_user, opt.okapi_password, &login);
@@ -141,7 +141,7 @@ void okapiLogin(const options& opt, Log* lg, string* token)
     // TODO enable times
     // Temporarily disabled until timing added for staging, merging, etc.
     //if (opt.verbose)
-    //    timer.print("login time");
+    //    t.print("login time");
 }
 
 enum class PageStatus {
@@ -155,7 +155,7 @@ static PageStatus retrieve(const Curl& c, const options& opt, Log* lg,
         ExtractionFiles* extractionFiles, size_t page)
 {
     // TODO move timing code to calling function and re-enable
-    //Timer timer(opt);
+    //timer t(opt);
 
     string path = opt.okapi_url;
     etymon::join(&path, table.sourcePath);
@@ -220,7 +220,7 @@ static PageStatus retrieve(const Curl& c, const options& opt, Log* lg,
     // TODO move timing code to calling function and re-enable
     // Temporarily disabled until timing added for staging, merging, etc.
     //if (opt.verbose)
-    //    timer.print("extraction time");
+    //    t.print("extraction time");
 }
 
 static void writeCountFile(const string& loadDir, const string& tableName,

@@ -29,7 +29,7 @@ void mergeTable(const options& opt, Log* log, const TableSchema& table,
         "                  h1.updated < h2.updated\n"
         "      );";
     log->log(Level::detail, "", "", sql, -1);
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
@@ -50,7 +50,7 @@ void mergeTable(const options& opt, Log* log, const TableSchema& table,
         "          ( h.id IS NULL OR\n"
         "            (s.data)::VARCHAR <> (h.data)::VARCHAR );";
     log->log(Level::detail, "", "", sql, -1);
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 }
 
 void dropTable(const options& opt, Log* log, const string& tableName,
@@ -58,7 +58,7 @@ void dropTable(const options& opt, Log* log, const string& tableName,
 {
     string sql = "DROP TABLE IF EXISTS " + tableName + ";";
     log->logDetail(sql);
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 }
 
 void placeTable(const options& opt, Log* log, const TableSchema& table,
@@ -70,6 +70,6 @@ void placeTable(const options& opt, Log* log, const TableSchema& table,
         "ALTER TABLE " + loadingTable + "\n"
         "    RENAME TO " + table.tableName + ";";
     log->log(Level::detail, "", "", sql, -1);
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 }
 

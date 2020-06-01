@@ -8,19 +8,19 @@
 
 using namespace std;
 
-class Timer {
+class timer {
 public:
-    chrono::steady_clock::time_point startTime;
+    chrono::steady_clock::time_point start_time;
     FILE* err;
     const char* prog;
-    Timer();
+    timer();
     //Timer(FILE* err, const char* prog);
-    Timer(const options& options);
+    timer(const options& options);
     void restart();
-    double elapsedTime() const;
+    double elapsed_time() const;
     void print(const char* str) const;
 };
 
-void getCurrentTime(string* str);
+void get_current_time(string* str);
 
 #endif

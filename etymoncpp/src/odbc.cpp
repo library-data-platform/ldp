@@ -4,7 +4,7 @@
 
 namespace etymon {
 
-const char* odbcStrError(SQLRETURN rc)
+const char* odbc_str_error(SQLRETURN rc)
 {
     switch (rc) {
         case SQL_SUCCESS:
@@ -71,30 +71,30 @@ void odbc_conn::get_dbms_name(string* dbms_name)
     *dbms_name = (char*) dn;
 }
 
-void odbc_conn::execDirectStmt(odbc_stmt* stmt, const string& sql)
+void odbc_conn::exec_direct_stmt(odbc_stmt* stmt, const string& sql)
 {
     SQLRETURN rc = SQLExecDirect(stmt->stmt, (SQLCHAR *) sql.c_str(),
             SQL_NTS);
     if (!SQL_SUCCEEDED(rc) && rc != SQL_NO_DATA) {
-        //fprintf(stderr, "ERROR: %s\n", odbcStrError(rc));
-        //odbcStrErrorDetail(stmt->stmt, SQL_HANDLE_STMT);
+        //fprintf(stderr, "ERROR: %s\n", odbc_str_error(rc));
+        //odbc_str_error_detail(stmt->stmt, SQL_HANDLE_STMT);
         throw runtime_error("Error executing statement in database: " + dsn +
-                ": " + odbcStrError(rc) + ":\n" + sql);
+                ": " + odbc_str_error(rc) + ":\n" + sql);
     }
 }
 
 void odbc_conn::exec(const string& sql)
 {
     odbc_stmt st(this);
-    execDirectStmt(&st, sql);
+    exec_direct_stmt(&st, sql);
 }
 
-void odbc_conn::execDirect(odbc_stmt* stmt, const string& sql)
+void odbc_conn::exec_direct(odbc_stmt* stmt, const string& sql)
 {
     if (stmt == nullptr)
         exec(sql);
     else
-        execDirectStmt(stmt, sql);
+        exec_direct_stmt(stmt, sql);
 }
 
 bool odbc_conn::fetch(odbc_stmt* stmt)
@@ -104,11 +104,11 @@ bool odbc_conn::fetch(odbc_stmt* stmt)
         return false;
     if (!SQL_SUCCEEDED(rc))
         throw runtime_error("Error fetching data in database: " + dsn + ": " +
-                odbcStrError(rc));
+                odbc_str_error(rc));
     return true;
 }
 
-void odbc_conn::getData(odbc_stmt* stmt, uint16_t column, string* data)
+void odbc_conn::get_data(odbc_stmt* stmt, uint16_t column, string* data)
 {
     SQLLEN indicator;
     char buffer[65535];
@@ -122,16 +122,16 @@ void odbc_conn::getData(odbc_stmt* stmt, uint16_t column, string* data)
         *data = buffer;
 }
 
-void odbc_conn::startTransaction()
+void odbc_conn::start_transaction()
 {
-    setAutoCommit(false);
+    set_auto_commit(false);
 }
 
 void odbc_conn::commit()
 {
     SQLRETURN rc = SQLEndTran(SQL_HANDLE_DBC, conn, SQL_COMMIT);
     try {
-        setAutoCommit(true);
+        set_auto_commit(true);
     } catch (runtime_error& e) {}
     if (!SQL_SUCCEEDED(rc))
         throw runtime_error("error committing transaction in database: " + dsn);
@@ -141,26 +141,26 @@ void odbc_conn::rollback()
 {
     SQLRETURN rc = SQLEndTran(SQL_HANDLE_DBC, conn, SQL_ROLLBACK);
     try {
-        setAutoCommit(true);
+        set_auto_commit(true);
     } catch (runtime_error& e) {}
     if (!SQL_SUCCEEDED(rc))
         throw runtime_error("error rolling back transaction in database: " +
                 dsn);
 }
 
-void odbc_conn::setAutoCommit(bool autoCommit)
+void odbc_conn::set_auto_commit(bool auto_commit)
 {
     SQLRETURN rc = SQLSetConnectAttr(conn, SQL_ATTR_AUTOCOMMIT,
-            autoCommit ?
+            auto_commit ?
             (SQLPOINTER) SQL_AUTOCOMMIT_ON : (SQLPOINTER) SQL_AUTOCOMMIT_OFF,
             SQL_IS_UINTEGER);
     if (!SQL_SUCCEEDED(rc))
         throw runtime_error("error setting autocommit in database: " + dsn);
 }
 
-odbc_stmt::odbc_stmt(odbc_conn* odbcDbc)
+odbc_stmt::odbc_stmt(odbc_conn* conn)
 {
-    SQLAllocHandle(SQL_HANDLE_STMT, odbcDbc->conn, &stmt);
+    SQLAllocHandle(SQL_HANDLE_STMT, conn->conn, &stmt);
 }
 
 odbc_stmt::~odbc_stmt()
@@ -168,11 +168,11 @@ odbc_stmt::~odbc_stmt()
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 }
 
-odbc_tx::odbc_tx(odbc_conn* odbcDbc)
+odbc_tx::odbc_tx(odbc_conn* conn)
 {
-    conn = odbcDbc;
+    this->conn = conn;
     completed = false;
-    conn->startTransaction();
+    this->conn->start_transaction();
 }
 
 void odbc_tx::commit()

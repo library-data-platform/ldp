@@ -8,26 +8,26 @@
 
 constexpr json::ParseFlag pflags = json::kParseTrailingCommasFlag;
 
-Config::Config(const string& config)
+config::config(const string& conf)
 {
-    string configFile;
-    if (config != "") {
-        configFile = config;
+    string config_file;
+    if (conf != "") {
+        config_file = conf;
     } else {
         char* s = getenv("LDPCONFIG");
-        configFile = s ? s : "";
-        etymon::trim(&configFile);
-        if (configFile.empty())
+        config_file = s ? s : "";
+        etymon::trim(&config_file);
+        if (config_file.empty())
             throw runtime_error("configuration file not specified");
     }
     // Load and parse JSON file.
-    etymon::file f(configFile, "r");
-    char readBuffer[65536];
-    json::FileReadStream is(f.fp, readBuffer, sizeof(readBuffer));
+    etymon::file f(config_file, "r");
+    char read_buffer[65536];
+    json::FileReadStream is(f.fp, read_buffer, sizeof(read_buffer));
     jsondoc.ParseStream<pflags>(is);
 }
 
-bool Config::get(const string& key, string* value) const
+bool config::get(const string& key, string* value) const
 {
     if (const json::Value* v = json::Pointer(key.c_str()).Get(jsondoc)) {
         if (v->IsString() == false)
@@ -42,7 +42,7 @@ bool Config::get(const string& key, string* value) const
     }
 }
 
-bool Config::getBool(const string& key, bool* value) const
+bool config::get_bool(const string& key, bool* value) const
 {
     if (const json::Value* v = json::Pointer(key.c_str()).Get(jsondoc)) {
         if (v->IsBool() == false)
@@ -57,7 +57,7 @@ bool Config::getBool(const string& key, bool* value) const
     }
 }
 
-bool Config::getInt(const string& key, int* value) const
+bool config::get_int(const string& key, int* value) const
 {
     if (const json::Value* v = json::Pointer(key.c_str()).Get(jsondoc)) {
         if (v->IsInt() == false)
@@ -72,13 +72,13 @@ bool Config::getInt(const string& key, int* value) const
     }
 }
 
-void Config::getRequired(const string& key, string* value) const
+void config::get_required(const string& key, string* value) const
 {
     if (!get(key, value))
         throw runtime_error("configuration value not found: " + key);
 }
 
-void Config::getOptional(const string& key, string* value) const
+void config::get_optional(const string& key, string* value) const
 {
     if (!get(key, value)) {
         value->clear();

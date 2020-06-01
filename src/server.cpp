@@ -24,7 +24,7 @@
 // Temporary
 #include "names.h"
 
-static const char* optionHelp =
+static const char* option_help =
 "Usage:  ldp <command> <options>\n"
 "  e.g.  ldp init -D /usr/local/ldp/data --profile folio\n"
 "Commands:\n"
@@ -86,7 +86,7 @@ void vacuumAnalyzeAll(const options& opt, Schema* schema, etymon::Postgres* db)
 // Check for obvious problems that could show up later in the loading
 // process.
 /*
-static void runPreloadTests(const options& opt, etymon::odbc_env* odbc)
+static void run_preload_tests(const options& opt, etymon::odbc_env* odbc)
 {
     //print(Print::verbose, opt, "running pre-load checks");
 
@@ -102,7 +102,7 @@ static void runPreloadTests(const options& opt, etymon::odbc_env* odbc)
         string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
             opt.ldpUser + ";";
         printSQL(Print::debug, opt, sql);
-        conn.execDirect(nullptr, sql);
+        conn.exec(sql);
         tx.rollback();
     }
 }
@@ -129,15 +129,15 @@ bool timeForFullUpdate(const options& opt, etymon::odbc_conn* conn, DBType* dbt,
         "    FROM ldpconfig.general;";
     log->log(Level::detail, "", "", sql, -1);
     etymon::odbc_stmt stmt(conn);
-    conn->execDirect(&stmt, sql);
+    conn->exec_direct(&stmt, sql);
     if (conn->fetch(&stmt) == false) {
         string e = "No rows could be read from table: ldpconfig.general";
         log->log(Level::error, "", "", e, -1);
         throw runtime_error(e);
     }
     string fullUpdateEnabled, updateNow;
-    conn->getData(&stmt, 1, &fullUpdateEnabled);
-    conn->getData(&stmt, 2, &updateNow);
+    conn->get_data(&stmt, 1, &fullUpdateEnabled);
+    conn->get_data(&stmt, 2, &updateNow);
     if (conn->fetch(&stmt)) {
         string e = "Too many rows in table: ldpconfig.general";
         log->log(Level::error, "", "", e, -1);
@@ -165,7 +165,7 @@ void rescheduleNextDailyLoad(const options& opt, etymon::odbc_conn* conn,
             "UPDATE ldpconfig.general SET next_full_update =\n"
             "    next_full_update + INTERVAL '1 day';";
         log->log(Level::detail, "", "", sql, -1);
-        conn->execDirect(nullptr, sql);
+        conn->exec(sql);
         // Check if next_full_update is now in the future.
         sql =
             "SELECT (next_full_update > " + string(dbt->currentTimestamp()) +
@@ -173,13 +173,13 @@ void rescheduleNextDailyLoad(const options& opt, etymon::odbc_conn* conn,
             "    FROM ldpconfig.general;";
         log->log(Level::detail, "", "", sql, -1);
         etymon::odbc_stmt stmt(conn);
-        conn->execDirect(&stmt, sql);
+        conn->exec_direct(&stmt, sql);
         if (conn->fetch(&stmt) == false) {
             string e = "No rows could be read from table: ldpconfig.general";
             log->log(Level::error, "", "", e, -1);
             throw runtime_error(e);
         }
-        conn->getData(&stmt, 1, &updateInFuture);
+        conn->get_data(&stmt, 1, &updateInFuture);
         if (conn->fetch(&stmt)) {
             string e = "Too many rows in table: ldpconfig.general";
             log->log(Level::error, "", "", e, -1);
@@ -236,25 +236,25 @@ void server(const options& opt, etymon::odbc_env* odbc)
             string("Server stopped") + (opt.cli_mode ? " (CLI mode)" : ""), -1);
 }
 
-void runServer(const options& opt)
+void run_server(const options& opt)
 {
     etymon::odbc_env odbc;
 
-    //runPreloadTests(opt, odbc);
+    //run_preload_tests(opt, odbc);
 
-    etymon::odbc_conn lockConn(&odbc, opt.db);
+    etymon::odbc_conn lock_conn(&odbc, opt.db);
     string sql = "CREATE SCHEMA IF NOT EXISTS ldpsystem;";
-    lockConn.execDirect(nullptr, sql);
+    lock_conn.exec(sql);
     sql = "CREATE TABLE IF NOT EXISTS ldpsystem.server_lock (b BOOLEAN);";
-    lockConn.execDirect(nullptr, sql);
+    lock_conn.exec(sql);
 
     {
         if (opt.log_level == Level::trace || opt.log_level == Level::detail)
             fprintf(opt.err, "%s: Acquiring server lock\n", opt.prog);
 
-        etymon::odbc_tx tx(&lockConn);
+        etymon::odbc_tx tx(&lock_conn);
         sql = "LOCK ldpsystem.server_lock;";
-        lockConn.execDirect(nullptr, sql);
+        lock_conn.exec(sql);
 
         if (opt.log_level == Level::trace || opt.log_level == Level::detail)
             fprintf(opt.err, "%s: Initializing\n", opt.prog);
@@ -263,34 +263,34 @@ void runServer(const options& opt)
     }
 }
 
-void fillDirectOptions(const Config& config, const string& base, options* opt)
+void fill_direct_options(const config& conf, const string& base, options* opt)
 {
     int x = 0;
     string directTables = base + "direct_tables/";
     while (true) {
         string t;
-        if (!config.get(directTables + to_string(x), &t))
+        if (!conf.get(directTables + to_string(x), &t))
             break;
         opt->direct.table_names.push_back(t);
         x++;
     }
-    config.get(base + "direct_database_name", &(opt->direct.database_name));
-    config.get(base + "direct_database_host", &(opt->direct.database_host));
+    conf.get(base + "direct_database_name", &(opt->direct.database_name));
+    conf.get(base + "direct_database_host", &(opt->direct.database_host));
     int port = 0;
-    config.getInt(base + "direct_database_port", &port);
+    conf.get_int(base + "direct_database_port", &port);
     opt->direct.database_port = to_string(port);
-    config.get(base + "direct_database_user", &(opt->direct.database_user));
-    config.get(base + "direct_database_password",
+    conf.get(base + "direct_database_user", &(opt->direct.database_user));
+    conf.get(base + "direct_database_password",
             &(opt->direct.database_password));
 }
 
-void fillOptions(const Config& config, options* opt)
+void fill_options(const config& conf, options* opt)
 {
     string environment;
     ///////////////////////////////////////////////////////////////////////////
-    //config.getRequired("/environment", &environment);
+    //conf.get_required("/environment", &environment);
     ///////////////////////////////////////////////////////////////////////////
-    config.get("/environment", &environment);
+    conf.get("/environment", &environment);
     if (environment == "") {
         fprintf(stderr, "ldp: ");
         print_banner_line(stderr, '=', 74);
@@ -306,15 +306,15 @@ void fillOptions(const Config& config, options* opt)
     config_set_environment(environment, &(opt->environment));
 
     string target = "/ldp_database/";
-    config.getRequired(target + "odbc_database", &(opt->db));
-    config.get(target + "ldpconfig_user", &(opt->ldpconfig_user));
-    config.get(target + "ldp_user", &(opt->ldp_user));
+    conf.get_required(target + "odbc_database", &(opt->db));
+    conf.get(target + "ldpconfig_user", &(opt->ldpconfig_user));
+    conf.get(target + "ldp_user", &(opt->ldp_user));
 
     if (opt->load_from_dir == "") {
         string enableSource;
-        config.getRequired("/enable_sources/0", &enableSource);
+        conf.get_required("/enable_sources/0", &enableSource);
         string secondSource;
-        config.get("/enable_sources/1", &secondSource);
+        conf.get("/enable_sources/1", &secondSource);
         if (secondSource != "")
             throw runtime_error(
                     "Multiple sources not currently supported in "
@@ -322,41 +322,41 @@ void fillOptions(const Config& config, options* opt)
                     "    Attribute: enable_sources\n"
                     "    Value: " + secondSource);
         string source = "/sources/" + enableSource + "/";
-        config.getRequired(source + "okapi_url", &(opt->okapi_url));
-        config.getRequired(source + "okapi_tenant", &(opt->okapi_tenant));
-        config.getRequired(source + "okapi_user", &(opt->okapi_user));
-        config.getRequired(source + "okapi_password", &(opt->okapi_password));
-        fillDirectOptions(config, source, opt);
+        conf.get_required(source + "okapi_url", &(opt->okapi_url));
+        conf.get_required(source + "okapi_tenant", &(opt->okapi_tenant));
+        conf.get_required(source + "okapi_user", &(opt->okapi_user));
+        conf.get_required(source + "okapi_password", &(opt->okapi_password));
+        fill_direct_options(conf, source, opt);
     }
 
     bool disable_anonymization;
-    config.getBool("/disable_anonymization", &disable_anonymization);
+    conf.get_bool("/disable_anonymization", &disable_anonymization);
     opt->disable_anonymization = disable_anonymization;
 }
 
 void run_opt(options* opt)
 {
-    Config config(opt->datadir + "/ldpconf.json");
-    fillOptions(config, opt);
+    config conf(opt->datadir + "/ldpconf.json");
+    fill_options(conf, opt);
     if (opt->command == ldp_command::update)
         opt->console = true;
 
     if (opt->command == ldp_command::server) {
         do {
-            Timer timer(*opt);
+            timer error_timer(*opt);
             try {
-                runServer(*opt);
+                run_server(*opt);
             } catch (runtime_error& e) {
                 string s = e.what();
                 if ( !(s.empty()) && s.back() == '\n' )
                     s.pop_back();
                 fprintf(stderr, "ldp: Error: %s\n", s.c_str());
-                double elapsedTime = timer.elapsedTime();
-                if (elapsedTime < 60) {
+                double elapsed_time = error_timer.elapsed_time();
+                if (elapsed_time < 300) {
                     fprintf(stderr,
                             "ldp: Server error occurred after %.4f seconds\n",
-                            elapsedTime);
-                    long long int waitTime = 60;
+                            elapsed_time);
+                    long long int waitTime = 300;
                     fprintf(stderr, "ldp: Waiting for %lld seconds\n",
                             waitTime);
                     std::this_thread::sleep_for(std::chrono::seconds(waitTime));
@@ -368,19 +368,19 @@ void run_opt(options* opt)
     }
 
     if (opt->command == ldp_command::upgrade_database) {
-        runServer(*opt);
+        run_server(*opt);
         return;
     }
 
     if (opt->command == ldp_command::init) {
         if (opt->set_profile == profile::none)
             throw runtime_error("Profile not specified");
-        runServer(*opt);
+        run_server(*opt);
         return;
     }
 
     if (opt->command == ldp_command::update) {
-        runServer(*opt);
+        run_server(*opt);
         return;
     }
 }
@@ -393,7 +393,7 @@ void run(const etymon::command_args& cargs)
         throw runtime_error("unable to parse command line options");
 
     if (cargs.argc < 2 || opt.command == ldp_command::help) {
-        printf("%s", optionHelp);
+        printf("%s", option_help);
         return;
     }
 

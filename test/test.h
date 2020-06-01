@@ -1,5 +1,5 @@
-#ifndef LDP_TEST_H
-#define LDP_TEST_H
+#ifndef LDP_TEST_TEST_H
+#define LDP_TEST_TEST_H
 
 #include <catch2/catch.hpp>
 

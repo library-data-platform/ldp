@@ -203,7 +203,7 @@ static void endInserts(const options& opt, Log* log, const string& table,
 {
     *buffer += ";\n";
     log->log(Level::detail, "", "", "Loading data for table: " + table, -1);
-    conn->execDirect(nullptr, *buffer);
+    conn->exec(*buffer);
     buffer->clear();
 }
 
@@ -595,7 +595,7 @@ static void createLoadingTable(const options& opt, Log* log,
         "    tenant_id SMALLINT NOT NULL\n"
         ")" + rskeys + ";";
     log->log(Level::detail, "", "", sql, -1);
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     // Add comment on table.
     if (table.moduleName != "mod-agreements") {
@@ -610,20 +610,20 @@ static void createLoadingTable(const options& opt, Log* log,
         sql += "';";
         log->log(Level::detail, "", "",
                 "Setting comment on table: " + table.tableName, -1);
-        conn->execDirect(nullptr, sql);
+        conn->exec(sql);
     }
 
     sql =
         "GRANT SELECT ON " + loadingTable + "\n"
         "    TO " + opt.ldpconfig_user + ";";
     log->logDetail(sql);
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     sql =
         "GRANT SELECT ON " + loadingTable + "\n"
         "    TO " + opt.ldp_user + ";";
     log->logDetail(sql);
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 }
 
 bool stageTable(const options& opt, Log* log, TableSchema* table,

@@ -39,7 +39,7 @@ bool select_database_version(etymon::odbc_conn* conn, int64_t* version)
     string sql = "SELECT ldp_schema_version FROM ldpsystem.main;";
     etymon::odbc_stmt stmt(conn);
     try {
-        conn->execDirect(&stmt, sql);
+        conn->exec_direct(&stmt, sql);
     } catch (runtime_error& e) {
         // This could happen if the table does not exist.
         return false;
@@ -51,7 +51,7 @@ bool select_database_version(etymon::odbc_conn* conn, int64_t* version)
         throw runtime_error(e);
     }
     string ldpSchemaVersion;
-    conn->getData(&stmt, 1, &ldpSchemaVersion);
+    conn->get_data(&stmt, 1, &ldpSchemaVersion);
     if (conn->fetch(&stmt)) {
         // This means there is more than one row.  Do not try to
         // recover automatically from this problem.
@@ -71,7 +71,7 @@ void catalog_add_table(etymon::odbc_conn* conn, const string& table)
     string sql =
         "INSERT INTO ldpsystem.tables (table_name) VALUES\n"
         "    ('" + table + "');";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 }
 
 /* *
@@ -102,21 +102,21 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
     // Schema: ldpsystem
 
     //string sql = "CREATE SCHEMA ldpsystem;";
-    //db->conn->execDirect(nullptr, sql);
+    //db->conn->exec(sql);
 
     string sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
     sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpconfigUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     sql =
         "CREATE TABLE ldpsystem.main (\n"
         "    ldp_schema_version BIGINT NOT NULL\n"
         ");";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
     sql = "INSERT INTO ldpsystem.main (ldp_schema_version) VALUES (" +
         to_string(thisSchemaVersion) + ");";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     sql =
         "CREATE TABLE ldpsystem.log (\n"
@@ -128,7 +128,7 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
         "    message VARCHAR(65535) NOT NULL,\n"
         "    elapsed_time REAL\n"
         ");";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     // Table: ldpsystem.tables
 
@@ -141,7 +141,7 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
         "    documentation VARCHAR(65535),\n"
         "    documentation_url VARCHAR(65535)\n"
         ");";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     // Add tables to the catalog.
     for (auto& table : schema.tables)
@@ -159,46 +159,46 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
         "    constraint_name VARCHAR(63) NOT NULL,\n"
         "        PRIMARY KEY (referencing_table, referencing_column)\n"
         ")" + rskeys + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpUser + ";";
-    //conn->execDirect(nullptr, sql);
+    //conn->exec(sql);
     //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpconfigUser +
     //    ";";
-    //conn->execDirect(nullptr, sql);
+    //conn->exec(sql);
 
 
     sql = "GRANT SELECT ON ldpsystem.log TO " + ldpUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
     sql = "GRANT SELECT ON ldpsystem.log TO " + ldpconfigUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     sql = "GRANT SELECT ON ldpsystem.main TO " + ldpUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
     sql = "GRANT SELECT ON ldpsystem.main TO " + ldpconfigUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     sql = "GRANT SELECT ON ldpsystem.foreign_key_constraints TO " + ldpUser +
         ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
     sql = "GRANT SELECT ON ldpsystem.foreign_key_constraints TO " +
         ldpconfigUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     sql = "GRANT SELECT ON ldpsystem.tables TO " + ldpUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
     sql = "GRANT SELECT ON ldpsystem.tables TO " + ldpconfigUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     // Schema: ldpconfig
 
     sql = "CREATE SCHEMA ldpconfig;";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldpUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
     sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldpconfigUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     sql =
         "CREATE TABLE ldpconfig.general (\n"
@@ -209,15 +209,15 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
         "    enable_foreign_key_warnings BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    disable_anonymization BOOLEAN NOT NULL DEFAULT FALSE\n"
         ");";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
     sql = "DELETE FROM ldpconfig.general;";  // Temporary: pre-LDP-1.0
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
     sql =
         "INSERT INTO ldpconfig.general\n"
         "    (enable_full_updates, next_full_update)\n"
         "    VALUES\n"
         "    (TRUE, " + string(dbt.currentTimestamp()) + ");";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     sql =
         "CREATE TABLE ldpconfig.foreign_keys (\n"
@@ -227,25 +227,25 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
         "    referenced_table VARCHAR(63) NOT NULL,\n"
         "    referenced_column VARCHAR(63) NOT NULL\n"
         ");";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpconfigUser +
         ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
     sql = "GRANT UPDATE ON ldpconfig.general TO " + ldpconfigUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     // Schema: history
 
     sql = "CREATE SCHEMA history;";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     sql = "GRANT USAGE ON SCHEMA history TO " + ldpUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
     sql = "GRANT USAGE ON SCHEMA history TO " + ldpconfigUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     for (auto& table : schema.tables) {
         string rskeys;
@@ -261,18 +261,18 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
             "        history_" + table.tableName + "_pkey\n"
             "        PRIMARY KEY (id, updated)\n"
             ")" + rskeys + ";";
-        conn->execDirect(nullptr, sql);
+        conn->exec(sql);
 
         sql =
             "GRANT SELECT ON\n"
             "    history." + table.tableName + "\n"
             "    TO " + ldpUser + ";";
-        conn->execDirect(nullptr, sql);
+        conn->exec(sql);
         sql =
             "GRANT SELECT ON\n"
             "    history." + table.tableName + "\n"
             "    TO " + ldpconfigUser + ";";
-        conn->execDirect(nullptr, sql);
+        conn->exec(sql);
     }
 
     // Schema: public
@@ -287,26 +287,26 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
             "    tenant_id SMALLINT NOT NULL,\n"
             "    PRIMARY KEY (id)\n"
         ")" + rskeys + ";";
-        conn->execDirect(nullptr, sql);
+        conn->exec(sql);
         sql =
             "GRANT SELECT ON " + table.tableName + "\n"
             "    TO " + ldpconfigUser + ";";
-        conn->execDirect(nullptr, sql);
+        conn->exec(sql);
         sql =
             "GRANT SELECT ON " + table.tableName + "\n"
             "    TO " + ldpUser + ";";
-        conn->execDirect(nullptr, sql);
+        conn->exec(sql);
     }
 
     // Schema: local
 
     sql = "CREATE SCHEMA local;";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + ldpUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
     sql = "GRANT USAGE ON SCHEMA local TO " + ldpconfigUser + ";";
-    conn->execDirect(nullptr, sql);
+    conn->exec(sql);
 
     tx.commit();
 }
