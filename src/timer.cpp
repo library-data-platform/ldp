@@ -1,45 +1,45 @@
 #include "timer.h"
 
-Timer::Timer()
+timer::timer()
 {
     restart();
     err = stderr;
     prog = "ldp";
 }
 
-//Timer::Timer(FILE* err, const char* prog)
+//timer::timer(FILE* err, const char* prog)
 //{
 //    restart();
 //    this->err = err;
 //    this->prog = prog;
 //}
 
-Timer::Timer(const options& options)
+timer::timer(const options& options)
 {
     restart();
     err = options.err;
     prog = options.prog;
 }
 
-void Timer::restart()
+void timer::restart()
 {
-    startTime = chrono::steady_clock::now();
+    start_time = chrono::steady_clock::now();
 }
 
-double Timer::elapsedTime() const
+double timer::elapsed_time() const
 {
-    chrono::duration<double> elapsed = chrono::steady_clock::now() - startTime;
+    chrono::duration<double> elapsed = chrono::steady_clock::now() - start_time;
     return elapsed.count();
 }
 
-void Timer::print(const char* str) const
+void timer::print(const char* str) const
 {
     chrono::duration<double> elapsed =
-        chrono::steady_clock::now() - startTime;
+        chrono::steady_clock::now() - start_time;
     fprintf(err, "%s: %s: %.4f s\n", prog, str, elapsed.count());
 }
 
-void getCurrentTime(string* str)
+void get_current_time(string* str)
 {
     time_t now;
     time(&now);

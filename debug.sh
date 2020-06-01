@@ -5,5 +5,5 @@ mkdir -p build
 cd build
 cmake -DDEBUG=ON -DOPTIMIZE=OFF ..
 make
-./src/test_ldp
+./ldp_test
 

@@ -11,7 +11,7 @@
 #include "timer.h"
 #include "util.h"
 
-ExtractionFiles::~ExtractionFiles()
+extraction_files::~extraction_files()
 {
     if (!opt.savetemps) {
         for (const auto& f : files)
@@ -76,9 +76,9 @@ size_t header_callback(char* buffer, size_t size, size_t nitems,
  * okapiPassword, and okapiTenant.
  * \param[out] token The authentication token received from Okapi.
  */
-void okapiLogin(const options& opt, Log* lg, string* token)
+void okapi_login(const options& opt, log* lg, string* token)
 {
-    Timer timer(opt);
+    //timer t(opt);
 
     string login;
     encodeLogin(opt.okapi_user, opt.okapi_password, &login);
@@ -86,7 +86,7 @@ void okapiLogin(const options& opt, Log* lg, string* token)
     string path = opt.okapi_url;
     etymon::join(&path, "/authn/login");
 
-    lg->log(Level::detail, "", "", "Retrieving: " + path, -1);
+    lg->write(level::detail, "", "", "Retrieving: " + path, -1);
 
     string tenantHeader = "X-Okapi-Tenant: ";
     tenantHeader += opt.okapi_tenant;
@@ -141,7 +141,7 @@ void okapiLogin(const options& opt, Log* lg, string* token)
     // TODO enable times
     // Temporarily disabled until timing added for staging, merging, etc.
     //if (opt.verbose)
-    //    timer.print("login time");
+    //    t.print("login time");
 }
 
 enum class PageStatus {
@@ -150,12 +150,12 @@ enum class PageStatus {
     containsRecords
 };
 
-static PageStatus retrieve(const Curl& c, const options& opt, Log* lg,
+static PageStatus retrieve(const Curl& c, const options& opt, log* lg,
         const string& token, const TableSchema& table, const string& loadDir,
-        ExtractionFiles* extractionFiles, size_t page)
+        extraction_files* ext_files, size_t page)
 {
     // TODO move timing code to calling function and re-enable
-    //Timer timer(opt);
+    //timer t(opt);
 
     string path = opt.okapi_url;
     etymon::join(&path, table.sourcePath);
@@ -179,7 +179,7 @@ static PageStatus retrieve(const Curl& c, const options& opt, Log* lg,
 
     {
         etymon::file f(output, "wb");
-        extractionFiles->files.push_back(output);
+        ext_files->files.push_back(output);
 
         // testing
         //curl_easy_setopt(c.curl, CURLOPT_TIMEOUT, 100000);
@@ -188,7 +188,7 @@ static PageStatus retrieve(const Curl& c, const options& opt, Log* lg,
         curl_easy_setopt(c.curl, CURLOPT_URL, path.c_str());
         curl_easy_setopt(c.curl, CURLOPT_WRITEDATA, f.fp);
 
-        lg->log(Level::detail, "", "",
+        lg->write(level::detail, "", "",
                 "Retrieving from:\n"
                 "    Path: " + table.sourcePath + "\n"
                 "    Query: " + query, -1);
@@ -220,37 +220,37 @@ static PageStatus retrieve(const Curl& c, const options& opt, Log* lg,
     // TODO move timing code to calling function and re-enable
     // Temporarily disabled until timing added for staging, merging, etc.
     //if (opt.verbose)
-    //    timer.print("extraction time");
+    //    t.print("extraction time");
 }
 
 static void writeCountFile(const string& loadDir, const string& tableName,
-        ExtractionFiles* extractionFiles, size_t page) {
+        extraction_files* ext_files, size_t page) {
     string countFile = loadDir;
     etymon::join(&countFile, tableName);
     countFile += "_count.txt";
     etymon::file f(countFile, "w");
-    extractionFiles->files.push_back(countFile);
+    ext_files->files.push_back(countFile);
     string pageStr = to_string(page) + "\n";
     fputs(pageStr.c_str(), f.fp);
 }
 
-bool retrievePages(const Curl& c, const options& opt, Log* lg,
+bool retrievePages(const Curl& c, const options& opt, log* lg,
         const string& token, const TableSchema& table, const string& loadDir,
-        ExtractionFiles* extractionFiles)
+        extraction_files* ext_files)
 {
     size_t page = 0;
     while (true) {
-        lg->log(Level::detail, "", "",
+        lg->write(level::detail, "", "",
                 "Extracting page: " + to_string(page), -1);
         PageStatus status = retrieve(c, opt, lg, token, table, loadDir,
-                extractionFiles, page);
+                ext_files, page);
         switch (status) {
         case PageStatus::interfaceNotAvailable:
-            lg->log(Level::trace, "", "",
+            lg->write(level::trace, "", "",
                     "Interface not available: " + table.sourcePath, -1);
             return false;
         case PageStatus::pageEmpty:
-            writeCountFile(loadDir, table.tableName, extractionFiles, page);
+            writeCountFile(loadDir, table.tableName, ext_files, page);
             return true;
         case PageStatus::containsRecords:
             break;
@@ -268,13 +268,13 @@ bool directOverride(const options& opt, const string& tableName)
     return false;
 }
 
-bool retrieveDirect(const options& opt, Log* lg, const TableSchema& table,
-        const string& loadDir, ExtractionFiles* extractionFiles)
+bool retrieveDirect(const options& opt, log* lg, const TableSchema& table,
+        const string& loadDir, extraction_files* ext_files)
 {
-    lg->log(Level::trace, "", "",
+    lg->write(level::trace, "", "",
             "Direct from database: " + table.sourcePath, -1);
     if (table.directSourceTable == "") {
-        lg->log(Level::warning, "", "",
+        lg->write(level::warning, "", "",
                 "Direct source table undefined: " + table.sourcePath, -1);
         return false;
     }
@@ -285,7 +285,7 @@ bool retrieveDirect(const options& opt, Log* lg, const TableSchema& table,
             opt.direct.database_name, "require");
     string sql = "SELECT jsonb FROM " +
         opt.okapi_tenant + "_" + table.directSourceTable + ";";
-    lg->log(Level::detail, "", "", sql, -1);
+    lg->write(level::detail, "", "", sql, -1);
 
     if (PQsendQuery(db.conn, sql.c_str()) == 0) {
         string err = PQerrorMessage(db.conn);
@@ -297,7 +297,7 @@ bool retrieveDirect(const options& opt, Log* lg, const TableSchema& table,
     string output = loadDir;
     etymon::join(&output, table.tableName + "_0.json");
     etymon::file f(output, "w");
-    extractionFiles->files.push_back(output);
+    ext_files->files.push_back(output);
 
     fprintf(f.fp, "{\n  \"a\": [\n");
 
@@ -321,7 +321,7 @@ bool retrieveDirect(const options& opt, Log* lg, const TableSchema& table,
     fprintf(f.fp, "\n  ]\n}\n");
 
     // Write 1 to count file.
-    writeCountFile(loadDir, table.tableName, extractionFiles, 1);
+    writeCountFile(loadDir, table.tableName, ext_files, 1);
 
     return true;
 }

@@ -1,15 +1,15 @@
 {
     "environment": "production",
-    "ldpDatabase": {
-        "odbcDatabase": "ldp"
+    "ldp_database": {
+        "odbc_database": "ldp"
     },
-    "enableSources": ["myLibrary"],
+    "enable_sources": ["my_library"],
     "sources": {
-        "myLibrary": {
-            "okapiURL": "https://folio-release-okapi.aws.indexdata.com",
-            "okapiTenant": "diku",
-            "okapiUser": "diku_admin",
-            "okapiPassword": "(Okapi password here)"
+        "my_library": {
+            "okapi_url": "https://folio-release-okapi.aws.indexdata.com",
+            "okapi_tenant": "diku",
+            "okapi_user": "diku_admin",
+            "okapi_password": "(okapi password here)"
         }
     }
 }

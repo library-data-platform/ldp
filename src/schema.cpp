@@ -2,7 +2,7 @@
 
 #include "schema.h"
 
-void Schema::MakeDefaultSchema(Schema* schema)
+void Schema::make_default_schema(Schema* schema)
 {
     schema->tables.clear();
 
@@ -534,13 +534,13 @@ void ColumnSchema::columnTypeToString(ColumnType type, string* str)
     }
 }
 
-bool ColumnSchema::selectColumnType(Log* lg, const string& table,
+bool ColumnSchema::selectColumnType(log* lg, const string& table,
         const string& source_path, const string& field, const Counts& counts,
         ColumnType* ctype)
 {
     // Check for incompatible types.
     if (counts.string > 0 && counts.number > 0) {
-        lg->log(Level::error, "", "",
+        lg->write(level::error, "", "",
                 "Inconsistent data types in source data:\n"
                 "    Table: " + table + "\n"
                 "    Source path: " + source_path + "\n"

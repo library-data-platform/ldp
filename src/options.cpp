@@ -6,39 +6,20 @@
 #include "options.h"
 #include "err.h"
 
-static void validate(const options& opt)
+void config_set_profile(const string& profile_str, profile* prof)
 {
-    if (opt.verbose) {
-        fprintf(stderr, "ldp:    ---------------------------------------------"
-                "-----------------------\n");
-        fprintf(stderr,
-                "ldp:    Verbose output (--verbose or -v) is deprecated.  "
-                "Logs are now\n"
-                "ldp:    recorded in table: ldpsystem.log\n");
-        fprintf(stderr, "ldp:    ---------------------------------------------"
-                "-----------------------\n");
+    if (profile_str == "folio") {
+        *prof = profile::folio;
+        return;
     }
-    if (opt.debug) {
-        fprintf(stderr, "ldp:    ---------------------------------------------"
-                "-----------------------\n");
-        fprintf(stderr,
-                "ldp:    Debugging output (--debug) is deprecated.  "
-                "Logs are now recorded\n"
-                "ldp:    in table: ldpsystem.log\n"
-                "ldp:    The \"--trace\" option enables detailed logging.\n");
-        fprintf(stderr, "ldp:    ---------------------------------------------"
-                "-----------------------\n");
+    if (profile_str == "") {
+        *prof = profile::none;
+        return;
     }
-
-    if (opt.command != "server" &&
-            opt.command != "upgrade-database" &&
-            opt.command != "update" &&
-            opt.command != "help" &&
-            opt.command != "")
-        throw runtime_error("unknown command: " + opt.command);
+    throw runtime_error("Unknown profile: " + profile_str);
 }
 
-static void evaloptlong(char *name, char *arg, options* opt)
+static void evaloptlong(char* name, char* arg, options* opt)
 {
     if (!strcmp(name, "extract-only")) {
         opt->extract_only = true;
@@ -52,6 +33,10 @@ static void evaloptlong(char *name, char *arg, options* opt)
         opt->table = arg;
         return;
     }
+    if (!strcmp(name, "profile")) {
+        config_set_profile(arg, &(opt->set_profile));
+        return;
+    }
     if (!strcmp(name, "savetemps")) {
         opt->savetemps = true;
         return;
@@ -61,11 +46,11 @@ static void evaloptlong(char *name, char *arg, options* opt)
         return;
     }
     if (!strcmp(name, "trace")) {
-        opt->log_level = Level::trace;
+        opt->log_level = level::trace;
         return;
     }
     if (!strcmp(name, "detail")) {
-        opt->log_level = Level::detail;
+        opt->log_level = level::detail;
         return;
     }
     if (!strcmp(name, "console")) {
@@ -78,31 +63,53 @@ static void evaloptlong(char *name, char *arg, options* opt)
     }
 }
 
+void config_set_command(const string& command_str, ldp_command* command)
+{
+    if (command_str == "server") {
+        *command = ldp_command::server;
+        return;
+    }
+    if (command_str == "upgrade-database") {
+        *command = ldp_command::upgrade_database;
+        return;
+    }
+    if (command_str == "init") {
+        *command = ldp_command::init;
+        return;
+    }
+    if (command_str == "update") {
+        *command = ldp_command::update;
+        return;
+    }
+    if (command_str == "help" || command_str == "") {
+        *command = ldp_command::help;
+        return;
+    }
+    throw runtime_error("Unknown command: " + command_str);
+}
+
 int evalopt(const etymon::command_args& cargs, options *opt)
 {
     static struct option longopts[] = {
-        { "extract-only", no_argument,       NULL, 0   },
-        { "sourcedir",    required_argument, NULL, 0   },
-        { "table",        required_argument, NULL, 0   },
-        { "verbose",      no_argument,       NULL, 'v' },
-        { "debug",        no_argument,       NULL, 0   },
-        { "trace",        no_argument,       NULL, 0   },
-        { "detail",       no_argument,       NULL, 0   },
         { "console",      no_argument,       NULL, 0   },
-        //{ "unsafe",       no_argument,       NULL, 0   },
-        { "savetemps",    no_argument,       NULL, 0   },
+        { "debug",        no_argument,       NULL, 0   },
+        { "detail",       no_argument,       NULL, 0   },
+        { "extract-only", no_argument,       NULL, 0   },
+        { "profile",      required_argument, NULL, 0   },
         { "quiet",        no_argument,       NULL, 0   },
+        { "sourcedir",    required_argument, NULL, 0   },
+        { "savetemps",    no_argument,       NULL, 0   },
+        { "table",        required_argument, NULL, 0   },
+        { "trace",        no_argument,       NULL, 0   },
+        { "verbose",      no_argument,       NULL, 'v' },
         { 0,              0,                 0,    0   }
     };
     int g, x;
 
-    opt->command = cargs.command;
-    if (opt->command == "load")
-        opt->command = "update";
-    if (opt->command != "server")
+    string command_str = cargs.command;
+    config_set_command(command_str, &(opt->command));
+    if (opt->command != ldp_command::server)
         opt->cli_mode = true;
-    if (opt->command == "upgrade-database")
-        opt->upgrade_database = true;
 
     while (1) {
         int longindex = 0;
@@ -115,8 +122,7 @@ int evalopt(const etymon::command_args& cargs, options *opt)
             return -1;
         switch (g) {
             case 0:
-                evaloptlong( (char *) longopts[longindex].name,
-                        optarg, opt);
+                evaloptlong((char *) longopts[longindex].name, optarg, opt);
                 break;
             case 'D':
                 opt->datadir = optarg;
@@ -140,7 +146,6 @@ int evalopt(const etymon::command_args& cargs, options *opt)
         printf("'\n");
         return -1;
     }
-    validate(*opt);
     return 0;
 }
 
@@ -148,6 +153,14 @@ void config_set_environment(const string& env_str, deployment_environment* env)
 {
     if (env_str == "production") {
         *env = deployment_environment::production;
+        return;
+    }
+    if (env_str == "staging") {
+        *env = deployment_environment::staging;
+        return;
+    }
+    if (env_str == "testing") {
+        *env = deployment_environment::testing;
         return;
     }
     if (env_str == "development") {

@@ -48,7 +48,6 @@ LDP instance.
   * [libpq](https://www.postgresql.org/) 11.5 or later
   * [libcurl](https://curl.haxx.se/) 7.64.0 or later
   * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
-  * [SQLite](https://sqlite.org/) 3.22.0 or later
 * Required to build from source code:
   * C++ compilers supported:
     * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
@@ -82,31 +81,43 @@ also can be increased as needed.
 ### Releases and branches
 
 LDP releases use version numbers in the form, _a_._b_._c_, where
-_a_._b_ is the release number and _c_ indicates a bug fix version.
-For example, suppose that LDP 1.3 has been released.  The first
-version of the 1.3 release will be 1.3.0.  Any subsequent versions
-with the same release number, for example, 1.3.1 or 1.3.2, will
-generally contain no new features but only bug fixes.  (This practice
-will be less strictly observed in pre-releases, i.e. prior to 1.0.)
+_a_._b_ is the major version and _c_ > 0 indicates a bug fix version.
+Suppose that LDP 1.3.0 has been released.  Any subsequent versions
+with the same major version number (1.3), for example, 1.3.1 or 1.3.2,
+will generally contain no new features but only bug fixes.  (This
+practice is less strictly observed in releases prior to 0.9.0.)
 
-Stable versions of LDP are available from the [releases
-page](https://github.com/folio-org/ldp/releases) and via the
-`-release` branches described below.
+Stable versions of LDP are available via the release branches
+described below and from the [releases
+page](https://github.com/folio-org/ldp/releases).
 
 Within the [source code repository](https://github.com/folio-org/ldp)
-there are two main branches:
+there are three kinds of branches that are relatively the most stable:
 
-* `master` is the branch that new releases are made from.  It contains
-  recently added features that have had some testing.
-* `current` is for active development and tends to be very unstable.
-  This is where new features are first added.
+* Release branches (`*-release`):  Beginning with LDP 0.9.0, a
+  numbered branch will be created for each major version.  For
+example, `1.2-release` would point to the latest release of major
+version 1.2, such as 1.2.5.  These release branches are the most
+stable in the source repository.
+* Master branch (`master`):  This is the branch that new major version
+  releases are made from.  It contains recently added features that
+have had some testing.  It is less stable than release branches.
+* Current branch (`current`):  This is for active development and
+  tends to be unstable.  This is where new features are first added,
+before they are merged to the master branch.
 
-Beginning with LDP 1.0, a numbered branch will be created for each
-release; for example, `1.2-release` would point to the latest version
-of LDP 1.2, e.g. 1.2.5.  The `-release` branches are the most stable
-in the source repository.
+If automated deployment will be used for upgrading to new versions of
+LDP, two approaches might be suggested:
 
-### Before installation
+* For a production or staging environment, it is safest to pull from a
+  specific release branch, for example, `1.7-release`, which would
+mean that only bug fixes for major version 1.7 would be applied
+automatically.
+* For a testing environment, which might be used to test new features
+  not yet released, the latest version can be pulled from the `master`
+branch.
+
+### Installing software dependencies
 
 Dependencies required for building the LDP software can be installed via
 a package manager on some platforms.
@@ -115,8 +126,7 @@ a package manager on some platforms.
 
 ```shell
 $ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
-      postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev \
-      libsqlite3-dev
+      postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
@@ -132,7 +142,7 @@ source](https://github.com/catchorg/Catch2/blob/master/docs/cmake-integration.md
 
 ```shell
 $ sudo dnf install catch-devel cmake gcc-c++ libcurl-devel libpq-devel make \
-      postgresql-server-devel sqlite-devel unixODBC-devel
+      postgresql-server-devel unixODBC-devel
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
@@ -160,21 +170,22 @@ $ brew install psqlodbc
 
 ### Building the software
 
-To build the LDP software, download and unpack [a recent
-release](https://github.com/folio-org/ldp/releases) and `cd` into the
-unpacked directory.  Then:
+If the LDP software was built previously in the same directory, first
+remove the leftover `build/` subdirectory to ensure a clean compile.
+Then:
 
 ```shell
 $ ./all.sh
 ```
 
-The `all.sh` script builds three executables in `build/`:
+The `all.sh` script creates a `build/` subdirectory and builds three
+executables there:
 
 * `ldp` is the LDP software.
-* `test_ldp` runs self-contained unit tests.
-* `test_int_ldp` runs integration tests.
+* `ldp_test` runs self-contained unit tests.
+* `ldp_testint` runs integration tests.
 
-After building these executables, the script also runs `test_ldp`.
+After building these executables, the script also runs `ldp_test`.
 
 If there are no errors, the end of the output will include:
 
@@ -194,21 +205,21 @@ As mentioned above, the `all.sh` script runs the unit tests, but they
 can be run separately if needed:
 
 ```shell
-$ ./build/test_ldp
+$ ./build/ldp_test
 ```
 
 Running the integration tests requires a FOLIO instance, as well as an
-LDP testbed instance with a PostgreSQL or Redshift database.  Any
+LDP testbed instance with a PostgreSQL or Redshift database.  The
 contents of the database will be destroyed by these tests; so please
-be careful.  The `environment` configuration setting for the LDP
-testbed instance should be defined as `development`, and the tests are
-run as:
+be careful that the correct database will be used.  The `environment`
+configuration setting for the LDP testbed instance should be defined
+as `testing`, and the tests are run as:
 
 ```shell
-$ ./build/test_int_ldp -s -D <datadir>
+$ ./build/ldp_testint -s -D DATADIR
 ```
 
-where `<datadir>` is the data directory for the test database.  See
+where `DATADIR` is the data directory for the test database.  See
 below for an explanation of LDP data directories and configuration.
 
 
@@ -258,23 +269,23 @@ Three database users are required:
   settings in the `ldpconfig` schema.  It is intended to enable
 designated users to make changes to the server's operation, such as
 scheduling when data updates occur.  This user name can be modified
-using the `ldpconfigUser` configuration setting in `ldpconf.json`.
+using the `ldpconfig_user` configuration setting in `ldpconf.json`.
 * `ldp` is a general user of the LDP database.  This user name can be
-  modified using the `ldpUser` configuration setting in
+  modified using the `ldp_user` configuration setting in
 `ldpconf.json`.
 
 If more than one LDP instance will be hosted with a single database
 server, the `ldpconfig` and `ldp` user names should for security
 reasons be configured to be different for each LDP instance.  This is
-done by including within `ldpconf.json` the `ldpconfigUser` and
-`ldpUser` settings described below in the "Reference" section of this
+done by including within `ldpconf.json` the `ldpconfig_user` and
+`ldp_user` settings described below in the "Reference" section of this
 guide.  In the following examples we will assume that the default user
 names are being used, but please substitute alternative names if you
 have configured them.
 
-In addition to creating these users, it is a good idea to restrict
-access permissions.  In PostgreSQL, this can be done on the command
-line, for example:
+In addition to creating these users, a few access permissions should
+be set.  In PostgreSQL, this can be done on the command line, for
+example:
 
 ```shell
 $ createuser ldpadmin --username=<admin_user> --pwprompt
@@ -327,7 +338,7 @@ FileUsage = 1
 
 __odbc.ini__
 ```
-[ldpdemo]
+[ldp]
 Description = ldp
 Driver = PostgreSQL
 Database = ldp
@@ -366,23 +377,28 @@ __ldpconf.json__
 ```
 {
     "environment": "production",
-    "ldpDatabase": {
-        "odbcDatabase": "ldp"
+    "ldp_database": {
+        "odbc_database": "ldp"
     },
-    "enableSources": ["myLibrary"],
+    "enable_sources": ["my_library"],
     "sources": {
-        "myLibrary": {
-            "okapiURL": "https://folio-release-okapi.aws.indexdata.com",
-            "okapiTenant": "diku",
-            "okapiUser": "diku_admin",
-            "okapiPassword": "(Okapi password here)"
+        "my_library": {
+            "okapi_url": "https://folio-release-okapi.aws.indexdata.com",
+            "okapi_tenant": "diku",
+            "okapi_user": "diku_admin",
+            "okapi_password": "(okapi password here)"
         }
     }
 }
-
 ```
 
 ### Starting the server
+
+If this is a new database, it should first be initialized:
+
+```shell
+$ ldp init -D /var/lib/ldp --profile folio
+```
 
 To start the LDP server:
 
@@ -408,27 +424,31 @@ time of day using the table `ldpconfig.general`.  See the
 When installing a new version of LDP, the database should be
 "upgraded" before starting the new server:
 
-* First, confirm that the new version of LDP builds without errors in
-  the installation environment.
+1. First, confirm that the new version of LDP builds without errors in
+   the installation environment.
 
-* Make a backup of the database.
+2. Make a backup of the database.
 
-* Stop the old version of the server.
+3. Stop the old version of the server.
 
-* Use the `upgrade-database` command in the new version of LDP to
-  perform the upgrade, e.g.:
+4. Use the `upgrade-database` command in the new version of LDP to
+   perform the upgrade, e.g.:
 
 ```shell
 $ ldp upgrade-database -D /var/lib/ldp
 ```
 
-Do not interrupt this process.  Some schema changes use DDL statements
-that cannot be run within a transaction, and interrupting them may
-leave the database in an intermediate state.  For debugging purposes,
-database statements used to perform the upgrade are logged to the file
-`database_upgrade.sql` located in the data directory under `log/`.
+5. Start the new version of the server.
 
-* Start the new version of the server.
+For automated deployment, the `upgrade-database` command can be run
+after `git pull`, whether or not any new changes were pulled.
+
+Do not interrupt the database upgrade process.  Some schema changes
+use DDL statements that cannot be run within a transaction, and
+interrupting them may leave the database in an intermediate state.
+For debugging purposes, database statements used to perform the
+upgrade are logged to files located in the data directory under
+`database_upgrade/`.
 
 
 6\. Direct extraction
@@ -454,20 +474,20 @@ example:
     ( . . . )
 
     "sources": {
-        "okapi": {
+        "my_library": {
 
             ( . . . )
 
-	    "directTables": [
+	    "direct_tables": [
 	        "inventory_holdings",
 		"inventory_instances",
 		"inventory_items"
             ],
-            "directDatabaseName": "okapi",
-            "directDatabaseHost": "database.indexdata.com",
-            "directDatabasePort": 5432,
-            "directDatabaseUser": "folio_admin",
-            "directDatabasePassword": "(database password here)"
+            "direct_database_name": "okapi",
+            "direct_database_host": "database.indexdata.com",
+            "direct_database_port": 5432,
+            "direct_database_user": "folio_admin",
+            "direct_database_password": "(database password here)"
         }
     }
 }
@@ -487,7 +507,7 @@ from other tables.  This anonymization process is enabled unless LDP
 is otherwise configured.
 
 If it should be necessary to disable anonymization, this can be done
-by setting `disableAnonymization` to `true` in `ldpconf.json`, and by
+by setting `disable_anonymization` to `true` in `ldpconf.json`, and by
 setting `disable_anonymization` to `TRUE` in the table
 `ldpconfig.general`.  Both are required to be set in order to disable
 anonymization.
@@ -504,21 +524,18 @@ Reference
 ### Configuration file: ldpconf.json
 
 * `environment` (string; required) is the deployment environment of
-  the LDP instance.  Supported values are `production` and
-`development`.  The `production` environment is recommended for all
-deployments.  The `development` environment allows unsafe operations
-that never should be run on a production instance, such as running
-integration tests on the instance, or updating from data in local
-files.
-* `ldpDatabase` (object; required) is a group of database-related
+  the LDP instance.  Supported values are `production`, `staging`,
+`testing`, and `development`.  This setting is used to determine
+whether certain operations should be allowed to run on the instance.
+* `ldp_database` (object; required) is a group of database-related
   settings.
-  * `odbcDatabase` (string; required) is the ODBC "data source name"
+  * `odbc_database` (string; required) is the ODBC "data source name"
     of the LDP database.
-  * `ldpconfigUser` (string; optional) is the database user that is
+  * `ldpconfig_user` (string; optional) is the database user that is
     defined by default as `ldpconfig`.
-  * `ldpUser` (string; optional) is the database user that is defined
+  * `ldp_user` (string; optional) is the database user that is defined
     by default as `ldp`.
-* `enableSources` (array; required) is a list of sources that are
+* `enable_sources` (array; required) is a list of sources that are
   enabled for the LDP to extract data from.  The source names refer to
 a subset of those defined under `sources` (see below).  Only one
 source should be provided in the case of non-consortial deployments.
@@ -526,27 +543,27 @@ source should be provided in the case of non-consortial deployments.
   extract data from.  Only one source should be provided in the case
 of non-consortial deployments.  A source is defined by a source name
 and an associated object containing several settings:
-  * `okapiURL` (string; required) is the URL for the Okapi instance to
+  * `okapi_url` (string; required) is the URL for the Okapi instance to
     extract data from.
-  * `okapiTenant` (string; required) is the Okapi tenant.
-  * `okapiUser` (string; required) is the Okapi user name.
-  * `okapiPassword` (string; required) is the password for the
+  * `okapi_tenant` (string; required) is the Okapi tenant.
+  * `okapi_user` (string; required) is the Okapi user name.
+  * `okapi_password` (string; required) is the password for the
     specified Okapi user name.
-  * `directTables` (array; optional) is a list of tables that should
+  * `direct_tables` (array; optional) is a list of tables that should
     be updated using direct extraction.  Only these tables may be
 included: `inventory_holdings`, `inventory_instances`, and
 `inventory_items`.
-  * `directDatabaseName` (string; optional) is the FOLIO database
+  * `direct_database_name` (string; optional) is the FOLIO database
     name.
-  * `directDatabaseHost` (string; optional) is the FOLIO database host
+  * `direct_database_host` (string; optional) is the FOLIO database host
     name.
-  * `directDatabasePort` (integer; optional) is the FOLIO database
+  * `direct_database_port` (integer; optional) is the FOLIO database
     port.
-  * `directDatabaseUser` (string; optional) is the FOLIO database user
+  * `direct_database_user` (string; optional) is the FOLIO database user
     name.
-  * `directDatabasePassword` (string; optional) is the password for
+  * `direct_database_password` (string; optional) is the password for
     the specified FOLIO database user name.
-* `disableAnonymization` (Boolean; optional) when set to `true`,
+* `disable_anonymization` (Boolean; optional) when set to `true`,
   disables anonymization of personal data.  Please read the section on
 "Data privacy" above before changing this setting.  As a safety
 precaution, the configuration attribute `disable_anonymization` in

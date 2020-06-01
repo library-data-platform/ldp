@@ -1,3 +1,20 @@
+#
+# To build a release version:
+#
+#     mkdir -p build
+#     cd build
+#     cmake ..
+#     make
+#
+# For debugging:
+#
+#     cmake -DDEBUG=ON -DOPTIMIZE=OFF ..
+#
+# For gprof:
+#
+#     cmake -DGPROF=ON -DDEBUG=ON -DOPTIMIZE=OFF ..
+#
+
 cmake_minimum_required (VERSION 3.7.2)
 project (LDP)
 
@@ -46,7 +63,7 @@ find_package(PostgreSQL REQUIRED)
 include_directories(${PostgreSQL_INCLUDE_DIR})
 #set(LIBS ${LIBS} ${PostgreSQL_LIBRARY})
 
-find_package(SQLite3 REQUIRED)
+#find_package(SQLite3 REQUIRED)
 
 find_package(RapidJSON REQUIRED)
 
@@ -58,7 +75,6 @@ add_library(ldp_obj OBJECT
 	etymoncpp/src/mallocptr.cpp
 	etymoncpp/src/odbc.cpp
 	etymoncpp/src/postgres.cpp
-	etymoncpp/src/sqlite3.cpp
 	etymoncpp/src/util.cpp
 	src/anonymize.cpp
 	src/camelcase.cpp
@@ -90,39 +106,39 @@ target_link_libraries(ldp
 	${CURL_LIBRARIES}
 	${ODBC_LIBRARY}
 	${PostgreSQL_LIBRARY}
-	${SQLite3_LIBRARY}
+	#${SQLite3_LIBRARY}
 	${FSLIB}
 	)
 
-add_executable(test_ldp
+add_executable(ldp_test
 	$<TARGET_OBJECTS:ldp_obj>
 
 	test/camelcase_test.cpp
 	test/main_test.cpp
 
 	)
-target_link_libraries(test_ldp
+target_link_libraries(ldp_test
 	${GPROFFLAG}
 	${CURL_LIBRARIES}
 	${ODBC_LIBRARY}
 	${PostgreSQL_LIBRARY}
-	${SQLite3_LIBRARY}
+	#${SQLite3_LIBRARY}
 	${FSLIB}
 	)
 
-add_executable(test_int_ldp
+add_executable(ldp_testint
 	$<TARGET_OBJECTS:ldp_obj>
 
-	test_int/main_test_int.cpp
-	test_int/server_test_int.cpp
+	testint/main_testint.cpp
+	testint/server_testint.cpp
 
 	)
-target_link_libraries(test_int_ldp
+target_link_libraries(ldp_testint
 	${GPROFFLAG}
 	${CURL_LIBRARIES}
 	${ODBC_LIBRARY}
 	${PostgreSQL_LIBRARY}
-	${SQLite3_LIBRARY}
+	#${SQLite3_LIBRARY}
 	${FSLIB}
 	)
 

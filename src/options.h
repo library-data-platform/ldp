@@ -9,8 +9,23 @@
 
 using namespace std;
 
+enum class ldp_command {
+    server,
+    upgrade_database,
+    init,
+    update,
+    help
+};
+
+enum class profile {
+    folio,
+    none
+};
+
 enum class deployment_environment {
     production,
+    staging,
+    testing,
     development
 };
 
@@ -26,9 +41,9 @@ public:
 
 class options {
 public:
-    string command;
+    ldp_command command;
+    profile set_profile = profile::none;
     bool cli_mode = false;
-    bool upgrade_database = false;
     string datadir;
     bool extract_only = false;
     string load_from_dir;
@@ -49,7 +64,7 @@ public:
     FILE* err = stderr;
     bool verbose = false;  // Deprecated.
     bool debug = false;  // Deprecated.
-    Level log_level = Level::debug;
+    level log_level = level::debug;
     bool console = false;
     bool quiet = false;
     size_t page_size = 1000;

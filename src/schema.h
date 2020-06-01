@@ -35,7 +35,7 @@ public:
     ColumnType columnType;
     string sourceColumnName;
     static void columnTypeToString(ColumnType type, string* str);
-    static bool selectColumnType(Log* lg, const string& table,
+    static bool selectColumnType(log* lg, const string& table,
             const string& source_path, const string& field,
             const Counts& counts, ColumnType* ctype);
 };
@@ -60,7 +60,7 @@ public:
 class Schema {
 public:
     vector<TableSchema> tables;
-    static void MakeDefaultSchema(Schema* schema);
+    static void make_default_schema(Schema* schema);
 };
 
 #endif
