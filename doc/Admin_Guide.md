@@ -211,9 +211,9 @@ $ ./build/ldp_test
 Running the integration tests requires a FOLIO instance, as well as an
 LDP testbed instance with a PostgreSQL or Redshift database.  The
 contents of the database will be destroyed by these tests; so please
-be careful that the correct database will be used.  The `environment`
-configuration setting for the LDP testbed instance should be defined
-as `testing`, and the tests are run as:
+be careful that the correct database will be used.  The
+`deployment_environment` configuration setting for the LDP testbed
+instance should be defined as `testing`, and the tests are run as:
 
 ```shell
 $ ./build/ldp_testint -s -D DATADIR
@@ -376,7 +376,7 @@ can be used as a template.
 __ldpconf.json__
 ```
 {
-    "environment": "production",
+    "deployment_environment": "production",
     "ldp_database": {
         "odbc_database": "ldp"
     },
@@ -523,10 +523,11 @@ Reference
 
 ### Configuration file: ldpconf.json
 
-* `environment` (string; required) is the deployment environment of
-  the LDP instance.  Supported values are `production`, `staging`,
-`testing`, and `development`.  This setting is used to determine
-whether certain operations should be allowed to run on the instance.
+* `deployment_environment` (string; required) is the deployment
+  environment of the LDP instance.  Supported values are `production`,
+`staging`, `testing`, and `development`.  This setting is used to
+determine whether certain operations should be allowed to run on the
+instance.
 * `ldp_database` (object; required) is a group of database-related
   settings.
   * `odbc_database` (string; required) is the ODBC "data source name"
@@ -543,8 +544,8 @@ source should be provided in the case of non-consortial deployments.
   extract data from.  Only one source should be provided in the case
 of non-consortial deployments.  A source is defined by a source name
 and an associated object containing several settings:
-  * `okapi_url` (string; required) is the URL for the Okapi instance to
-    extract data from.
+  * `okapi_url` (string; required) is the URL for the Okapi instance
+    to extract data from.
   * `okapi_tenant` (string; required) is the Okapi tenant.
   * `okapi_user` (string; required) is the Okapi user name.
   * `okapi_password` (string; required) is the password for the
@@ -555,12 +556,12 @@ included: `inventory_holdings`, `inventory_instances`, and
 `inventory_items`.
   * `direct_database_name` (string; optional) is the FOLIO database
     name.
-  * `direct_database_host` (string; optional) is the FOLIO database host
-    name.
+  * `direct_database_host` (string; optional) is the FOLIO database
+    host name.
   * `direct_database_port` (integer; optional) is the FOLIO database
     port.
-  * `direct_database_user` (string; optional) is the FOLIO database user
-    name.
+  * `direct_database_user` (string; optional) is the FOLIO database
+    user name.
   * `direct_database_password` (string; optional) is the password for
     the specified FOLIO database user name.
 * `disable_anonymization` (Boolean; optional) when set to `true`,

@@ -1,5 +1,5 @@
 {
-    "environment": "production",
+    "deployment_environment": "production",
     "ldp_database": {
         "odbc_database": "ldp"
     },

@@ -53,7 +53,7 @@ public:
     string okapi_user;
     string okapi_password;
     direct_extraction direct;
-    deployment_environment environment;
+    deployment_environment deploy_env;
     string db;
     string ldp_user = "ldp";
     string ldpconfig_user = "ldpconfig";

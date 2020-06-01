@@ -284,12 +284,12 @@ void fill_direct_options(const config& conf, const string& base, options* opt)
 
 void fill_options(const config& conf, options* opt)
 {
-    string environment;
+    string deploy_env;
     ///////////////////////////////////////////////////////////////////////////
-    //conf.get_required("/environment", &environment);
+    //conf.get_required("/deployment_environment", &deploy_env);
     ///////////////////////////////////////////////////////////////////////////
-    conf.get("/environment", &environment);
-    if (environment == "") {
+    conf.get("/deployment_environment", &deploy_env);
+    if (deploy_env == "") {
         fprintf(stderr, "ldp: ");
         print_banner_line(stderr, '=', 74);
         fprintf(stderr,
@@ -298,10 +298,10 @@ void fill_options(const config& conf, options* opt)
                 "ldp: Defaulting to: production\n");
         fprintf(stderr, "ldp: ");
         print_banner_line(stderr, '=', 74);
-        environment = "production";
+        deploy_env = "production";
     }
     ///////////////////////////////////////////////////////////////////////////
-    config_set_environment(environment, &(opt->environment));
+    config_set_environment(deploy_env, &(opt->deploy_env));
 
     string target = "/ldp_database/";
     conf.get_required(target + "odbc_database", &(opt->db));
