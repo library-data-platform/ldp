@@ -81,7 +81,7 @@ void config_set_command(const string& command_str, ldp_command* command)
         *command = ldp_command::update;
         return;
     }
-    if (command_str == "help") {
+    if (command_str == "help" || command_str == "") {
         *command = ldp_command::help;
         return;
     }

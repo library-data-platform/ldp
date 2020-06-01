@@ -447,8 +447,8 @@ Do not interrupt the database upgrade process.  Some schema changes
 use DDL statements that cannot be run within a transaction, and
 interrupting them may leave the database in an intermediate state.
 For debugging purposes, database statements used to perform the
-upgrade are logged to the file `database_upgrade.sql` located in the
-data directory under `log/`.
+upgrade are logged to files located in the data directory under
+`database_upgrade/`.
 
 
 6\. Direct extraction

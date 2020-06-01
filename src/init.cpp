@@ -351,13 +351,14 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
         throw runtime_error(
                 "Unknown LDP database version: " + to_string(version));
 
-    fs::path log_path = fs::path(datadir) / "log";
-    fs::create_directories(log_path);
-    fs::path ulog_path = log_path / "database_upgrade.sql";
-    etymon::file ulogFile(ulog_path, "a");
+    fs::path ulog_dir = fs::path(datadir) / "database_upgrade";
+    fs::create_directories(ulog_dir);
 
     bool upgraded = false;
     for (int64_t v = version + 1; v <= this_schema_version; v++) {
+        string ulog_filename = "upgrade_" + to_string(v) + ".sql";
+        fs::path ulog_path = ulog_dir / ulog_filename;
+        etymon::file ulog_file(ulog_path, "a");
         if (!upgraded) {
             fprintf(err, "%s: ", prog);
             print_banner_line(err, '=', 74);
@@ -370,21 +371,21 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
             disable_termination_signals();
         }
         fprintf(err, "%s: Upgrading: %s\n", prog, to_string(v).c_str());
-        print_banner_line(ulogFile.fp, '-', 79);
-        fprintf(ulogFile.fp, "-- Upgrading: %s\n", to_string(v).c_str());
-        print_banner_line(ulogFile.fp, '-', 79);
+        print_banner_line(ulog_file.fp, '-', 79);
+        fprintf(ulog_file.fp, "-- Upgrading: %s\n", to_string(v).c_str());
+        print_banner_line(ulog_file.fp, '-', 79);
         database_upgrade_options opt;
-        opt.ulog = ulogFile.fp;
+        opt.ulog = ulog_file.fp;
         opt.conn = conn;
         opt.ldp_user = ldpUser;
         opt.ldpconfig_user = ldpconfigUser;
         opt.datadir = datadir;
         database_upgrades[v](&opt);
-        print_banner_line(ulogFile.fp, '-', 79);
-        fprintf(ulogFile.fp, "-- Completed upgrade: %s\n",
+        print_banner_line(ulog_file.fp, '-', 79);
+        fprintf(ulog_file.fp, "-- Completed upgrade: %s\n",
                 to_string(v).c_str());
-        print_banner_line(ulogFile.fp, '-', 79);
-        fputc('\n', ulogFile.fp);
+        print_banner_line(ulog_file.fp, '-', 79);
+        fputc('\n', ulog_file.fp);
         upgraded = true;
     }
 
