@@ -70,11 +70,11 @@ void print(Print level, const options& opt, const string& str)
     //    fprintf(opt.err, "%s: %s\n", opt.prog, s.c_str());
     //    break;
     case Print::verbose:
-        if (opt.log_level == Level::trace)
+        if (opt.log_level == level::trace)
             fprintf(opt.err, "%s: %s\n", opt.prog, s.c_str());
         break;
     case Print::debug:
-        if (opt.log_level == Level::trace)
+        if (opt.log_level == level::trace)
             fprintf(opt.err, "%s: %s\n", opt.prog, s.c_str());
         break;
     }

@@ -7,32 +7,32 @@
 
 using namespace std;
 
-enum class DBT {
+enum class dbsys {
     postgresql,
     redshift,
     unknown
 };
 
-class DBType {
+class dbtype {
 public:
-    DBType(etymon::odbc_conn* conn);
-    const char* jsonType() const;
-    const char* currentTimestamp() const;
-    void renameSequence(const string& sequenceName,
-        const string& newSequenceName, string* sql) const;
-    void createSequence(const string& sequenceName, int64_t start,
+    dbtype(etymon::odbc_conn* conn);
+    const char* json_type() const;
+    const char* current_timestamp() const;
+    void rename_sequence(const string& sequence_name,
+        const string& new_sequence_name, string* sql) const;
+    void create_sequence(const string& sequence_name, int64_t start,
         string* sql) const;
-    void autoIncrementType(int64_t start, bool namedSequence,
-            const string& sequenceName, string* sql) const;
-    void alterSequenceOwnedBy(const string& sequenceName,
-        const string& tableColumnName, string* sql) const;
-    void encodeStringConst(const char* str, string* newstr) const;
-    const char* dbType() const;
-    void redshiftKeys(const char* distkey, const char* sortkey,
+    void auto_increment_type(int64_t start, bool named_sequence,
+            const string& sequence_name, string* sql) const;
+    void alter_sequence_owned_by(const string& sequence_name,
+        const string& table_column_name, string* sql) const;
+    void encode_string_const(const char* str, string* newstr) const;
+    const char* type_string() const;
+    void redshift_keys(const char* distkey, const char* sortkey,
             string* sql) const;
 private:
-    void set_type(const string& dbtype);
-    DBT dbt;
+    void set_type(const string& dbms);
+    dbsys dbt;
 };
 
 #endif

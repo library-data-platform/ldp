@@ -4,8 +4,8 @@
 #include "names.h"
 #include "util.h"
 
-void mergeTable(const options& opt, Log* log, const TableSchema& table,
-        etymon::odbc_env* odbc, etymon::odbc_conn* conn, const DBType& dbt)
+void mergeTable(const options& opt, log* lg, const TableSchema& table,
+        etymon::odbc_env* odbc, etymon::odbc_conn* conn, const dbtype& dbt)
 {
     // Update history tables.
 
@@ -28,7 +28,7 @@ void mergeTable(const options& opt, Log* log, const TableSchema& table,
         "                  h1.id = h2.id AND\n"
         "                  h1.updated < h2.updated\n"
         "      );";
-    log->log(Level::detail, "", "", sql, -1);
+    lg->write(level::detail, "", "", sql, -1);
     conn->exec(sql);
 
     string loadingTable;
@@ -39,7 +39,7 @@ void mergeTable(const options& opt, Log* log, const TableSchema& table,
         "    (id, data, updated, tenant_id)\n"
         "SELECT s.id,\n"
         "       s.data,\n" +
-        "       " + dbt.currentTimestamp() + ",\n"
+        "       " + dbt.current_timestamp() + ",\n"
         "       s.tenant_id\n"
         "    FROM " + loadingTable + " AS s\n"
         "        LEFT JOIN " + latestHistoryTable + "\n"
@@ -49,19 +49,19 @@ void mergeTable(const options& opt, Log* log, const TableSchema& table,
         "    WHERE s.data IS NOT NULL AND\n"
         "          ( h.id IS NULL OR\n"
         "            (s.data)::VARCHAR <> (h.data)::VARCHAR );";
-    log->log(Level::detail, "", "", sql, -1);
+    lg->write(level::detail, "", "", sql, -1);
     conn->exec(sql);
 }
 
-void dropTable(const options& opt, Log* log, const string& tableName,
+void dropTable(const options& opt, log* lg, const string& tableName,
         etymon::odbc_conn* conn)
 {
     string sql = "DROP TABLE IF EXISTS " + tableName + ";";
-    log->logDetail(sql);
+    lg->detail(sql);
     conn->exec(sql);
 }
 
-void placeTable(const options& opt, Log* log, const TableSchema& table,
+void placeTable(const options& opt, log* lg, const TableSchema& table,
         etymon::odbc_conn* conn)
 {
     string loadingTable;
@@ -69,7 +69,7 @@ void placeTable(const options& opt, Log* log, const TableSchema& table,
     string sql =
         "ALTER TABLE " + loadingTable + "\n"
         "    RENAME TO " + table.tableName + ";";
-    log->log(Level::detail, "", "", sql, -1);
+    lg->write(level::detail, "", "", sql, -1);
     conn->exec(sql);
 }
 

@@ -5,35 +5,35 @@
 #include "../etymoncpp/include/util.h"
 #include "log.h"
 
-Log::Log(etymon::odbc_conn* conn, Level level, bool console, bool quiet,
+log::log(etymon::odbc_conn* conn, level lv, bool console, bool quiet,
         const char* program)
 {
     this->conn = conn;
-    this->level = level;
+    this->lv = lv;
     this->console = console;
     this->quiet = quiet;
     this->program = program;
-    dbt = new DBType(conn);
+    dbt = new dbtype(conn);
 }
 
-Log::~Log()
+log::~log()
 {
     delete dbt;
 }
 
-void Log::log(Level level, const char* type, const string& table,
+void log::write(level lv, const char* type, const string& table,
         const string& message, double elapsed_time)
 {
     // Add a prefix to highlight error states.
     string logmsg;
-    switch (level) {
-    case Level::fatal:
+    switch (lv) {
+    case level::fatal:
         logmsg = "Fatal: " + message;
         break;
-    case Level::error:
+    case level::error:
         logmsg = "Error: " + message;
         break;
-    case Level::warning:
+    case level::warning:
         logmsg = "Warning: " + message;
         break;
     default:
@@ -49,7 +49,7 @@ void Log::log(Level level, const char* type, const string& table,
 
     // For printing, prefix with '\n' if the message has multiple lines.
     string printmsg;
-    if (level != Level::detail && message.find('\n') != string::npos)
+    if (lv != level::detail && message.find('\n') != string::npos)
         printmsg = "\n" + logmsg;
     else
         printmsg = logmsg;
@@ -57,45 +57,45 @@ void Log::log(Level level, const char* type, const string& table,
         printmsg += " [" + string(elapsed_time_str) + "]";
 
     // Print error states and filter messages below selected log level.
-    const char* levelStr;
-    switch (level) {
-    case Level::fatal:
+    const char* level_str;
+    switch (lv) {
+    case level::fatal:
         if (!quiet)
             fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
-        levelStr = "fatal";
+        level_str = "fatal";
         break;
-    case Level::error:
+    case level::error:
         if (!quiet)
             fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
-        levelStr = "error";
+        level_str = "error";
         break;
-    case Level::warning:
+    case level::warning:
         if (!quiet)
             fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
-        levelStr = "warning";
+        level_str = "warning";
         break;
-    case Level::info:
+    case level::info:
         if (!quiet)
             fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
-        levelStr = "info";
+        level_str = "info";
         break;
-    case Level::debug:
-        if (this->level != Level::debug && this->level != Level::trace &&
-                this->level != Level::detail)
+    case level::debug:
+        if (this->lv != level::debug && this->lv != level::trace &&
+                this->lv != level::detail)
             return;
         if (console && !quiet)
             fprintf(stderr, "%s\n", printmsg.c_str());
-        levelStr = "debug";
+        level_str = "debug";
         break;
-    case Level::trace:
-        if (this->level != Level::trace && this->level != Level::detail)
+    case level::trace:
+        if (this->lv != level::trace && this->lv != level::detail)
             return;
         if (console && !quiet)
             fprintf(stderr, "%s\n", printmsg.c_str());
-        levelStr = "trace";
+        level_str = "trace";
         break;
-    case Level::detail:
-        if (this->level != Level::detail)
+    case level::detail:
+        if (this->lv != level::detail)
             return;
         if (console && !quiet)
             fprintf(stderr, "%s\n", printmsg.c_str());
@@ -104,34 +104,29 @@ void Log::log(Level level, const char* type, const string& table,
 
     // Log the message, and print if the log is not available.
     string logmsgEncoded;
-    dbt->encodeStringConst(logmsg.c_str(), &logmsgEncoded);
+    dbt->encode_string_const(logmsg.c_str(), &logmsgEncoded);
     string sql =
         "INSERT INTO ldpsystem.log\n"
         "    (log_time, pid, level, type, table_name, message, elapsed_time)\n"
         "  VALUES\n"
-        "    (" + string(dbt->currentTimestamp()) + ", " + to_string(getpid()) +
-        ", '" + levelStr + "', '" + type + "', '" + table + "', " +
-        logmsgEncoded + ", " + elapsed_time_str + ");";
+        "    (" + string(dbt->current_timestamp()) + ", " +
+        to_string(getpid()) + ", '" + level_str + "', '" + type + "', '" +
+        table + "', " + logmsgEncoded + ", " + elapsed_time_str + ");";
     conn->exec(sql);
 }
 
-void Log::trace(const string& message)
+void log::trace(const string& message)
 {
-    log(Level::trace, "", "", message, -1);
+    write(level::trace, "", "", message, -1);
 }
 
-void Log::logDetail(const string& sql)
+void log::detail(const string& sql)
 {
-    detail(sql);
+    write(level::detail, "", "", sql, -1);
 }
 
-void Log::detail(const string& sql)
+void log::perf(const string& message, double elapsed_time)
 {
-    log(Level::detail, "", "", sql, -1);
-}
-
-void Log::perf(const string& message, double elapsed_time)
-{
-    log(Level::debug, "perf", "", message, elapsed_time);
+    write(level::debug, "perf", "", message, elapsed_time);
 }
 

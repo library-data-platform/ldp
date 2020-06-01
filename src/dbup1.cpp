@@ -11,7 +11,7 @@ namespace fs = std::experimental::filesystem;
 
 void database_upgrade_1(database_upgrade_options* opt)
 {
-    DBType dbt(opt->conn);
+    dbtype dbt(opt->conn);
 
     // Create table catalog.
 
@@ -125,7 +125,7 @@ void database_upgrade_1(database_upgrade_options* opt)
             "    row_id BIGINT NOT NULL,\n"
             "    sk BIGINT NOT NULL,\n"
             "    id VARCHAR(65535) NOT NULL,\n"
-            "    data " + dbt.jsonType() + ",\n"
+            "    data " + dbt.json_type() + ",\n"
             "    tenant_id SMALLINT NOT NULL\n"
             ");";
         opt->conn->exec_direct(nullptr, sql);
@@ -139,13 +139,13 @@ void database_upgrade_1(database_upgrade_options* opt)
             "    history." + string(table[x]) + ";";
         opt->conn->exec_direct(nullptr, sql);
         string rskeys;
-        dbt.redshiftKeys("sk", "sk, updated", &rskeys);
+        dbt.redshift_keys("sk", "sk, updated", &rskeys);
         string sql =
             "CREATE TABLE IF NOT EXISTS\n"
             "    history." + string(table[x]) + " (\n"
             "    sk BIGINT NOT NULL,\n"
             "    id VARCHAR(65535) NOT NULL,\n"
-            "    data " + dbt.jsonType() + " NOT NULL,\n"
+            "    data " + dbt.json_type() + " NOT NULL,\n"
             "    updated TIMESTAMP WITH TIME ZONE NOT NULL,\n"
             "    tenant_id SMALLINT NOT NULL,\n"
             "    CONSTRAINT\n"
@@ -161,7 +161,7 @@ void database_upgrade_1(database_upgrade_options* opt)
             "    history." + string(table[x]) + "\n"
             "    TO " + opt->ldp_user + ";";
         opt->conn->exec_direct(nullptr, sql);
-        if (string(dbt.dbType()) == "PostgreSQL") {
+        if (string(dbt.type_string()) == "PostgreSQL") {
             // Remove row_id columns.
             sql =
                 "ALTER TABLE \n"
@@ -174,9 +174,9 @@ void database_upgrade_1(database_upgrade_options* opt)
     // Create idmap table.
 
     string rskeys;
-    dbt.redshiftKeys("sk", "sk", &rskeys);
+    dbt.redshift_keys("sk", "sk", &rskeys);
     string autoInc;
-    dbt.autoIncrementType(1, false, "", &autoInc);
+    dbt.auto_increment_type(1, false, "", &autoInc);
     sql =
         "CREATE TABLE ldpsystem.idmap (\n"
         "    sk " + autoInc + ",\n"
@@ -334,7 +334,7 @@ void database_upgrade_3(database_upgrade_options* opt)
 
 void database_upgrade_4(database_upgrade_options* opt)
 {
-    DBType dbt(opt->conn);
+    dbtype dbt(opt->conn);
 
     string sql = "ALTER TABLE ldpsystem.log DROP COLUMN level;";
     opt->conn->exec_direct(nullptr, sql);
@@ -352,7 +352,7 @@ void database_upgrade_4(database_upgrade_options* opt)
     opt->conn->exec_direct(nullptr, sql);
 
     string rskeys;
-    dbt.redshiftKeys("referencing_table",
+    dbt.redshift_keys("referencing_table",
             "referencing_table, referencing_column", &rskeys);
     sql =
         "CREATE TABLE ldpsystem.referential_constraints (\n"
@@ -378,7 +378,7 @@ void database_upgrade_4(database_upgrade_options* opt)
 
 void database_upgrade_5(database_upgrade_options* opt)
 {
-    DBType dbt(opt->conn);
+    dbtype dbt(opt->conn);
 
     string sql = "ALTER TABLE ldpsystem.idmap DROP CONSTRAINT idmap_pkey;";
     opt->conn->exec_direct(nullptr, sql);
@@ -390,7 +390,7 @@ void database_upgrade_5(database_upgrade_options* opt)
     opt->conn->exec_direct(nullptr, sql);
 
     string rskeys;
-    dbt.redshiftKeys("sk", "sk", &rskeys);
+    dbt.redshift_keys("sk", "sk", &rskeys);
     sql =
         "CREATE TABLE ldpsystem.idmap (\n"
         "    sk BIGINT NOT NULL,\n"
@@ -627,13 +627,13 @@ void database_upgrade_8(database_upgrade_options* opt)
 
 void database_upgrade_9(database_upgrade_options* opt)
 {
-    DBType dbt(opt->conn);
+    dbtype dbt(opt->conn);
 
     string sql = "DROP TABLE ldpsystem.referential_constraints;";
     opt->conn->exec(sql);
 
     string rskeys;
-    dbt.redshiftKeys("referencing_table",
+    dbt.redshift_keys("referencing_table",
             "referencing_table, referencing_column", &rskeys);
     sql =
         "CREATE TABLE ldpsystem.foreign_key_constraints (\n"
@@ -923,7 +923,7 @@ void database_upgrade_11(database_upgrade_options* opt)
         nullptr
     };
 
-    DBType dbt(opt->conn);
+    dbtype dbt(opt->conn);
 
     string sql = "DROP TABLE ldpsystem.idmap;";
     fprintf(opt->ulog, "%s\n", sql.c_str());
@@ -934,7 +934,7 @@ void database_upgrade_11(database_upgrade_options* opt)
 
     for (int x = 0; table[x] != nullptr; x++) {
 
-        if (string(dbt.dbType()) == "Redshift") {
+        if (string(dbt.type_string()) == "Redshift") {
 
             sql =
                 "ALTER TABLE history." + string(table[x]) + "\n"

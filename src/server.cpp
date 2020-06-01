@@ -112,27 +112,26 @@ static void run_preload_tests(const options& opt, etymon::odbc_env* odbc)
  * \brief Check configuration in the LDP database to determine if it
  * is time to run a full update.
  *
- * \param[in] opt
- * \param[in] conn
- * \param[in] dbt
- * \param[in] log
- * \retval true The full update should be run as soon as possible.
- * \retval false The full update should not be run at this time.
+ * param[in] opt
+ * param[in] conn
+ * param[in] dbt
+ * retval true The full update should be run as soon as possible.
+ * retval false The full update should not be run at this time.
  */
-bool timeForFullUpdate(const options& opt, etymon::odbc_conn* conn, DBType* dbt,
-        Log* log)
+bool time_for_full_update(const options& opt, etymon::odbc_conn* conn,
+        dbtype* dbt, log* lg)
 {
     string sql =
         "SELECT enable_full_updates,\n"
         "       (next_full_update <= " +
-        string(dbt->currentTimestamp()) + ") AS update_now\n"
+        string(dbt->current_timestamp()) + ") AS update_now\n"
         "    FROM ldpconfig.general;";
-    log->log(Level::detail, "", "", sql, -1);
+    lg->write(level::detail, "", "", sql, -1);
     etymon::odbc_stmt stmt(conn);
     conn->exec_direct(&stmt, sql);
     if (conn->fetch(&stmt) == false) {
         string e = "No rows could be read from table: ldpconfig.general";
-        log->log(Level::error, "", "", e, -1);
+        lg->write(level::error, "", "", e, -1);
         throw runtime_error(e);
     }
     string fullUpdateEnabled, updateNow;
@@ -140,7 +139,7 @@ bool timeForFullUpdate(const options& opt, etymon::odbc_conn* conn, DBType* dbt,
     conn->get_data(&stmt, 2, &updateNow);
     if (conn->fetch(&stmt)) {
         string e = "Too many rows in table: ldpconfig.general";
-        log->log(Level::error, "", "", e, -1);
+        lg->write(level::error, "", "", e, -1);
         throw runtime_error(e);
     }
     return fullUpdateEnabled == "1" && updateNow == "1";
@@ -150,13 +149,12 @@ bool timeForFullUpdate(const options& opt, etymon::odbc_conn* conn, DBType* dbt,
  * \brief Reschedule the configured full load time to the next day,
  * retaining the same time.
  *
- * \param[in] opt
- * \param[in] conn
- * \param[in] dbt
- * \param[in] log
+ * param[in] opt
+ * param[in] conn
+ * param[in] dbt
  */
-void rescheduleNextDailyLoad(const options& opt, etymon::odbc_conn* conn,
-        DBType* dbt, Log* log)
+void reschedule_next_daily_load(const options& opt, etymon::odbc_conn* conn,
+        dbtype* dbt, log* lg)
 {
     string updateInFuture;
     do {
@@ -164,25 +162,25 @@ void rescheduleNextDailyLoad(const options& opt, etymon::odbc_conn* conn,
         string sql =
             "UPDATE ldpconfig.general SET next_full_update =\n"
             "    next_full_update + INTERVAL '1 day';";
-        log->log(Level::detail, "", "", sql, -1);
+        lg->write(level::detail, "", "", sql, -1);
         conn->exec(sql);
         // Check if next_full_update is now in the future.
         sql =
-            "SELECT (next_full_update > " + string(dbt->currentTimestamp()) +
+            "SELECT (next_full_update > " + string(dbt->current_timestamp()) +
             ") AS update_in_future\n"
             "    FROM ldpconfig.general;";
-        log->log(Level::detail, "", "", sql, -1);
+        lg->write(level::detail, "", "", sql, -1);
         etymon::odbc_stmt stmt(conn);
         conn->exec_direct(&stmt, sql);
         if (conn->fetch(&stmt) == false) {
             string e = "No rows could be read from table: ldpconfig.general";
-            log->log(Level::error, "", "", e, -1);
+            lg->write(level::error, "", "", e, -1);
             throw runtime_error(e);
         }
         conn->get_data(&stmt, 1, &updateInFuture);
         if (conn->fetch(&stmt)) {
             string e = "Too many rows in table: ldpconfig.general";
-            log->log(Level::error, "", "", e, -1);
+            lg->write(level::error, "", "", e, -1);
             throw runtime_error(e);
         }
     } while (updateInFuture == "0");
@@ -198,18 +196,18 @@ void server(const options& opt, etymon::odbc_env* odbc)
     if (opt.command == ldp_command::init)
         return;
 
-    etymon::odbc_conn logConn(odbc, opt.db);
-    Log lg(&logConn, opt.log_level, opt.console, opt.quiet, opt.prog);
+    etymon::odbc_conn log_conn(odbc, opt.db);
+    log lg(&log_conn, opt.log_level, opt.console, opt.quiet, opt.prog);
 
-    lg.log(Level::info, "server", "",
+    lg.write(level::info, "server", "",
             string("Server started") + (opt.cli_mode ? " (CLI mode)" : ""), -1);
 
     etymon::odbc_conn conn(odbc, opt.db);
-    DBType dbt(&conn);
+    dbtype dbt(&conn);
 
     do {
-        if (opt.cli_mode || timeForFullUpdate(opt, &conn, &dbt, &lg) ) {
-            rescheduleNextDailyLoad(opt, &conn, &dbt, &lg);
+        if (opt.cli_mode || time_for_full_update(opt, &conn, &dbt, &lg) ) {
+            reschedule_next_daily_load(opt, &conn, &dbt, &lg);
             pid_t pid = fork();
             if (pid == 0)
                 run_update_process(opt);
@@ -217,11 +215,11 @@ void server(const options& opt, etymon::odbc_env* odbc)
                 int stat;
                 waitpid(pid, &stat, 0);
                 if (WIFEXITED(stat))
-                    lg.log(Level::trace, "", "",
+                    lg.write(level::trace, "", "",
                             "Status code of full update: " +
                             to_string(WEXITSTATUS(stat)), -1);
                 else
-                    lg.log(Level::trace, "", "",
+                    lg.write(level::trace, "", "",
                             "Full update did not terminate normally", -1);
             }
             if (pid < 0)
@@ -232,7 +230,7 @@ void server(const options& opt, etymon::odbc_env* odbc)
             std::this_thread::sleep_for(std::chrono::seconds(60));
     } while (!opt.cli_mode);
 
-    lg.log(Level::info, "server", "",
+    lg.write(level::info, "server", "",
             string("Server stopped") + (opt.cli_mode ? " (CLI mode)" : ""), -1);
 }
 
@@ -249,14 +247,14 @@ void run_server(const options& opt)
     lock_conn.exec(sql);
 
     {
-        if (opt.log_level == Level::trace || opt.log_level == Level::detail)
+        if (opt.log_level == level::trace || opt.log_level == level::detail)
             fprintf(opt.err, "%s: Acquiring server lock\n", opt.prog);
 
         etymon::odbc_tx tx(&lock_conn);
         sql = "LOCK ldpsystem.server_lock;";
         lock_conn.exec(sql);
 
-        if (opt.log_level == Level::trace || opt.log_level == Level::detail)
+        if (opt.log_level == level::trace || opt.log_level == level::detail)
             fprintf(opt.err, "%s: Initializing\n", opt.prog);
 
         server(opt, &odbc);

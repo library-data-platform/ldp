@@ -146,7 +146,7 @@ class JSONHandler :
 public:
     int pass;
     const options& opt;
-    Log* log;
+    log* lg;
     int level = 0;
     bool active = false;
     string record;
@@ -155,14 +155,14 @@ public:
     map<string,Counts>* stats;
     // Loading to database
     etymon::odbc_conn* conn;
-    const DBType& dbt;
+    const dbtype& dbt;
     size_t recordCount = 0;
     size_t totalRecordCount = 0;
     string insertBuffer;
-    JSONHandler(int pass, const options& options, Log* log,
+    JSONHandler(int pass, const options& options, log* lg,
             const TableSchema& table, etymon::odbc_conn* conn,
-            const DBType& dbt, map<string,Counts>* statistics) :
-        pass(pass), opt(options), log(log), tableSchema(table),
+            const dbtype& dbt, map<string,Counts>* statistics) :
+        pass(pass), opt(options), lg(lg), tableSchema(table),
         stats(statistics), conn(conn), dbt(dbt) {}
     bool StartObject();
     bool EndObject(json::SizeType memberCount);
@@ -198,16 +198,16 @@ static void beginInserts(const string& table, string* buffer)
     *buffer = "INSERT INTO " + loadingTable + " VALUES ";
 }
 
-static void endInserts(const options& opt, Log* log, const string& table,
+static void endInserts(const options& opt, log* lg, const string& table,
         string* buffer, etymon::odbc_conn* conn)
 {
     *buffer += ";\n";
-    log->log(Level::detail, "", "", "Loading data for table: " + table, -1);
+    lg->write(level::detail, "", "", "Loading data for table: " + table, -1);
     conn->exec(*buffer);
     buffer->clear();
 }
 
-static void writeTuple(const options& opt, Log* log, const DBType& dbt,
+static void writeTuple(const options& opt, log* lg, const dbtype& dbt,
         const TableSchema& table, const json::Document& doc,
         size_t* recordCount, size_t* totalRecordCount, string* insertBuffer)
 {
@@ -220,7 +220,7 @@ static void writeTuple(const options& opt, Log* log, const DBType& dbt,
     const char* id = doc["id"].GetString();
     // id
     string idenc;
-    dbt.encodeStringConst(id, &idenc);
+    dbt.encode_string_const(id, &idenc);
     *insertBuffer += idenc;
     *insertBuffer += ',';
 
@@ -251,10 +251,10 @@ static void writeTuple(const options& opt, Log* log, const DBType& dbt,
         case ColumnType::id:
         case ColumnType::timestamptz:
         case ColumnType::varchar:
-            dbt.encodeStringConst(jsonValue.GetString(), &s);
+            dbt.encode_string_const(jsonValue.GetString(), &s);
             // Check if varchar exceeds maximum string length (65535).
             if (s.length() >= 65535) {
-                log->log(Level::warning, "", "",
+                lg->write(level::warning, "", "",
                         "String length exceeds database limit:\n"
                         "    Table: " + table.tableName + "\n"
                         "    Column: " + column.columnName + "\n"
@@ -272,7 +272,7 @@ static void writeTuple(const options& opt, Log* log, const DBType& dbt,
     json::StringBuffer jsonText;
     json::PrettyWriter<json::StringBuffer> writer(jsonText);
     doc.Accept(writer);
-    dbt.encodeStringConst(jsonText.GetString(), &data);
+    dbt.encode_string_const(jsonText.GetString(), &data);
     // Check if pretty-printed JSON exceeds maximum string length (65535).
     if (data.length() > 65535) {
         // Formatted JSON object size exceeds database limit.  Try
@@ -280,9 +280,9 @@ static void writeTuple(const options& opt, Log* log, const DBType& dbt,
         json::StringBuffer jsonText;
         json::Writer<json::StringBuffer> writer(jsonText);
         doc.Accept(writer);
-        dbt.encodeStringConst(jsonText.GetString(), &data);
+        dbt.encode_string_const(jsonText.GetString(), &data);
         if (data.length() > 65535) {
-            log->log(Level::warning, "", "", 
+            lg->write(level::warning, "", "", 
                     "JSON object size exceeds database limit:\n"
                     "    Table: " + table.tableName + "\n"
                     "    ID: " + id + "\n"
@@ -308,7 +308,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
 
         record += '}';
 
-        log->detail("New record parsed for table: " + tableSchema.tableName +
+        lg->detail("New record parsed for table: " + tableSchema.tableName +
                 ":\n" + record);
 
         char* buffer = strdup(record.c_str());
@@ -334,12 +334,12 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
 
             if (insertBuffer.length() > 16500000) {
             //if (insertBuffer.length() > 10000000) {
-                endInserts(opt, log, tableSchema.tableName, &insertBuffer, conn);
+                endInserts(opt, lg, tableSchema.tableName, &insertBuffer, conn);
                 beginInserts(tableSchema.tableName, &insertBuffer);
                 recordCount = 0;
             }
 
-            writeTuple(opt, log, dbt, tableSchema, doc, &recordCount,
+            writeTuple(opt, lg, dbt, tableSchema, doc, &recordCount,
                     &totalRecordCount, &insertBuffer);
         }
 
@@ -371,7 +371,7 @@ bool JSONHandler::EndArray(json::SizeType elementCount)
         active = false;
         if (recordCount > 0)
             if (pass == 2)
-                endInserts(opt, log, tableSchema.tableName, &insertBuffer, conn);
+                endInserts(opt, lg, tableSchema.tableName, &insertBuffer, conn);
     } else {
         if (level > 2)
             record += "],";
@@ -500,14 +500,14 @@ bool JSONHandler::Null()
     return true;
 }
 
-size_t readPageCount(const options& opt, Log* log, const string& loadDir,
+size_t readPageCount(const options& opt, log* lg, const string& loadDir,
         const string& tableName)
 {
     string filename = loadDir;
     etymon::join(&filename, tableName);
     filename += "_count.txt";
     if ( !(fs::exists(filename)) ) {
-        log->log(Level::warning, "", "", "File not found: " + filename, -1);
+        lg->write(level::warning, "", "", "File not found: " + filename, -1);
         return 0;
     }
     etymon::file f(filename, "r");
@@ -518,15 +518,15 @@ size_t readPageCount(const options& opt, Log* log, const string& loadDir,
     return count;
 }
 
-static void stagePage(const options& opt, Log* log, int pass,
+static void stagePage(const options& opt, log* lg, int pass,
         const TableSchema& tableSchema, etymon::odbc_env* odbc,
-        etymon::odbc_conn* conn, const DBType &dbt, map<string,Counts>* stats,
+        etymon::odbc_conn* conn, const dbtype &dbt, map<string,Counts>* stats,
         const string& filename, char* readBuffer, size_t readBufferSize)
 {
     json::Reader reader;
     etymon::file f(filename, "r");
     json::FileReadStream is(f.fp, readBuffer, readBufferSize);
-    JSONHandler handler(pass, opt, log, tableSchema, conn, dbt, stats);
+    JSONHandler handler(pass, opt, lg, tableSchema, conn, dbt, stats);
     reader.Parse(is, handler);
 }
 
@@ -538,10 +538,10 @@ static void composeDataFilePath(const string& loadDir,
     *path += suffix;
 }
 
-static void indexLoadingTable(Log* log, const TableSchema& table,
-        etymon::odbc_conn* conn, DBType* dbt)
+static void indexLoadingTable(log* lg, const TableSchema& table,
+        etymon::odbc_conn* conn, dbtype* dbt)
 {
-    log->trace("Creating indexes on table: " + table.tableName);
+    lg->trace("Creating indexes on table: " + table.tableName);
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
     for (const auto& column : table.columns) {
@@ -550,15 +550,15 @@ static void indexLoadingTable(Log* log, const TableSchema& table,
                 string sql =
                     "ALTER TABLE " + loadingTable + "\n"
                     "    ADD PRIMARY KEY (id);";
-                log->detail(sql);
+                lg->detail(sql);
                 conn->exec(sql);
             } else {
-                if (string(dbt->dbType()) == "PostgreSQL") {
+                if (string(dbt->type_string()) == "PostgreSQL") {
                     string sql =
                         "CREATE INDEX ON\n"
                         "    " + loadingTable + "\n"
                         "    (" + column.columnName + ");";
-                    log->detail(sql);
+                    lg->detail(sql);
                     conn->exec(sql);
                 }
             }
@@ -566,16 +566,16 @@ static void indexLoadingTable(Log* log, const TableSchema& table,
     }
 }
 
-static void createLoadingTable(const options& opt, Log* log,
+static void createLoadingTable(const options& opt, log* lg,
         const TableSchema& table, etymon::odbc_env* odbc, etymon::odbc_conn* conn,
-        const DBType& dbt)
+        const dbtype& dbt)
 {
     string loadingTable;
     loadingTableName(table.tableName, &loadingTable);
     string sql;
 
     string rskeys;
-    dbt.redshiftKeys("id", "id", &rskeys);
+    dbt.redshift_keys("id", "id", &rskeys);
     sql = "CREATE TABLE ";
     sql += loadingTable;
     sql += " (\n"
@@ -591,10 +591,10 @@ static void createLoadingTable(const options& opt, Log* log,
             sql += ",\n";
         }
     }
-    sql += string("    data ") + dbt.jsonType() + ",\n"
+    sql += string("    data ") + dbt.json_type() + ",\n"
         "    tenant_id SMALLINT NOT NULL\n"
         ")" + rskeys + ";";
-    log->log(Level::detail, "", "", sql, -1);
+    lg->write(level::detail, "", "", sql, -1);
     conn->exec(sql);
 
     // Add comment on table.
@@ -608,7 +608,7 @@ static void createLoadingTable(const options& opt, Log* log,
         sql += "https://dev.folio.org/reference/api/#";
         sql += table.moduleName;
         sql += "';";
-        log->log(Level::detail, "", "",
+        lg->write(level::detail, "", "",
                 "Setting comment on table: " + table.tableName, -1);
         conn->exec(sql);
     }
@@ -616,23 +616,23 @@ static void createLoadingTable(const options& opt, Log* log,
     sql =
         "GRANT SELECT ON " + loadingTable + "\n"
         "    TO " + opt.ldpconfig_user + ";";
-    log->logDetail(sql);
+    lg->detail(sql);
     conn->exec(sql);
 
     sql =
         "GRANT SELECT ON " + loadingTable + "\n"
         "    TO " + opt.ldp_user + ";";
-    log->logDetail(sql);
+    lg->detail(sql);
     conn->exec(sql);
 }
 
-bool stageTable(const options& opt, Log* log, TableSchema* table,
-        etymon::odbc_env* odbc, etymon::odbc_conn* conn, DBType* dbt,
+bool stageTable(const options& opt, log* lg, TableSchema* table,
+        etymon::odbc_env* odbc, etymon::odbc_conn* conn, dbtype* dbt,
         const string& loadDir)
 {
-    size_t pageCount = readPageCount(opt, log, loadDir, table->tableName);
+    size_t pageCount = readPageCount(opt, lg, loadDir, table->tableName);
 
-    log->log(Level::detail, "", "",
+    lg->write(level::detail, "", "",
             "Staging: " + table->tableName + ": page count: " +
             to_string(pageCount), -1);
 
@@ -645,7 +645,7 @@ bool stageTable(const options& opt, Log* log, TableSchema* table,
 
     for (int pass = 1; pass <= 2; pass++) {
 
-        log->log(Level::detail, "", "",
+        lg->write(level::detail, "", "",
                 "Staging: " + table->tableName +
                 (pass == 1 ?  ": analyze" : ": load"), -1);
 
@@ -653,11 +653,11 @@ bool stageTable(const options& opt, Log* log, TableSchema* table,
             string path;
             composeDataFilePath(loadDir, *table,
                     "_" + to_string(page) + ".json", &path);
-            log->log(Level::detail, "", "",
+            lg->write(level::detail, "", "",
                     "Staging: " + table->tableName +
                     (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                     to_string(page), -1);
-            stagePage(opt, log, pass, *table, odbc, conn, *dbt, &stats, path,
+            stagePage(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
                     readBuffer, sizeof readBuffer);
         }
 
@@ -665,32 +665,32 @@ bool stageTable(const options& opt, Log* log, TableSchema* table,
             string path;
             composeDataFilePath(loadDir, *table, "_test.json", &path);
             if (fs::exists(path)) {
-                log->log(Level::detail, "", "",
+                lg->write(level::detail, "", "",
                         "Staging: " + table->tableName +
                         (pass == 1 ?  ": analyze" : ": load") +
                         ": test file", -1);
-                stagePage(opt, log, pass, *table, odbc, conn, *dbt, &stats, path,
+                stagePage(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
                         readBuffer, sizeof readBuffer);
             }
         }
 
         if (pass == 1) {
             for (const auto& [field, counts] : stats) {
-                log->log(Level::detail, "", "",
+                lg->write(level::detail, "", "",
                         "Stats: in field: " + field, -1);
-                log->log(Level::detail, "", "",
+                lg->write(level::detail, "", "",
                         "Stats: string: " + to_string(counts.string), -1);
-                log->log(Level::detail, "", "",
+                lg->write(level::detail, "", "",
                         "Stats: datetime: " + to_string(counts.dateTime), -1);
-                log->log(Level::detail, "", "",
+                lg->write(level::detail, "", "",
                         "Stats: bool: " + to_string(counts.boolean), -1);
-                log->log(Level::detail, "", "",
+                lg->write(level::detail, "", "",
                         "Stats: number: " + to_string(counts.number), -1);
-                log->log(Level::detail, "", "",
+                lg->write(level::detail, "", "",
                         "Stats: int: " + to_string(counts.integer), -1);
-                log->log(Level::detail, "", "",
+                lg->write(level::detail, "", "",
                         "Stats: float: " + to_string(counts.floating), -1);
-                log->log(Level::detail, "", "",
+                lg->write(level::detail, "", "",
                         "Stats: null: " + to_string(counts.null), -1);
             }
         }
@@ -699,7 +699,7 @@ bool stageTable(const options& opt, Log* log, TableSchema* table,
             for (const auto& [field, counts] : stats) {
                 ColumnSchema column;
                 bool ok =
-                    ColumnSchema::selectColumnType(log, table->tableName,
+                    ColumnSchema::selectColumnType(lg, table->tableName,
                             table->sourcePath, field, counts,
                             &column.columnType);
                 if (!ok)
@@ -708,18 +708,18 @@ bool stageTable(const options& opt, Log* log, TableSchema* table,
                 ColumnSchema::columnTypeToString(column.columnType, &typeStr);
                 string newattr;
                 decode_camel_case(field.c_str(), &newattr);
-                log->log(Level::detail, "", "",
+                lg->write(level::detail, "", "",
                         string("Column: ") + newattr + string(" ") + typeStr,
                         -1);
                 column.columnName = newattr;
                 column.sourceColumnName = field;
                 table->columns.push_back(column);
             }
-            createLoadingTable(opt, log, *table, odbc, conn, *dbt);
+            createLoadingTable(opt, lg, *table, odbc, conn, *dbt);
         }
 
         if (pass == 2)
-            indexLoadingTable(log, *table, conn, dbt);
+            indexLoadingTable(lg, *table, conn, dbt);
     }
 
     return true;

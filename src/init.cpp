@@ -91,7 +91,7 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
 {
     fprintf(err, "%s: Initializing database\n", prog);
 
-    DBType dbt(conn);
+    dbtype dbt(conn);
 
     // TODO This should probably be passed into the function as a parameter.
     Schema schema;
@@ -148,7 +148,7 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
         catalog_add_table(conn, table.tableName);
 
     string rskeys;
-    dbt.redshiftKeys("referencing_table",
+    dbt.redshift_keys("referencing_table",
             "referencing_table, referencing_column", &rskeys);
     sql =
         "CREATE TABLE ldpsystem.foreign_key_constraints (\n"
@@ -216,7 +216,7 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
         "INSERT INTO ldpconfig.general\n"
         "    (enable_full_updates, next_full_update)\n"
         "    VALUES\n"
-        "    (TRUE, " + string(dbt.currentTimestamp()) + ");";
+        "    (TRUE, " + string(dbt.current_timestamp()) + ");";
     conn->exec(sql);
 
     sql =
@@ -249,12 +249,12 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
 
     for (auto& table : schema.tables) {
         string rskeys;
-        dbt.redshiftKeys("id", "id, updated", &rskeys);
+        dbt.redshift_keys("id", "id, updated", &rskeys);
         string sql =
             "CREATE TABLE IF NOT EXISTS\n"
             "    history." + table.tableName + " (\n"
             "    id VARCHAR(36) NOT NULL,\n"
-            "    data " + dbt.jsonType() + " NOT NULL,\n"
+            "    data " + dbt.json_type() + " NOT NULL,\n"
             "    updated TIMESTAMP WITH TIME ZONE NOT NULL,\n"
             "    tenant_id SMALLINT NOT NULL,\n"
             "    CONSTRAINT\n"
@@ -279,11 +279,11 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
 
     for (auto& table : schema.tables) {
         string rskeys;
-        dbt.redshiftKeys("id", "id", &rskeys);
+        dbt.redshift_keys("id", "id", &rskeys);
         sql =
             "CREATE TABLE " + table.tableName + " (\n"
             "    id VARCHAR(65535) NOT NULL,\n"
-            "    data " + dbt.jsonType() + ",\n"
+            "    data " + dbt.json_type() + ",\n"
             "    tenant_id SMALLINT NOT NULL,\n"
             "    PRIMARY KEY (id)\n"
         ")" + rskeys + ";";
@@ -394,8 +394,8 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
         fprintf(err, "%s: Database upgrade completed\n", prog);
         fprintf(err, "%s: ", prog);
         print_banner_line(err, '=', 74);
-        Log lg(conn, Level::info, false, quiet, prog);
-        lg.log(Level::info, "server", "", "Upgraded to database version: " +
+        log lg(conn, level::info, false, quiet, prog);
+        lg.write(level::info, "server", "", "Upgraded to database version: " +
                 to_string(this_schema_version), -1);
     } else {
         if (!quiet)

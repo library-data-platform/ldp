@@ -64,7 +64,7 @@ public:
     FILE* err = stderr;
     bool verbose = false;  // Deprecated.
     bool debug = false;  // Deprecated.
-    Level log_level = Level::debug;
+    level log_level = level::debug;
     bool console = false;
     bool quiet = false;
     size_t page_size = 1000;
