@@ -214,9 +214,11 @@ $ ./build/ldp_test
 Running the integration tests requires a FOLIO instance, as well as an
 LDP testbed instance with a PostgreSQL or Redshift database.  The
 contents of the database will be destroyed by these tests; so please
-be careful that the correct database will be used.  The
+be careful that the correct database is used.  The
 `deployment_environment` configuration setting for the LDP testbed
-instance should be defined as `testing`, and the tests are run as:
+instance should be `testing` or `development`.  Also as a safety
+precaution, the setting `allow_destructive_tests` is required for
+integration tests.  The tests are run as:
 
 ```shell
 $ ./build/ldp_testint -s -D DATADIR
