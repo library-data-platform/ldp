@@ -1,32 +1,32 @@
 #include <experimental/filesystem>
 
 #include "../etymoncpp/include/util.h"
-#include "../src/server.h"
+#include "../src/ldp.h"
 #include "../test/test.h"
 
 namespace fs = std::experimental::filesystem;
 
 TEST_CASE( "Test update", "[update]" ) {
-    options opt;
+    ldp_options opt;
     opt.cli_mode = true;
     opt.quiet = true;
     opt.command = ldp_command::update;
     opt.datadir = datadir.data();
     opt.table = "user_groups";
-    CHECK_NOTHROW( run_opt(&opt) );
+    CHECK_NOTHROW( ldp_main(&opt) );
     fs::path update_dir = fs::path(datadir) / "tmp" / "update";
     CHECK_FALSE( fs::exists(update_dir) );
 }
 
 TEST_CASE( "Test update with savetemps", "[update]" ) {
-    options opt;
+    ldp_options opt;
     opt.cli_mode = true;
     opt.quiet = true;
     opt.command = ldp_command::update;
     opt.datadir = datadir.data();
     opt.table = "user_groups";
     opt.savetemps = true;
-    CHECK_NOTHROW( run_opt(&opt) );
+    CHECK_NOTHROW( ldp_main(&opt) );
     fs::path user_groups_file = fs::path(datadir) / "tmp" / "update" /
         "user_groups_count.txt";
     CHECK( fs::exists(user_groups_file) );
@@ -88,14 +88,14 @@ TEST_CASE( "Test inconsistent JSON data types", "[update]" ) {
         etymon::file f(update_dir / "user_groups_count.txt", "w");
         fputs("1\n", f.fp);
     }
-    options opt;
+    ldp_options opt;
     opt.cli_mode = true;
     opt.quiet = true;
     opt.command = ldp_command::update;
     opt.datadir = datadir.data();
     opt.table = "user_groups";
     opt.load_from_dir = update_dir;
-    CHECK_NOTHROW( run_opt(&opt) );
+    CHECK_NOTHROW( ldp_main(&opt) );
     fs::remove_all(update_dir);
 }
 

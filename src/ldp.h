@@ -1,5 +1,5 @@
-#ifndef LDP_SERVER_H
-#define LDP_SERVER_H
+#ifndef LDP_LDP_H
+#define LDP_LDP_H
 
 #include "../etymoncpp/include/util.h"
 #include "config.h"
@@ -7,7 +7,7 @@
 
 int main_cli(int argc, char* const argv[]);
 
-void run_opt(options* opt);
-void fill_options(const config& conf, options* opt);
+void ldp_main(ldp_options* opt);
+void fill_options(const config& conf, ldp_options* opt);
 
 #endif

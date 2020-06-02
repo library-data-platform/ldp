@@ -7,6 +7,6 @@
 
 using namespace std;
 
-void run_update_process(const options& opt);
+void run_update_process(const ldp_options& opt);
 
 #endif

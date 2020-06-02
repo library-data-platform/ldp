@@ -15,7 +15,7 @@ public:
     const char* prog;
     timer();
     //Timer(FILE* err, const char* prog);
-    timer(const options& options);
+    timer(const ldp_options& options);
     void restart();
     double elapsed_time() const;
     void print(const char* str) const;

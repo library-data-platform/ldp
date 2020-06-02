@@ -19,7 +19,7 @@ void config_set_profile(const string& profile_str, profile* prof)
     throw runtime_error("Unknown profile: " + profile_str);
 }
 
-static void evaloptlong(char* name, char* arg, options* opt)
+static void evaloptlong(char* name, char* arg, ldp_options* opt)
 {
     if (!strcmp(name, "extract-only")) {
         opt->extract_only = true;
@@ -88,7 +88,7 @@ void config_set_command(const string& command_str, ldp_command* command)
     throw runtime_error("Unknown command: " + command_str);
 }
 
-int evalopt(const etymon::command_args& cargs, options *opt)
+int evalopt(const etymon::command_args& cargs, ldp_options *opt)
 {
     static struct option longopts[] = {
         { "console",      no_argument,       NULL, 0   },

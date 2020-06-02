@@ -23,8 +23,8 @@ enum class Print {
     debug
 };
 
-void print(Print level, const options& opt, const string& str);
-void printSQL(Print level, const options& opt, const string& sql);
+void print(Print level, const ldp_options& opt, const string& str);
+void printSQL(Print level, const ldp_options& opt, const string& sql);
 
 void printSchema(FILE* stream, const Schema& schema);
 

@@ -76,7 +76,7 @@ size_t header_callback(char* buffer, size_t size, size_t nitems,
  * okapiPassword, and okapiTenant.
  * \param[out] token The authentication token received from Okapi.
  */
-void okapi_login(const options& opt, log* lg, string* token)
+void okapi_login(const ldp_options& opt, log* lg, string* token)
 {
     //timer t(opt);
 
@@ -150,7 +150,7 @@ enum class PageStatus {
     containsRecords
 };
 
-static PageStatus retrieve(const Curl& c, const options& opt, log* lg,
+static PageStatus retrieve(const Curl& c, const ldp_options& opt, log* lg,
         const string& token, const TableSchema& table, const string& loadDir,
         extraction_files* ext_files, size_t page)
 {
@@ -234,7 +234,7 @@ static void writeCountFile(const string& loadDir, const string& tableName,
     fputs(pageStr.c_str(), f.fp);
 }
 
-bool retrievePages(const Curl& c, const options& opt, log* lg,
+bool retrievePages(const Curl& c, const ldp_options& opt, log* lg,
         const string& token, const TableSchema& table, const string& loadDir,
         extraction_files* ext_files)
 {
@@ -259,7 +259,7 @@ bool retrievePages(const Curl& c, const options& opt, log* lg,
     }
 }
 
-bool directOverride(const options& opt, const string& tableName)
+bool directOverride(const ldp_options& opt, const string& tableName)
 {
     for (auto& t : opt.direct.table_names) {
         if (t == tableName)
@@ -268,7 +268,7 @@ bool directOverride(const options& opt, const string& tableName)
     return false;
 }
 
-bool retrieveDirect(const options& opt, log* lg, const TableSchema& table,
+bool retrieveDirect(const ldp_options& opt, log* lg, const TableSchema& table,
         const string& loadDir, extraction_files* ext_files)
 {
     lg->write(level::trace, "", "",

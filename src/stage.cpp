@@ -145,7 +145,7 @@ class JSONHandler :
     public json::BaseReaderHandler<json::UTF8<>, JSONHandler> {
 public:
     int pass;
-    const options& opt;
+    const ldp_options& opt;
     log* lg;
     int level = 0;
     bool active = false;
@@ -159,7 +159,7 @@ public:
     size_t recordCount = 0;
     size_t totalRecordCount = 0;
     string insertBuffer;
-    JSONHandler(int pass, const options& options, log* lg,
+    JSONHandler(int pass, const ldp_options& options, log* lg,
             const TableSchema& table, etymon::odbc_conn* conn,
             const dbtype& dbt, map<string,Counts>* statistics) :
         pass(pass), opt(options), lg(lg), tableSchema(table),
@@ -198,7 +198,7 @@ static void beginInserts(const string& table, string* buffer)
     *buffer = "INSERT INTO " + loadingTable + " VALUES ";
 }
 
-static void endInserts(const options& opt, log* lg, const string& table,
+static void endInserts(const ldp_options& opt, log* lg, const string& table,
         string* buffer, etymon::odbc_conn* conn)
 {
     *buffer += ";\n";
@@ -207,7 +207,7 @@ static void endInserts(const options& opt, log* lg, const string& table,
     buffer->clear();
 }
 
-static void writeTuple(const options& opt, log* lg, const dbtype& dbt,
+static void writeTuple(const ldp_options& opt, log* lg, const dbtype& dbt,
         const TableSchema& table, const json::Document& doc,
         size_t* recordCount, size_t* totalRecordCount, string* insertBuffer)
 {
@@ -500,7 +500,7 @@ bool JSONHandler::Null()
     return true;
 }
 
-size_t readPageCount(const options& opt, log* lg, const string& loadDir,
+size_t readPageCount(const ldp_options& opt, log* lg, const string& loadDir,
         const string& tableName)
 {
     string filename = loadDir;
@@ -518,7 +518,7 @@ size_t readPageCount(const options& opt, log* lg, const string& loadDir,
     return count;
 }
 
-static void stagePage(const options& opt, log* lg, int pass,
+static void stagePage(const ldp_options& opt, log* lg, int pass,
         const TableSchema& tableSchema, etymon::odbc_env* odbc,
         etymon::odbc_conn* conn, const dbtype &dbt, map<string,Counts>* stats,
         const string& filename, char* readBuffer, size_t readBufferSize)
@@ -566,7 +566,7 @@ static void indexLoadingTable(log* lg, const TableSchema& table,
     }
 }
 
-static void createLoadingTable(const options& opt, log* lg,
+static void createLoadingTable(const ldp_options& opt, log* lg,
         const TableSchema& table, etymon::odbc_env* odbc, etymon::odbc_conn* conn,
         const dbtype& dbt)
 {
@@ -626,7 +626,7 @@ static void createLoadingTable(const options& opt, log* lg,
     conn->exec(sql);
 }
 
-bool stageTable(const options& opt, log* lg, TableSchema* table,
+bool stageTable(const ldp_options& opt, log* lg, TableSchema* table,
         etymon::odbc_env* odbc, etymon::odbc_conn* conn, dbtype* dbt,
         const string& loadDir)
 {
