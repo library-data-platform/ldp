@@ -1,5 +1,4 @@
 #include <experimental/filesystem>
-#include <signal.h>
 #include <sstream>
 #include <stdexcept>
 
@@ -10,6 +9,8 @@
 #include "util.h"
 
 namespace fs = std::experimental::filesystem;
+
+static int64_t ldp_latest_database_version = 11;
 
 database_upgrade_array database_upgrades[] = {
     nullptr,  // Version 0 has no migration.
@@ -25,6 +26,11 @@ database_upgrade_array database_upgrades[] = {
     database_upgrade_10,
     database_upgrade_11
 };
+
+int64_t latest_database_version()
+{
+    return ldp_latest_database_version;
+}
 
 /* *
  * \brief Looks up the schema version number in the LDP database.
@@ -66,6 +72,14 @@ bool select_database_version(etymon::odbc_conn* conn, int64_t* version)
     return true;
 }
 
+void validate_database_version(int64_t database_version)
+{
+    int64_t latest_version = latest_database_version();
+    if (database_version < 0 || database_version > latest_version)
+        throw runtime_error(
+                "Unknown LDP database version: " + to_string(database_version));
+}
+
 void catalog_add_table(etymon::odbc_conn* conn, const string& table)
 {
     string sql =
@@ -85,7 +99,7 @@ void catalog_add_table(etymon::odbc_conn* conn, const string& table)
  *
  * \param[in] db Database context.
  */
-void init_database(etymon::odbc_conn* conn, const string& ldpUser,
+static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         const string& ldpconfigUser, int64_t thisSchemaVersion, FILE* err,
         const char* prog)
 {
@@ -309,53 +323,20 @@ void init_database(etymon::odbc_conn* conn, const string& ldpUser,
     conn->exec(sql);
 
     tx.commit();
+
+    fprintf(err, "%s: Database initialization completed\n", prog);
 }
 
-static void sigint_handler(int signum)
-{
-    // NOP
-}
-
-static void sigquit_handler(int signum)
-{
-    // NOP
-}
-
-static void sigterm_handler(int signum)
-{
-    // NOP
-}
-
-static void setup_signal_handler(int sig, void (*handler)(int))
-{
-    struct sigaction sa;
-    sa.sa_handler = handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    sigaction(sig, &sa, NULL);
-}
-
-static void disable_termination_signals()
-{
-    setup_signal_handler(SIGINT, sigint_handler);
-    setup_signal_handler(SIGQUIT, sigquit_handler);
-    setup_signal_handler(SIGTERM, sigterm_handler);
-}
-
-void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
+static void upgrade_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         const string& ldpconfigUser, int64_t version,
-        int64_t this_schema_version, const string& datadir, FILE* err,
+        int64_t latest_version, const string& datadir, FILE* err,
         const char* prog, bool quiet)
 {
-    if (version < 0 || version > this_schema_version)
-        throw runtime_error(
-                "Unknown LDP database version: " + to_string(version));
-
     fs::path ulog_dir = fs::path(datadir) / "database_upgrade";
     fs::create_directories(ulog_dir);
 
     bool upgraded = false;
-    for (int64_t v = version + 1; v <= this_schema_version; v++) {
+    for (int64_t v = version + 1; v <= latest_version; v++) {
         string ulog_filename = "upgrade_" + to_string(v) + ".sql";
         fs::path ulog_path = ulog_dir / ulog_filename;
         etymon::file ulog_file(ulog_path, "a");
@@ -368,7 +349,6 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
                     prog);
             fprintf(err, "%s: ", prog);
             print_banner_line(err, '=', 74);
-            disable_termination_signals();
         }
         fprintf(err, "%s: Upgrading: %s\n", prog, to_string(v).c_str());
         print_banner_line(ulog_file.fp, '-', 79);
@@ -397,12 +377,85 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
         print_banner_line(err, '=', 74);
         log lg(conn, level::info, false, quiet, prog);
         lg.write(level::info, "server", "", "Upgraded to database version: " +
-                to_string(this_schema_version), -1);
+                to_string(latest_version), -1);
     } else {
         if (!quiet)
             fprintf(err, "%s: Database version is up to date\n", prog);
     }
 }
+
+void init_database(etymon::odbc_env* odbc, const string& dbname,
+        const string& ldpUser, const string& ldpconfigUser,
+        const string& datadir, FILE* err, const char* prog, bool quiet,
+        bool upgrade_database_command)
+{
+    int64_t latest_version = latest_database_version();
+
+    etymon::odbc_conn conn(odbc, dbname);
+
+    int64_t database_version;
+    bool version_found = select_database_version(&conn, &database_version);
+    if (version_found) {
+        validate_database_version(database_version);
+        throw runtime_error("Database may have been previously initialized");
+    } else {
+        init_database_all(&conn, ldpUser, ldpconfigUser, latest_version, err,
+                prog);
+    }
+}
+
+void upgrade_database(etymon::odbc_env* odbc, const string& dbname,
+        const string& ldpUser, const string& ldpconfigUser,
+        const string& datadir, FILE* err, const char* prog, bool quiet,
+        bool upgrade_database_command)
+{
+    int64_t latest_version = latest_database_version();
+
+    etymon::odbc_conn conn(odbc, dbname);
+
+    int64_t database_version;
+    bool version_found = select_database_version(&conn, &database_version);
+    if (version_found) {
+        // Database appears to be initialized: check if it should be upgraded.
+        validate_database_version(database_version);
+        if (database_version < latest_version) {
+            upgrade_database_all(&conn, ldpUser, ldpconfigUser,
+                    database_version, latest_version, datadir, err, prog,
+                    quiet);
+        } else {
+            if (!quiet)
+                fprintf(err, "%s: Database version is up to date\n", prog);
+        }
+    } else {
+        throw runtime_error("Database has not been initialized");
+    }
+}
+
+void validate_database_latest_version(etymon::odbc_env* odbc,
+        const string& dbname,
+        const string& ldpUser, const string& ldpconfigUser,
+        const string& datadir, FILE* err, const char* prog, bool quiet,
+        bool upgrade_database_command)
+{
+    int64_t latest_version = latest_database_version();
+
+    etymon::odbc_conn conn(odbc, dbname);
+
+    int64_t database_version;
+    bool version_found = select_database_version(&conn, &database_version);
+    if (version_found) {
+        // Database appears to be initialized: confirm version up to date.
+        validate_database_version(database_version);
+        if (database_version != latest_version) {
+            throw runtime_error(
+                    "Database should be upgraded using the "
+                    "upgrade-database command");
+        }
+    } else {
+        throw runtime_error("Database has not been initialized");
+    }
+}
+
 
 /* *
  * \brief Initializes or upgrades an LDP database if needed.
@@ -421,35 +474,4 @@ void upgrade_database(etymon::odbc_conn* conn, const string& ldpUser,
  * \param[in] odbc ODBC environment.
  * \param[in] db Database context.
  */
-void init_upgrade(etymon::odbc_env* odbc, const string& dbname,
-        const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir, FILE* err, const char* prog, bool quiet,
-        bool upgrade_database_command)
-{
-    int64_t this_schema_version = 11;
-
-    etymon::odbc_conn conn(odbc, dbname);
-
-    int64_t database_version;
-    bool version_found = select_database_version(&conn, &database_version);
-
-    if (version_found)
-        // Schema is present: check if it needs to be upgraded.
-        upgrade_database(&conn, ldpUser, ldpconfigUser, database_version,
-                this_schema_version, datadir, err, prog, quiet);
-    else
-        // Schema is not present: create it.
-        init_database(&conn, ldpUser, ldpconfigUser, this_schema_version, err,
-                prog);
-
-    if (database_version < this_schema_version && !upgrade_database_command) {
-        fprintf(stderr, "ldp: ");
-        print_banner_line(stderr, '=', 74);
-        fprintf(stderr,
-                "ldp: Warning: Automatic database upgrades are deprecated\n"
-                "ldp: Please use the new \"upgrade-database\" command\n");
-        fprintf(stderr, "ldp: ");
-        print_banner_line(stderr, '=', 74);
-    }
-}
 

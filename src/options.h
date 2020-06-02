@@ -12,7 +12,7 @@ using namespace std;
 enum class ldp_command {
     server,
     upgrade_database,
-    init,
+    init_database,
     update,
     help
 };

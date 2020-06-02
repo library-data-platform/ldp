@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <signal.h>
 #include <stdexcept>
 #include <string>
 #include <sys/wait.h>
@@ -235,13 +236,19 @@ server_lock::~server_lock()
 
 void server(const ldp_options& opt, etymon::odbc_env* odbc)
 {
-    init_upgrade(odbc, opt.db, opt.ldp_user, opt.ldpconfig_user, opt.datadir,
+    //init_upgrade(odbc, opt.db, opt.ldp_user, opt.ldpconfig_user, opt.datadir,
+    //        opt.err, opt.prog, opt.quiet,
+    //        (opt.command == ldp_command::upgrade_database));
+    //if (opt.command == ldp_command::upgrade_database)
+    //    return;
+    //if (opt.command == ldp_command::init)
+    //    return;
+
+    // Check that database version is up to date.
+    validate_database_latest_version(odbc, opt.db, opt.ldp_user,
+            opt.ldpconfig_user, opt.datadir,
             opt.err, opt.prog, opt.quiet,
             (opt.command == ldp_command::upgrade_database));
-    if (opt.command == ldp_command::upgrade_database)
-        return;
-    if (opt.command == ldp_command::init)
-        return;
 
     etymon::odbc_conn log_conn(odbc, opt.db);
     log lg(&log_conn, opt.log_level, opt.console, opt.quiet, opt.prog);
@@ -352,6 +359,61 @@ void fill_options(const config& conf, ldp_options* opt)
     conf.get_bool("/allow_destructive_tests", &(opt->allow_destructive_tests));
 }
 
+static void sigint_handler(int signum)
+{
+    // NOP
+}
+
+static void sigquit_handler(int signum)
+{
+    // NOP
+}
+
+static void sigterm_handler(int signum)
+{
+    // NOP
+}
+
+static void setup_signal_handler(int sig, void (*handler)(int))
+{
+    struct sigaction sa;
+    sa.sa_handler = handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    sigaction(sig, &sa, NULL);
+}
+
+static void disable_termination_signals()
+{
+    setup_signal_handler(SIGINT, sigint_handler);
+    setup_signal_handler(SIGQUIT, sigquit_handler);
+    setup_signal_handler(SIGTERM, sigterm_handler);
+}
+
+void init_command(const ldp_options& opt)
+{
+    if (opt.set_profile == profile::none)
+        throw runtime_error("Profile not specified");
+
+    etymon::odbc_env odbc;
+    server_lock svrlock(&odbc, opt.db, opt.log_level, opt.err, opt.prog);
+    disable_termination_signals();
+    init_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user, opt.datadir,
+            opt.err, opt.prog, opt.quiet,
+            (opt.command == ldp_command::upgrade_database));
+}
+
+void upgrade_database_command(const ldp_options& opt)
+{
+    etymon::odbc_env odbc;
+    server_lock svrlock(&odbc, opt.db, opt.log_level, opt.err, opt.prog);
+    disable_termination_signals();
+    upgrade_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user,
+            opt.datadir,
+            opt.err, opt.prog, opt.quiet,
+            (opt.command == ldp_command::upgrade_database));
+}
+
 void ldp_main(ldp_options* opt)
 {
     config conf(opt->datadir + "/ldpconf.json");
@@ -385,20 +447,18 @@ void ldp_main(ldp_options* opt)
         return;
     }
 
-    if (opt->command == ldp_command::upgrade_database) {
-        run_server(*opt);
-        return;
-    }
-
-    if (opt->command == ldp_command::init) {
-        if (opt->set_profile == profile::none)
-            throw runtime_error("Profile not specified");
-        run_server(*opt);
-        return;
-    }
-
     if (opt->command == ldp_command::update) {
         run_server(*opt);
+        return;
+    }
+
+    if (opt->command == ldp_command::upgrade_database) {
+        upgrade_database_command(*opt);
+        return;
+    }
+
+    if (opt->command == ldp_command::init_database) {
+        init_command(*opt);
         return;
     }
 }
