@@ -96,26 +96,29 @@ there are three kinds of branches that are relatively the most stable:
 
 * Release branches (`*-release`):  Beginning with LDP 0.9.0, a
   numbered branch will be created for each major version.  For
-example, `1.2-release` would point to the latest release of major
-version 1.2, such as 1.2.5.  These release branches are the most
-stable in the source repository.
+  example, `1.2-release` would point to the latest release of major
+  version 1.2, such as 1.2.5.  These release branches are the most
+  stable in the source repository.
+
 * Master branch (`master`):  This is the branch that new major version
   releases are made from.  It contains recently added features that
-have had some testing.  It is less stable than release branches.
+  have had some testing.  It is less stable than release branches.
+
 * Current branch (`current`):  This is for active development and
   tends to be unstable.  This is where new features are first added,
-before they are merged to the master branch.
+  before they are merged to the master branch.
 
 If automated deployment will be used for upgrading to new versions of
 LDP, two approaches might be suggested:
 
 * For a production or staging environment, it is safest to pull from a
   specific release branch, for example, `1.7-release`, which would
-mean that only bug fixes for major version 1.7 would be applied
-automatically.
+  mean that only bug fixes for major version 1.7 would be applied
+  automatically.
+
 * For a testing environment, which might be used to test new features
   not yet released, the latest version can be pulled from the `master`
-branch.
+  branch.
 
 ### Installing software dependencies
 
@@ -211,9 +214,11 @@ $ ./build/ldp_test
 Running the integration tests requires a FOLIO instance, as well as an
 LDP testbed instance with a PostgreSQL or Redshift database.  The
 contents of the database will be destroyed by these tests; so please
-be careful that the correct database will be used.  The
+be careful that the correct database is used.  The
 `deployment_environment` configuration setting for the LDP testbed
-instance should be defined as `testing`, and the tests are run as:
+instance should be `testing` or `development`.  Also as a safety
+precaution, the setting `allow_destructive_tests` is required for
+integration tests.  The tests are run as:
 
 ```shell
 $ ./build/ldp_testint -s -D DATADIR
@@ -265,14 +270,16 @@ Three database users are required:
 
 * `ldpadmin` owns all database objects created by the LDP software.
   This account should be used very sparingly and carefully.
+
 * `ldpconfig` is a special user account for changing configuration
   settings in the `ldpconfig` schema.  It is intended to enable
-designated users to make changes to the server's operation, such as
-scheduling when data updates occur.  This user name can be modified
-using the `ldpconfig_user` configuration setting in `ldpconf.json`.
+  designated users to make changes to the server's operation, such as
+  scheduling when data updates occur.  This user name can be modified
+  using the `ldpconfig_user` configuration setting in `ldpconf.json`.
+
 * `ldp` is a general user of the LDP database.  This user name can be
   modified using the `ldp_user` configuration setting in
-`ldpconf.json`.
+  `ldpconf.json`.
 
 If more than one LDP instance will be hosted with a single database
 server, the `ldpconfig` and `ldp` user names should for security
@@ -299,11 +306,11 @@ $ psql ldp --username=<admin_user> --single-transaction \
       --command="GRANT USAGE ON SCHEMA public TO ldp;"
 ```
 
-Additional command line options may be required to specify the database
-host, port, etc.
+Additional command line options may be required to specify the
+database host, port, etc.
 
-In Redshift, this can be done in the database once it has been created,
-for example:
+In Redshift, this can be done in the database once it has been
+created, for example:
 
 ```sql
 CREATE USER ldpadmin PASSWORD '(ldpadmin password here)';
@@ -355,10 +362,10 @@ SSLMode = require
 
 ### Creating a data directory
 
-LDP uses a "data directory" where cached and temporary data, as
-well as server configuration files, are stored.  In these examples, we
-will suppose that the data directory is `/var/lib/ldp` and that the
-server will be run as an `ldp` user:
+LDP uses a "data directory" where cached and temporary data, as well
+as server configuration files, are stored.  In these examples, we will
+suppose that the data directory is `/var/lib/ldp` and that the server
+will be run as an `ldp` user:
 
 ```shell
 $ sudo mkdir -p /var/lib/ldp
@@ -525,9 +532,10 @@ Reference
 
 * `deployment_environment` (string; required) is the deployment
   environment of the LDP instance.  Supported values are `production`,
-`staging`, `testing`, and `development`.  This setting is used to
-determine whether certain operations should be allowed to run on the
-instance.
+  `staging`, `testing`, and `development`.  This setting is used to
+  determine whether certain operations should be allowed to run on the
+  instance.
+
 * `ldp_database` (object; required) is a group of database-related
   settings.
   * `odbc_database` (string; required) is the ODBC "data source name"
@@ -536,14 +544,16 @@ instance.
     defined by default as `ldpconfig`.
   * `ldp_user` (string; optional) is the database user that is defined
     by default as `ldp`.
+
 * `enable_sources` (array; required) is a list of sources that are
   enabled for the LDP to extract data from.  The source names refer to
-a subset of those defined under `sources` (see below).  Only one
-source should be provided in the case of non-consortial deployments.
+  a subset of those defined under `sources` (see below).  Only one
+  source should be provided in the case of non-consortial deployments.
+
 * `sources` (object; required) is a collection of sources that LDP can
   extract data from.  Only one source should be provided in the case
-of non-consortial deployments.  A source is defined by a source name
-and an associated object containing several settings:
+  of non-consortial deployments.  A source is defined by a source name
+  and an associated object containing several settings:
   * `okapi_url` (string; required) is the URL for the Okapi instance
     to extract data from.
   * `okapi_tenant` (string; required) is the Okapi tenant.
@@ -552,8 +562,8 @@ and an associated object containing several settings:
     specified Okapi user name.
   * `direct_tables` (array; optional) is a list of tables that should
     be updated using direct extraction.  Only these tables may be
-included: `inventory_holdings`, `inventory_instances`, and
-`inventory_items`.
+    included: `inventory_holdings`, `inventory_instances`, and
+    `inventory_items`.
   * `direct_database_name` (string; optional) is the FOLIO database
     name.
   * `direct_database_host` (string; optional) is the FOLIO database
@@ -564,59 +574,25 @@ included: `inventory_holdings`, `inventory_instances`, and
     user name.
   * `direct_database_password` (string; optional) is the password for
     the specified FOLIO database user name.
+
 * `disable_anonymization` (Boolean; optional) when set to `true`,
   disables anonymization of personal data.  Please read the section on
-"Data privacy" above before changing this setting.  As a safety
-precaution, the configuration attribute `disable_anonymization` in
-table `ldpconfig.general` also must be set.
+  "Data privacy" above before changing this setting.  As a safety
+  precaution, the configuration attribute `disable_anonymization` in
+  table `ldpconfig.general` also must be set.
 
-
-<!--
-
-7\. Updating data from files (testing only)
--------------------------------------------
-
-For testing purposes, source data can be loaded directly from the file
-system using the `update` command with options `--unsafe` and
-`--sourcedir`, e.g.:
-
-```shell
-$ ldp update -D /usr/local/ldp/data --unsafe --sourcedir ldp-analytics/testdata/
-```
-
-The `update` command cannot be used while the server is running, and
-it will wait until the server is stopped before continuing.
-
-The source data are expected to have particular names, e.g.
-`loans_0.json`.  In addition, an optional, accompanying file can be
-included having the suffix, `_test.json`, e.g. `loans_test.json`.
-Data in these "test" files are loaded into the same table as the files
-they accompany.  This is used for testing in query development to
-combine extracted test data with additional static test data.
-
-
-10\. Referential analysis (experimental)
-----------------------------------------
-
-LDP 0.7.3 provides an experimental feature that analyzes potential
-foreign key relationships between tables, and writes messages to the
-log (`ldpsystem.log`) about presumed referential violations.  The
-analysis runs immediately after a full update.
-
-To enable this feature:
-
-```sql
-UPDATE ldpconfig.general
-    SET log_referential_analysis = TRUE;
-```
-
--->
+* `allow_destructive_tests` (Boolean; optional) when set to `true`,
+  allows the LDP database to be overwritten by integration tests.  It
+  should only be enabled for an LDP database that is being used as a
+  testing sandbox, and never in a production or staging deployment.
 
 
 Further reading
 ---------------
 
-[__Learn about configuring LDP in the Configuration Guide > > >__](Config_Guide.md)
+[__Learn about configuring LDP in the
+Configuration Guide > > >__](Config_Guide.md)
 
-[__Learn about using the LDP database in the User Guide > > >__](User_Guide.md)
+[__Learn about using the LDP database in the
+User Guide > > >__](User_Guide.md)
 

@@ -71,6 +71,7 @@ public:
     int nargc = 0;
     char **nargv = nullptr;
     const char* prog = "ldp";
+    bool allow_destructive_tests = false;
 };
 
 int evalopt(const etymon::command_args& cargs, options* opt);
