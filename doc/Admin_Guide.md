@@ -96,26 +96,29 @@ there are three kinds of branches that are relatively the most stable:
 
 * Release branches (`*-release`):  Beginning with LDP 0.9.0, a
   numbered branch will be created for each major version.  For
-example, `1.2-release` would point to the latest release of major
-version 1.2, such as 1.2.5.  These release branches are the most
-stable in the source repository.
+  example, `1.2-release` would point to the latest release of major
+  version 1.2, such as 1.2.5.  These release branches are the most
+  stable in the source repository.
+
 * Master branch (`master`):  This is the branch that new major version
   releases are made from.  It contains recently added features that
-have had some testing.  It is less stable than release branches.
+  have had some testing.  It is less stable than release branches.
+
 * Current branch (`current`):  This is for active development and
   tends to be unstable.  This is where new features are first added,
-before they are merged to the master branch.
+  before they are merged to the master branch.
 
 If automated deployment will be used for upgrading to new versions of
 LDP, two approaches might be suggested:
 
 * For a production or staging environment, it is safest to pull from a
   specific release branch, for example, `1.7-release`, which would
-mean that only bug fixes for major version 1.7 would be applied
-automatically.
+  mean that only bug fixes for major version 1.7 would be applied
+  automatically.
+
 * For a testing environment, which might be used to test new features
   not yet released, the latest version can be pulled from the `master`
-branch.
+  branch.
 
 ### Installing software dependencies
 
@@ -265,14 +268,16 @@ Three database users are required:
 
 * `ldpadmin` owns all database objects created by the LDP software.
   This account should be used very sparingly and carefully.
+
 * `ldpconfig` is a special user account for changing configuration
   settings in the `ldpconfig` schema.  It is intended to enable
-designated users to make changes to the server's operation, such as
-scheduling when data updates occur.  This user name can be modified
-using the `ldpconfig_user` configuration setting in `ldpconf.json`.
+  designated users to make changes to the server's operation, such as
+  scheduling when data updates occur.  This user name can be modified
+  using the `ldpconfig_user` configuration setting in `ldpconf.json`.
+
 * `ldp` is a general user of the LDP database.  This user name can be
   modified using the `ldp_user` configuration setting in
-`ldpconf.json`.
+  `ldpconf.json`.
 
 If more than one LDP instance will be hosted with a single database
 server, the `ldpconfig` and `ldp` user names should for security
@@ -525,9 +530,10 @@ Reference
 
 * `deployment_environment` (string; required) is the deployment
   environment of the LDP instance.  Supported values are `production`,
-`staging`, `testing`, and `development`.  This setting is used to
-determine whether certain operations should be allowed to run on the
-instance.
+  `staging`, `testing`, and `development`.  This setting is used to
+  determine whether certain operations should be allowed to run on the
+  instance.
+
 * `ldp_database` (object; required) is a group of database-related
   settings.
   * `odbc_database` (string; required) is the ODBC "data source name"
@@ -536,14 +542,16 @@ instance.
     defined by default as `ldpconfig`.
   * `ldp_user` (string; optional) is the database user that is defined
     by default as `ldp`.
+
 * `enable_sources` (array; required) is a list of sources that are
   enabled for the LDP to extract data from.  The source names refer to
-a subset of those defined under `sources` (see below).  Only one
-source should be provided in the case of non-consortial deployments.
+  a subset of those defined under `sources` (see below).  Only one
+  source should be provided in the case of non-consortial deployments.
+
 * `sources` (object; required) is a collection of sources that LDP can
   extract data from.  Only one source should be provided in the case
-of non-consortial deployments.  A source is defined by a source name
-and an associated object containing several settings:
+  of non-consortial deployments.  A source is defined by a source name
+  and an associated object containing several settings:
   * `okapi_url` (string; required) is the URL for the Okapi instance
     to extract data from.
   * `okapi_tenant` (string; required) is the Okapi tenant.
@@ -552,8 +560,8 @@ and an associated object containing several settings:
     specified Okapi user name.
   * `direct_tables` (array; optional) is a list of tables that should
     be updated using direct extraction.  Only these tables may be
-included: `inventory_holdings`, `inventory_instances`, and
-`inventory_items`.
+    included: `inventory_holdings`, `inventory_instances`, and
+    `inventory_items`.
   * `direct_database_name` (string; optional) is the FOLIO database
     name.
   * `direct_database_host` (string; optional) is the FOLIO database
@@ -564,11 +572,17 @@ included: `inventory_holdings`, `inventory_instances`, and
     user name.
   * `direct_database_password` (string; optional) is the password for
     the specified FOLIO database user name.
+
 * `disable_anonymization` (Boolean; optional) when set to `true`,
   disables anonymization of personal data.  Please read the section on
-"Data privacy" above before changing this setting.  As a safety
-precaution, the configuration attribute `disable_anonymization` in
-table `ldpconfig.general` also must be set.
+  "Data privacy" above before changing this setting.  As a safety
+  precaution, the configuration attribute `disable_anonymization` in
+  table `ldpconfig.general` also must be set.
+
+* `allow_destructive_tests` (Boolean; optional) when set to `true`,
+  allows the LDP database to be overwritten by integration tests.  It
+  should only be enabled for an LDP database that is being used as a
+  testing sandbox, and never in a production or staging deployment.
 
 
 Further reading

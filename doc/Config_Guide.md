@@ -41,19 +41,24 @@ Reference
 
 * `enable_full_updates` (BOOLEAN) turns on daily full updates when set
   to `TRUE`.  No full updates are performed if it is set to `FALSE`.
+
 * `next_full_update` (TIMESTAMP WITH TIME ZONE) is the date and time
   of the next full update.  Once the full update begins, this value is
-automatically incremented to the next day at the same time.
+  automatically incremented to the next day at the same time.
+
 * `detect_foreign_keys` (BOOLEAN) is reserved for future use.
+
 * `force_foreign_key_constraints` (BOOLEAN) is reserved for future
   use.
+
 * `enable_foreign_key_warnings` (BOOLEAN) is reserved for future use.
+
 * `disable_anonymization` (BOOLEAN) when set to `TRUE`, disables
   anonymization of personal data.  Please read the section on "Data
-privacy" in the [Administrator Guide](Admin_Guide.md) before changing
-this setting.  As a safety precaution, the configuration setting
-`disableAnonymization` in `ldpconf.json` also must be set by the LDP
-system administrator.
+  privacy" in the [Administrator Guide](Admin_Guide.md) before
+  changing this setting.  As a safety precaution, the configuration
+  setting `disableAnonymization` in `ldpconf.json` also must be set by
+  the LDP system administrator.
 
 
 Further reading

@@ -13,10 +13,10 @@
 
 #include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/postgres.h"
-#include "config.h"
 #include "dbtype.h"
 #include "init.h"
 #include "log.h"
+#include "server.h"
 #include "timer.h"
 #include "update.h"
 #include "util.h"
@@ -327,9 +327,9 @@ void fill_options(const config& conf, options* opt)
         fill_direct_options(conf, source, opt);
     }
 
-    bool disable_anonymization;
-    conf.get_bool("/disable_anonymization", &disable_anonymization);
-    opt->disable_anonymization = disable_anonymization;
+    conf.get_bool("/disable_anonymization", &(opt->disable_anonymization));
+
+    conf.get_bool("/allow_destructive_tests", &(opt->allow_destructive_tests));
 }
 
 void run_opt(options* opt)
