@@ -299,11 +299,11 @@ $ psql ldp --username=<admin_user> --single-transaction \
       --command="GRANT USAGE ON SCHEMA public TO ldp;"
 ```
 
-Additional command line options may be required to specify the database
-host, port, etc.
+Additional command line options may be required to specify the
+database host, port, etc.
 
-In Redshift, this can be done in the database once it has been created,
-for example:
+In Redshift, this can be done in the database once it has been
+created, for example:
 
 ```sql
 CREATE USER ldpadmin PASSWORD '(ldpadmin password here)';
@@ -355,10 +355,10 @@ SSLMode = require
 
 ### Creating a data directory
 
-LDP uses a "data directory" where cached and temporary data, as
-well as server configuration files, are stored.  In these examples, we
-will suppose that the data directory is `/var/lib/ldp` and that the
-server will be run as an `ldp` user:
+LDP uses a "data directory" where cached and temporary data, as well
+as server configuration files, are stored.  In these examples, we will
+suppose that the data directory is `/var/lib/ldp` and that the server
+will be run as an `ldp` user:
 
 ```shell
 $ sudo mkdir -p /var/lib/ldp
@@ -571,52 +571,12 @@ precaution, the configuration attribute `disable_anonymization` in
 table `ldpconfig.general` also must be set.
 
 
-<!--
-
-7\. Updating data from files (testing only)
--------------------------------------------
-
-For testing purposes, source data can be loaded directly from the file
-system using the `update` command with options `--unsafe` and
-`--sourcedir`, e.g.:
-
-```shell
-$ ldp update -D /usr/local/ldp/data --unsafe --sourcedir ldp-analytics/testdata/
-```
-
-The `update` command cannot be used while the server is running, and
-it will wait until the server is stopped before continuing.
-
-The source data are expected to have particular names, e.g.
-`loans_0.json`.  In addition, an optional, accompanying file can be
-included having the suffix, `_test.json`, e.g. `loans_test.json`.
-Data in these "test" files are loaded into the same table as the files
-they accompany.  This is used for testing in query development to
-combine extracted test data with additional static test data.
-
-
-10\. Referential analysis (experimental)
-----------------------------------------
-
-LDP 0.7.3 provides an experimental feature that analyzes potential
-foreign key relationships between tables, and writes messages to the
-log (`ldpsystem.log`) about presumed referential violations.  The
-analysis runs immediately after a full update.
-
-To enable this feature:
-
-```sql
-UPDATE ldpconfig.general
-    SET log_referential_analysis = TRUE;
-```
-
--->
-
-
 Further reading
 ---------------
 
-[__Learn about configuring LDP in the Configuration Guide > > >__](Config_Guide.md)
+[__Learn about configuring LDP in the
+Configuration Guide > > >__](Config_Guide.md)
 
-[__Learn about using the LDP database in the User Guide > > >__](User_Guide.md)
+[__Learn about using the LDP database in the
+User Guide > > >__](User_Guide.md)
 

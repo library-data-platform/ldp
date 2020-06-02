@@ -59,8 +59,9 @@ system administrator.
 Further reading
 ---------------
 
-[__Learn about installing and administering LDP in the Administrator Guide > > >__](Admin_Guide.md)
+[__Learn about installing and administering LDP in the
+Administrator Guide > > >__](Admin_Guide.md)
 
-[__Learn about using the LDP database in the User Guide > > >__](User_Guide.md)
-
+[__Learn about using the LDP database in the
+User Guide > > >__](User_Guide.md)
 
