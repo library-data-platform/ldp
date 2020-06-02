@@ -320,22 +320,7 @@ void fill_direct_options(const config& conf, const string& base,
 void fill_options(const config& conf, ldp_options* opt)
 {
     string deploy_env;
-    ///////////////////////////////////////////////////////////////////////////
-    //conf.get_required("/deployment_environment", &deploy_env);
-    ///////////////////////////////////////////////////////////////////////////
-    conf.get("/deployment_environment", &deploy_env);
-    if (deploy_env == "") {
-        fprintf(stderr, "ldp: ");
-        print_banner_line(stderr, '=', 74);
-        fprintf(stderr,
-                "ldp: Warning: Deployment environment should be set in "
-                "ldpconf.json\n"
-                "ldp: Defaulting to: production\n");
-        fprintf(stderr, "ldp: ");
-        print_banner_line(stderr, '=', 74);
-        deploy_env = "production";
-    }
-    ///////////////////////////////////////////////////////////////////////////
+    conf.get_required("/deployment_environment", &deploy_env);
     config_set_environment(deploy_env, &(opt->deploy_env));
 
     string target = "/ldp_database/";
