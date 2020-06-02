@@ -44,29 +44,10 @@ Reference
 * `next_full_update` (TIMESTAMP WITH TIME ZONE) is the date and time
   of the next full update.  Once the full update begins, this value is
 automatically incremented to the next day at the same time.
-* `detect_foreign_keys` (BOOLEAN) enables experimental features that
-  are not yet supported.
-* `force_foreign_key_constraints` (BOOLEAN) enables experimental
-  features that are not yet supported.
-* `enable_foreign_key_warnings` (BOOLEAN) enables experimental
-  features that are not yet supported.
-<!--
-* `detect_foreign_keys` (BOOLEAN) when set to `TRUE`, enables an
-  experimental feature that attempts to detect or infer the presence
-of foreign key relationships.  This process is run after a full
-update.  The detected foreign keys are placed into the table
-`ldpconfig.foreign_keys`.
-* `force_foreign_key_constraints` (BOOLEAN) when set to `TRUE`,
-  enables an experimental feature that applies foreign key constraints
-listed in the table `ldpconfig.foreign_keys` where `enable_constraint`
-is `TRUE`.  The constraints are applied after a full update.  In order
-to define the constraints, rows that do not conform to them are
-deleted.  Therefore this is a potentially destructive process and
-should be used with care in a production system.  Note that history
-tables generally retain all rows including those deleted by this
-process.
-* `enable_foreign_key_warnings` (BOOLEAN) is not currently supported.
--->
+* `detect_foreign_keys` (BOOLEAN) is reserved for future use.
+* `force_foreign_key_constraints` (BOOLEAN) is reserved for future
+  use.
+* `enable_foreign_key_warnings` (BOOLEAN) is reserved for future use.
 * `disable_anonymization` (BOOLEAN) when set to `TRUE`, disables
   anonymization of personal data.  Please read the section on "Data
 privacy" in the [Administrator Guide](Admin_Guide.md) before changing

@@ -447,9 +447,13 @@ void run_update(const options& opt)
 
         bool detect_foreign_keys = false;
         bool force_foreign_key_constraints = false;
-        bool enable_foreign_key_warnings = false;
-        select_config_general(&conn, &lg, &detect_foreign_keys,
-                &force_foreign_key_constraints, &enable_foreign_key_warnings);
+        //bool enable_foreign_key_warnings = false;
+
+        ///////////////////////////////////////////////////////////////////////
+        // Temporarily removed until 1.0 release.
+        //select_config_general(&conn, &lg, &detect_foreign_keys,
+        //        &force_foreign_key_constraints, &enable_foreign_key_warnings);
+        ///////////////////////////////////////////////////////////////////////
 
         if (detect_foreign_keys) {
 
