@@ -333,6 +333,13 @@ void config_options(const config& conf, ldp_options* opt)
     conf.get_bool("/allow_destructive_tests", &(opt->allow_destructive_tests));
 }
 
+void require_disable_anon_ldp1(const ldp_options& opt)
+{
+    if (!opt.disable_anonymization)
+        throw runtime_error(
+                "This version requires disable_anonymization in ldpconf.json");
+}
+
 void validate_options_in_deployment(const ldp_options& opt)
 {
     if (opt.extract_only) {
@@ -366,6 +373,8 @@ void ldp_exec(ldp_options* opt)
 {
     config conf(opt->datadir + "/ldpconf.json");
     config_options(conf, opt);
+
+    require_disable_anon_ldp1(*opt);
 
     validate_options_in_deployment(*opt);
 

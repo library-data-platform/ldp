@@ -395,7 +395,8 @@ __ldpconf.json__
             "okapi_user": "diku_admin",
             "okapi_password": "(okapi password here)"
         }
-    }
+    },
+    "disable_anonymization": true
 }
 ```
 
@@ -507,22 +508,10 @@ which may be protected by a firewall.
 7\. Data privacy
 ----------------
 
-By default, LDP attempts to "anonymize" personal data.  It does this
-by not updating certain tables that would contain personal data, for
-example `user_users`, and by deleting foreign key references to them
-from other tables.  This anonymization process is enabled unless LDP
-is otherwise configured.
-
-If it should be necessary to disable anonymization, this can be done
-by setting `disable_anonymization` to `true` in `ldpconf.json`, and by
-setting `disable_anonymization` to `TRUE` in the table
-`ldpconfig.general`.  Both are required to be set in order to disable
-anonymization.
-
-__WARNING:  LDP does not provide a way to anonymize the database after
-personal data have been loaded into it.  For this reason, these
-settings should never be used unless you are absolutely sure that you
-want to store personal data in the LDP database.__
+LDP 1.0 stores personal data extracted from FOLIO.  LDP 1.1, currently
+under development, is planned to support anonymization of personal
+data.  When LDP 1.1 is released, this documentation will be updated
+with instructions on how to enable anonymization.
 
 
 Reference
@@ -575,11 +564,9 @@ Reference
   * `direct_database_password` (string; optional) is the password for
     the specified FOLIO database user name.
 
-* `disable_anonymization` (Boolean; optional) when set to `true`,
-  disables anonymization of personal data.  Please read the section on
-  "Data privacy" above before changing this setting.  As a safety
-  precaution, the configuration attribute `disable_anonymization` in
-  table `ldpconfig.general` also must be set.
+* `disable_anonymization` (Boolean; required) when set to `true`,
+  disables anonymization of personal data.  In LDP 1.0, this value
+  must be set to `true`.
 
 * `allow_destructive_tests` (Boolean; optional) when set to `true`,
   allows the LDP database to be overwritten by integration tests.  It

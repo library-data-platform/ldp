@@ -302,7 +302,7 @@ void run_update(const ldp_options& opt)
         curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
     }
 
-    string ldpconfig_disable_anonymization;
+    bool ldpconfig_disable_anonymization = false;
     {
         etymon::odbc_conn conn(&odbc, opt.db);
         string sql = "SELECT disable_anonymization FROM ldpconfig.general;";
@@ -311,9 +311,15 @@ void run_update(const ldp_options& opt)
             etymon::odbc_stmt stmt(&conn);
             conn.exec_direct(&stmt, sql);
             conn.fetch(&stmt);
-            conn.get_data(&stmt, 1, &ldpconfig_disable_anonymization);
+            string s;
+            conn.get_data(&stmt, 1, &s);
+            ldpconfig_disable_anonymization = (s == "1");
         }
     }
+    if (!ldpconfig_disable_anonymization)
+        throw runtime_error(
+                "This version requires disable_anonymization in "
+                "ldpconfig.general");
 
     for (auto& table : schema.tables) {
 
@@ -322,7 +328,7 @@ void run_update(const ldp_options& opt)
 
         bool anonymizeTable = ( table.anonymize &&
                 (!opt.disable_anonymization ||
-                 ldpconfig_disable_anonymization != "1") );
+                 !ldpconfig_disable_anonymization) );
 
         //printf("anonymize=%d\tfile_disable=%d\tdb_disable=%s\tA=%d\n",
         //        table.anonymize, opt.disableAnonymization,
