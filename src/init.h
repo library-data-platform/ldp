@@ -17,26 +17,15 @@ int64_t latest_database_version();
 typedef void (*database_upgrade_array)(database_upgrade_options* opt);
 
 void init_database(etymon::odbc_env* odbc, const string& dbname,
-        const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir, FILE* err, const char* prog, bool quiet,
-        bool upgrade_database_command);
+        const string& ldpUser, const string& ldpconfigUser, FILE* err,
+        const char* prog);
 
 void upgrade_database(etymon::odbc_env* odbc, const string& dbname,
         const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir, FILE* err, const char* prog, bool quiet,
-        bool upgrade_database_command);
+        const string& datadir, FILE* err, const char* prog, bool quiet);
 
 void validate_database_latest_version(etymon::odbc_env* odbc,
-        const string& dbname,
-        const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir, FILE* err, const char* prog, bool quiet,
-        bool upgrade_database_command);
-
-// OLD
-void init_upgrade(etymon::odbc_env* odbc, const string& dbname,
-        const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir, FILE* err, const char* prog, bool quiet,
-        bool upgrade_database_command);
+        const string& dbname);
 
 void catalog_add_table(etymon::odbc_conn* conn, const string& table);
 

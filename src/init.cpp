@@ -385,9 +385,8 @@ static void upgrade_database_all(etymon::odbc_conn* conn, const string& ldpUser,
 }
 
 void init_database(etymon::odbc_env* odbc, const string& dbname,
-        const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir, FILE* err, const char* prog, bool quiet,
-        bool upgrade_database_command)
+        const string& ldpUser, const string& ldpconfigUser, FILE* err,
+        const char* prog)
 {
     int64_t latest_version = latest_database_version();
 
@@ -406,8 +405,7 @@ void init_database(etymon::odbc_env* odbc, const string& dbname,
 
 void upgrade_database(etymon::odbc_env* odbc, const string& dbname,
         const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir, FILE* err, const char* prog, bool quiet,
-        bool upgrade_database_command)
+        const string& datadir, FILE* err, const char* prog, bool quiet)
 {
     int64_t latest_version = latest_database_version();
 
@@ -432,10 +430,7 @@ void upgrade_database(etymon::odbc_env* odbc, const string& dbname,
 }
 
 void validate_database_latest_version(etymon::odbc_env* odbc,
-        const string& dbname,
-        const string& ldpUser, const string& ldpconfigUser,
-        const string& datadir, FILE* err, const char* prog, bool quiet,
-        bool upgrade_database_command)
+        const string& dbname)
 {
     int64_t latest_version = latest_database_version();
 

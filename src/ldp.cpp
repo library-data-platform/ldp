@@ -236,19 +236,8 @@ server_lock::~server_lock()
 
 void server(const ldp_options& opt, etymon::odbc_env* odbc)
 {
-    //init_upgrade(odbc, opt.db, opt.ldp_user, opt.ldpconfig_user, opt.datadir,
-    //        opt.err, opt.prog, opt.quiet,
-    //        (opt.command == ldp_command::upgrade_database));
-    //if (opt.command == ldp_command::upgrade_database)
-    //    return;
-    //if (opt.command == ldp_command::init)
-    //    return;
-
     // Check that database version is up to date.
-    validate_database_latest_version(odbc, opt.db, opt.ldp_user,
-            opt.ldpconfig_user, opt.datadir,
-            opt.err, opt.prog, opt.quiet,
-            (opt.command == ldp_command::upgrade_database));
+    validate_database_latest_version(odbc, opt.db);
 
     etymon::odbc_conn log_conn(odbc, opt.db);
     log lg(&log_conn, opt.log_level, opt.console, opt.quiet, opt.prog);
@@ -398,9 +387,8 @@ void init_command(const ldp_options& opt)
     etymon::odbc_env odbc;
     server_lock svrlock(&odbc, opt.db, opt.log_level, opt.err, opt.prog);
     disable_termination_signals();
-    init_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user, opt.datadir,
-            opt.err, opt.prog, opt.quiet,
-            (opt.command == ldp_command::upgrade_database));
+    init_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user,
+            opt.err, opt.prog);
 }
 
 void upgrade_database_command(const ldp_options& opt)
@@ -410,8 +398,7 @@ void upgrade_database_command(const ldp_options& opt)
     disable_termination_signals();
     upgrade_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user,
             opt.datadir,
-            opt.err, opt.prog, opt.quiet,
-            (opt.command == ldp_command::upgrade_database));
+            opt.err, opt.prog, opt.quiet);
 }
 
 void ldp_main(ldp_options* opt)
