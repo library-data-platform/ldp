@@ -569,9 +569,10 @@ Reference
   must be set to `true`.
 
 * `allow_destructive_tests` (Boolean; optional) when set to `true`,
-  allows the LDP database to be overwritten by integration tests.  It
-  should only be enabled for an LDP database that is being used as a
-  testing sandbox, and never in a production or staging deployment.
+  allows the LDP database to be overwritten by integration tests or
+  other testing or development operations.  It should only be enabled
+  for an LDP database that is being used as a testing sandbox, and
+  never in a production or staging deployment.
 
 
 Further reading
