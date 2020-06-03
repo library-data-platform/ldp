@@ -95,9 +95,9 @@ managed by the LDP software.
 2\. JSON queries
 ----------------
 
-To access the JSON fields, it is recommended to use the built in
-function `json_extract_path_text()` to retrieve data from a path of up
-to five nested JSON fields, for example:
+To access the JSON fields, the function `json_extract_path_text()` can
+be used to retrieve data from a path of up to five nested JSON fields,
+for example:
 
 ```sql
 SELECT data FROM circulation_loans LIMIT 1;
@@ -135,6 +135,14 @@ SELECT json_extract_path_text(data, 'status', 'name') AS status,
 
 In this example, `json_extract_path_text(data, 'status', 'name')`
 refers to the `name` field nested within the `status` field.
+
+It is strongly recommended to use the function
+`json_extract_path_text()` in particular because it is mostly
+compatible with both PostgreSQL and Redshift, the two database systems
+that are supported by LDP.  PostgreSQL is a versatile and stable open
+source system, and Redshift offers fast queries on extremely large
+data.  By using only functions that are compatible with both database
+systems, you can retain flexibility in the future to use either.
 
 
 3\. Relational attributes vs. JSON
