@@ -12,8 +12,8 @@ class extraction_files {
 public:
     string dir;
     vector<string> files;
-    const options& opt;
-    extraction_files(const options& options) : opt(options) {};
+    const ldp_options& opt;
+    extraction_files(const ldp_options& options) : opt(options) {};
     ~extraction_files();
 };
 
@@ -25,12 +25,12 @@ public:
     ~Curl();
 };
 
-void okapi_login(const options& o, log* lg, string* token);
+void okapi_login(const ldp_options& o, log* lg, string* token);
 
-bool directOverride(const options& opt, const string& sourcePath);
-bool retrieveDirect(const options& opt, log* lg, const TableSchema& table,
+bool directOverride(const ldp_options& opt, const string& sourcePath);
+bool retrieveDirect(const ldp_options& opt, log* lg, const TableSchema& table,
         const string& loadDir, extraction_files* ext_files);
-bool retrievePages(const Curl& c, const options& opt, log* lg,
+bool retrievePages(const Curl& c, const ldp_options& opt, log* lg,
         const string& token, const TableSchema& table, const string& loadDir,
         extraction_files* ext_files);
 

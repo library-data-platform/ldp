@@ -55,7 +55,7 @@ void print_banner_line(FILE* stream, char ch, int width)
 ////////////////////////////////////////////////////////////////////////////
 // Old error printing functions
 
-void print(Print level, const options& opt, const string& str)
+void print(Print level, const ldp_options& opt, const string& str)
 {
     string s = str;
     etymon::trim(&s);
@@ -80,7 +80,7 @@ void print(Print level, const options& opt, const string& str)
     }
 }
 
-void printSQL(Print level, const options& opt, const string& sql)
+void printSQL(Print level, const ldp_options& opt, const string& sql)
 {
     print(level, opt, string("sql:\n") + sql);
 }

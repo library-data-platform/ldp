@@ -2,7 +2,7 @@
 
 #include "../src/config.h"
 #include "../src/options.h"
-#include "../src/server.h"
+#include "../src/ldp.h"
 #include "../test/test.h"
 
 using namespace std;
@@ -12,9 +12,9 @@ string datadir;
 
 void safety_checks(char* argv0)
 {
-    options opt;
+    ldp_options opt;
     config conf(datadir + "/ldpconf.json");
-    fill_options(conf, &opt);
+    config_options(conf, &opt);
     if (opt.deploy_env != deployment_environment::testing &&
             opt.deploy_env != deployment_environment::development) {
         fprintf(stderr,

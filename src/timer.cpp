@@ -14,7 +14,7 @@ timer::timer()
 //    this->prog = prog;
 //}
 
-timer::timer(const options& options)
+timer::timer(const ldp_options& options)
 {
     restart();
     err = options.err;

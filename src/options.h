@@ -12,7 +12,7 @@ using namespace std;
 enum class ldp_command {
     server,
     upgrade_database,
-    init,
+    init_database,
     update,
     help
 };
@@ -39,7 +39,7 @@ public:
     string database_password;
 };
 
-class options {
+class ldp_options {
 public:
     ldp_command command;
     profile set_profile = profile::none;
@@ -74,8 +74,8 @@ public:
     bool allow_destructive_tests = false;
 };
 
-int evalopt(const etymon::command_args& cargs, options* opt);
-void debug_options(const options& o);
+int evalopt(const etymon::command_args& cargs, ldp_options* opt);
+void debug_options(const ldp_options& o);
 void config_set_environment(const string& env_str, deployment_environment* env);
 
 #endif

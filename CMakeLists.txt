@@ -53,8 +53,8 @@ IF(GPROF)
 	set(GPROFFLAG "-pg")
 ENDIF(GPROF)
 
-#set(CURL_LIBRARY "-lcurl") 
-find_package(CURL REQUIRED) 
+#set(CURL_LIBRARY "-lcurl")
+find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIR})
 
 find_package(ODBC REQUIRED)
@@ -70,7 +70,7 @@ find_package(RapidJSON REQUIRED)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_library(ldp_obj OBJECT
-	
+
 	etymoncpp/src/curl.cpp
 	etymoncpp/src/mallocptr.cpp
 	etymoncpp/src/odbc.cpp
@@ -83,18 +83,18 @@ add_library(ldp_obj OBJECT
 	src/dbup1.cpp
 	src/extract.cpp
 	src/init.cpp
+	src/ldp.cpp
 	src/log.cpp
 	src/merge.cpp
 	src/names.cpp
 	src/options.cpp
 	src/paging.cpp
 	src/schema.cpp
-	src/server.cpp
 	src/stage.cpp
 	src/timer.cpp
 	src/update.cpp
 	src/util.cpp
-	
+
 	)
 
 add_executable(ldp

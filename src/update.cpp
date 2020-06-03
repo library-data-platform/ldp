@@ -19,7 +19,7 @@
 using namespace etymon;
 namespace fs = std::experimental::filesystem;
 
-void make_update_tmp_dir(const options& opt, string* loaddir)
+void make_update_tmp_dir(const ldp_options& opt, string* loaddir)
 {
     fs::path datadir = opt.datadir;
     fs::path tmp = datadir / "tmp";
@@ -248,7 +248,7 @@ void select_config_general(etymon::odbc_conn* conn, log* lg,
     *enable_foreign_key_warnings = (s3 == "1");
 }
 
-void run_update(const options& opt)
+void run_update(const ldp_options& opt)
 {
     CURLcode cc;
     curl_global curl_env(CURL_GLOBAL_ALL, &cc);
@@ -517,7 +517,7 @@ void run_update(const options& opt)
 
 }
 
-void run_update_process(const options& opt)
+void run_update_process(const ldp_options& opt)
 {
 #ifdef GPROF
     string update_dir = "./update-gprof";
