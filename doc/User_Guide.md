@@ -96,8 +96,8 @@ managed by the LDP software.
 ----------------
 
 To access the JSON fields, the function `json_extract_path_text()` can
-be used to retrieve data from a path of up to five nested JSON fields,
-for example:
+be used to retrieve data from a path of up to five nested fields, for
+example:
 
 ```sql
 SELECT data FROM circulation_loans LIMIT 1;
