@@ -5,9 +5,9 @@
 #include "config.h"
 #include "options.h"
 
-int main_cli(int argc, char* const argv[]);
+int main_ldp(int argc, char* const argv[]);
 
-void ldp_main(ldp_options* opt);
-void fill_options(const config& conf, ldp_options* opt);
+void ldp_exec(ldp_options* opt);
+void config_options(const config& conf, ldp_options* opt);
 
 #endif

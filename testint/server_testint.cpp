@@ -13,7 +13,7 @@ TEST_CASE( "Test update", "[update]" ) {
     opt.command = ldp_command::update;
     opt.datadir = datadir.data();
     opt.table = "user_groups";
-    CHECK_NOTHROW( ldp_main(&opt) );
+    CHECK_NOTHROW( ldp_exec(&opt) );
     fs::path update_dir = fs::path(datadir) / "tmp" / "update";
     CHECK_FALSE( fs::exists(update_dir) );
 }
@@ -26,7 +26,7 @@ TEST_CASE( "Test update with savetemps", "[update]" ) {
     opt.datadir = datadir.data();
     opt.table = "user_groups";
     opt.savetemps = true;
-    CHECK_NOTHROW( ldp_main(&opt) );
+    CHECK_NOTHROW( ldp_exec(&opt) );
     fs::path user_groups_file = fs::path(datadir) / "tmp" / "update" /
         "user_groups_count.txt";
     CHECK( fs::exists(user_groups_file) );
@@ -95,7 +95,7 @@ TEST_CASE( "Test inconsistent JSON data types", "[update]" ) {
     opt.datadir = datadir.data();
     opt.table = "user_groups";
     opt.load_from_dir = update_dir;
-    CHECK_NOTHROW( ldp_main(&opt) );
+    CHECK_NOTHROW( ldp_exec(&opt) );
     fs::remove_all(update_dir);
 }
 

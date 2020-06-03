@@ -22,9 +22,6 @@
 #include "update.h"
 #include "util.h"
 
-// Temporary
-#include "names.h"
-
 static const char* option_help =
 "Usage:  ldp <command> <options>\n"
 "  e.g.  ldp init -D /usr/local/ldp/data --profile folio\n"
@@ -42,7 +39,6 @@ static const char* option_help =
 "  --profile <prof>    - Initialize the LDP database with profile <prof>\n"
 "                        (required)\n"
 "Development options (supported only for \"development\" environments):\n"
-//"  --unsafe            - Enable functions used for development and testing\n"
 "  --extract-only      - Extract data in the data directory, but do not\n"
 "                        update them in the database\n"
 "  --savetemps         - Disable deletion of temporary files containing\n"
@@ -50,64 +46,83 @@ static const char* option_help =
 "  --sourcedir <path>  - Update data from directory <path> instead of\n"
 "                        from source\n";
 
-void debugNoticeProcessor(void *arg, const char *message)
+class server_lock {
+public:
+    server_lock(etymon::odbc_env* odbc, const string& db, level lg_level,
+            FILE* err, const string& program);
+    ~server_lock();
+private:
+    etymon::odbc_conn* conn = nullptr;
+    etymon::odbc_tx* tx = nullptr;
+};
+
+server_lock::server_lock(etymon::odbc_env* odbc, const string& db,
+        level lg_level, FILE* err, const string& program)
 {
-    const ldp_options* opt = (const ldp_options*) arg;
-    print(Print::debug, *opt,
-            string("database response: ") + string(message));
-}
-
-//const char* sslmode(bool nossl)
-//{
-//    return nossl ? "disable" : "require";
-//}
-
-static void vacuumAnalyzeTable(const ldp_options& opt, const TableSchema& table,
-        etymon::Postgres* db)
-{
-    string sql = "VACUUM " + table.tableName + ";\n";
-    printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
-
-    sql = "ANALYZE " + table.tableName + ";\n";
-    printSQL(Print::debug, opt, sql);
-    { etymon::PostgresResult result(db, sql); }
-}
-
-void vacuumAnalyzeAll(const ldp_options& opt, Schema* schema, etymon::Postgres* db)
-{
-    print(Print::verbose, opt, "vacuum/analyze");
-    for (auto& table : schema->tables) {
-        if (table.skip)
-            continue;
-        vacuumAnalyzeTable(opt, table, db);
-    }
-}
-
-// Check for obvious problems that could show up later in the loading
-// process.
-/*
-static void run_preload_tests(const ldp_options& opt, etymon::odbc_env* odbc)
-{
-    //print(Print::verbose, opt, "running pre-load checks");
-
-    // Check database connection.
-    etymon::odbc_conn conn(odbc, opt.db);
-    // TODO Check if a time-out is used here, for example if the client
-    // connection hangs due to a firewall.  Non-verbose output does not
-    // communicate any problem while frozen.
+    if (lg_level == level::trace || lg_level == level::detail)
+        fprintf(err, "%s: Acquiring server lock\n", program.data());
 
     {
-        etymon::odbc_tx tx(&conn);
-        // Check that ldpUser is a valid user.
-        string sql = "GRANT SELECT ON ALL TABLES IN SCHEMA public TO " +
-            opt.ldpUser + ";";
-        printSQL(Print::debug, opt, sql);
-        conn.exec(sql);
-        tx.rollback();
+        etymon::odbc_conn tmp_conn(odbc, db);
+        string sql = "CREATE SCHEMA IF NOT EXISTS ldpsystem;";
+        tmp_conn.exec(sql);
+        sql = "CREATE TABLE IF NOT EXISTS ldpsystem.server_lock (b BOOLEAN);";
+        tmp_conn.exec(sql);
+    }
+
+    conn = new etymon::odbc_conn(odbc, db);
+    try {
+        tx = new etymon::odbc_tx(conn);
+        try {
+            string sql = "LOCK ldpsystem.server_lock;";
+            conn->exec(sql);
+        } catch (runtime_error& e) {
+            delete tx;
+            delete conn;
+            throw;
+        }
+    } catch (runtime_error& e) {
+        delete conn;
+        throw;
     }
 }
-*/
+
+server_lock::~server_lock()
+{
+    delete tx;
+    delete conn;
+}
+
+static void sigint_handler(int signum)
+{
+    // NOP
+}
+
+static void sigquit_handler(int signum)
+{
+    // NOP
+}
+
+static void sigterm_handler(int signum)
+{
+    // NOP
+}
+
+static void setup_signal_handler(int sig, void (*handler)(int))
+{
+    struct sigaction sa;
+    sa.sa_handler = handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    sigaction(sig, &sa, NULL);
+}
+
+static void disable_termination_signals()
+{
+    setup_signal_handler(SIGINT, sigint_handler);
+    setup_signal_handler(SIGQUIT, sigquit_handler);
+    setup_signal_handler(SIGTERM, sigterm_handler);
+}
 
 /**
  * \brief Check configuration in the LDP database to determine if it
@@ -187,54 +202,7 @@ void reschedule_next_daily_load(const ldp_options& opt, etymon::odbc_conn* conn,
     } while (updateInFuture == "0");
 }
 
-class server_lock {
-public:
-    server_lock(etymon::odbc_env* odbc, const string& db, level lg_level,
-            FILE* err, const string& program);
-    ~server_lock();
-private:
-    etymon::odbc_conn* conn = nullptr;
-    etymon::odbc_tx* tx = nullptr;
-};
-
-server_lock::server_lock(etymon::odbc_env* odbc, const string& db,
-        level lg_level, FILE* err, const string& program)
-{
-    if (lg_level == level::trace || lg_level == level::detail)
-        fprintf(err, "%s: Acquiring server lock\n", program.data());
-
-    {
-        etymon::odbc_conn tmp_conn(odbc, db);
-        string sql = "CREATE SCHEMA IF NOT EXISTS ldpsystem;";
-        tmp_conn.exec(sql);
-        sql = "CREATE TABLE IF NOT EXISTS ldpsystem.server_lock (b BOOLEAN);";
-        tmp_conn.exec(sql);
-    }
-
-    conn = new etymon::odbc_conn(odbc, db);
-    try {
-        tx = new etymon::odbc_tx(conn);
-        try {
-            string sql = "LOCK ldpsystem.server_lock;";
-            conn->exec(sql);
-        } catch (runtime_error& e) {
-            delete tx;
-            delete conn;
-            throw;
-        }
-    } catch (runtime_error& e) {
-        delete conn;
-        throw;
-    }
-}
-
-server_lock::~server_lock()
-{
-    delete tx;
-    delete conn;
-}
-
-void server(const ldp_options& opt, etymon::odbc_env* odbc)
+void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
 {
     // Check that database version is up to date.
     validate_database_latest_version(odbc, opt.db);
@@ -277,21 +245,38 @@ void server(const ldp_options& opt, etymon::odbc_env* odbc)
             string("Server stopped") + (opt.cli_mode ? " (CLI mode)" : ""), -1);
 }
 
-void run_server(const ldp_options& opt)
+void init(const ldp_options& opt)
 {
+    if (opt.set_profile == profile::none)
+        throw runtime_error("Profile not specified");
+
     etymon::odbc_env odbc;
-
-    //run_preload_tests(opt, odbc);
-
     server_lock svrlock(&odbc, opt.db, opt.log_level, opt.err, opt.prog);
-
-    if (opt.log_level == level::trace || opt.log_level == level::detail)
-        fprintf(opt.err, "%s: Initializing\n", opt.prog);
-
-    server(opt, &odbc);
+    disable_termination_signals();
+    init_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user,
+            opt.err, opt.prog);
 }
 
-void fill_direct_options(const config& conf, const string& base,
+void upgrade_database(const ldp_options& opt)
+{
+    etymon::odbc_env odbc;
+    server_lock svrlock(&odbc, opt.db, opt.log_level, opt.err, opt.prog);
+    disable_termination_signals();
+    upgrade_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user,
+            opt.datadir,
+            opt.err, opt.prog, opt.quiet);
+}
+
+void server(const ldp_options& opt)
+{
+    etymon::odbc_env odbc;
+    server_lock svrlock(&odbc, opt.db, opt.log_level, opt.err, opt.prog);
+    if (opt.log_level == level::trace || opt.log_level == level::detail)
+        fprintf(opt.err, "%s: Starting server\n", opt.prog);
+    server_loop(opt, &odbc);
+}
+
+void config_direct_options(const config& conf, const string& base,
         ldp_options* opt)
 {
     int x = 0;
@@ -313,7 +298,7 @@ void fill_direct_options(const config& conf, const string& base,
             &(opt->direct.database_password));
 }
 
-void fill_options(const config& conf, ldp_options* opt)
+void config_options(const config& conf, ldp_options* opt)
 {
     string deploy_env;
     conf.get_required("/deployment_environment", &deploy_env);
@@ -340,7 +325,7 @@ void fill_options(const config& conf, ldp_options* opt)
         conf.get_required(source + "okapi_tenant", &(opt->okapi_tenant));
         conf.get_required(source + "okapi_user", &(opt->okapi_user));
         conf.get_required(source + "okapi_password", &(opt->okapi_password));
-        fill_direct_options(conf, source, opt);
+        config_direct_options(conf, source, opt);
     }
 
     conf.get_bool("/disable_anonymization", &(opt->disable_anonymization));
@@ -348,63 +333,10 @@ void fill_options(const config& conf, ldp_options* opt)
     conf.get_bool("/allow_destructive_tests", &(opt->allow_destructive_tests));
 }
 
-static void sigint_handler(int signum)
-{
-    // NOP
-}
-
-static void sigquit_handler(int signum)
-{
-    // NOP
-}
-
-static void sigterm_handler(int signum)
-{
-    // NOP
-}
-
-static void setup_signal_handler(int sig, void (*handler)(int))
-{
-    struct sigaction sa;
-    sa.sa_handler = handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    sigaction(sig, &sa, NULL);
-}
-
-static void disable_termination_signals()
-{
-    setup_signal_handler(SIGINT, sigint_handler);
-    setup_signal_handler(SIGQUIT, sigquit_handler);
-    setup_signal_handler(SIGTERM, sigterm_handler);
-}
-
-void init_command(const ldp_options& opt)
-{
-    if (opt.set_profile == profile::none)
-        throw runtime_error("Profile not specified");
-
-    etymon::odbc_env odbc;
-    server_lock svrlock(&odbc, opt.db, opt.log_level, opt.err, opt.prog);
-    disable_termination_signals();
-    init_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user,
-            opt.err, opt.prog);
-}
-
-void upgrade_database_command(const ldp_options& opt)
-{
-    etymon::odbc_env odbc;
-    server_lock svrlock(&odbc, opt.db, opt.log_level, opt.err, opt.prog);
-    disable_termination_signals();
-    upgrade_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user,
-            opt.datadir,
-            opt.err, opt.prog, opt.quiet);
-}
-
-void ldp_main(ldp_options* opt)
+void ldp_exec(ldp_options* opt)
 {
     config conf(opt->datadir + "/ldpconf.json");
-    fill_options(conf, opt);
+    config_options(conf, opt);
     if (opt->command == ldp_command::update)
         opt->console = true;
 
@@ -412,7 +344,7 @@ void ldp_main(ldp_options* opt)
         do {
             timer error_timer(*opt);
             try {
-                run_server(*opt);
+                server(*opt);
             } catch (runtime_error& e) {
                 string s = e.what();
                 if ( !(s.empty()) && s.back() == '\n' )
@@ -435,22 +367,22 @@ void ldp_main(ldp_options* opt)
     }
 
     if (opt->command == ldp_command::update) {
-        run_server(*opt);
+        server(*opt);
         return;
     }
 
     if (opt->command == ldp_command::upgrade_database) {
-        upgrade_database_command(*opt);
+        upgrade_database(*opt);
         return;
     }
 
     if (opt->command == ldp_command::init_database) {
-        init_command(*opt);
+        init(*opt);
         return;
     }
 }
 
-static void cli(const etymon::command_args& cargs)
+static void setup_ldp_exec(const etymon::command_args& cargs)
 {
     ldp_options opt;
 
@@ -462,14 +394,14 @@ static void cli(const etymon::command_args& cargs)
         return;
     }
 
-    ldp_main(&opt);
+    ldp_exec(&opt);
 }
 
-int main_cli(int argc, char* const argv[])
+int main_ldp(int argc, char* const argv[])
 {
     etymon::command_args cargs(argc, argv);
     try {
-        cli(cargs);
+        setup_ldp_exec(cargs);
     } catch (runtime_error& e) {
         string s = e.what();
         if ( !(s.empty()) && s.back() == '\n' )
