@@ -103,9 +103,9 @@ there are several kinds of branches:
   have had some testing.  It is effectively the "testing" version.
 
 * Current branch (`current`):  This is for active development and
-  tends to be unstable.  This is where new features are first added,
-  before they are merged to the master branch.  It is the main
-  "development" version.
+  tends to be unstable.  This is where new features are added, before
+  they are merged to the master branch.  It is the main "development"
+  version.
 
 * Other branches used for development which may have various names.
 
@@ -183,9 +183,7 @@ $ ./all.sh
 ```
 
 The `all.sh` script creates a `build/` subdirectory and builds the
-`ldp` executable there.
-
-To run the LDP software:
+`ldp` executable there:
 
 ```shell
 $ ./build/ldp
