@@ -338,6 +338,12 @@ sets if needed.
 7\. Community
 -------------
 
+### Wiki
+
+The community is [creating a
+wiki](https://github.com/folio-org/ldp/wiki) with notes about database
+tools that can be used with LDP.
+
 ### Discussion
 
 FOLIO's [Slack organization](https://slack-invitation.folio.org/)
