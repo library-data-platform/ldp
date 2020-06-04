@@ -448,15 +448,24 @@ $ ldp upgrade-database -D /var/lib/ldp
 
 5. Start the new version of the server.
 
-For automated deployment, the `upgrade-database` command can be run
-after `git pull`, whether or not any new changes were pulled.
-
 Do not interrupt the database upgrade process.  Some schema changes
 use DDL statements that cannot be run within a transaction, and
 interrupting them may leave the database in an intermediate state.
-For debugging purposes, database statements used to perform the
+For diagnostic purposes, database statements used to perform the
 upgrade are logged to files located in the data directory under
 `database_upgrade/`.
+
+In automated deployments, the `upgrade-database` command can be run
+after `git pull`, whether or not any new changes were pulled.  If no
+upgrade is needed, it will exit normally:
+
+```shell
+$ ldp upgrade-database -D /var/lib/ldp ; echo $?
+```
+```shell
+ldp: Database version is up to date
+0
+```
 
 
 6\. Direct extraction
@@ -508,10 +517,13 @@ which may be protected by a firewall.
 7\. Data privacy
 ----------------
 
-LDP 1.0 stores personal data extracted from FOLIO.  LDP 1.1, currently
-under development, is planned to support anonymization of personal
-data.  When LDP 1.1 is released, this documentation will be updated
-with instructions on how to enable anonymization.
+LDP 1.0 stores personal data extracted from FOLIO.  The personal data
+are not currently anonymized.
+
+LDP 1.1, which is under development, is planned to support
+anonymization of personal data.  When LDP 1.1 is released, this
+documentation will be updated with instructions on how to enable
+anonymization.
 
 
 Reference
