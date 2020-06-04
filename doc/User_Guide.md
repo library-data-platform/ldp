@@ -48,23 +48,23 @@ SELECT * FROM circulation_loans LIMIT 1;
 ```
 id            | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
 action        | checkedin
-due_date      | 2017-02-17 08:43:15+00
+due_date      | 2020-02-17 08:43:15+00
 item_id       | 459afaba-5b39-468d-9072-eb1685e0ddf4
 item_status   | Available
-loan_date     | 2017-02-03 08:43:15+00
+loan_date     | 2020-02-03 08:43:15+00
 renewal_count | 0
-return_date   | 2017-03-01 11:35:12+00
+return_date   | 2020-03-01 11:35:12+00
 user_id       | ab579dc3-219b-4f5b-8068-ab1c7a55c402
 data          | {                                                          
               |     "id": "0bab56e5-1ab6-4ac2-afdf-8b2df0434378",          
               |     "action": "checkedin",                                 
-              |     "dueDate": "2017-02-17T08:43:15.000+0000",             
+              |     "dueDate": "2020-02-17T08:43:15.000+0000",             
               |     "itemId": "459afaba-5b39-468d-9072-eb1685e0ddf4",      
               |     "itemStatus": "Available",                             
-              |     "loanDate": "2017-02-03T08:43:15Z",                    
+              |     "loanDate": "2020-02-03T08:43:15Z",                    
               |     "proxyUserId": "a13dda6b-51ce-4543-be9c-eff894c0c2d0", 
               |     "renewalCount": 0,                                     
-              |     "returnDate": "2017-03-01T11:35:12Z",                  
+              |     "returnDate": "2020-03-01T11:35:12Z",                  
               |     "status": {                                            
               |         "name": "Closed"                                   
               |     },                                                     
@@ -110,8 +110,8 @@ SELECT data FROM circulation_loans LIMIT 1;
          "name": "Open"                                
      },                                                
      "userId": "79dffc9d-be22-462e-b46f-78ca88babe91", 
-     "dueDate": "2018-01-15T00:00:00Z",                
-     "loanDate": "2018-01-01T00:00:00Z"                
+     "dueDate": "2020-01-15T00:00:00Z",                
+     "loanDate": "2020-01-01T00:00:00Z"                
  }                                                     
 ```
 
@@ -235,19 +235,19 @@ id        | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
 data      | {                                                          
           |     "id": "0bab56e5-1ab6-4ac2-afdf-8b2df0434378",          
           |     "action": "checkedin",                                 
-          |     "dueDate": "2017-02-17T08:43:15.000+0000",             
+          |     "dueDate": "2020-02-17T08:43:15.000+0000",             
           |     "itemId": "459afaba-5b39-468d-9072-eb1685e0ddf4",      
           |     "itemStatus": "Available",                             
-          |     "loanDate": "2017-02-03T08:43:15Z",                    
+          |     "loanDate": "2020-02-03T08:43:15Z",                    
           |     "proxyUserId": "a13dda6b-51ce-4543-be9c-eff894c0c2d0", 
           |     "renewalCount": 0,                                     
-          |     "returnDate": "2017-03-01T11:35:12Z",                  
+          |     "returnDate": "2020-03-01T11:35:12Z",                  
           |     "status": {                                            
           |         "name": "Closed"                                   
           |     },                                                     
           |     "userId": "ab579dc3-219b-4f5b-8068-ab1c7a55c402"       
           | }
-updated   | 2020-09-06 03:46:49.362606+00
+updated   | 2020-03-02 03:46:49.362606+00
 tenant_id | 1
 ```
 
