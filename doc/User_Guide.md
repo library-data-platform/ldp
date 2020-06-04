@@ -19,10 +19,10 @@ The Library Data Platform (LDP) is an open source platform for
 reporting and analytics in libraries, offering a number of features:
 
 * Query capability:  Ad hoc, cross-domain querying of data which are
-  automatically extracted from Okapi-based microservices
+  automatically extracted from source databases
 
-* Compatibility:  Designed to work with popular graphical database
-  clients as well as data analysis software
+* Compatibility:  Designed to work with popular tools for database
+  access, analysis and visualization
 
 * Data integration:  Offers a robust platform for combining data from
   beyond library systems
@@ -32,10 +32,6 @@ reporting and analytics in libraries, offering a number of features:
 
 * Scalability:  Provides an upgrade path that scales to virtually any
   amount of data that libraries can collect
-
-The LDP is available now in "pre-release" versions for testing
-purposes, with version 1.0 expected in mid-2020.  This documentation
-covers the LDP as it exists at the present time.
 
 
 1\. Data model
@@ -84,20 +80,20 @@ complete extracted source data.
 One additional attribute, `tenant_id`, is reserved for future use in
 consortial reporting.
 
-The data in these tables are extracted from Okapi-based APIs and
-loaded into the database by the LDP data loader.  The data loader
-typically runs once per day, and so the LDP database reflects the
-state of the source data as of sometime within the past 24 hours or
-so.  The table `ldpsystem.tables` maintains a catalog of all tables
-managed by the LDP software.
+The LDP software creates these tables, having extracted the data from
+source databases.  It then updates the data from those sources once
+per day, so that the LDP database reflects the state of the source
+data as of sometime within the past 24 hours or so.  The table
+`ldpsystem.tables` maintains a catalog of all tables managed by the
+LDP software.
 
 
 2\. JSON queries
 ----------------
 
-To access the JSON fields, it is recommended to use the built in
-function `json_extract_path_text()` to retrieve data from a path of up
-to five nested JSON fields, for example:
+To access the JSON fields, the function `json_extract_path_text()` can
+be used to retrieve data from a path of up to five nested fields, for
+example:
 
 ```sql
 SELECT data FROM circulation_loans LIMIT 1;
@@ -135,6 +131,14 @@ SELECT json_extract_path_text(data, 'status', 'name') AS status,
 
 In this example, `json_extract_path_text(data, 'status', 'name')`
 refers to the `name` field nested within the `status` field.
+
+It is strongly recommended to use the function
+`json_extract_path_text()` in particular because it is mostly
+compatible with both PostgreSQL and Redshift, the two database systems
+that are supported by LDP.  PostgreSQL is a versatile and stable open
+source system, and Redshift offers fast queries on extremely large
+data.  By using only functions that are compatible with both database
+systems, you can retain flexibility in the future to use either.
 
 
 3\. Relational attributes vs. JSON
@@ -178,9 +182,9 @@ SELECT users.id AS user_id,
 4\. Local schemas
 -----------------
 
-The `local` schema is created by the LDP loader as a common area in
-the database where reporting users can create or import their own data
-sets, including storing the results of queries, e.g.:
+The `local` schema is created by LDP as a common area in the database
+where reporting users can create or import their own data sets,
+including storing the results of queries, e.g.:
 
 ```sql
 CREATE TABLE local.loan_status AS
@@ -203,12 +207,12 @@ naming collisions with the LDP.
 
 ### Overview
 
-As mentioned earlier, the LDP database reflects the state of the
-source data as of the last time the LDP data loader was run.  The
-loader also maintains another schema called `history` which stores all
-data that have been loaded in the past, including data that no longer
-exist in the source database.  Each table normally has a corresponding
-history table, e.g. the history table for `circulation_loans` is
+As mentioned earlier, the database reflects the state of the source
+data as of the last time that LDP updated it.  LDP also maintains
+another schema called `history` which stores all data that have been
+updated in the past, including data that may no longer exist in the
+source.  Each table normally has a corresponding history table, e.g.
+the history table for `circulation_loans` is
 `history.circulation_loans`.
 
 This historical data capability is designed for gaining insights about
@@ -218,7 +222,7 @@ History tables contain these attributes:
 
 * `id` is the record ID.
 * `data` is the source data, usually a JSON object.
-* `updated` is the date and time when the data were loaded.
+* `updated` is the date and time when the data were updated.
 * `tenant_id` is reserved for future use in consortial reporting.
 
 For example:
@@ -243,15 +247,15 @@ data      | {
           |     },                                                     
           |     "userId": "ab579dc3-219b-4f5b-8068-ab1c7a55c402"       
           | }
-updated   | 2019-09-06 03:46:49.362606+00
+updated   | 2020-09-06 03:46:49.362606+00
 tenant_id | 1
 ```
 
-Unlike the main LDP tables in which `id` is unique, the history tables
-can accumulate many records with the same value for `id`.  Note also
-that if a value in the source database changes more than once during
-the interval between any two runs of the LDP loader, the LDP history
-will only reflect the last of those changes.
+Unlike the main tables in which `id` is unique, the history tables can
+accumulate many records with the same value for `id`.  Note also that
+if a value in the source changes more than once during the interval
+between any two LDP updates, the history will only reflect the last of
+those changes.
 
 ### Querying historical data
 
@@ -307,7 +311,7 @@ SELECT id,
        json_extract_path_text(data, 'itemStatus') AS item_status,
        updated
     FROM history.circulation_loans
-    WHERE updated BETWEEN '2019-01-01' AND '2019-12-31';
+    WHERE updated BETWEEN '2020-01-01' AND '2020-12-31';
 ```
 
 This will make it easier to examine the data to check for inconsistent
@@ -321,8 +325,8 @@ distinct values.
 
 The schema of source data can change over time, and the LDP reflects
 these changes when it refreshes its data.  For this reason, the LDP
-cannot support the use of database views.  The LDP loader may fail to
-run if the database contains views.  Instead of creating a view, use
+cannot support the use of database views.  LDP updates may fail to run
+if the database contains views.  Instead of creating a view, use
 `CREATE TABLE ... AS SELECT ...` to store a result set, as in the
 local schema example above.
 

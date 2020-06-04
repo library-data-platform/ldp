@@ -221,7 +221,7 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         "    detect_foreign_keys BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    force_foreign_key_constraints BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    enable_foreign_key_warnings BOOLEAN NOT NULL DEFAULT FALSE,\n"
-        "    disable_anonymization BOOLEAN NOT NULL DEFAULT FALSE\n"
+        "    disable_anonymization BOOLEAN NOT NULL DEFAULT TRUE\n"
         ");";
     conn->exec(sql);
     sql = "DELETE FROM ldpconfig.general;";  // Temporary: pre-LDP-1.0

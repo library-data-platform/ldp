@@ -24,21 +24,21 @@
 
 static const char* option_help =
 "Usage:  ldp <command> <options>\n"
-"  e.g.  ldp init -D /usr/local/ldp/data --profile folio\n"
+"  e.g.  ldp server -D /usr/local/ldp/data\n"
 "Commands:\n"
-"  init                - Initialize a new LDP database\n"
 "  server              - Run the LDP server\n"
-"  upgrade-database    - Upgrade the LDP database to the current version\n"
+"  init-database       - Initialize a new LDP database\n"
+"  upgrade-database    - Upgrade an LDP database to the current version\n"
 "  update              - Run a full update and exit\n"
 "  help                - Display help information\n"
 "Options:\n"
 "  -D <path>           - Use <path> as the data directory\n"
 "  --trace             - Enable detailed logging\n"
 "  --quiet             - Reduce console output\n"
-"Initialization (init) options\n"
+"Options for init-database:\n"
 "  --profile <prof>    - Initialize the LDP database with profile <prof>\n"
 "                        (required)\n"
-"Development options (supported only for \"development\" environments):\n"
+"Development/testing options:\n"
 "  --extract-only      - Extract data in the data directory, but do not\n"
 "                        update them in the database\n"
 "  --savetemps         - Disable deletion of temporary files containing\n"
@@ -333,10 +333,51 @@ void config_options(const config& conf, ldp_options* opt)
     conf.get_bool("/allow_destructive_tests", &(opt->allow_destructive_tests));
 }
 
+void require_disable_anon_ldp1(const ldp_options& opt)
+{
+    if (!opt.disable_anonymization)
+        throw runtime_error(
+                "This version requires disable_anonymization in ldpconf.json");
+}
+
+void validate_options_in_deployment(const ldp_options& opt)
+{
+    if (opt.extract_only) {
+        if (opt.deploy_env != deployment_environment::testing &&
+                opt.deploy_env != deployment_environment::development)
+            throw runtime_error(
+                    "Extract-only option requires testing or development "
+                    "environment");
+    }
+    if (opt.savetemps) {
+        if (opt.deploy_env != deployment_environment::testing &&
+                opt.deploy_env != deployment_environment::development)
+            throw runtime_error(
+                    "Savetemps option requires testing or development "
+                    "environment");
+    }
+    if (opt.load_from_dir != "") {
+        if (opt.deploy_env != deployment_environment::testing &&
+                opt.deploy_env != deployment_environment::development)
+            throw runtime_error(
+                    "Loading from directory requires testing or development "
+                    "environment");
+        if (!opt.allow_destructive_tests)
+            throw runtime_error(
+                    "Loading from directory requires the "
+                    "allow_destructive_tests\nconfiguration setting");
+    }
+}
+
 void ldp_exec(ldp_options* opt)
 {
     config conf(opt->datadir + "/ldpconf.json");
     config_options(conf, opt);
+
+    require_disable_anon_ldp1(*opt);
+
+    validate_options_in_deployment(*opt);
+
     if (opt->command == ldp_command::update)
         opt->console = true;
 
