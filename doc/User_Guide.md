@@ -110,8 +110,8 @@ SELECT data FROM circulation_loans LIMIT 1;
          "name": "Open"                                
      },                                                
      "userId": "79dffc9d-be22-462e-b46f-78ca88babe91", 
-     "dueDate": "2018-01-15T00:00:00Z",                
-     "loanDate": "2018-01-01T00:00:00Z"                
+     "dueDate": "2020-01-15T00:00:00Z",                
+     "loanDate": "2020-01-01T00:00:00Z"                
  }                                                     
 ```
 
