@@ -535,8 +535,8 @@ Reference
     by default as `ldp`.
 
 * `enable_sources` (array; required) is a list of sources that are
-  enabled for the LDP to extract data from.  The source names refer to
-  a subset of those defined under `sources` (see below).  Only one
+  enabled for LDP to extract data from.  The source names refer to a
+  subset of those defined under `sources` (see below).  Only one
   source should be provided in the case of non-consortial deployments.
 
 * `sources` (object; required) is a collection of sources that LDP can

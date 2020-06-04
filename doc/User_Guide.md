@@ -199,7 +199,7 @@ The `ldp` user is granted database permissions to create tables in the
 
 If additional local schemas are desired, it is recommended that the
 new schema names be prefixed with `local_` or `l_` to avoid future
-naming collisions with the LDP.
+naming collisions with LDP.
 
 
 5\. Historical data
@@ -323,12 +323,12 @@ distinct values.
 6\. Important note on database views
 ------------------------------------
 
-The schema of source data can change over time, and the LDP reflects
-these changes when it refreshes its data.  For this reason, the LDP
-cannot support the use of database views.  LDP updates may fail to run
-if the database contains views.  Instead of creating a view, use
-`CREATE TABLE ... AS SELECT ...` to store a result set, as in the
-local schema example above.
+The schema of source data can change over time, and LDP reflects these
+changes when it refreshes its data.  For this reason, LDP cannot
+support the use of database views.  LDP updates may fail to run if the
+database contains views.  Instead of creating a view, use `CREATE
+TABLE ... AS SELECT ...` to store a result set, as in the local schema
+example above.
 
 Reporting users should be aware of schema changes in advance, in order
 to be able to update queries and to prepare to recreate local result
