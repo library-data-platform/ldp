@@ -84,37 +84,38 @@ LDP releases use version numbers in the form, _a_._b_._c_, where
 _a_._b_ is the major version and _c_ > 0 indicates a bug fix version.
 Suppose that LDP 1.3.0 has been released.  Any subsequent versions
 with the same major version number (1.3), for example, 1.3.1 or 1.3.2,
-will generally contain no new features but only bug fixes.  (This
-practice is less strictly observed in releases prior to 0.9.0.)
+will not generally contain new features but only bug fixes.
 
 Stable versions of LDP are available via the release branches
 described below and from the [releases
 page](https://github.com/folio-org/ldp/releases).
 
 Within the [source code repository](https://github.com/folio-org/ldp)
-there are three kinds of branches that are relatively the most stable:
+there are several kinds of branches:
 
-* Release branches (`*-release`):  Beginning with LDP 0.9.0, a
-  numbered branch will be created for each major version.  For
-  example, `1.2-release` would point to the latest release of major
-  version 1.2, such as 1.2.5.  These release branches are the most
-  stable in the source repository.
+* Release branches (`*-release`):  A numbered release branch is
+  created for each major version.  For example, `1.2-release` would
+  point to the latest release of major version 1.2, such as 1.2.5.
+  These release branches are "stable" versions.
 
 * Master branch (`master`):  This is the branch that new major version
   releases are made from.  It contains recently added features that
-  have had some testing.  It is less stable than release branches.
+  have had some testing.  It is effectively the "testing" version.
 
 * Current branch (`current`):  This is for active development and
   tends to be unstable.  This is where new features are first added,
-  before they are merged to the master branch.
+  before they are merged to the master branch.  It is the main
+  "development" version.
+
+* Other branches used for development which may have various names.
 
 If automated deployment will be used for upgrading to new versions of
 LDP, two approaches might be suggested:
 
-* For a production or staging environment, it is safest to pull from a
-  specific release branch, for example, `1.7-release`, which would
-  mean that only bug fixes for major version 1.7 would be applied
-  automatically.
+* For a staging environment, one option would be to pull upgrades
+  automatically from a specific release branch.  For example, using
+  `1.7-release` would mean that only bug fixes for major version 1.7
+  would be applied.
 
 * For a testing environment, which might be used to test new features
   not yet released, the latest version can be pulled from the `master`
@@ -181,51 +182,14 @@ Then:
 $ ./all.sh
 ```
 
-The `all.sh` script creates a `build/` subdirectory and builds three
-executables there:
-
-* `ldp` is the LDP software.
-* `ldp_test` runs self-contained unit tests.
-* `ldp_testint` runs integration tests.
-
-After building these executables, the script also runs `ldp_test`.
-
-If there are no errors, the end of the output will include:
-
-```shell
-All tests passed
-```
+The `all.sh` script creates a `build/` subdirectory and builds the
+`ldp` executable there.
 
 To run the LDP software:
 
 ```shell
 $ ./build/ldp
 ```
-
-### Running tests
-
-As mentioned above, the `all.sh` script runs the unit tests, but they
-can be run separately if needed:
-
-```shell
-$ ./build/ldp_test
-```
-
-Running the integration tests requires a FOLIO instance, as well as an
-LDP testbed instance with a PostgreSQL or Redshift database.  The
-contents of the database will be destroyed by these tests; so please
-be careful that the correct database is used.  The
-`deployment_environment` configuration setting for the LDP testbed
-instance should be `testing` or `development`.  Also as a safety
-precaution, the setting `allow_destructive_tests` is required for
-integration tests.  The tests are run as:
-
-```shell
-$ ./build/ldp_testint -s -D DATADIR
-```
-
-where `DATADIR` is the data directory for the test database.  See
-below for an explanation of LDP data directories and configuration.
 
 
 4\. Database configuration
@@ -448,9 +412,9 @@ $ ldp upgrade-database -D /var/lib/ldp
 
 5. Start the new version of the server.
 
-Do not interrupt the database upgrade process.  Some schema changes
-use DDL statements that cannot be run within a transaction, and
-interrupting them may leave the database in an intermediate state.
+Do not interrupt the database upgrade process in step 4.  Some schema
+changes use DDL statements that cannot be run within a transaction,
+and interrupting them may leave the database in an intermediate state.
 For diagnostic purposes, database statements used to perform the
 upgrade are logged to files located in the data directory under
 `database_upgrade/`.
@@ -521,9 +485,7 @@ LDP 1.0 stores personal data extracted from FOLIO.  The personal data
 are not currently anonymized.
 
 LDP 1.1, which is under development, is planned to support
-anonymization of personal data.  When LDP 1.1 is released, this
-documentation will be updated with instructions on how to enable
-anonymization.
+anonymization of personal data.
 
 
 Reference
