@@ -323,8 +323,9 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
         if (pass == 1) {
             anonymizeTable = false;
         } else {
-            anonymizeTable =
-                (strcmp(tableSchema.tableName.c_str(), "user_users") == 0);
+            //anonymizeTable =
+            //    (strcmp(tableSchema.tableName.c_str(), "user_users") == 0);
+            anonymizeTable = false;
         }
         // Collect statistics and anonymize data.
         processJSONRecord(&doc, &doc, collectStats, anonymizeTable, path, 0,
