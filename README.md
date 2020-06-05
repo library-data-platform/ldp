@@ -11,7 +11,7 @@ Version 2.0.  See the file
 information.
 
 __The Library Data Platform (LDP) is an open source platform for
-reporting and analytics in libraries.__
+analytics in libraries.__
 
 ```
 id            | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
