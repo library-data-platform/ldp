@@ -323,28 +323,20 @@ example above.
 ### Wiki
 
 [A wiki](https://github.com/folio-org/ldp/wiki) is available for the
-LDP community and provides information about database tools that can
-be used with LDP.
+LDP community.  It provides information about database tools that can
+be used with LDP and links to related projects.
+
+### Issue tracking
+
+Please use the [issue
+tracker](https://github.com/folio-org/ldp/issues) to report a bug or
+feature request.
 
 ### Discussion
 
 The FOLIO project's [Slack
 organization](https://slack-invitation.folio.org/) hosts a few
 LDP-related channels.
-
-### Bugs and feature requests
-
-Please use the [issue
-tracker](https://github.com/folio-org/ldp/issues) to report a bug or
-feature request.
-
-### FOLIO
-
-Librarians and developers in the FOLIO community are building a
-collection of LDP-based queries to provide reporting capabilities for
-libraries that use FOLIO.  This effort is organized around the
-[ldp-analytics](https://github.com/folio-org/ldp-analytics)
-repository.
 
 
 Further reading
