@@ -8,7 +8,7 @@ Overview
 3\. Relational attributes vs. JSON  
 4\. Local schemas  
 5\. Historical data  
-6\. Important note on database views  
+6\. Database views  
 7\. Community
 
 
@@ -16,7 +16,7 @@ Overview
 --------
 
 The Library Data Platform (LDP) is an open source platform for
-reporting and analytics in libraries, offering a number of features:
+analytics in libraries, offering a number of features:
 
 * Query capability:  Ad hoc, cross-domain querying of data which are
   automatically extracted from source databases
@@ -73,19 +73,15 @@ data          | {
 tenant_id     | 1
 ```
 
-The relational attributes are provided to simplify writing queries and
-to improve query performance.  The JSON fields offer access to the
-complete extracted source data.
-
-One additional attribute, `tenant_id`, is reserved for future use in
-consortial reporting.
+The relational attributes are provided to simplify writing queries,
+and the JSON fields offer access to the complete source data.  One
+additional attribute, `tenant_id`, is reserved for future use in
+consortial environments.
 
 The LDP software creates these tables, having extracted the data from
 source databases.  It then updates the data from those sources once
 per day, so that the LDP database reflects the state of the source
-data as of sometime within the past 24 hours or so.  The table
-`ldpsystem.tables` maintains a catalog of all tables managed by the
-LDP software.
+data as of sometime within the past 24 hours or so.
 
 
 2\. JSON queries
@@ -135,10 +131,10 @@ refers to the `name` field nested within the `status` field.
 It is strongly recommended to use the function
 `json_extract_path_text()` in particular because it is mostly
 compatible with both PostgreSQL and Redshift, the two database systems
-that are supported by LDP.  PostgreSQL is a versatile and stable open
-source system, and Redshift offers fast queries on extremely large
-data.  By using only functions that are compatible with both database
-systems, you can retain flexibility in the future to use either.
+that are supported by LDP.  PostgreSQL is versatile, stable, and open
+source, and Redshift offers fast queries on extremely large data.  By
+using only functions that are compatible with both systems, you can
+retain flexibility in the future to run either.
 
 
 3\. Relational attributes vs. JSON
@@ -147,12 +143,12 @@ systems, you can retain flexibility in the future to use either.
 An example of a query written entirely using JSON data:
 
 ```sql
-SELECT json_extract_path_text(users.data, 'id') AS user_id,
-       json_extract_path_text(groups.data, 'group') AS group
-    FROM user_users
-        LEFT JOIN user_groups
-            ON json_extract_path_text(users.data, 'patronGroup') =
-               json_extract_path_text(groups.data, 'id')
+SELECT json_extract_path_text(u.data, 'id') AS user_id,
+       json_extract_path_text(g.data, 'group') AS group
+    FROM user_users AS u
+        LEFT JOIN user_groups AS g
+            ON json_extract_path_text(u.data, 'patronGroup') =
+               json_extract_path_text(g.data, 'id')
     LIMIT 5;
 ```
 
@@ -160,11 +156,11 @@ This can be written in a simpler form by using the relational
 attributes rather than JSON fields:
 
 ```sql
-SELECT users.id AS user_id,
-       groups.group
-    FROM user_users
-        LEFT JOIN user_groups
-	    ON users.patron_group = groups.id
+SELECT u.id AS user_id,
+       g.group
+    FROM user_users AS u
+        LEFT JOIN user_groups AS g
+	    ON u.patron_group = g.id
     LIMIT 5;
 ```
 
@@ -183,8 +179,8 @@ SELECT users.id AS user_id,
 -----------------
 
 The `local` schema is created by LDP as a common area in the database
-where reporting users can create or import their own data sets,
-including storing the results of queries, e.g.:
+where users can create or import their own data sets, including
+storing the results of queries, e.g.:
 
 ```sql
 CREATE TABLE local.loan_status AS
@@ -194,28 +190,20 @@ SELECT json_extract_path_text(data, 'status', 'name') AS status,
     GROUP BY status;
 ```
 
-The `ldp` user is granted database permissions to create tables in the
-`local` schema.
-
-If additional local schemas are desired, it is recommended that the
-new schema names be prefixed with `local_` or `l_` to avoid future
-naming collisions with LDP.
-
 
 5\. Historical data
 -------------------
 
-### Overview
+### History tables
 
-As mentioned earlier, the database reflects the state of the source
-data as of the last time that LDP updated it.  LDP also maintains
-another schema called `history` which stores all data that have been
-updated in the past, including data that may no longer exist in the
-source.  Each table normally has a corresponding history table, e.g.
-the history table for `circulation_loans` is
-`history.circulation_loans`.
+As mentioned earlier, the database contains a snapshot of the source
+data as of the last update.  LDP also provides a schema called
+`history` which stores all data that have been updated in the past,
+including data that may no longer exist in the source.  Each table
+normally has a corresponding history table, e.g.  the history table
+for `circulation_loans` is `history.circulation_loans`.
 
-This historical data capability is designed for gaining insights about
+This historical data capability can be used for gaining insights about
 the library by analyzing trends over time.
 
 History tables contain these attributes:
@@ -223,7 +211,7 @@ History tables contain these attributes:
 * `id` is the record ID.
 * `data` is the source data, usually a JSON object.
 * `updated` is the date and time when the data were updated.
-* `tenant_id` is reserved for future use in consortial reporting.
+* `tenant_id` is reserved for future use in consortial environments.
 
 For example:
 
@@ -254,7 +242,7 @@ tenant_id | 1
 Unlike the main tables in which `id` is unique, the history tables can
 accumulate many records with the same value for `id`.  Note also that
 if a value in the source changes more than once during the interval
-between any two LDP updates, the history will only reflect the last of
+between two LDP updates, the history will only reflect the last of
 those changes.
 
 ### Querying historical data
@@ -272,8 +260,7 @@ SELECT updated,
     ORDER BY updated;
 ```
 
-To view how a single record can change over time, using the record ID
-above:
+To view how a single record changes over time:
 
 ```sql
 SELECT *
@@ -298,12 +285,11 @@ SELECT json_extract_path_text(data, 'action'),
 
 Since the source data schemas may evolve over time, the `data`
 attribute in history tables does not necessarily have a single schema
-that is consistent over an entire table.  As a result, reporting on
-history tables may require some "data cleaning" as preparation before
-the data can be queried accurately.  A suggested first step could be
-to select a subset of data within a time window, pulling out JSON
-fields of interest into relational attributes, and storing this result
-in a local table, e.g.:
+that is consistent over an entire table.  As a result, querying
+history tables may require "data cleaning."  A suggested first step
+would be to select a subset of data within a time window, pulling out
+JSON fields of interest into relational attributes, and storing this
+result in a local table, e.g.:
 
 ```sql
 CREATE TABLE local.loan_status_history AS
@@ -320,19 +306,15 @@ or missing values, update them, etc.  Note that in SQL, `''` and
 distinct values.
 
 
-6\. Important note on database views
-------------------------------------
+6\. Database views
+------------------
 
 The schema of source data can change over time, and LDP reflects these
-changes when it refreshes its data.  For this reason, LDP cannot
-support the use of database views.  LDP updates may fail to run if the
+changes when it updates data.  For this reason, LDP does not support
+the use of database views.  LDP updates may fail to run if the
 database contains views.  Instead of creating a view, use `CREATE
 TABLE ... AS SELECT ...` to store a result set, as in the local schema
 example above.
-
-Reporting users should be aware of schema changes in advance, in order
-to be able to update queries and to prepare to recreate local result
-sets if needed.
 
 
 7\. Community
@@ -340,28 +322,21 @@ sets if needed.
 
 ### Wiki
 
-The community is [creating a
-wiki](https://github.com/folio-org/ldp/wiki) with notes about database
-tools that can be used with LDP.
+[A wiki](https://github.com/folio-org/ldp/wiki) is available for the
+LDP community.  It provides information about database tools that can
+be used with LDP and links to related projects.
 
-### Discussion
-
-FOLIO's [Slack organization](https://slack-invitation.folio.org/)
-contains LDP-related channels for announcements and discussion.
-
-### Bugs and feature requests
+### Issue tracking
 
 Please use the [issue
 tracker](https://github.com/folio-org/ldp/issues) to report a bug or
 feature request.
 
-### FOLIO reporting
+### Discussion
 
-Librarians and developers in the FOLIO community are building a
-collection of LDP-based queries to provide reporting capabilities for
-FOLIO libraries.  This effort is organized around the
-[ldp-analytics](https://github.com/folio-org/ldp-analytics)
-repository.
+The FOLIO project's [Slack
+organization](https://slack-invitation.folio.org/) hosts a few
+LDP-related channels.
 
 
 Further reading
