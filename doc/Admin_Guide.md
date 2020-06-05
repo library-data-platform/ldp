@@ -182,12 +182,51 @@ Then:
 $ ./all.sh
 ```
 
-The `all.sh` script creates a `build/` subdirectory and builds the
-`ldp` executable there:
+The `all.sh` script creates a `build/` subdirectory and builds three
+executables there:
+
+* `ldp` is the LDP software.
+* `ldp_test` runs self-contained unit tests.
+* `ldp_testint` runs integration tests.
+
+After building these executables, the script also runs `ldp_test`.
+
+If there are no errors, the end of the output will include:
+
+```shell
+All tests passed
+```
+
+To run the LDP software:
 
 ```shell
 $ ./build/ldp
 ```
+
+### Running tests
+
+As mentioned above, the `all.sh` script runs the unit tests, but they
+can be run separately if needed:
+
+```shell
+$ ./build/ldp_test
+```
+
+Running the integration tests requires a FOLIO instance, as well as an
+LDP testbed instance with a PostgreSQL or Redshift database.  The
+contents of the LDP database will be destroyed by these tests; so
+please be careful that the correct database is used.  The
+`deployment_environment` configuration setting for the LDP testbed
+instance should be `testing` or `development`.  Also as a safety
+precaution, the setting `allow_destructive_tests` is required for
+integration tests.  The tests are run as:
+
+```shell
+$ ./build/ldp_testint -s -D DATADIR
+```
+
+where `DATADIR` is the data directory for the test database.  See
+below for an explanation of LDP data directories and configuration.
 
 
 4\. Database configuration
