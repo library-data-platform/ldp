@@ -245,7 +245,7 @@ void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
             string("Server stopped") + (opt.cli_mode ? " (CLI mode)" : ""), -1);
 }
 
-void init(const ldp_options& opt)
+void cmd_init_database(const ldp_options& opt)
 {
     if (opt.set_profile == profile::none)
         throw runtime_error("Profile not specified");
@@ -257,7 +257,7 @@ void init(const ldp_options& opt)
             opt.err, opt.prog);
 }
 
-void upgrade_database(const ldp_options& opt)
+void cmd_upgrade_database(const ldp_options& opt)
 {
     etymon::odbc_env odbc;
     server_lock svrlock(&odbc, opt.db, opt.log_level, opt.err, opt.prog);
@@ -267,7 +267,7 @@ void upgrade_database(const ldp_options& opt)
             opt.err, opt.prog, opt.quiet);
 }
 
-void server(const ldp_options& opt)
+void cmd_server(const ldp_options& opt)
 {
     etymon::odbc_env odbc;
     server_lock svrlock(&odbc, opt.db, opt.log_level, opt.err, opt.prog);
@@ -385,7 +385,7 @@ void ldp_exec(ldp_options* opt)
         do {
             timer error_timer(*opt);
             try {
-                server(*opt);
+                cmd_server(*opt);
             } catch (runtime_error& e) {
                 string s = e.what();
                 if ( !(s.empty()) && s.back() == '\n' )
@@ -408,17 +408,17 @@ void ldp_exec(ldp_options* opt)
     }
 
     if (opt->command == ldp_command::update) {
-        server(*opt);
+        cmd_server(*opt);
         return;
     }
 
     if (opt->command == ldp_command::upgrade_database) {
-        upgrade_database(*opt);
+        cmd_upgrade_database(*opt);
         return;
     }
 
     if (opt->command == ldp_command::init_database) {
-        init(*opt);
+        cmd_init_database(*opt);
         return;
     }
 }
