@@ -1,11 +1,9 @@
 #ifndef LDP_ANONYMIZE_H
 #define LDP_ANONYMIZE_H
 
-#include <string>
+#include "schema.h"
 
-using namespace std;
-
-bool possiblePersonalData(const string& field);
+bool is_personal_data_field(const TableSchema& table, const string& field);
 
 #endif
 

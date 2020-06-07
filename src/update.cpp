@@ -29,7 +29,7 @@ void make_update_tmp_dir(const ldp_options& opt, string* loaddir)
     *loaddir = tmppath;
 }
 
-bool is_foreign_key(etymon::odbc_conn* conn, log* lg,
+bool is_foreign_key(etymon::odbc_conn* conn, ldp_log* lg,
         const TableSchema& table2, const ColumnSchema& column2,
         const TableSchema& table1)
 {
@@ -59,7 +59,7 @@ public:
 };
 
 void search_table_foreign_keys(etymon::odbc_env* odbc, const string& dbName,
-        etymon::odbc_conn* conn, log* lg, const Schema& schema,
+        etymon::odbc_conn* conn, ldp_log* lg, const Schema& schema,
         const TableSchema& table, bool detectForeignKeys,
         map<string, vector<reference>>* refs)
 {
@@ -96,7 +96,7 @@ void search_table_foreign_keys(etymon::odbc_env* odbc, const string& dbName,
     }
 }
 
-void select_foreign_key_constraints(odbc_conn* conn, log* lg,
+void select_foreign_key_constraints(odbc_conn* conn, ldp_log* lg,
         vector<reference>* refs)
 {
     refs->clear();
@@ -121,7 +121,7 @@ void select_foreign_key_constraints(odbc_conn* conn, log* lg,
     }
 }
 
-void remove_foreign_key_constraints(odbc_conn* conn, log* lg)
+void remove_foreign_key_constraints(odbc_conn* conn, ldp_log* lg)
 {
     etymon::odbc_tx tx(conn);
     vector<reference> refs;
@@ -139,7 +139,7 @@ void remove_foreign_key_constraints(odbc_conn* conn, log* lg)
     tx.commit();
 }
 
-void select_enabled_foreign_keys(odbc_conn* conn, log* lg,
+void select_enabled_foreign_keys(odbc_conn* conn, ldp_log* lg,
         vector<reference>* refs)
 {
     refs->clear();
@@ -174,7 +174,7 @@ void make_foreign_key_constraint_name(const string& referencing_table,
     *constraint_name = string(p) + "_" + referencing_column + "_fk";
 }
 
-void create_foreign_key_constraints(odbc_conn* conn, log* lg)
+void create_foreign_key_constraints(odbc_conn* conn, ldp_log* lg)
 {
     vector<reference> refs;
     select_enabled_foreign_keys(conn, lg, &refs);
@@ -225,7 +225,7 @@ void create_foreign_key_constraints(odbc_conn* conn, log* lg)
     }
 }
 
-void select_config_general(etymon::odbc_conn* conn, log* lg,
+void select_config_general(etymon::odbc_conn* conn, ldp_log* lg,
         bool* detect_foreign_keys, bool* force_foreign_key_constraints,
         bool* enable_foreign_key_warnings)
 {
@@ -248,21 +248,46 @@ void select_config_general(etymon::odbc_conn* conn, log* lg,
     *enable_foreign_key_warnings = (s3 == "1");
 }
 
+bool is_anonymization_enabled(const ldp_options& opt, etymon::odbc_env* odbc,
+                              const string& db, ldp_log* lg)
+{
+    bool ldpconf_disable_anon = false;
+    {
+        etymon::odbc_conn conn(odbc, opt.db);
+        string sql = "SELECT disable_anonymization FROM ldpconfig.general;";
+        lg->detail(sql);
+        {
+            etymon::odbc_stmt stmt(&conn);
+            conn.exec_direct(&stmt, sql);
+            conn.fetch(&stmt);
+            string s;
+            conn.get_data(&stmt, 1, &s);
+            ldpconf_disable_anon = (s == "1");
+        }
+    }
+
+    //if (opt.disable_anonymization != ldpconf_disable_anon)
+    //    lg->warning(
+    //        "Configuration settings disable_anonymization do not match");
+
+    return (!opt.disable_anonymization || !ldpconf_disable_anon);
+}
+
 void run_update(const ldp_options& opt)
 {
     CURLcode cc;
     curl_global curl_env(CURL_GLOBAL_ALL, &cc);
     if (cc) {
         throw runtime_error(string("Error initializing curl: ") +
-                curl_easy_strerror(cc));
+                            curl_easy_strerror(cc));
     }
 
     etymon::odbc_env odbc;
 
     etymon::odbc_conn log_conn(&odbc, opt.db);
-    log lg(&log_conn, opt.log_level, opt.console, opt.quiet, opt.prog);
+    ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet, opt.prog);
 
-    lg.write(level::debug, "server", "", "Starting full update", -1);
+    lg.write(log_level::debug, "server", "", "Starting full update", -1);
     timer full_update_timer(opt);
 
     Schema schema;
@@ -279,12 +304,12 @@ void run_update(const ldp_options& opt)
     string token, tenant_header, token_header;
 
     if (opt.load_from_dir != "") {
-        //if (opt.logLevel == level::trace)
+        //if (opt.logLevel == log_level::trace)
         //    fprintf(opt.err, "%s: Reading data from directory: %s\n",
         //            opt.prog, opt.loadFromDir.c_str());
         loadDir = opt.load_from_dir;
     } else {
-        lg.write(level::trace, "", "", "Logging in to Okapi service", -1);
+        lg.write(log_level::trace, "", "", "Logging in to Okapi service", -1);
 
         okapi_login(opt, &lg, &token);
 
@@ -298,46 +323,36 @@ void run_update(const ldp_options& opt)
         c.headers = curl_slist_append(c.headers, tenant_header.c_str());
         c.headers = curl_slist_append(c.headers, token_header.c_str());
         c.headers = curl_slist_append(c.headers,
-                "Accept: application/json,text/plain");
+                                      "Accept: application/json,text/plain");
         curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
     }
 
-    bool ldpconfig_disable_anonymization = false;
-    {
-        etymon::odbc_conn conn(&odbc, opt.db);
-        string sql = "SELECT disable_anonymization FROM ldpconfig.general;";
-        lg.detail(sql);
-        {
-            etymon::odbc_stmt stmt(&conn);
-            conn.exec_direct(&stmt, sql);
-            conn.fetch(&stmt);
-            string s;
-            conn.get_data(&stmt, 1, &s);
-            ldpconfig_disable_anonymization = (s == "1");
-        }
-    }
-    if (!ldpconfig_disable_anonymization)
-        throw runtime_error(
-                "This version requires disable_anonymization in "
-                "ldpconfig.general");
+    bool enable_anonymization = is_anonymization_enabled(opt, &odbc, opt.db,
+                                                         &lg);
+
+    // For LDP 1.0:
+    // if (!ldpconfig_disable_anonymization)
+    //     throw runtime_error(
+    //             "This version requires disable_anonymization in "
+    //             "ldpconfig.general");
 
     for (auto& table : schema.tables) {
 
+        // Skip this table if the --table option is specified and does not
+        // match this table.
         if (opt.table != "" && opt.table != table.tableName)
             continue;
 
-        bool anonymizeTable = ( table.anonymize &&
-                (!opt.disable_anonymization ||
-                 !ldpconfig_disable_anonymization) );
+        // Enable anonymization of the entire table.
+        bool anonymize_table = enable_anonymization && table.anonymize;
+        // Enable selective anonymization of fields.
+        bool anonymize_fields = enable_anonymization;
 
-        //printf("anonymize=%d\tfile_disable=%d\tdb_disable=%s\tA=%d\n",
-        //        table.anonymize, opt.disableAnonymization,
-        //        ldpconfig_disable_anonymization.c_str(), anonymizeTable);
-
-        if (anonymizeTable)
+        // Skip this table if the entire table should be anonymized.
+        if (anonymize_table)
             continue;
 
-        lg.write(level::trace, "", "",
+        lg.write(log_level::trace, "", "",
                 "Updating table: " + table.tableName, -1);
 
         timer update_timer(opt);
@@ -345,7 +360,7 @@ void run_update(const ldp_options& opt)
         extraction_files ext_files(opt);
 
         if (opt.load_from_dir == "") {
-            lg.write(level::trace, "", "",
+            lg.write(log_level::trace, "", "",
                     "Extracting: " + table.sourcePath, -1);
             bool found_data = directOverride(opt, table.tableName) ?
                 retrieveDirect(opt, &lg, table, loadDir, &ext_files) :
@@ -365,18 +380,18 @@ void run_update(const ldp_options& opt)
         {
             etymon::odbc_tx tx(&conn);
 
-            lg.write(level::trace, "", "",
+            lg.write(log_level::trace, "", "",
                     "Staging table: " + table.tableName, -1);
             bool ok = stageTable(opt, &lg, &table, &odbc, &conn, &dbt,
-                    loadDir);
+                                 loadDir, anonymize_fields);
             if (!ok)
                 continue;
 
-            lg.write(level::trace, "", "",
+            lg.write(log_level::trace, "", "",
                     "Merging table: " + table.tableName, -1);
             mergeTable(opt, &lg, table, &odbc, &conn, dbt);
 
-            lg.write(level::trace, "", "",
+            lg.write(log_level::trace, "", "",
                     "Replacing table: " + table.tableName, -1);
 
             remove_foreign_key_constraints(&conn, &lg);
@@ -427,11 +442,11 @@ void run_update(const ldp_options& opt)
         lg.detail(sql);
         conn.exec(sql);
 
-        lg.write(level::debug, "update", table.tableName,
+        lg.write(log_level::debug, "update", table.tableName,
                 "Updated table: " + table.tableName,
                 update_timer.elapsed_time());
 
-        //if (opt.logLevel == level::trace)
+        //if (opt.logLevel == log_level::trace)
         //    loadTimer.print("load time");
     } // for
 
@@ -444,7 +459,7 @@ void run_update(const ldp_options& opt)
     //    }
     //}
 
-    lg.write(level::debug, "server", "", "Completed full update",
+    lg.write(log_level::debug, "server", "", "Completed full update",
             full_update_timer.elapsed_time());
 
     // TODO Move analysis and constraints out of update process.
@@ -460,7 +475,7 @@ void run_update(const ldp_options& opt)
 
         if (detect_foreign_keys) {
 
-            lg.write(level::debug, "server", "",
+            lg.write(log_level::debug, "server", "",
                     "Detecting foreign keys", -1);
 
             timer ref_timer(opt);
@@ -497,21 +512,21 @@ void run_update(const ldp_options& opt)
 
             tx.commit();
 
-            lg.write(level::debug, "server", "",
+            lg.write(log_level::debug, "server", "",
                     "Completed foreign key detection",
                     ref_timer.elapsed_time());
         }
 
         if (force_foreign_key_constraints) {
 
-            lg.write(level::debug, "server", "",
+            lg.write(log_level::debug, "server", "",
                     "Creating foreign key constraints", -1);
 
             timer ref_timer(opt);
 
             create_foreign_key_constraints(&conn, &lg);
 
-            lg.write(level::debug, "server", "",
+            lg.write(log_level::debug, "server", "",
                     "Foreign key constraints created",
                     ref_timer.elapsed_time());
         }
@@ -536,8 +551,8 @@ void run_update_process(const ldp_options& opt)
             s.pop_back();
         etymon::odbc_env odbc;
         etymon::odbc_conn log_conn(&odbc, opt.db);
-        log lg(&log_conn, opt.log_level, opt.console, opt.quiet, opt.prog);
-        lg.write(level::error, "server", "", s, -1);
+        ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet, opt.prog);
+        lg.write(log_level::error, "server", "", s, -1);
         exit(1);
     }
 }

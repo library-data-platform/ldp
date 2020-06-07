@@ -25,12 +25,12 @@ public:
     ~Curl();
 };
 
-void okapi_login(const ldp_options& o, log* lg, string* token);
+void okapi_login(const ldp_options& o, ldp_log* lg, string* token);
 
 bool directOverride(const ldp_options& opt, const string& sourcePath);
-bool retrieveDirect(const ldp_options& opt, log* lg, const TableSchema& table,
+bool retrieveDirect(const ldp_options& opt, ldp_log* lg, const TableSchema& table,
         const string& loadDir, extraction_files* ext_files);
-bool retrievePages(const Curl& c, const ldp_options& opt, log* lg,
+bool retrievePages(const Curl& c, const ldp_options& opt, ldp_log* lg,
         const string& token, const TableSchema& table, const string& loadDir,
         extraction_files* ext_files);
 

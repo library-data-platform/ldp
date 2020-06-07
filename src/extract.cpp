@@ -76,7 +76,7 @@ size_t header_callback(char* buffer, size_t size, size_t nitems,
  * okapiPassword, and okapiTenant.
  * \param[out] token The authentication token received from Okapi.
  */
-void okapi_login(const ldp_options& opt, log* lg, string* token)
+void okapi_login(const ldp_options& opt, ldp_log* lg, string* token)
 {
     //timer t(opt);
 
@@ -86,7 +86,7 @@ void okapi_login(const ldp_options& opt, log* lg, string* token)
     string path = opt.okapi_url;
     etymon::join(&path, "/authn/login");
 
-    lg->write(level::detail, "", "", "Retrieving: " + path, -1);
+    lg->write(log_level::detail, "", "", "Retrieving: " + path, -1);
 
     string tenantHeader = "X-Okapi-Tenant: ";
     tenantHeader += opt.okapi_tenant;
@@ -150,7 +150,7 @@ enum class PageStatus {
     containsRecords
 };
 
-static PageStatus retrieve(const Curl& c, const ldp_options& opt, log* lg,
+static PageStatus retrieve(const Curl& c, const ldp_options& opt, ldp_log* lg,
         const string& token, const TableSchema& table, const string& loadDir,
         extraction_files* ext_files, size_t page)
 {
@@ -188,7 +188,7 @@ static PageStatus retrieve(const Curl& c, const ldp_options& opt, log* lg,
         curl_easy_setopt(c.curl, CURLOPT_URL, path.c_str());
         curl_easy_setopt(c.curl, CURLOPT_WRITEDATA, f.fp);
 
-        lg->write(level::detail, "", "",
+        lg->write(log_level::detail, "", "",
                 "Retrieving from:\n"
                 "    Path: " + table.sourcePath + "\n"
                 "    Query: " + query, -1);
@@ -234,19 +234,19 @@ static void writeCountFile(const string& loadDir, const string& tableName,
     fputs(pageStr.c_str(), f.fp);
 }
 
-bool retrievePages(const Curl& c, const ldp_options& opt, log* lg,
+bool retrievePages(const Curl& c, const ldp_options& opt, ldp_log* lg,
         const string& token, const TableSchema& table, const string& loadDir,
         extraction_files* ext_files)
 {
     size_t page = 0;
     while (true) {
-        lg->write(level::detail, "", "",
+        lg->write(log_level::detail, "", "",
                 "Extracting page: " + to_string(page), -1);
         PageStatus status = retrieve(c, opt, lg, token, table, loadDir,
                 ext_files, page);
         switch (status) {
         case PageStatus::interfaceNotAvailable:
-            lg->write(level::trace, "", "",
+            lg->write(log_level::trace, "", "",
                     "Interface not available: " + table.sourcePath, -1);
             return false;
         case PageStatus::pageEmpty:
@@ -268,13 +268,13 @@ bool directOverride(const ldp_options& opt, const string& tableName)
     return false;
 }
 
-bool retrieveDirect(const ldp_options& opt, log* lg, const TableSchema& table,
+bool retrieveDirect(const ldp_options& opt, ldp_log* lg, const TableSchema& table,
         const string& loadDir, extraction_files* ext_files)
 {
-    lg->write(level::trace, "", "",
+    lg->write(log_level::trace, "", "",
             "Direct from database: " + table.sourcePath, -1);
     if (table.directSourceTable == "") {
-        lg->write(level::warning, "", "",
+        lg->write(log_level::warning, "", "",
                 "Direct source table undefined: " + table.sourcePath, -1);
         return false;
     }
@@ -285,7 +285,7 @@ bool retrieveDirect(const ldp_options& opt, log* lg, const TableSchema& table,
             opt.direct.database_name, "require");
     string sql = "SELECT jsonb FROM " +
         opt.okapi_tenant + "_" + table.directSourceTable + ";";
-    lg->write(level::detail, "", "", sql, -1);
+    lg->write(log_level::detail, "", "", sql, -1);
 
     if (PQsendQuery(db.conn, sql.c_str()) == 0) {
         string err = PQerrorMessage(db.conn);

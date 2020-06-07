@@ -4,7 +4,7 @@
 #include "names.h"
 #include "util.h"
 
-void mergeTable(const ldp_options& opt, log* lg, const TableSchema& table,
+void mergeTable(const ldp_options& opt, ldp_log* lg, const TableSchema& table,
         etymon::odbc_env* odbc, etymon::odbc_conn* conn, const dbtype& dbt)
 {
     // Update history tables.
@@ -28,7 +28,7 @@ void mergeTable(const ldp_options& opt, log* lg, const TableSchema& table,
         "                  h1.id = h2.id AND\n"
         "                  h1.updated < h2.updated\n"
         "      );";
-    lg->write(level::detail, "", "", sql, -1);
+    lg->write(log_level::detail, "", "", sql, -1);
     conn->exec(sql);
 
     string loadingTable;
@@ -49,11 +49,11 @@ void mergeTable(const ldp_options& opt, log* lg, const TableSchema& table,
         "    WHERE s.data IS NOT NULL AND\n"
         "          ( h.id IS NULL OR\n"
         "            (s.data)::VARCHAR <> (h.data)::VARCHAR );";
-    lg->write(level::detail, "", "", sql, -1);
+    lg->write(log_level::detail, "", "", sql, -1);
     conn->exec(sql);
 }
 
-void dropTable(const ldp_options& opt, log* lg, const string& tableName,
+void dropTable(const ldp_options& opt, ldp_log* lg, const string& tableName,
         etymon::odbc_conn* conn)
 {
     string sql = "DROP TABLE IF EXISTS " + tableName + ";";
@@ -61,7 +61,7 @@ void dropTable(const ldp_options& opt, log* lg, const string& tableName,
     conn->exec(sql);
 }
 
-void placeTable(const ldp_options& opt, log* lg, const TableSchema& table,
+void placeTable(const ldp_options& opt, ldp_log* lg, const TableSchema& table,
         etymon::odbc_conn* conn)
 {
     string loadingTable;
@@ -69,7 +69,7 @@ void placeTable(const ldp_options& opt, log* lg, const TableSchema& table,
     string sql =
         "ALTER TABLE " + loadingTable + "\n"
         "    RENAME TO " + table.tableName + ";";
-    lg->write(level::detail, "", "", sql, -1);
+    lg->write(log_level::detail, "", "", sql, -1);
     conn->exec(sql);
 }
 

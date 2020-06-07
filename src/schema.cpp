@@ -534,13 +534,13 @@ void ColumnSchema::columnTypeToString(ColumnType type, string* str)
     }
 }
 
-bool ColumnSchema::selectColumnType(log* lg, const string& table,
+bool ColumnSchema::selectColumnType(ldp_log* lg, const string& table,
         const string& source_path, const string& field, const Counts& counts,
         ColumnType* ctype)
 {
     // Check for incompatible types.
     if (counts.string > 0 && counts.number > 0) {
-        lg->write(level::error, "", "",
+        lg->write(log_level::error, "", "",
                 "Inconsistent data types in source data:\n"
                 "    Table: " + table + "\n"
                 "    Source path: " + source_path + "\n"

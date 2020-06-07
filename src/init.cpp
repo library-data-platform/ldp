@@ -221,10 +221,8 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         "    detect_foreign_keys BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    force_foreign_key_constraints BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    enable_foreign_key_warnings BOOLEAN NOT NULL DEFAULT FALSE,\n"
-        "    disable_anonymization BOOLEAN NOT NULL DEFAULT TRUE\n"
+        "    disable_anonymization BOOLEAN NOT NULL DEFAULT FALSE\n"
         ");";
-    conn->exec(sql);
-    sql = "DELETE FROM ldpconfig.general;";  // Temporary: pre-LDP-1.0
     conn->exec(sql);
     sql =
         "INSERT INTO ldpconfig.general\n"
@@ -375,8 +373,8 @@ static void upgrade_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         fprintf(err, "%s: Database upgrade completed\n", prog);
         fprintf(err, "%s: ", prog);
         print_banner_line(err, '=', 74);
-        log lg(conn, level::info, false, quiet, prog);
-        lg.write(level::info, "server", "", "Upgraded to database version: " +
+        ldp_log lg(conn, log_level::info, false, quiet, prog);
+        lg.write(log_level::info, "server", "", "Upgraded to database version: " +
                 to_string(latest_version), -1);
     } else {
         if (!quiet)

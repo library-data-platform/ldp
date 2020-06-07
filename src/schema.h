@@ -35,7 +35,7 @@ public:
     ColumnType columnType;
     string sourceColumnName;
     static void columnTypeToString(ColumnType type, string* str);
-    static bool selectColumnType(log* lg, const string& table,
+    static bool selectColumnType(ldp_log* lg, const string& table,
             const string& source_path, const string& field,
             const Counts& counts, ColumnType* ctype);
 };

@@ -46,11 +46,11 @@ static void evaloptlong(char* name, char* arg, ldp_options* opt)
         return;
     }
     if (!strcmp(name, "trace")) {
-        opt->log_level = level::trace;
+        opt->lg_level = log_level::trace;
         return;
     }
     if (!strcmp(name, "detail")) {
-        opt->log_level = level::detail;
+        opt->lg_level = log_level::detail;
         return;
     }
     if (!strcmp(name, "console")) {
