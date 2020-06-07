@@ -150,15 +150,15 @@ bool time_for_full_update(const ldp_options& opt, etymon::odbc_conn* conn,
         lg->write(log_level::error, "", "", e, -1);
         throw runtime_error(e);
     }
-    string fullUpdateEnabled, updateNow;
-    conn->get_data(&stmt, 1, &fullUpdateEnabled);
-    conn->get_data(&stmt, 2, &updateNow);
+    string full_update_enabled, update_now;
+    conn->get_data(&stmt, 1, &full_update_enabled);
+    conn->get_data(&stmt, 2, &update_now);
     if (conn->fetch(&stmt)) {
         string e = "Too many rows in table: ldpconfig.general";
         lg->write(log_level::error, "", "", e, -1);
         throw runtime_error(e);
     }
-    return fullUpdateEnabled == "1" && updateNow == "1";
+    return full_update_enabled == "1" && update_now == "1";
 }
 
 /**
@@ -170,9 +170,9 @@ bool time_for_full_update(const ldp_options& opt, etymon::odbc_conn* conn,
  * param[in] dbt
  */
 void reschedule_next_daily_load(const ldp_options& opt, etymon::odbc_conn* conn,
-        dbtype* dbt, ldp_log* lg)
+                                dbtype* dbt, ldp_log* lg)
 {
-    string updateInFuture;
+    string update_in_future;
     do {
         // Increment next_full_update.
         string sql =
@@ -193,13 +193,13 @@ void reschedule_next_daily_load(const ldp_options& opt, etymon::odbc_conn* conn,
             lg->write(log_level::error, "", "", e, -1);
             throw runtime_error(e);
         }
-        conn->get_data(&stmt, 1, &updateInFuture);
+        conn->get_data(&stmt, 1, &update_in_future);
         if (conn->fetch(&stmt)) {
             string e = "Too many rows in table: ldpconfig.general";
             lg->write(log_level::error, "", "", e, -1);
             throw runtime_error(e);
         }
-    } while (updateInFuture == "0");
+    } while (update_in_future == "0");
 }
 
 void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
@@ -280,10 +280,10 @@ void config_direct_options(const config& conf, const string& base,
         ldp_options* opt)
 {
     int x = 0;
-    string directTables = base + "direct_tables/";
+    string direct_tables = base + "direct_tables/";
     while (true) {
         string t;
-        if (!conf.get(directTables + to_string(x), &t))
+        if (!conf.get(direct_tables + to_string(x), &t))
             break;
         opt->direct.table_names.push_back(t);
         x++;
@@ -310,17 +310,17 @@ void config_options(const config& conf, ldp_options* opt)
     conf.get(target + "ldp_user", &(opt->ldp_user));
 
     if (opt->load_from_dir == "") {
-        string enableSource;
-        conf.get_required("/enable_sources/0", &enableSource);
-        string secondSource;
-        conf.get("/enable_sources/1", &secondSource);
-        if (secondSource != "")
+        string enable_source;
+        conf.get_required("/enable_sources/0", &enable_source);
+        string second_source;
+        conf.get("/enable_sources/1", &second_source);
+        if (second_source != "")
             throw runtime_error(
                     "Multiple sources not currently supported in "
                     "configuration:\n"
                     "    Attribute: enable_sources\n"
-                    "    Value: " + secondSource);
-        string source = "/sources/" + enableSource + "/";
+                    "    Value: " + second_source);
+        string source = "/sources/" + enable_source + "/";
         conf.get_required(source + "okapi_url", &(opt->okapi_url));
         conf.get_required(source + "okapi_tenant", &(opt->okapi_tenant));
         conf.get_required(source + "okapi_user", &(opt->okapi_user));
@@ -331,14 +331,6 @@ void config_options(const config& conf, ldp_options* opt)
     conf.get_bool("/disable_anonymization", &(opt->disable_anonymization));
 
     conf.get_bool("/allow_destructive_tests", &(opt->allow_destructive_tests));
-}
-
-// For LDP 1.0:
-void require_disable_anon_ldp1(const ldp_options& opt)
-{
-    if (!opt.disable_anonymization)
-        throw runtime_error(
-                "This version requires disable_anonymization in ldpconf.json");
 }
 
 void validate_options_in_deployment(const ldp_options& opt)
@@ -374,9 +366,6 @@ void ldp_exec(ldp_options* opt)
 {
     config conf(opt->datadir + "/ldpconf.json");
     config_options(conf, opt);
-
-    // For LDP 1.0:
-    // require_disable_anon_ldp1(*opt);
 
     validate_options_in_deployment(*opt);
 

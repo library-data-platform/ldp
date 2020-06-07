@@ -331,12 +331,6 @@ void run_update(const ldp_options& opt)
     bool enable_anonymization = is_anonymization_enabled(opt, &odbc, opt.db,
                                                          &lg);
 
-    // For LDP 1.0:
-    // if (!ldpconfig_disable_anonymization)
-    //     throw runtime_error(
-    //             "This version requires disable_anonymization in "
-    //             "ldpconfig.general");
-
     for (auto& table : schema.tables) {
 
         // Skip this table if the --table option is specified and does not
