@@ -4,16 +4,16 @@
 #include "names.h"
 #include "util.h"
 
-void mergeTable(const ldp_options& opt, ldp_log* lg, const TableSchema& table,
+void mergeTable(const ldp_options& opt, ldp_log* lg, const table_schema& table,
         etymon::odbc_env* odbc, etymon::odbc_conn* conn, const dbtype& dbt)
 {
     // Update history tables.
 
     string historyTable;
-    historyTableName(table.tableName, &historyTable);
+    historyTableName(table.name, &historyTable);
 
     string latestHistoryTable;
-    latestHistoryTableName(table.tableName, &latestHistoryTable);
+    latestHistoryTableName(table.name, &latestHistoryTable);
 
     string sql =
         "CREATE TEMPORARY TABLE\n"
@@ -32,7 +32,7 @@ void mergeTable(const ldp_options& opt, ldp_log* lg, const TableSchema& table,
     conn->exec(sql);
 
     string loadingTable;
-    loadingTableName(table.tableName, &loadingTable);
+    loadingTableName(table.name, &loadingTable);
 
     sql =
         "INSERT INTO " + historyTable + "\n"
@@ -61,14 +61,14 @@ void dropTable(const ldp_options& opt, ldp_log* lg, const string& tableName,
     conn->exec(sql);
 }
 
-void placeTable(const ldp_options& opt, ldp_log* lg, const TableSchema& table,
+void placeTable(const ldp_options& opt, ldp_log* lg, const table_schema& table,
         etymon::odbc_conn* conn)
 {
     string loadingTable;
-    loadingTableName(table.tableName, &loadingTable);
+    loadingTableName(table.name, &loadingTable);
     string sql =
         "ALTER TABLE " + loadingTable + "\n"
-        "    RENAME TO " + table.tableName + ";";
+        "    RENAME TO " + table.name + ";";
     lg->write(log_level::detail, "", "", sql, -1);
     conn->exec(sql);
 }

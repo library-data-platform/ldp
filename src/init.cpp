@@ -108,8 +108,8 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
     dbtype dbt(conn);
 
     // TODO This should probably be passed into the function as a parameter.
-    Schema schema;
-    Schema::make_default_schema(&schema);
+    ldp_schema schema;
+    ldp_schema::make_default_schema(&schema);
 
     etymon::odbc_tx tx(conn);
 
@@ -159,7 +159,7 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
 
     // Add tables to the catalog.
     for (auto& table : schema.tables)
-        catalog_add_table(conn, table.tableName);
+        catalog_add_table(conn, table.name);
 
     string rskeys;
     dbt.redshift_keys("referencing_table",
@@ -264,25 +264,25 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         dbt.redshift_keys("id", "id, updated", &rskeys);
         string sql =
             "CREATE TABLE IF NOT EXISTS\n"
-            "    history." + table.tableName + " (\n"
+            "    history." + table.name + " (\n"
             "    id VARCHAR(36) NOT NULL,\n"
             "    data " + dbt.json_type() + " NOT NULL,\n"
             "    updated TIMESTAMP WITH TIME ZONE NOT NULL,\n"
             "    tenant_id SMALLINT NOT NULL,\n"
             "    CONSTRAINT\n"
-            "        history_" + table.tableName + "_pkey\n"
+            "        history_" + table.name + "_pkey\n"
             "        PRIMARY KEY (id, updated)\n"
             ")" + rskeys + ";";
         conn->exec(sql);
 
         sql =
             "GRANT SELECT ON\n"
-            "    history." + table.tableName + "\n"
+            "    history." + table.name + "\n"
             "    TO " + ldpUser + ";";
         conn->exec(sql);
         sql =
             "GRANT SELECT ON\n"
-            "    history." + table.tableName + "\n"
+            "    history." + table.name + "\n"
             "    TO " + ldpconfigUser + ";";
         conn->exec(sql);
     }
@@ -293,7 +293,7 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         string rskeys;
         dbt.redshift_keys("id", "id", &rskeys);
         sql =
-            "CREATE TABLE " + table.tableName + " (\n"
+            "CREATE TABLE " + table.name + " (\n"
             "    id VARCHAR(65535) NOT NULL,\n"
             "    data " + dbt.json_type() + ",\n"
             "    tenant_id SMALLINT NOT NULL,\n"
@@ -301,11 +301,11 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         ")" + rskeys + ";";
         conn->exec(sql);
         sql =
-            "GRANT SELECT ON " + table.tableName + "\n"
+            "GRANT SELECT ON " + table.name + "\n"
             "    TO " + ldpconfigUser + ";";
         conn->exec(sql);
         sql =
-            "GRANT SELECT ON " + table.tableName + "\n"
+            "GRANT SELECT ON " + table.name + "\n"
             "    TO " + ldpUser + ";";
         conn->exec(sql);
     }

@@ -30,14 +30,14 @@ void make_update_tmp_dir(const ldp_options& opt, string* loaddir)
 }
 
 bool is_foreign_key(etymon::odbc_conn* conn, ldp_log* lg,
-        const TableSchema& table2, const ColumnSchema& column2,
-        const TableSchema& table1)
+        const table_schema& table2, const column_schema& column2,
+        const table_schema& table1)
 {
     string sql =
         "SELECT 1\n"
-        "    FROM " + table2.tableName + " AS r2\n"
-        "        JOIN " + table1.tableName + " AS r1\n"
-        "            ON r2." + column2.columnName + " = r1.id\n"
+        "    FROM " + table2.name + " AS r2\n"
+        "        JOIN " + table1.name + " AS r1\n"
+        "            ON r2." + column2.name + " = r1.id\n"
         "    LIMIT 1;";
     lg->detail(sql);
     etymon::odbc_stmt stmt(conn);
@@ -59,27 +59,27 @@ public:
 };
 
 void search_table_foreign_keys(etymon::odbc_env* odbc, const string& dbName,
-        etymon::odbc_conn* conn, ldp_log* lg, const Schema& schema,
-        const TableSchema& table, bool detectForeignKeys,
+        etymon::odbc_conn* conn, ldp_log* lg, const ldp_schema& schema,
+        const table_schema& table, bool detectForeignKeys,
         map<string, vector<reference>>* refs)
 {
     etymon::odbc_conn queryDBC(odbc, dbName);
-    lg->detail("Searching for foreign keys in table: " + table.tableName);
-    //printf("Table: %s\n", table.tableName.c_str());
+    lg->detail("Searching for foreign keys in table: " + table.name);
+    //printf("Table: %s\n", table.name.c_str());
     for (auto& column : table.columns) {
-        if (column.columnType != ColumnType::id)
+        if (column.type != column_type::id)
             continue;
-        if (column.columnName == "id")
+        if (column.name == "id")
             continue;
-        //printf("    Column: %s\n", column.columnName.c_str());
+        //printf("    Column: %s\n", column.name.c_str());
         for (auto& table1 : schema.tables) {
             if (is_foreign_key(&queryDBC, lg, table, column, table1)) {
 
-                string key = table.tableName + "." + column.columnName;
+                string key = table.name + "." + column.name;
                 reference ref = {
-                    table.tableName,
-                    column.columnName,
-                    table1.tableName,
+                    table.name,
+                    column.name,
+                    table1.name,
                     "id"
                 };
 
@@ -291,8 +291,8 @@ void run_update(const ldp_options& opt)
     lg.write(log_level::debug, "server", "", "Starting full update", -1);
     timer full_update_timer(opt);
 
-    Schema schema;
-    Schema::make_default_schema(&schema);
+    ldp_schema schema;
+    ldp_schema::make_default_schema(&schema);
 
     extraction_files ext_dir(opt);
 
@@ -341,7 +341,7 @@ void run_update(const ldp_options& opt)
 
         // Skip this table if the --table option is specified and does not
         // match this table.
-        if (opt.table != "" && opt.table != table.tableName)
+        if (opt.table != "" && opt.table != table.name)
             continue;
 
         // Enable anonymization of the entire table.
@@ -354,7 +354,7 @@ void run_update(const ldp_options& opt)
             continue;
 
         lg.write(log_level::trace, "", "",
-                "Updating table: " + table.tableName, -1);
+                "Updating table: " + table.name, -1);
 
         timer update_timer(opt);
 
@@ -362,8 +362,8 @@ void run_update(const ldp_options& opt)
 
         if (opt.load_from_dir == "") {
             lg.write(log_level::trace, "", "",
-                    "Extracting: " + table.sourcePath, -1);
-            bool found_data = directOverride(opt, table.tableName) ?
+                    "Extracting: " + table.source_spec, -1);
+            bool found_data = directOverride(opt, table.name) ?
                 retrieveDirect(opt, &lg, table, loadDir, &ext_files) :
                 retrievePages(c, opt, &lg, token, table, loadDir,
                         &ext_files);
@@ -382,21 +382,21 @@ void run_update(const ldp_options& opt)
             etymon::odbc_tx tx(&conn);
 
             lg.write(log_level::trace, "", "",
-                    "Staging table: " + table.tableName, -1);
+                    "Staging table: " + table.name, -1);
             bool ok = stageTable(opt, &lg, &table, &odbc, &conn, &dbt,
                                  loadDir, anonymize_fields);
             if (!ok)
                 continue;
 
             lg.write(log_level::trace, "", "",
-                    "Merging table: " + table.tableName, -1);
+                    "Merging table: " + table.name, -1);
             mergeTable(opt, &lg, table, &odbc, &conn, dbt);
 
             lg.write(log_level::trace, "", "",
-                    "Replacing table: " + table.tableName, -1);
+                    "Replacing table: " + table.name, -1);
 
             remove_foreign_key_constraints(&conn, &lg);
-            dropTable(opt, &lg, table.tableName, &conn);
+            dropTable(opt, &lg, table.name, &conn);
 
             placeTable(opt, &lg, table, &conn);
             //updateStatus(opt, table, &conn);
@@ -410,7 +410,7 @@ void run_update(const ldp_options& opt)
 
         string sql =
             "SELECT COUNT(*) FROM\n"
-            "    " + table.tableName + ";";
+            "    " + table.name + ";";
         lg.detail(sql);
         string rowCount;
         {
@@ -421,7 +421,7 @@ void run_update(const ldp_options& opt)
         }
         sql =
             "SELECT COUNT(*) FROM\n"
-            "    history." + table.tableName + ";";
+            "    history." + table.name + ";";
         lg.detail(sql);
         string history_row_count;
         {
@@ -435,16 +435,16 @@ void run_update(const ldp_options& opt)
             "    SET updated = " + string(dbt.current_timestamp()) + ",\n"
             "        row_count = " + rowCount + ",\n"
             "        history_row_count = " + history_row_count + ",\n"
-            "        documentation = '" + table.sourcePath + " in "
-            + table.moduleName + "',\n"
+            "        documentation = '" + table.source_spec + " in "
+            + table.module_name + "',\n"
             "        documentation_url = 'https://dev.folio.org/reference/api/#"
-            + table.moduleName + "'\n"
-            "    WHERE table_name = '" + table.tableName + "';";
+            + table.module_name + "'\n"
+            "    WHERE table_name = '" + table.name + "';";
         lg.detail(sql);
         conn.exec(sql);
 
-        lg.write(log_level::debug, "update", table.tableName,
-                "Updated table: " + table.tableName,
+        lg.write(log_level::debug, "update", table.name,
+                "Updated table: " + table.name,
                 update_timer.elapsed_time());
 
         //if (opt.logLevel == log_level::trace)

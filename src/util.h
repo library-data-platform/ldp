@@ -26,6 +26,6 @@ enum class Print {
 void print(Print level, const ldp_options& opt, const string& str);
 void printSQL(Print level, const ldp_options& opt, const string& sql);
 
-void printSchema(FILE* stream, const Schema& schema);
+void printSchema(FILE* stream, const ldp_schema& schema);
 
 #endif

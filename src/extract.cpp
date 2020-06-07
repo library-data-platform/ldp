@@ -151,14 +151,14 @@ enum class PageStatus {
 };
 
 static PageStatus retrieve(const Curl& c, const ldp_options& opt, ldp_log* lg,
-        const string& token, const TableSchema& table, const string& loadDir,
+        const string& token, const table_schema& table, const string& loadDir,
         extraction_files* ext_files, size_t page)
 {
     // TODO move timing code to calling function and re-enable
     //timer t(opt);
 
     string path = opt.okapi_url;
-    etymon::join(&path, table.sourcePath);
+    etymon::join(&path, table.source_spec);
 
     //path += "?offset=" + to_string(page * opt.pageSize) +
     //    "&limit=" + to_string(opt.pageSize) +
@@ -170,11 +170,11 @@ static PageStatus retrieve(const Curl& c, const ldp_options& opt, ldp_log* lg,
     path += query;
 
     //path += "?offset=0&limit=1000&query=id==*%20sortby%20id";
-    //if (table.sourcePath.find("/erm/") == 0)
+    //if (table.source_spec.find("/erm/") == 0)
     //    path += "?stats=true&offset=0&max=100";
 
     string output = loadDir;
-    etymon::join(&output, table.tableName);
+    etymon::join(&output, table.name);
     output += "_" + to_string(page) + ".json";
 
     {
@@ -190,7 +190,7 @@ static PageStatus retrieve(const Curl& c, const ldp_options& opt, ldp_log* lg,
 
         lg->write(log_level::detail, "", "",
                 "Retrieving from:\n"
-                "    Path: " + table.sourcePath + "\n"
+                "    Path: " + table.source_spec + "\n"
                 "    Query: " + query, -1);
 
         CURLcode code = curl_easy_perform(c.curl);
@@ -235,7 +235,7 @@ static void writeCountFile(const string& loadDir, const string& tableName,
 }
 
 bool retrievePages(const Curl& c, const ldp_options& opt, ldp_log* lg,
-        const string& token, const TableSchema& table, const string& loadDir,
+        const string& token, const table_schema& table, const string& loadDir,
         extraction_files* ext_files)
 {
     size_t page = 0;
@@ -247,10 +247,10 @@ bool retrievePages(const Curl& c, const ldp_options& opt, ldp_log* lg,
         switch (status) {
         case PageStatus::interfaceNotAvailable:
             lg->write(log_level::trace, "", "",
-                    "Interface not available: " + table.sourcePath, -1);
+                    "Interface not available: " + table.source_spec, -1);
             return false;
         case PageStatus::pageEmpty:
-            writeCountFile(loadDir, table.tableName, ext_files, page);
+            writeCountFile(loadDir, table.name, ext_files, page);
             return true;
         case PageStatus::containsRecords:
             break;
@@ -268,23 +268,23 @@ bool directOverride(const ldp_options& opt, const string& tableName)
     return false;
 }
 
-bool retrieveDirect(const ldp_options& opt, ldp_log* lg, const TableSchema& table,
+bool retrieveDirect(const ldp_options& opt, ldp_log* lg, const table_schema& table,
         const string& loadDir, extraction_files* ext_files)
 {
     lg->write(log_level::trace, "", "",
-            "Direct from database: " + table.sourcePath, -1);
-    if (table.directSourceTable == "") {
+            "Direct from database: " + table.source_spec, -1);
+    if (table.direct_source_table == "") {
         lg->write(log_level::warning, "", "",
-                "Direct source table undefined: " + table.sourcePath, -1);
+                "Direct source table undefined: " + table.source_spec, -1);
         return false;
     }
 
-    // Select jsonb from table.directSourceTable and write to JSON file.
+    // Select jsonb from table.direct_source_table and write to JSON file.
     etymon::Postgres db(opt.direct.database_host, opt.direct.database_port,
             opt.direct.database_user, opt.direct.database_password,
             opt.direct.database_name, "require");
     string sql = "SELECT jsonb FROM " +
-        opt.okapi_tenant + "_" + table.directSourceTable + ";";
+        opt.okapi_tenant + "_" + table.direct_source_table + ";";
     lg->write(log_level::detail, "", "", sql, -1);
 
     if (PQsendQuery(db.conn, sql.c_str()) == 0) {
@@ -295,7 +295,7 @@ bool retrieveDirect(const ldp_options& opt, ldp_log* lg, const TableSchema& tabl
         throw runtime_error("unable to set single-row mode in database query");
 
     string output = loadDir;
-    etymon::join(&output, table.tableName + "_0.json");
+    etymon::join(&output, table.name + "_0.json");
     etymon::file f(output, "w");
     ext_files->files.push_back(output);
 
@@ -321,7 +321,7 @@ bool retrieveDirect(const ldp_options& opt, ldp_log* lg, const TableSchema& tabl
     fprintf(f.fp, "\n  ]\n}\n");
 
     // Write 1 to count file.
-    writeCountFile(loadDir, table.tableName, ext_files, 1);
+    writeCountFile(loadDir, table.name, ext_files, 1);
 
     return true;
 }

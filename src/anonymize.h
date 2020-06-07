@@ -3,7 +3,7 @@
 
 #include "schema.h"
 
-bool is_personal_data_field(const TableSchema& table, const string& field);
+bool is_personal_data_field(const table_schema& table, const string& field);
 
 #endif
 

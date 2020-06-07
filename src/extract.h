@@ -28,10 +28,10 @@ public:
 void okapi_login(const ldp_options& o, ldp_log* lg, string* token);
 
 bool directOverride(const ldp_options& opt, const string& sourcePath);
-bool retrieveDirect(const ldp_options& opt, ldp_log* lg, const TableSchema& table,
+bool retrieveDirect(const ldp_options& opt, ldp_log* lg, const table_schema& table,
         const string& loadDir, extraction_files* ext_files);
 bool retrievePages(const Curl& c, const ldp_options& opt, ldp_log* lg,
-        const string& token, const TableSchema& table, const string& loadDir,
+        const string& token, const table_schema& table, const string& loadDir,
         extraction_files* ext_files);
 
 #endif

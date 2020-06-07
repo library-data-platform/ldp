@@ -85,11 +85,11 @@ void printSQL(Print level, const ldp_options& opt, const string& sql)
     print(level, opt, string("sql:\n") + sql);
 }
 
-void printSchema(FILE* stream, const Schema& schema)
+void printSchema(FILE* stream, const ldp_schema& schema)
 {
     fprintf(stream, "Module name,Source path,Table name\n");
     for (const auto& table : schema.tables) {
-        fprintf(stream, "%s,%s,%s\n", table.moduleName.c_str(),
-                table.sourcePath.c_str(), table.tableName.c_str());
+        fprintf(stream, "%s,%s,%s\n", table.module_name.c_str(),
+                table.source_spec.c_str(), table.name.c_str());
     }
 }
