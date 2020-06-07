@@ -57,8 +57,8 @@ Reference
   anonymization of personal data.  Please read the section on "Data
   privacy" in the [Administrator Guide](Admin_Guide.md) before
   changing this setting.  As a safety precaution, the configuration
-  setting `disableAnonymization` in `ldpconf.json` also must be set by
-  the LDP system administrator.
+  setting `disable_anonymization` in `ldpconf.json` also must be set
+  by the LDP system administrator.
 
 
 Further reading
