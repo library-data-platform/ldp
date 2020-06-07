@@ -115,14 +115,19 @@ void ldp_log::write(log_level lv, const char* type, const string& table,
     conn->exec(sql);
 }
 
+void ldp_log::warning(const string& message)
+{
+    write(log_level::warning, "", "", message, -1);
+}
+
 void ldp_log::trace(const string& message)
 {
     write(log_level::trace, "", "", message, -1);
 }
 
-void ldp_log::detail(const string& sql)
+void ldp_log::detail(const string& message)
 {
-    write(log_level::detail, "", "", sql, -1);
+    write(log_level::detail, "", "", message, -1);
 }
 
 void ldp_log::perf(const string& message, double elapsed_time)

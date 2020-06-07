@@ -26,8 +26,9 @@ public:
     ~ldp_log();
     void write(log_level lv, const char* type, const string& table,
             const string& message, double elapsed_time);
+    void warning(const string& message);
     void trace(const string& message);
-    void detail(const string& sql);
+    void detail(const string& message);
     void perf(const string& message, double elapsed_time);
 private:
     log_level lv;

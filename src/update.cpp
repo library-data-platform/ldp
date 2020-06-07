@@ -266,9 +266,10 @@ bool is_anonymization_enabled(const ldp_options& opt, etymon::odbc_env* odbc,
         }
     }
 
-    //if (opt.disable_anonymization != ldpconf_disable_anon)
-    //    lg->warning(
-    //        "Configuration settings disable_anonymization do not match");
+    if (opt.disable_anonymization != ldpconf_disable_anon)
+        lg->warning(
+            "Configuration settings for disable_anonymization do not match:\n"
+            "    Action: Anonymization not disabled");
 
     return (!opt.disable_anonymization || !ldpconf_disable_anon);
 }
