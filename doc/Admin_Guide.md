@@ -522,19 +522,18 @@ does this by not updating certain tables that would contain personal
 data, for example `user_users`, and by deleting foreign key references
 to them from other tables.
 
-In the current development version of LDP, this anonymization process
-(though currently very limited) is enabled in new databases unless
+In the current development version of LDP, this anonymization process,
+though currently very limited, is enabled in new databases unless
 otherwise configured.
 
 Databases created with LDP 1.0 must be configured to support
-anonymization by changing the `disable_anonymization` settings to
-`false` (see below).
+anonymization by changing the `disable_anonymization` settings (see
+below).
 
-If it should be necessary to disable anonymization, this can be done
-by setting `disable_anonymization` to `true` in `ldpconf.json`, and by
-setting `disable_anonymization` to `TRUE` in the table
-`ldpconfig.general`.  Both are required to be set in order to disable
-anonymization.
+Anonymization can be disabled by setting `disable_anonymization` to
+`true` in `ldpconf.json`, and by setting `disable_anonymization` to
+`TRUE` in the table `ldpconfig.general`.  Both are required to be set
+in order to disable anonymization.
 
 __WARNING:  LDP does not provide a way to anonymize the database after
 personal data have been loaded into it.  For this reason, these
