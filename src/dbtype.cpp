@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include "dbtype.h"
 
 dbtype::dbtype(etymon::odbc_conn* conn)
