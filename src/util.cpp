@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "util.h"
 
 bool is_uuid(const char* str)
