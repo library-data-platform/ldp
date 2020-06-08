@@ -1,11 +1,7 @@
 #ifndef LDP_DBTYPE_H
 #define LDP_DBTYPE_H
 
-#include <string>
-
 #include "../etymoncpp/include/odbc.h"
-
-using namespace std;
 
 enum class dbsys {
     postgresql,

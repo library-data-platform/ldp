@@ -25,7 +25,7 @@ class PagingJSONHandler :
     public json::BaseReaderHandler<json::UTF8<>, PagingJSONHandler> {
 public:
     int level = 0;
-    bool foundRecord = false;
+    bool found_record = false;
     const ldp_options& opt;
     PagingJSONHandler(const ldp_options& options) : opt(options) { }
     bool StartObject();
@@ -46,7 +46,7 @@ public:
 bool PagingJSONHandler::StartObject()
 {
     if (level == 2) {
-        foundRecord = true;
+        found_record = true;
         return false;
     }
     level++;
@@ -117,14 +117,14 @@ bool PagingJSONHandler::Null()
     return true;
 }
 
-bool pageIsEmpty(const ldp_options& opt, const string& filename)
+bool page_is_empty(const ldp_options& opt, const string& filename)
 {
     PagingJSONHandler handler(opt);
     json::Reader reader;
-    char readBuffer[65536];
+    char read_buffer[65536];
     etymon::file f(filename, "r");
-    json::FileReadStream is(f.fp, readBuffer, sizeof(readBuffer));
+    json::FileReadStream is(f.fp, read_buffer, sizeof read_buffer);
     reader.Parse(is, handler);
-    return !(handler.foundRecord);
+    return !(handler.found_record);
 }
 

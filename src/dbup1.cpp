@@ -1,13 +1,4 @@
-#include <experimental/filesystem>
-#include <sstream>
-#include <stdexcept>
-
-#include "dbtype.h"
 #include "dbup1.h"
-#include "init.h"
-#include "log.h"
-
-namespace fs = std::experimental::filesystem;
 
 void database_upgrade_1(database_upgrade_options* opt)
 {
@@ -615,8 +606,6 @@ void database_upgrade_7(database_upgrade_options* opt)
 
 void database_upgrade_8(database_upgrade_options* opt)
 {
-    //idmap::schemaUpgradeRemoveNewColumn(opt->datadir);
-
     string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 8;";
     fprintf(opt->ulog, "%s\n", sql.c_str());
     fflush(opt->ulog);

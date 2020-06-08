@@ -103,15 +103,15 @@ void ldp_log::write(log_level lv, const char* type, const string& table,
     }
 
     // Log the message, and print if the log is not available.
-    string logmsgEncoded;
-    dbt->encode_string_const(logmsg.c_str(), &logmsgEncoded);
+    string logmsg_encoded;
+    dbt->encode_string_const(logmsg.c_str(), &logmsg_encoded);
     string sql =
         "INSERT INTO ldpsystem.log\n"
         "    (log_time, pid, level, type, table_name, message, elapsed_time)\n"
         "  VALUES\n"
         "    (" + string(dbt->current_timestamp()) + ", " +
         to_string(getpid()) + ", '" + level_str + "', '" + type + "', '" +
-        table + "', " + logmsgEncoded + ", " + elapsed_time_str + ");";
+        table + "', " + logmsg_encoded + ", " + elapsed_time_str + ");";
     conn->exec(sql);
 }
 

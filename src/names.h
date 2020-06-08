@@ -5,9 +5,9 @@
 
 using namespace std;
 
-void loadingTableName(const string& table, string* newtable);
-void latestHistoryTableName(const string& table, string* newtable);
-void historyTableName(const string& table, string* newtable);
+void loading_table_name(const string& table, string* newtable);
+void latest_history_table_name(const string& table, string* newtable);
+void history_table_name(const string& table, string* newtable);
 
 #endif
 

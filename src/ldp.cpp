@@ -276,7 +276,7 @@ void cmd_server(const ldp_options& opt)
     server_loop(opt, &odbc);
 }
 
-void config_direct_options(const config& conf, const string& base,
+void config_direct_options(const ldp_config& conf, const string& base,
         ldp_options* opt)
 {
     int x = 0;
@@ -298,7 +298,7 @@ void config_direct_options(const config& conf, const string& base,
             &(opt->direct.database_password));
 }
 
-void config_options(const config& conf, ldp_options* opt)
+void config_options(const ldp_config& conf, ldp_options* opt)
 {
     string deploy_env;
     conf.get_required("/deployment_environment", &deploy_env);
@@ -364,7 +364,7 @@ void validate_options_in_deployment(const ldp_options& opt)
 
 void ldp_exec(ldp_options* opt)
 {
-    config conf(opt->datadir + "/ldpconf.json");
+    ldp_config conf(opt->datadir + "/ldpconf.json");
     config_options(conf, opt);
 
     validate_options_in_deployment(*opt);
@@ -387,10 +387,11 @@ void ldp_exec(ldp_options* opt)
                     fprintf(stderr,
                             "ldp: Server error occurred after %.4f seconds\n",
                             elapsed_time);
-                    long long int waitTime = 300;
+                    long long int wait_time = 300;
                     fprintf(stderr, "ldp: Waiting for %lld seconds\n",
-                            waitTime);
-                    std::this_thread::sleep_for(std::chrono::seconds(waitTime));
+                            wait_time);
+                    std::this_thread::sleep_for(
+                        std::chrono::seconds(wait_time) );
                 }
                 fprintf(stderr, "ldp: Restarting server\n");
             }

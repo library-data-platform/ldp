@@ -2,8 +2,6 @@
 #define LDP_EXTRACT_H
 
 #include <curl/curl.h>
-#include <string>
-#include <unistd.h>
 
 #include "options.h"
 #include "schema.h"
@@ -17,22 +15,23 @@ public:
     ~extraction_files();
 };
 
-class Curl {
+class curl_wrapper {
 public:
     CURL* curl;
     struct curl_slist* headers;
-    Curl();
-    ~Curl();
+    curl_wrapper();
+    ~curl_wrapper();
 };
 
 void okapi_login(const ldp_options& o, ldp_log* lg, string* token);
 
-bool directOverride(const ldp_options& opt, const string& sourcePath);
-bool retrieveDirect(const ldp_options& opt, ldp_log* lg, const table_schema& table,
-        const string& loadDir, extraction_files* ext_files);
-bool retrievePages(const Curl& c, const ldp_options& opt, ldp_log* lg,
-        const string& token, const table_schema& table, const string& loadDir,
-        extraction_files* ext_files);
+bool direct_override(const ldp_options& opt, const string& sourcePath);
+bool retrieve_direct(const ldp_options& opt, ldp_log* lg,
+                     const table_schema& table, const string& loadDir,
+                     extraction_files* ext_files);
+bool retrieve_pages(const curl_wrapper& c, const ldp_options& opt, ldp_log* lg,
+                    const string& token, const table_schema& table,
+                    const string& loadDir, extraction_files* ext_files);
 
 #endif
 

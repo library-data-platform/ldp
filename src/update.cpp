@@ -16,7 +16,6 @@
 #include "timer.h"
 #include "update.h"
 
-using namespace etymon;
 namespace fs = std::experimental::filesystem;
 
 void make_update_tmp_dir(const ldp_options& opt, string* loaddir)
@@ -59,11 +58,13 @@ public:
 };
 
 void search_table_foreign_keys(etymon::odbc_env* odbc, const string& dbName,
-        etymon::odbc_conn* conn, ldp_log* lg, const ldp_schema& schema,
-        const table_schema& table, bool detectForeignKeys,
-        map<string, vector<reference>>* refs)
+                               etymon::odbc_conn* conn, ldp_log* lg,
+                               const ldp_schema& schema,
+                               const table_schema& table,
+                               bool detectForeignKeys,
+                               map<string, vector<reference>>* refs)
 {
-    etymon::odbc_conn queryDBC(odbc, dbName);
+    etymon::odbc_conn query_conn(odbc, dbName);
     lg->detail("Searching for foreign keys in table: " + table.name);
     //printf("Table: %s\n", table.name.c_str());
     for (auto& column : table.columns) {
@@ -73,7 +74,7 @@ void search_table_foreign_keys(etymon::odbc_env* odbc, const string& dbName,
             continue;
         //printf("    Column: %s\n", column.name.c_str());
         for (auto& table1 : schema.tables) {
-            if (is_foreign_key(&queryDBC, lg, table, column, table1)) {
+            if (is_foreign_key(&query_conn, lg, table, column, table1)) {
 
                 string key = table.name + "." + column.name;
                 reference ref = {
@@ -96,7 +97,7 @@ void search_table_foreign_keys(etymon::odbc_env* odbc, const string& dbName,
     }
 }
 
-void select_foreign_key_constraints(odbc_conn* conn, ldp_log* lg,
+void select_foreign_key_constraints(etymon::odbc_conn* conn, ldp_log* lg,
         vector<reference>* refs)
 {
     refs->clear();
@@ -121,7 +122,7 @@ void select_foreign_key_constraints(odbc_conn* conn, ldp_log* lg,
     }
 }
 
-void remove_foreign_key_constraints(odbc_conn* conn, ldp_log* lg)
+void remove_foreign_key_constraints(etymon::odbc_conn* conn, ldp_log* lg)
 {
     etymon::odbc_tx tx(conn);
     vector<reference> refs;
@@ -139,7 +140,7 @@ void remove_foreign_key_constraints(odbc_conn* conn, ldp_log* lg)
     tx.commit();
 }
 
-void select_enabled_foreign_keys(odbc_conn* conn, ldp_log* lg,
+void select_enabled_foreign_keys(etymon::odbc_conn* conn, ldp_log* lg,
         vector<reference>* refs)
 {
     refs->clear();
@@ -174,7 +175,7 @@ void make_foreign_key_constraint_name(const string& referencing_table,
     *constraint_name = string(p) + "_" + referencing_column + "_fk";
 }
 
-void create_foreign_key_constraints(odbc_conn* conn, ldp_log* lg)
+void create_foreign_key_constraints(etymon::odbc_conn* conn, ldp_log* lg)
 {
     vector<reference> refs;
     select_enabled_foreign_keys(conn, lg, &refs);
@@ -277,7 +278,7 @@ bool is_anonymization_enabled(const ldp_options& opt, etymon::odbc_env* odbc,
 void run_update(const ldp_options& opt)
 {
     CURLcode cc;
-    curl_global curl_env(CURL_GLOBAL_ALL, &cc);
+    etymon::curl_global curl_env(CURL_GLOBAL_ALL, &cc);
     if (cc) {
         throw runtime_error(string("Error initializing curl: ") +
                             curl_easy_strerror(cc));
@@ -296,9 +297,9 @@ void run_update(const ldp_options& opt)
 
     extraction_files ext_dir(opt);
 
-    string loadDir;
+    string load_dir;
 
-    Curl c;
+    curl_wrapper c;
     //if (!c.curl) {
     //    // throw?
     //}
@@ -308,14 +309,14 @@ void run_update(const ldp_options& opt)
         //if (opt.logLevel == log_level::trace)
         //    fprintf(opt.err, "%s: Reading data from directory: %s\n",
         //            opt.prog, opt.loadFromDir.c_str());
-        loadDir = opt.load_from_dir;
+        load_dir = opt.load_from_dir;
     } else {
         lg.write(log_level::trace, "", "", "Logging in to Okapi service", -1);
 
         okapi_login(opt, &lg, &token);
 
-        make_update_tmp_dir(opt, &loadDir);
-        ext_dir.dir = loadDir;
+        make_update_tmp_dir(opt, &load_dir);
+        ext_dir.dir = load_dir;
 
         tenant_header = "X-Okapi-Tenant: ";
         tenant_header + opt.okapi_tenant;
@@ -357,9 +358,9 @@ void run_update(const ldp_options& opt)
         if (opt.load_from_dir == "") {
             lg.write(log_level::trace, "", "",
                     "Extracting: " + table.source_spec, -1);
-            bool found_data = directOverride(opt, table.name) ?
-                retrieveDirect(opt, &lg, table, loadDir, &ext_files) :
-                retrievePages(c, opt, &lg, token, table, loadDir,
+            bool found_data = direct_override(opt, table.name) ?
+                retrieve_direct(opt, &lg, table, load_dir, &ext_files) :
+                retrieve_pages(c, opt, &lg, token, table, load_dir,
                         &ext_files);
             if (!found_data)
                 table.skip = true;
@@ -377,22 +378,22 @@ void run_update(const ldp_options& opt)
 
             lg.write(log_level::trace, "", "",
                     "Staging table: " + table.name, -1);
-            bool ok = stageTable(opt, &lg, &table, &odbc, &conn, &dbt,
-                                 loadDir, anonymize_fields);
+            bool ok = stage_table(opt, &lg, &table, &odbc, &conn, &dbt,
+                                  load_dir, anonymize_fields);
             if (!ok)
                 continue;
 
             lg.write(log_level::trace, "", "",
                     "Merging table: " + table.name, -1);
-            mergeTable(opt, &lg, table, &odbc, &conn, dbt);
+            merge_table(opt, &lg, table, &odbc, &conn, dbt);
 
             lg.write(log_level::trace, "", "",
                     "Replacing table: " + table.name, -1);
 
             remove_foreign_key_constraints(&conn, &lg);
-            dropTable(opt, &lg, table.name, &conn);
+            drop_table(opt, &lg, table.name, &conn);
 
-            placeTable(opt, &lg, table, &conn);
+            place_table(opt, &lg, table, &conn);
             //updateStatus(opt, table, &conn);
 
             //updateDBPermissions(opt, &lg, &conn);

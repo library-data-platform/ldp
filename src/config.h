@@ -6,9 +6,9 @@
 using namespace std;
 namespace json = rapidjson;
 
-class config {
+class ldp_config {
 public:
-    config(const string& conf);
+    ldp_config(const string& conf);
     bool get(const string& key, string* value) const;
     bool get_int(const string& key, int* value) const;
     bool get_bool(const string& key, bool* value) const;

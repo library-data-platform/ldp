@@ -1,9 +1,6 @@
-#include <cstring>
-
-#include "../etymoncpp/include/util.h"
 #include "util.h"
 
-bool isUUID(const char* str)
+bool is_uuid(const char* str)
 {
     if (strlen(str) != 36)
         return false;
@@ -80,16 +77,3 @@ void print(Print level, const ldp_options& opt, const string& str)
     }
 }
 
-void printSQL(Print level, const ldp_options& opt, const string& sql)
-{
-    print(level, opt, string("sql:\n") + sql);
-}
-
-void printSchema(FILE* stream, const ldp_schema& schema)
-{
-    fprintf(stream, "Module name,Source path,Table name\n");
-    for (const auto& table : schema.tables) {
-        fprintf(stream, "%s,%s,%s\n", table.module_name.c_str(),
-                table.source_spec.c_str(), table.name.c_str());
-    }
-}

@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <iostream>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "../etymoncpp/include/postgres.h"
 #include "../etymoncpp/include/util.h"
@@ -30,13 +31,13 @@ extraction_files::~extraction_files()
     }
 }
 
-Curl::Curl()
+curl_wrapper::curl_wrapper()
 {
     curl = curl_easy_init();
     headers = NULL;
 }
 
-Curl::~Curl()
+curl_wrapper::~curl_wrapper()
 {
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
@@ -93,7 +94,7 @@ void okapi_login(const ldp_options& opt, ldp_log* lg, string* token)
     string bodyData;
     string tokenData;
 
-    Curl c;
+    curl_wrapper c;
     if (c.curl) {
         c.headers = curl_slist_append(c.headers, tenantHeader.c_str());
         c.headers = curl_slist_append(c.headers,
@@ -150,9 +151,10 @@ enum class PageStatus {
     containsRecords
 };
 
-static PageStatus retrieve(const Curl& c, const ldp_options& opt, ldp_log* lg,
-        const string& token, const table_schema& table, const string& loadDir,
-        extraction_files* ext_files, size_t page)
+static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
+                           ldp_log* lg, const string& token,
+                           const table_schema& table, const string& loadDir,
+                           extraction_files* ext_files, size_t page)
 {
     // TODO move timing code to calling function and re-enable
     //timer t(opt);
@@ -214,7 +216,7 @@ static PageStatus retrieve(const Curl& c, const ldp_options& opt, ldp_log* lg,
         throw runtime_error(err);
     }
 
-    bool empty = pageIsEmpty(opt, output);
+    bool empty = page_is_empty(opt, output);
     return empty ? PageStatus::pageEmpty : PageStatus::containsRecords;
 
     // TODO move timing code to calling function and re-enable
@@ -234,7 +236,7 @@ static void writeCountFile(const string& loadDir, const string& tableName,
     fputs(pageStr.c_str(), f.fp);
 }
 
-bool retrievePages(const Curl& c, const ldp_options& opt, ldp_log* lg,
+bool retrieve_pages(const curl_wrapper& c, const ldp_options& opt, ldp_log* lg,
         const string& token, const table_schema& table, const string& loadDir,
         extraction_files* ext_files)
 {
@@ -259,7 +261,7 @@ bool retrievePages(const Curl& c, const ldp_options& opt, ldp_log* lg,
     }
 }
 
-bool directOverride(const ldp_options& opt, const string& tableName)
+bool direct_override(const ldp_options& opt, const string& tableName)
 {
     for (auto& t : opt.direct.table_names) {
         if (t == tableName)
@@ -268,7 +270,7 @@ bool directOverride(const ldp_options& opt, const string& tableName)
     return false;
 }
 
-bool retrieveDirect(const ldp_options& opt, ldp_log* lg, const table_schema& table,
+bool retrieve_direct(const ldp_options& opt, ldp_log* lg, const table_schema& table,
         const string& loadDir, extraction_files* ext_files)
 {
     lg->write(log_level::trace, "", "",

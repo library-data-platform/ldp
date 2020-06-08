@@ -1,5 +1,3 @@
-#include <stdexcept>
-
 #include "dbtype.h"
 
 dbtype::dbtype(etymon::odbc_conn* conn)
@@ -54,7 +52,8 @@ void dbtype::rename_sequence(const string& sequence_name,
 {
     switch (dbt) {
         case dbsys::postgresql:
-            *sql = "ALTER SEQUENCE IF EXISTS\n"
+            *sql =
+                "ALTER SEQUENCE IF EXISTS\n"
                 "    " + sequence_name + "\n"
                 "    RENAME TO " + new_sequence_name + ";";
             return;
@@ -72,7 +71,8 @@ void dbtype::create_sequence(const string& sequence_name, int64_t start,
 {
     switch (dbt) {
         case dbsys::postgresql:
-            *sql = "CREATE SEQUENCE " + sequence_name + "\n"
+            *sql =
+                "CREATE SEQUENCE " + sequence_name + "\n"
                 "    START " + to_string(start) + ";";
             return;
         case dbsys::redshift:
@@ -90,7 +90,8 @@ void dbtype::auto_increment_type(int64_t start, bool named_sequence,
     switch (dbt) {
         case dbsys::postgresql:
             if (named_sequence)
-                *sql = "BIGINT NOT NULL\n"
+                *sql =
+                    "BIGINT NOT NULL\n"
                     "        DEFAULT\n"
                     "        nextval('" + sequence_name +
                     "')";
@@ -112,7 +113,8 @@ void dbtype::alter_sequence_owned_by(const string& sequence_name,
 {
     switch (dbt) {
         case dbsys::postgresql:
-            *sql = "ALTER SEQUENCE " + sequence_name + "\n"
+            *sql =
+                "ALTER SEQUENCE " + sequence_name + "\n"
                 "    OWNED BY " + table_column_name + ";";
             return;
         case dbsys::redshift:
