@@ -316,15 +316,27 @@ void config_options(const ldp_config& conf, ldp_options* opt)
         conf.get("/enable_sources/1", &second_source);
         if (second_source != "")
             throw runtime_error(
-                    "Multiple sources not currently supported in "
-                    "configuration:\n"
-                    "    Attribute: enable_sources\n"
-                    "    Value: " + second_source);
+                "Multiple sources not currently supported in "
+                "configuration:\n"
+                "    Attribute: enable_sources\n"
+                "    Value: " + second_source);
         string source = "/sources/" + enable_source + "/";
         conf.get_required(source + "okapi_url", &(opt->okapi_url));
         conf.get_required(source + "okapi_tenant", &(opt->okapi_tenant));
         conf.get_required(source + "okapi_user", &(opt->okapi_user));
         conf.get_required(source + "okapi_password", &(opt->okapi_password));
+
+        int tenant_id = 1;
+        conf.get_int(source + "tenant_id", &tenant_id);
+        if (0 < tenant_id && tenant_id < 32768)
+            opt->tenant_id = (int16_t) tenant_id;
+        else
+            throw runtime_error(
+                "Value for configuration setting is out of range:\n"
+                "    Attribute: tenant_id\n"
+                "    Value: " + to_string(tenant_id) + "\n"
+                "    Range: 0 < tenant_id < 32768");
+
         config_direct_options(conf, source, opt);
     }
 

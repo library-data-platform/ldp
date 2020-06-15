@@ -154,15 +154,17 @@ public:
     etymon::odbc_conn* conn;
     const dbtype& dbt;
     bool anonymize_fields = true;
+    int16_t tenant_id = 1;
     size_t record_count = 0;
     size_t total_record_count = 0;
     string insert_buffer;
     JSONHandler(int pass, const ldp_options& options, ldp_log* lg,
                 const table_schema& table, etymon::odbc_conn* conn,
-                const dbtype& dbt, bool anonymize_fields,
+                const dbtype& dbt, bool anonymize_fields, int16_t tenant_id,
                 map<string,type_counts>* statistics) :
         pass(pass), opt(options), lg(lg), table(table),
-        stats(statistics), conn(conn), dbt(dbt), anonymize_fields(anonymize_fields) {}
+        stats(statistics), conn(conn), dbt(dbt),
+        anonymize_fields(anonymize_fields), tenant_id(tenant_id) {}
     bool StartObject();
     bool EndObject(json::SizeType memberCount);
     bool StartArray();
@@ -210,7 +212,8 @@ static void end_inserts(const ldp_options& opt, ldp_log* lg,
 
 static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
         const table_schema& table, const json::Document& doc,
-        size_t* record_count, size_t* total_record_count, string* insert_buffer)
+        size_t* record_count, size_t* total_record_count, string* insert_buffer,
+        int16_t tenant_id)
 {
     if (*record_count > 0)
         *insert_buffer += ',';
@@ -293,7 +296,7 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
     //print(Print::warning, opt, "storing record as:\n" + data + "\n");
 
     *insert_buffer += data;
-    *insert_buffer += ",1)";
+    *insert_buffer += "," + to_string(tenant_id) + ")";
     (*record_count)++;
     (*total_record_count)++;
     //if (*total_record_count % 100000 == 0)
@@ -333,7 +336,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
             }
 
             writeTuple(opt, lg, dbt, table, doc, &record_count,
-                       &total_record_count, &insert_buffer);
+                       &total_record_count, &insert_buffer, tenant_id);
         }
 
     } else {
@@ -516,13 +519,13 @@ static void stage_page(const ldp_options& opt, ldp_log* lg, int pass,
                        etymon::odbc_conn* conn, const dbtype &dbt,
                        map<string,type_counts>* stats, const string& filename,
                        char* read_buffer, size_t read_buffer_size,
-                       bool anonymize_fields)
+                       bool anonymize_fields, int16_t tenant_id)
 {
     json::Reader reader;
     etymon::file f(filename, "r");
     json::FileReadStream is(f.fp, read_buffer, read_buffer_size);
     JSONHandler handler(pass, opt, lg, table, conn, dbt,
-                        anonymize_fields, stats);
+                        anonymize_fields, tenant_id, stats);
     reader.Parse(is, handler);
 }
 
@@ -656,7 +659,8 @@ bool stage_table(const ldp_options& opt, ldp_log* lg, table_schema* table,
                     (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                     to_string(page), -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
-                      read_buffer, sizeof read_buffer, anonymize_fields);
+                      read_buffer, sizeof read_buffer, anonymize_fields,
+                      opt.tenant_id);
         }
 
         if (opt.load_from_dir != "") {
@@ -669,7 +673,7 @@ bool stage_table(const ldp_options& opt, ldp_log* lg, table_schema* table,
                         ": test file", -1);
                 stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats,
                           path, read_buffer, sizeof read_buffer,
-                          anonymize_fields);
+                          anonymize_fields, opt.tenant_id);
             }
         }
 

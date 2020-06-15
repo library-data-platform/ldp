@@ -23,9 +23,7 @@ reporting and analytics.
 LDP is not multitenant in the usual sense, and normally one LDP
 instance is deployed per library.  However, shared data from multiple
 libraries of a consortium can be stored in a single LDP instance, and
-in that case we refer to each of the libraries as a tenant.  _This
-consortial feature is not fully implemented but is planned for the
-near future._
+in that case we refer to each of the libraries as a tenant.
 
 This administrator guide covers installation and configuration of an
 LDP instance.
@@ -576,6 +574,8 @@ Reference
   * `okapi_user` (string; required) is the Okapi user name.
   * `okapi_password` (string; required) is the password for the
     specified Okapi user name.
+  * `tenant_id` (integer; optional) uniquely identifies a tenant in a
+    consortial LDP deployment.  The default value is `1`.
   * `direct_tables` (array; optional) is a list of tables that should
     be updated using direct extraction.  Only these tables may be
     included: `inventory_holdings`, `inventory_instances`, and
