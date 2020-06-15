@@ -9,6 +9,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
+    - name: update apt
+      run: sudo apt update
     - name: install dependency packages
       run: sudo apt install -y cmake g++ libcurl4-openssl-dev libpq-dev postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev libsqlite3-dev
     - name: install catch2 testing framework
