@@ -77,20 +77,21 @@ size_t header_callback(char* buffer, size_t size, size_t nitems,
  * okapiPassword, and okapiTenant.
  * \param[out] token The authentication token received from Okapi.
  */
-void okapi_login(const ldp_options& opt, ldp_log* lg, string* token)
+void okapi_login(const ldp_options& opt, const data_source& source,
+                 ldp_log* lg, string* token)
 {
     //timer t(opt);
 
     string login;
-    encodeLogin(opt.okapi_user, opt.okapi_password, &login);
+    encodeLogin(source.okapi_user, source.okapi_password, &login);
 
-    string path = opt.okapi_url;
+    string path = source.okapi_url;
     etymon::join(&path, "/authn/login");
 
     lg->write(log_level::detail, "", "", "Retrieving: " + path, -1);
 
     string tenantHeader = "X-Okapi-Tenant: ";
-    tenantHeader += opt.okapi_tenant;
+    tenantHeader += source.okapi_tenant;
     string bodyData;
     string tokenData;
 
@@ -152,6 +153,7 @@ enum class PageStatus {
 };
 
 static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
+                           const data_source& source,
                            ldp_log* lg, const string& token,
                            const table_schema& table, const string& loadDir,
                            extraction_files* ext_files, size_t page)
@@ -159,7 +161,7 @@ static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
     // TODO move timing code to calling function and re-enable
     //timer t(opt);
 
-    string path = opt.okapi_url;
+    string path = source.okapi_url;
     etymon::join(&path, table.source_spec);
 
     //path += "?offset=" + to_string(page * opt.pageSize) +
@@ -236,15 +238,16 @@ static void writeCountFile(const string& loadDir, const string& tableName,
     fputs(pageStr.c_str(), f.fp);
 }
 
-bool retrieve_pages(const curl_wrapper& c, const ldp_options& opt, ldp_log* lg,
-        const string& token, const table_schema& table, const string& loadDir,
-        extraction_files* ext_files)
+bool retrieve_pages(const curl_wrapper& c, const ldp_options& opt,
+                    const data_source& source, ldp_log* lg,
+                    const string& token, const table_schema& table,
+                    const string& loadDir, extraction_files* ext_files)
 {
     size_t page = 0;
     while (true) {
         lg->write(log_level::detail, "", "",
                 "Extracting page: " + to_string(page), -1);
-        PageStatus status = retrieve(c, opt, lg, token, table, loadDir,
+        PageStatus status = retrieve(c, opt, source, lg, token, table, loadDir,
                 ext_files, page);
         switch (status) {
         case PageStatus::interfaceNotAvailable:
@@ -261,17 +264,18 @@ bool retrieve_pages(const curl_wrapper& c, const ldp_options& opt, ldp_log* lg,
     }
 }
 
-bool direct_override(const ldp_options& opt, const string& tableName)
+bool direct_override(const data_source& source, const string& tableName)
 {
-    for (auto& t : opt.direct.table_names) {
+    for (auto& t : source.direct.table_names) {
         if (t == tableName)
             return true;
     }
     return false;
 }
 
-bool retrieve_direct(const ldp_options& opt, ldp_log* lg, const table_schema& table,
-        const string& loadDir, extraction_files* ext_files)
+bool retrieve_direct(const data_source& source, ldp_log* lg,
+                     const table_schema& table, const string& loadDir,
+                     extraction_files* ext_files)
 {
     lg->write(log_level::trace, "", "",
             "Direct from database: " + table.source_spec, -1);
@@ -282,11 +286,11 @@ bool retrieve_direct(const ldp_options& opt, ldp_log* lg, const table_schema& ta
     }
 
     // Select jsonb from table.direct_source_table and write to JSON file.
-    etymon::Postgres db(opt.direct.database_host, opt.direct.database_port,
-            opt.direct.database_user, opt.direct.database_password,
-            opt.direct.database_name, "require");
+    etymon::Postgres db(source.direct.database_host, source.direct.database_port,
+            source.direct.database_user, source.direct.database_password,
+            source.direct.database_name, "require");
     string sql = "SELECT jsonb FROM " +
-        opt.okapi_tenant + "_" + table.direct_source_table + ";";
+        source.okapi_tenant + "_" + table.direct_source_table + ";";
     lg->write(log_level::detail, "", "", sql, -1);
 
     if (PQsendQuery(db.conn, sql.c_str()) == 0) {

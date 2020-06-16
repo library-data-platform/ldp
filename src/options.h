@@ -1,7 +1,9 @@
 #ifndef LDP_OPTIONS_H
 #define LDP_OPTIONS_H
 
+#include <map>
 #include <string>
+#include <vector>
 
 #include "../etymoncpp/include/util.h"
 #include "dbtype.h"
@@ -39,6 +41,17 @@ public:
     string database_password;
 };
 
+class data_source {
+public:
+    string source_name;
+    string okapi_url;
+    string okapi_tenant;
+    string okapi_user;
+    string okapi_password;
+    int16_t tenant_id = 1;
+    direct_extraction direct;
+};
+
 class ldp_options {
 public:
     ldp_command command;
@@ -47,13 +60,19 @@ public:
     string datadir;
     bool extract_only = false;
     string load_from_dir;
-    string source;
-    string okapi_url;
-    string okapi_tenant;
-    string okapi_user;
-    string okapi_password;
-    int16_t tenant_id = 1;
-    direct_extraction direct;
+    ///////////////////////////////////////////////////////////////////////////
+    // NEW SOURCE CONFIG
+    vector<data_source> enable_sources;
+    ///////////////////////////////////////////////////////////////////////////
+    // OLD SOURCE CONFIG
+    //string source;
+    //string okapi_url;
+    //string okapi_tenant;
+    //string okapi_user;
+    //string okapi_password;
+    //int16_t tenant_id = 1;
+    //direct_extraction direct;
+    ///////////////////////////////////////////////////////////////////////////
     deployment_environment deploy_env;
     string db;
     string ldp_user = "ldp";

@@ -627,9 +627,10 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
     conn->exec(sql);
 }
 
-bool stage_table(const ldp_options& opt, ldp_log* lg, table_schema* table,
-                 etymon::odbc_env* odbc, etymon::odbc_conn* conn, dbtype* dbt,
-                 const string& load_dir, bool anonymize_fields)
+bool stage_table(const ldp_options& opt, const data_source& source,
+                 ldp_log* lg, table_schema* table, etymon::odbc_env* odbc,
+                 etymon::odbc_conn* conn, dbtype* dbt, const string& load_dir,
+                 bool anonymize_fields)
 {
     size_t page_count = read_page_count(opt, lg, load_dir, table->name);
 
@@ -660,7 +661,7 @@ bool stage_table(const ldp_options& opt, ldp_log* lg, table_schema* table,
                     to_string(page), -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
                       read_buffer, sizeof read_buffer, anonymize_fields,
-                      opt.tenant_id);
+                      source.tenant_id);
         }
 
         if (opt.load_from_dir != "") {
@@ -673,7 +674,7 @@ bool stage_table(const ldp_options& opt, ldp_log* lg, table_schema* table,
                         ": test file", -1);
                 stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats,
                           path, read_buffer, sizeof read_buffer,
-                          anonymize_fields, opt.tenant_id);
+                          anonymize_fields, source.tenant_id);
             }
         }
 

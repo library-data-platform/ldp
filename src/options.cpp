@@ -1,8 +1,9 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <getopt.h>
 #include <stdexcept>
+
 #include "options.h"
 #include "err.h"
 

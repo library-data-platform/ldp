@@ -276,27 +276,27 @@ void cmd_server(const ldp_options& opt)
     server_loop(opt, &odbc);
 }
 
-void config_direct_options(const ldp_config& conf, const string& base,
-        ldp_options* opt)
-{
-    int x = 0;
-    string direct_tables = base + "direct_tables/";
-    while (true) {
-        string t;
-        if (!conf.get(direct_tables + to_string(x), &t))
-            break;
-        opt->direct.table_names.push_back(t);
-        x++;
-    }
-    conf.get(base + "direct_database_name", &(opt->direct.database_name));
-    conf.get(base + "direct_database_host", &(opt->direct.database_host));
-    int port = 0;
-    conf.get_int(base + "direct_database_port", &port);
-    opt->direct.database_port = to_string(port);
-    conf.get(base + "direct_database_user", &(opt->direct.database_user));
-    conf.get(base + "direct_database_password",
-            &(opt->direct.database_password));
-}
+//void config_direct_options(const ldp_config& conf, const string& base,
+//        ldp_options* opt)
+//{
+//    int x = 0;
+//    string direct_tables = base + "direct_tables/";
+//    while (true) {
+//        string t;
+//        if (!conf.get(direct_tables + to_string(x), &t))
+//            break;
+//        opt->direct.table_names.push_back(t);
+//        x++;
+//    }
+//    conf.get(base + "direct_database_name", &(opt->direct.database_name));
+//    conf.get(base + "direct_database_host", &(opt->direct.database_host));
+//    int port = 0;
+//    conf.old_get_int(base + "direct_database_port", &port);
+//    opt->direct.database_port = to_string(port);
+//    conf.get(base + "direct_database_user", &(opt->direct.database_user));
+//    conf.get(base + "direct_database_password",
+//            &(opt->direct.database_password));
+//}
 
 void config_options(const ldp_config& conf, ldp_options* opt)
 {
@@ -309,36 +309,43 @@ void config_options(const ldp_config& conf, ldp_options* opt)
     conf.get(target + "ldpconfig_user", &(opt->ldpconfig_user));
     conf.get(target + "ldp_user", &(opt->ldp_user));
 
-    if (opt->load_from_dir == "") {
-        string enable_source;
-        conf.get_required("/enable_sources/0", &enable_source);
-        string second_source;
-        conf.get("/enable_sources/1", &second_source);
-        if (second_source != "")
-            throw runtime_error(
-                "Multiple sources not currently supported in "
-                "configuration:\n"
-                "    Attribute: enable_sources\n"
-                "    Value: " + second_source);
-        string source = "/sources/" + enable_source + "/";
-        conf.get_required(source + "okapi_url", &(opt->okapi_url));
-        conf.get_required(source + "okapi_tenant", &(opt->okapi_tenant));
-        conf.get_required(source + "okapi_user", &(opt->okapi_user));
-        conf.get_required(source + "okapi_password", &(opt->okapi_password));
+    ///////////////////////////////////////////////////////////////////////////
+    // NEW SOURCE CONFIG
+    if (opt->load_from_dir == "")
+        conf.get_enable_sources(&(opt->enable_sources));
+    ///////////////////////////////////////////////////////////////////////////
+    // OLD SOURCE CONFIG
+    //if (opt->load_from_dir == "") {
+    //    string enable_source;
+    //    conf.get_required("/enable_sources/0", &enable_source);
+    //    string second_source;
+    //    conf.get("/enable_sources/1", &second_source);
+    //    if (second_source != "")
+    //        throw runtime_error(
+    //            "Multiple sources not currently supported in "
+    //            "configuration:\n"
+    //            "    Attribute: enable_sources\n"
+    //            "    Value: " + second_source);
+    //    string source = "/sources/" + enable_source + "/";
+    //    conf.get_required(source + "okapi_url", &(opt->okapi_url));
+    //    conf.get_required(source + "okapi_tenant", &(opt->okapi_tenant));
+    //    conf.get_required(source + "okapi_user", &(opt->okapi_user));
+    //    conf.get_required(source + "okapi_password", &(opt->okapi_password));
 
-        int tenant_id = 1;
-        conf.get_int(source + "tenant_id", &tenant_id);
-        if (0 < tenant_id && tenant_id < 32768)
-            opt->tenant_id = (int16_t) tenant_id;
-        else
-            throw runtime_error(
-                "Value for configuration setting is out of range:\n"
-                "    Attribute: tenant_id\n"
-                "    Value: " + to_string(tenant_id) + "\n"
-                "    Range: 0 < tenant_id < 32768");
+    //    int tenant_id = 1;
+    //    conf.old_get_int(source + "tenant_id", &tenant_id);
+    //    if (0 < tenant_id && tenant_id < 32768)
+    //        opt->tenant_id = (int16_t) tenant_id;
+    //    else
+    //        throw runtime_error(
+    //            "Value for configuration setting is out of range:\n"
+    //            "    Attribute: tenant_id\n"
+    //            "    Value: " + to_string(tenant_id) + "\n"
+    //            "    Range: 0 < tenant_id < 32768");
 
-        config_direct_options(conf, source, opt);
-    }
+    //    config_direct_options(conf, source, opt);
+    //}
+    ///////////////////////////////////////////////////////////////////////////
 
     conf.get_bool("/disable_anonymization", &(opt->disable_anonymization));
 

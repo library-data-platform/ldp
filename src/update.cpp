@@ -275,6 +275,14 @@ bool is_anonymization_enabled(const ldp_options& opt, etymon::odbc_env* odbc,
     return (!opt.disable_anonymization || !ldpconf_disable_anon);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+class source_state {
+public:
+    curl_wrapper curl;
+    string token;
+};
+///////////////////////////////////////////////////////////////////////////////
+
 void run_update(const ldp_options& opt)
 {
     CURLcode cc;
@@ -313,13 +321,13 @@ void run_update(const ldp_options& opt)
     } else {
         lg.write(log_level::trace, "", "", "Logging in to Okapi service", -1);
 
-        okapi_login(opt, &lg, &token);
+        okapi_login(opt, source, &lg, &token);
 
         make_update_tmp_dir(opt, &load_dir);
         ext_dir.dir = load_dir;
 
         tenant_header = "X-Okapi-Tenant: ";
-        tenant_header + opt.okapi_tenant;
+        tenant_header + source.okapi_tenant;
         token_header = "X-Okapi-Token: ";
         token_header += token;
         c.headers = curl_slist_append(c.headers, tenant_header.c_str());
@@ -358,10 +366,10 @@ void run_update(const ldp_options& opt)
         if (opt.load_from_dir == "") {
             lg.write(log_level::trace, "", "",
                     "Extracting: " + table.source_spec, -1);
-            bool found_data = direct_override(opt, table.name) ?
-                retrieve_direct(opt, &lg, table, load_dir, &ext_files) :
-                retrieve_pages(c, opt, &lg, token, table, load_dir,
-                        &ext_files);
+            bool found_data = direct_override(source, table.name) ?
+                retrieve_direct(source, &lg, table, load_dir, &ext_files) :
+                retrieve_pages(c, opt, source, &lg, token, table, load_dir,
+                               &ext_files);
             if (!found_data)
                 table.skip = true;
         }
@@ -378,7 +386,7 @@ void run_update(const ldp_options& opt)
 
             lg.write(log_level::trace, "", "",
                     "Staging table: " + table.name, -1);
-            bool ok = stage_table(opt, &lg, &table, &odbc, &conn, &dbt,
+            bool ok = stage_table(opt, source, &lg, &table, &odbc, &conn, &dbt,
                                   load_dir, anonymize_fields);
             if (!ok)
                 continue;
@@ -530,6 +538,13 @@ void run_update(const ldp_options& opt)
     }
 
 }
+
+//void run_update(const ldp_options& opt)
+//{
+//    for (auto& source : opt.enable_sources) {
+//        update_from_source(opt, source);
+//    }
+//}
 
 void run_update_process(const ldp_options& opt)
 {
