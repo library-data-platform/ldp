@@ -275,14 +275,6 @@ bool is_anonymization_enabled(const ldp_options& opt, etymon::odbc_env* odbc,
     return (!opt.disable_anonymization || !ldpconf_disable_anon);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-class source_state {
-public:
-    curl_wrapper curl;
-    string token;
-};
-///////////////////////////////////////////////////////////////////////////////
-
 void run_update(const ldp_options& opt)
 {
     CURLcode cc;
@@ -307,11 +299,8 @@ void run_update(const ldp_options& opt)
 
     string load_dir;
 
-    curl_wrapper c;
-    //if (!c.curl) {
-    //    // throw?
-    //}
-    string token, tenant_header, token_header;
+    vector<source_state> source_states;
+    //string token, tenant_header, token_header;
 
     if (opt.load_from_dir != "") {
         //if (opt.logLevel == log_level::trace)
@@ -319,22 +308,21 @@ void run_update(const ldp_options& opt)
         //            opt.prog, opt.loadFromDir.c_str());
         load_dir = opt.load_from_dir;
     } else {
-        lg.write(log_level::trace, "", "", "Logging in to Okapi service", -1);
 
-        okapi_login(opt, source, &lg, &token);
+        for (auto& source : opt.enable_sources) {
 
-        make_update_tmp_dir(opt, &load_dir);
-        ext_dir.dir = load_dir;
+            source_state state(source);
 
-        tenant_header = "X-Okapi-Tenant: ";
-        tenant_header + source.okapi_tenant;
-        token_header = "X-Okapi-Token: ";
-        token_header += token;
-        c.headers = curl_slist_append(c.headers, tenant_header.c_str());
-        c.headers = curl_slist_append(c.headers, token_header.c_str());
-        c.headers = curl_slist_append(c.headers,
-                                      "Accept: application/json,text/plain");
-        curl_easy_setopt(c.curl, CURLOPT_HTTPHEADER, c.headers);
+            lg.write(log_level::trace, "", "", "Logging in to Okapi service",
+                     -1);
+
+            okapi_login(opt, source, &lg, &state.token);
+
+            make_update_tmp_dir(opt, &load_dir);
+            ext_dir.dir = load_dir;
+
+            source_states.push_back(state);
+        }
     }
 
     bool enable_anonymization = is_anonymization_enabled(opt, &odbc, opt.db,
@@ -357,22 +345,44 @@ void run_update(const ldp_options& opt)
             continue;
 
         lg.write(log_level::trace, "", "",
-                "Updating table: " + table.name, -1);
+                 "Updating table: " + table.name, -1);
 
         timer update_timer(opt);
 
         extraction_files ext_files(opt);
 
-        if (opt.load_from_dir == "") {
-            lg.write(log_level::trace, "", "",
-                    "Extracting: " + table.source_spec, -1);
-            bool found_data = direct_override(source, table.name) ?
-                retrieve_direct(source, &lg, table, load_dir, &ext_files) :
-                retrieve_pages(c, opt, source, &lg, token, table, load_dir,
-                               &ext_files);
-            if (!found_data)
-                table.skip = true;
-        }
+        for (auto& state : source_states) {
+
+            curl_wrapper curlw;
+            //if (!c.curl) {
+            //    // throw?
+            //}
+            string tenant_header = "X-Okapi-Tenant: ";
+            tenant_header + state.source.okapi_tenant;
+            string token_header = "X-Okapi-Token: ";
+            token_header += state.token;
+            curlw.headers = curl_slist_append(curlw.headers,
+                                              tenant_header.c_str());
+            curlw.headers = curl_slist_append(curlw.headers,
+                                              token_header.c_str());
+            curlw.headers = curl_slist_append(
+                    curlw.headers, "Accept: application/json,text/plain");
+            curl_easy_setopt(curlw.curl, CURLOPT_HTTPHEADER,
+                             curlw.headers);
+
+            if (opt.load_from_dir == "") {
+                lg.write(log_level::trace, "", "",
+                         "Extracting: " + table.source_spec, -1);
+                bool found_data = direct_override(state.source, table.name) ?
+                        retrieve_direct(state.source, &lg, table, load_dir,
+                                        &ext_files) :
+                        retrieve_pages(curlw, opt, state.source, &lg,
+                                       state.token, table, load_dir,
+                                       &ext_files);
+                if (!found_data)
+                    table.skip = true;
+            }
+        } // for
 
         if (table.skip || opt.extract_only)
             continue;
@@ -385,18 +395,24 @@ void run_update(const ldp_options& opt)
             etymon::odbc_tx tx(&conn);
 
             lg.write(log_level::trace, "", "",
-                    "Staging table: " + table.name, -1);
-            bool ok = stage_table(opt, source, &lg, &table, &odbc, &conn, &dbt,
-                                  load_dir, anonymize_fields);
+                     "Staging table: " + table.name, -1);
+            bool ok = stage_table_1(opt, source_states, &lg, &table, &odbc,
+                                  &conn, &dbt, load_dir, anonymize_fields);
+            if (!ok)
+                continue;
+
+            ok = stage_table_2(opt, source_states, &lg, &table, &odbc,
+                                    &conn, &dbt, load_dir,
+                                    anonymize_fields);
             if (!ok)
                 continue;
 
             lg.write(log_level::trace, "", "",
-                    "Merging table: " + table.name, -1);
+                     "Merging table: " + table.name, -1);
             merge_table(opt, &lg, table, &odbc, &conn, dbt);
 
             lg.write(log_level::trace, "", "",
-                    "Replacing table: " + table.name, -1);
+                     "Replacing table: " + table.name, -1);
 
             remove_foreign_key_constraints(&conn, &lg);
             drop_table(opt, &lg, table.name, &conn);
@@ -412,8 +428,8 @@ void run_update(const ldp_options& opt)
         //vacuumAnalyzeTable(opt, table, &conn);
 
         string sql =
-            "SELECT COUNT(*) FROM\n"
-            "    " + table.name + ";";
+                "SELECT COUNT(*) FROM\n"
+                "    " + table.name + ";";
         lg.detail(sql);
         string rowCount;
         {
@@ -423,8 +439,8 @@ void run_update(const ldp_options& opt)
             conn.get_data(&stmt, 1, &rowCount);
         }
         sql =
-            "SELECT COUNT(*) FROM\n"
-            "    history." + table.name + ";";
+                "SELECT COUNT(*) FROM\n"
+                "    history." + table.name + ";";
         lg.detail(sql);
         string history_row_count;
         {
@@ -434,21 +450,21 @@ void run_update(const ldp_options& opt)
             conn.get_data(&stmt, 1, &history_row_count);
         }
         sql =
-            "UPDATE ldpsystem.tables\n"
-            "    SET updated = " + string(dbt.current_timestamp()) + ",\n"
-            "        row_count = " + rowCount + ",\n"
-            "        history_row_count = " + history_row_count + ",\n"
-            "        documentation = '" + table.source_spec + " in "
-            + table.module_name + "',\n"
-            "        documentation_url = 'https://dev.folio.org/reference/api/#"
-            + table.module_name + "'\n"
-            "    WHERE table_name = '" + table.name + "';";
+                "UPDATE ldpsystem.tables\n"
+                "    SET updated = " + string(dbt.current_timestamp()) + ",\n"
+                "        row_count = " + rowCount + ",\n"
+                "        history_row_count = " + history_row_count + ",\n"
+                "        documentation = '" + table.source_spec + " in "
+                + table.module_name + "',\n"
+                "        documentation_url = 'https://dev.folio.org/reference/api/#"
+                + table.module_name + "'\n"
+                "    WHERE table_name = '" + table.name + "';";
         lg.detail(sql);
         conn.exec(sql);
 
         lg.write(log_level::debug, "update", table.name,
-                "Updated table: " + table.name,
-                update_timer.elapsed_time());
+                 "Updated table: " + table.name,
+                 update_timer.elapsed_time());
 
         //if (opt.logLevel == log_level::trace)
         //    loadTimer.print("load time");

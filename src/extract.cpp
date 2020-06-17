@@ -1,7 +1,10 @@
 #include <cassert>
 #include <cstring>
 #include <ctype.h>
+#include <fstream>
 #include <iostream>
+#include <iostream>
+#include <sstream>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -179,6 +182,7 @@ static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
 
     string output = loadDir;
     etymon::join(&output, table.name);
+    output += "_" + source.source_name;
     output += "_" + to_string(page) + ".json";
 
     {
@@ -189,20 +193,24 @@ static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
         //curl_easy_setopt(c.curl, CURLOPT_TIMEOUT, 100000);
         //curl_easy_setopt(c.curl, CURLOPT_CONNECTTIMEOUT, 100000);
 
-        curl_easy_setopt(c.curl, CURLOPT_URL, path.c_str());
-        curl_easy_setopt(c.curl, CURLOPT_WRITEDATA, f.fp);
+        CURLcode cc = curl_easy_setopt(c.curl, CURLOPT_URL, path.c_str());
+        if (cc != CURLE_OK)
+            throw runtime_error(string("Error extracting data: ") +
+                                curl_easy_strerror(cc));
+        cc = curl_easy_setopt(c.curl, CURLOPT_WRITEDATA, f.fp);
+        if (cc != CURLE_OK)
+            throw runtime_error(string("Error extracting data: ") +
+                                curl_easy_strerror(cc));
 
         lg->write(log_level::detail, "", "",
                 "Retrieving from:\n"
                 "    Path: " + table.source_spec + "\n"
                 "    Query: " + query, -1);
 
-        CURLcode code = curl_easy_perform(c.curl);
-
-        if (code) {
-            throw runtime_error(string("error retrieving data from okapi: ") +
-                    curl_easy_strerror(code));
-        }
+        cc = curl_easy_perform(c.curl);
+        if (cc != CURLE_OK)
+            throw runtime_error(string("Error extracting data: ") +
+                                curl_easy_strerror(cc));
     }
 
     long response_code = 0;
@@ -211,9 +219,12 @@ static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
         return PageStatus::interfaceNotAvailable;
     }
     if (response_code != 200) {
-        string err = string("error retrieving data from okapi: ") +
-            to_string(response_code);
-            //string(": server response in file: " + output);
+        stringstream s;
+	std::ifstream f(output);
+	if (f.is_open())
+	    s << f.rdbuf() << endl;
+        string err = string("Error extracting data: ") +
+                to_string(response_code) + ":\n" + s.str();
         // TODO read and print server response, before tmp files cleaned up
         throw runtime_error(err);
     }
@@ -227,13 +238,15 @@ static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
     //    t.print("extraction time");
 }
 
-static void writeCountFile(const string& loadDir, const string& tableName,
-        extraction_files* ext_files, size_t page) {
-    string countFile = loadDir;
-    etymon::join(&countFile, tableName);
-    countFile += "_count.txt";
-    etymon::file f(countFile, "w");
-    ext_files->files.push_back(countFile);
+static void writeCountFile(const data_source& source, const string& loadDir,
+                           const string& tableName,
+                           extraction_files* ext_files, size_t page) {
+    string count_file = loadDir;
+    etymon::join(&count_file, tableName);
+    count_file += "_" + source.source_name;
+    count_file += "_count.txt";
+    etymon::file f(count_file, "w");
+    ext_files->files.push_back(count_file);
     string pageStr = to_string(page) + "\n";
     fputs(pageStr.c_str(), f.fp);
 }
@@ -248,14 +261,14 @@ bool retrieve_pages(const curl_wrapper& c, const ldp_options& opt,
         lg->write(log_level::detail, "", "",
                 "Extracting page: " + to_string(page), -1);
         PageStatus status = retrieve(c, opt, source, lg, token, table, loadDir,
-                ext_files, page);
+                                     ext_files, page);
         switch (status) {
         case PageStatus::interfaceNotAvailable:
             lg->write(log_level::trace, "", "",
                     "Interface not available: " + table.source_spec, -1);
             return false;
         case PageStatus::pageEmpty:
-            writeCountFile(loadDir, table.name, ext_files, page);
+            writeCountFile(source, loadDir, table.name, ext_files, page);
             return true;
         case PageStatus::containsRecords:
             break;
@@ -327,7 +340,7 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
     fprintf(f.fp, "\n  ]\n}\n");
 
     // Write 1 to count file.
-    writeCountFile(loadDir, table.name, ext_files, 1);
+    writeCountFile(source, loadDir, table.name, ext_files, 1);
 
     return true;
 }

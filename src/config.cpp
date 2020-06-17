@@ -104,23 +104,22 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
         if (value->IsString() == false)
             throw_invalid_data_type(key, "string");
         string source_name = value->GetString();
-        fprintf(stderr, "\"%s\"\n", source_name.c_str()); /////////////////////
+
+        // TODO Check if source_name is already in enable_sources, and if so,
+        // flag the duplication (throw error).
+
         // Look up source details.
         data_source source;
         source.source_name = source_name;
         string prefix = "/sources/" + source_name + "/";
         // Okapi URL.
         get_string(prefix + "okapi_url", true, &(source.okapi_url));
-        fprintf(stderr, "\t\"%s\"\n", source.okapi_url.c_str()); //////////////
         // Okapi tenant.
         get_string(prefix + "okapi_tenant", true, &(source.okapi_tenant));
-        fprintf(stderr, "\t\"%s\"\n", source.okapi_tenant.c_str()); ///////////
         // Okapi user.
         get_string(prefix + "okapi_user", true, &(source.okapi_user));
-        fprintf(stderr, "\t\"%s\"\n", source.okapi_user.c_str()); /////////////
         // Okapi password.
         get_string(prefix + "okapi_password", true, &(source.okapi_password));
-        fprintf(stderr, "\t\"%s\"\n", source.okapi_password.c_str()); /////////
         // Tenant ID.
         int tenant_id = 1;
         get_int(prefix + "tenant_id", true, &tenant_id);
@@ -129,7 +128,6 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
         else
             throw_value_out_of_range(prefix + "tenant_id",
                                      to_string(tenant_id), "1 to 32767");
-        fprintf(stderr, "\t\"%s\"\n", to_string(source.tenant_id).c_str()); ///
         // Direct extraction.
         direct_extraction direct;
         // Loop through direct_tables JSON array.
@@ -142,7 +140,6 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
             if (value->IsString() == false)
                 throw_invalid_data_type(key, "string");
             string table_name = value->GetString();
-            fprintf(stderr, "\t\t\"%s\"\n", table_name.c_str()); //////////////
 
             direct.table_names.push_back(table_name);
             direct_index++;
@@ -151,11 +148,9 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
         // Direct database name.
         get_string(prefix + "direct_database_name", false,
                    &(direct.database_name));
-        fprintf(stderr, "\t\t\"%s\"\n", direct.database_name.c_str()); ////////
         // Direct database host.
         get_string(prefix + "direct_database_host", false,
                    &(direct.database_host));
-        fprintf(stderr, "\t\t\"%s\"\n", direct.database_host.c_str()); ////////
         // Port number.
         int port = 0;
         bool found = get_int(prefix + "direct_database_port", false, &port);
@@ -166,15 +161,12 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
                 throw_value_out_of_range(prefix + "direct_database_port",
                                          to_string(port), "1 to 65535");
         }
-        fprintf(stderr, "\t\t\"%s\"\n", direct.database_port.c_str()); ////////
         // Direct database user.
         get_string(prefix + "direct_database_user", false,
                    &(direct.database_user));
-        fprintf(stderr, "\t\t\"%s\"\n", direct.database_user.c_str()); ////////
         // Direct database password.
         get_string(prefix + "direct_database_password", false,
                    &(direct.database_password));
-        fprintf(stderr, "\t\t\"%s\"\n", direct.database_password.c_str()); ////
         // Add direct extractino data to source.
         source.direct = direct;
         // Append source to list.

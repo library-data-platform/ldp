@@ -20,7 +20,6 @@
 #include "rapidjson/stringbuffer.h"
 #include "schema.h"
 #include "stage.h"
-#include "util.h"
 
 namespace fs = std::experimental::filesystem;
 namespace json = rapidjson;
@@ -496,11 +495,12 @@ bool JSONHandler::Null()
     return true;
 }
 
-size_t read_page_count(const ldp_options& opt, ldp_log* lg,
+size_t read_page_count(const data_source& source, ldp_log* lg,
                        const string& load_dir, const string& table_name)
 {
     string filename = load_dir;
     etymon::join(&filename, table_name);
+    filename += "_" + source.source_name;
     filename += "_count.txt";
     if ( !(fs::exists(filename)) ) {
         lg->write(log_level::warning, "", "", "File not found: " + filename, -1);
@@ -627,7 +627,8 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
     conn->exec(sql);
 }
 
-bool stage_table(const ldp_options& opt, const data_source& source,
+/*
+bool stage_table(const ldp_options& opt,
                  ldp_log* lg, table_schema* table, etymon::odbc_env* odbc,
                  etymon::odbc_conn* conn, dbtype* dbt, const string& load_dir,
                  bool anonymize_fields)
@@ -725,6 +726,172 @@ bool stage_table(const ldp_options& opt, const data_source& source,
         if (pass == 2)
             index_loading_table(lg, *table, conn, dbt);
     }
+
+    return true;
+}
+*/
+
+bool stage_table_1(const ldp_options& opt,
+                   const vector<source_state>& source_states,
+                 ldp_log* lg, table_schema* table, etymon::odbc_env* odbc,
+                 etymon::odbc_conn* conn, dbtype* dbt, const string& load_dir,
+                 bool anonymize_fields)
+{
+    // TODO remove this and create the load table from merge.cpp after
+    // pass 1
+    //createStagingTable(opt, table->name, db);
+
+    map<string,type_counts> stats;
+    char read_buffer[65536];
+
+    int pass = 1;
+
+    //lg->write(log_level::detail, "", "",
+    //          "Staging: " + table->name +
+    //          (pass == 1 ?  ": analyze" : ": load"), -1);
+
+    for (auto& state : source_states) {
+        size_t page_count = read_page_count(state.source, lg, load_dir,
+                                            table->name);
+
+        lg->write(log_level::detail, "", "",
+                  "Staging: " + table->name + ": page count: " +
+                  to_string(page_count), -1);
+
+        for (size_t page = 0; page < page_count; page++) {
+            string path;
+            compose_data_file_path(load_dir, *table,
+                                   "_" + state.source.source_name +
+                                   "_" + to_string(page) + ".json", &path);
+            lg->write(log_level::detail, "", "",
+                      "Staging: " + table->name +
+                      (pass == 1 ?  ": analyze" : ": load") + ": page: " +
+                      to_string(page), -1);
+            stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
+                       read_buffer, sizeof read_buffer, anonymize_fields, -1);
+        }
+    }
+
+    if (opt.load_from_dir != "") {
+        string path;
+        compose_data_file_path(load_dir, *table, "_test.json", &path);
+        if (fs::exists(path)) {
+            lg->write(log_level::detail, "", "",
+                      "Staging: " + table->name +
+                      (pass == 1 ?  ": analyze" : ": load") +
+                      ": test file", -1);
+            stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats,
+                       path, read_buffer, sizeof read_buffer,
+                       anonymize_fields, -1);
+        }
+    }
+
+    if (pass == 1) {
+        for (const auto& [field, counts] : stats) {
+            lg->write(log_level::detail, "", "",
+                      "Stats: in field: " + field, -1);
+            lg->write(log_level::detail, "", "",
+                      "Stats: string: " + to_string(counts.string), -1);
+            lg->write(log_level::detail, "", "",
+                      "Stats: datetime: " + to_string(counts.date_time), -1);
+            lg->write(log_level::detail, "", "",
+                      "Stats: bool: " + to_string(counts.boolean), -1);
+            lg->write(log_level::detail, "", "",
+                      "Stats: number: " + to_string(counts.number), -1);
+            lg->write(log_level::detail, "", "",
+                      "Stats: int: " + to_string(counts.integer), -1);
+            lg->write(log_level::detail, "", "",
+                      "Stats: float: " + to_string(counts.floating), -1);
+            lg->write(log_level::detail, "", "",
+                      "Stats: null: " + to_string(counts.null), -1);
+        }
+    }
+
+    if (pass == 1) {
+        for (const auto& [field, counts] : stats) {
+            column_schema column;
+            bool ok =
+                    column_schema::select_type(lg, table->name,
+                                               table->source_spec, field, counts,
+                                               &column.type);
+            if (!ok)
+                return false;
+            string type_str;
+            column_schema::type_to_string(column.type, &type_str);
+            string newattr;
+            decode_camel_case(field.c_str(), &newattr);
+            lg->write(log_level::detail, "", "",
+                      string("Column: ") + newattr + string(" ") + type_str,
+                      -1);
+            column.name = newattr;
+            column.source_name = field;
+            table->columns.push_back(column);
+        }
+        create_loading_table(opt, lg, *table, odbc, conn, *dbt);
+    }
+
+    return true;
+}
+
+
+bool stage_table_2(const ldp_options& opt,
+                   const vector<source_state>& source_states,
+                 ldp_log* lg, table_schema* table, etymon::odbc_env* odbc,
+                 etymon::odbc_conn* conn, dbtype* dbt, const string& load_dir,
+                 bool anonymize_fields)
+{
+    // TODO remove this and create the load table from merge.cpp after
+    // pass 1
+    //createStagingTable(opt, table->name, db);
+
+    map<string,type_counts> stats;
+    char read_buffer[65536];
+
+    int pass = 2;
+
+    //lg->write(log_level::detail, "", "",
+    //          "Staging: " + table->name +
+    //          (pass == 1 ?  ": analyze" : ": load"), -1);
+
+    for (auto& state : source_states) {
+        size_t page_count = read_page_count(state.source, lg, load_dir,
+                                            table->name);
+
+        lg->write(log_level::detail, "", "",
+                  "Staging: " + table->name + ": page count: " +
+                  to_string(page_count), -1);
+
+        for (size_t page = 0; page < page_count; page++) {
+            string path;
+            compose_data_file_path(load_dir, *table,
+                                   "_" + state.source.source_name +
+                                   "_" + to_string(page) + ".json", &path);
+            lg->write(log_level::detail, "", "",
+                      "Staging: " + table->name +
+                      (pass == 1 ?  ": analyze" : ": load") + ": page: " +
+                      to_string(page), -1);
+            stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
+                       read_buffer, sizeof read_buffer, anonymize_fields,
+                       state.source.tenant_id);
+        }
+    }
+
+    if (opt.load_from_dir != "") {
+        string path;
+        compose_data_file_path(load_dir, *table, "_test.json", &path);
+        if (fs::exists(path)) {
+            lg->write(log_level::detail, "", "",
+                      "Staging: " + table->name +
+                      (pass == 1 ?  ": analyze" : ": load") +
+                      ": test file", -1);
+            stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats,
+                       path, read_buffer, sizeof read_buffer,
+                       anonymize_fields, 1);
+        }
+    }
+
+    if (pass == 2)
+        index_loading_table(lg, *table, conn, dbt);
 
     return true;
 }

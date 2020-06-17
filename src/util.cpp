@@ -51,6 +51,15 @@ void print_banner_line(FILE* stream, char ch, int width)
     fputc('\n', stream);
 }
 
+source_state::source_state(data_source source)
+{
+    this->source = source;
+}
+
+source_state::~source_state()
+{
+}
+
 ////////////////////////////////////////////////////////////////////////////
 // Old error printing functions
 
