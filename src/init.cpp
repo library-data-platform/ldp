@@ -11,7 +11,7 @@
 
 namespace fs = std::experimental::filesystem;
 
-static int64_t ldp_latest_database_version = 11;
+static int64_t ldp_latest_database_version = 12;
 
 database_upgrade_array database_upgrades[] = {
     nullptr,  // Version 0 has no migration.
@@ -25,7 +25,8 @@ database_upgrade_array database_upgrades[] = {
     database_upgrade_8,
     database_upgrade_9,
     database_upgrade_10,
-    database_upgrade_11
+    database_upgrade_11,
+    database_upgrade_12
 };
 
 int64_t latest_database_version()
@@ -218,19 +219,31 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
 
     sql =
         "CREATE TABLE ldpconfig.general (\n"
+        "    update_all_tables BOOLEAN NOT NULL,\n"
         "    enable_full_updates BOOLEAN NOT NULL,\n"
         "    next_full_update TIMESTAMP WITH TIME ZONE NOT NULL,\n"
         "    detect_foreign_keys BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    force_foreign_key_constraints BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    enable_foreign_key_warnings BOOLEAN NOT NULL DEFAULT FALSE,\n"
-        "    disable_anonymization BOOLEAN NOT NULL DEFAULT FALSE\n"
+        "    disable_anonymization BOOLEAN NOT NULL\n"
         ");";
     conn->exec(sql);
     sql =
         "INSERT INTO ldpconfig.general\n"
-        "    (enable_full_updates, next_full_update)\n"
+        "    (update_all_tables, enable_full_updates, next_full_update,\n"
+        "     disable_anonymization)\n"
         "    VALUES\n"
-        "    (TRUE, " + string(dbt.current_timestamp()) + ");";
+        "    (TRUE, TRUE, " + string(dbt.current_timestamp()) + ",\n"
+        "     FALSE);";
+    conn->exec(sql);
+
+    // ldpconfig.update_tables
+    sql =
+        "CREATE TABLE ldpconfig.update_tables (\n"
+        "    enable_update BOOLEAN NOT NULL,\n"
+        "    table_name VARCHAR(63) NOT NULL,\n"
+        "    tenant_id SMALLINT NOT NULL\n"
+        ");";
     conn->exec(sql);
 
     sql =
