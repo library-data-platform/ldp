@@ -42,16 +42,41 @@ struct name_comparator {
 bool looks_like_date_time(const char* str)
 {
     static regex date_time(
-            "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}("
-            "(\\.\\d{3}\\+\\d{4})|"
-            "(Z)"
-            ")"
-            );
+        "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}("
+        "(\\.\\d{3}\\+\\d{4})|"
+        "(Z)"
+        ")"
+        );
     return regex_match(str, date_time);
 }
 
+bool ends_with(string const &str, string const &suffix) {
+    if (str.length() >= suffix.length())
+	return (0 == str.compare(str.length() - suffix.length(),
+				 suffix.length(), suffix));
+    else
+	return false;
+}
+
+bool data_to_filter(const table_schema& table, const string& field)
+{
+    if (table.name != "course_copyrightstatuses" &&
+        table.name != "course_courselistings" &&
+        table.name != "course_courses" &&
+        table.name != "course_coursetypes" &&
+        table.name != "course_departments" &&
+        table.name != "course_processingstatuses" &&
+        table.name != "course_reserves" &&
+        table.name != "course_roles" &&
+        table.name != "course_terms")
+        return false;
+    if (!ends_with(field, "Object") && !ends_with(field, "Objects"))
+        return false;
+    return true;
+}
+
 // Collect statistics and anonymize data
-void process_json_record(const table_schema table, json::Document* root,
+void process_json_record(const table_schema& table, json::Document* root,
         json::Value* node, bool collect_stats, bool anonymize_fields,
         const string& field, unsigned int depth, map<string,type_counts>* stats)
 {
@@ -91,6 +116,10 @@ void process_json_record(const table_schema table, json::Document* root,
             }
             break;
         case json::kArrayType:
+            if (data_to_filter(table, field)) {
+		json::Pointer(field.c_str()).Set(*root, json::kNullType);
+		break;
+            }
             {
                 int x = 0;
                 for (json::Value::ValueIterator i = node->Begin();
@@ -106,6 +135,10 @@ void process_json_record(const table_schema table, json::Document* root,
             }
             break;
         case json::kObjectType:
+            if (data_to_filter(table, field)) {
+		json::Pointer(field.c_str()).Set(*root, json::kNullType);
+		break;
+            }
             sort(node->MemberBegin(), node->MemberEnd(), name_comparator());
             for (json::Value::MemberIterator i = node->MemberBegin();
                     i != node->MemberEnd(); ++i) {

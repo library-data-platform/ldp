@@ -1,4 +1,60 @@
 #include "dbup1.h"
+#include "initutil.h"
+
+void ulog_sql(const string& sql, database_upgrade_options* opt)
+{
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+}
+
+void ulog_commit(database_upgrade_options* opt)
+{
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
+}
+
+void upgrade_add_new_table(const string& table, database_upgrade_options* opt,
+                           const dbtype& dbt)
+{
+    string sql;
+
+    create_main_table_sql(table, opt->conn, dbt, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    grant_select_on_table_sql(table, opt->ldp_user, opt->conn, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    grant_select_on_table_sql(table, opt->ldpconfig_user, opt->conn, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    create_history_table_sql(table, opt->conn, dbt, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    grant_select_on_table_sql("history." + table, opt->ldp_user, opt->conn,
+                              &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    grant_select_on_table_sql("history." + table, opt->ldpconfig_user,
+                              opt->conn, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    add_table_to_catalog_sql(opt->conn, table, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+}
 
 void database_upgrade_1(database_upgrade_options* opt)
 {
@@ -109,7 +165,8 @@ void database_upgrade_1(database_upgrade_options* opt)
     };
     for (int x = 0; table[x] != nullptr; x++) {
         // Add table to the catalog.
-        catalog_add_table(opt->conn, table[x]);
+        add_table_to_catalog_sql(opt->conn, table[x], &sql);
+        opt->conn->exec(sql);
         // Create stub table if it doesn't exist.
         sql =
             "CREATE TABLE IF NOT EXISTS " + string(table[x]) + " (\n"
@@ -1047,6 +1104,26 @@ void database_upgrade_12(database_upgrade_options* opt)
     opt->conn->exec(sql);
     fprintf(opt->ulog, "-- Committed\n");
     fflush(opt->ulog);
+}
+
+void database_upgrade_13(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    upgrade_add_new_table("course_copyrightstatuses", opt, dbt);
+    upgrade_add_new_table("course_courselistings", opt, dbt);
+    upgrade_add_new_table("course_courses", opt, dbt);
+    upgrade_add_new_table("course_coursetypes", opt, dbt);
+    upgrade_add_new_table("course_departments", opt, dbt);
+    upgrade_add_new_table("course_processingstatuses", opt, dbt);
+    upgrade_add_new_table("course_reserves", opt, dbt);
+    upgrade_add_new_table("course_roles", opt, dbt);
+    upgrade_add_new_table("course_terms", opt, dbt);
+
+    string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 13;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
 }
 
     //vector<string> tables = {

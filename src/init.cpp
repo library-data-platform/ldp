@@ -5,13 +5,14 @@
 #include "dbtype.h"
 #include "dbup1.h"
 #include "init.h"
+#include "initutil.h"
 #include "log.h"
 #include "schema.h"
 #include "util.h"
 
 namespace fs = std::experimental::filesystem;
 
-static int64_t ldp_latest_database_version = 12;
+static int64_t ldp_latest_database_version = 13;
 
 database_upgrade_array database_upgrades[] = {
     nullptr,  // Version 0 has no migration.
@@ -26,7 +27,8 @@ database_upgrade_array database_upgrades[] = {
     database_upgrade_9,
     database_upgrade_10,
     database_upgrade_11,
-    database_upgrade_12
+    database_upgrade_12,
+    database_upgrade_13
 };
 
 int64_t latest_database_version()
@@ -80,14 +82,6 @@ void validate_database_version(int64_t database_version)
     if (database_version < 0 || database_version > latest_version)
         throw runtime_error(
                 "Unknown LDP database version: " + to_string(database_version));
-}
-
-void catalog_add_table(etymon::odbc_conn* conn, const string& table)
-{
-    string sql =
-        "INSERT INTO ldpsystem.tables (table_name) VALUES\n"
-        "    ('" + table + "');";
-    conn->exec(sql);
 }
 
 /* *
@@ -158,10 +152,11 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
         "    documentation_url VARCHAR(65535)\n"
         ");";
     conn->exec(sql);
-
     // Add tables to the catalog.
-    for (auto& table : schema.tables)
-        catalog_add_table(conn, table.name);
+    for (auto& table : schema.tables) {
+        add_table_to_catalog_sql(conn, table.name, &sql);
+        conn->exec(sql);
+    }
 
     string rskeys;
     dbt.redshift_keys("referencing_table",
@@ -275,53 +270,24 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
     conn->exec(sql);
 
     for (auto& table : schema.tables) {
-        string rskeys;
-        dbt.redshift_keys("id", "id, updated", &rskeys);
-        string sql =
-            "CREATE TABLE IF NOT EXISTS\n"
-            "    history." + table.name + " (\n"
-            "    id VARCHAR(36) NOT NULL,\n"
-            "    data " + dbt.json_type() + " NOT NULL,\n"
-            "    updated TIMESTAMP WITH TIME ZONE NOT NULL,\n"
-            "    tenant_id SMALLINT NOT NULL,\n"
-            "    CONSTRAINT\n"
-            "        history_" + table.name + "_pkey\n"
-            "        PRIMARY KEY (id, updated)\n"
-            ")" + rskeys + ";";
+        create_history_table_sql(table.name, conn, dbt, &sql);
         conn->exec(sql);
-
-        sql =
-            "GRANT SELECT ON\n"
-            "    history." + table.name + "\n"
-            "    TO " + ldp_user + ";";
+        grant_select_on_table_sql("history." + table.name, ldp_user,
+                                  conn, &sql);
         conn->exec(sql);
-        sql =
-            "GRANT SELECT ON\n"
-            "    history." + table.name + "\n"
-            "    TO " + ldpconfig_user + ";";
+        grant_select_on_table_sql("history." + table.name, ldpconfig_user,
+                                  conn, &sql);
         conn->exec(sql);
     }
 
     // Schema: public
 
     for (auto& table : schema.tables) {
-        string rskeys;
-        dbt.redshift_keys("id", "id", &rskeys);
-        sql =
-            "CREATE TABLE " + table.name + " (\n"
-            "    id VARCHAR(65535) NOT NULL,\n"
-            "    data " + dbt.json_type() + ",\n"
-            "    tenant_id SMALLINT NOT NULL,\n"
-            "    PRIMARY KEY (id)\n"
-        ")" + rskeys + ";";
+        create_main_table_sql(table.name, conn, dbt, &sql);
         conn->exec(sql);
-        sql =
-            "GRANT SELECT ON " + table.name + "\n"
-            "    TO " + ldpconfig_user + ";";
+        grant_select_on_table_sql(table.name, ldp_user, conn, &sql);
         conn->exec(sql);
-        sql =
-            "GRANT SELECT ON " + table.name + "\n"
-            "    TO " + ldp_user + ";";
+        grant_select_on_table_sql(table.name, ldpconfig_user, conn, &sql);
         conn->exec(sql);
     }
 

@@ -145,19 +145,18 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
-/*
     table.module_name = "mod-courses";
+
+    table.source_spec = "/coursereserves/copyrightstatuses";
+    table.name = "course_copyrightstatuses";
+    schema->tables.push_back(table);
 
     table.source_spec = "/coursereserves/courselistings";
     table.name = "course_courselistings";
     schema->tables.push_back(table);
 
-    table.source_spec = "/coursereserves/roles";
-    table.name = "course_roles";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/coursereserves/terms";
-    table.name = "course_terms";
+    table.source_spec = "/coursereserves/courses";
+    table.name = "course_courses";
     schema->tables.push_back(table);
 
     table.source_spec = "/coursereserves/coursetypes";
@@ -172,18 +171,17 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.name = "course_processingstatuses";
     schema->tables.push_back(table);
 
-    table.source_spec = "/coursereserves/copyrightstatuses";
-    table.name = "course_copyrightstatuses";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/coursereserves/courses";
-    table.name = "course_courses";
-    schema->tables.push_back(table);
-
     table.source_spec = "/coursereserves/reserves";
     table.name = "course_reserves";
     schema->tables.push_back(table);
-*/
+
+    table.source_spec = "/coursereserves/roles";
+    table.name = "course_roles";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/coursereserves/terms";
+    table.name = "course_terms";
+    schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-finance-storage";
@@ -583,5 +581,4 @@ bool column_schema::select_type(ldp_log* lg, const string& table,
     *ctype = column_type::varchar;
     return true;
 }
-
 

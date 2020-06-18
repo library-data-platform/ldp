@@ -83,6 +83,7 @@ add_library(ldp_obj OBJECT
 	src/dbup1.cpp
 	src/extract.cpp
 	src/init.cpp
+	src/initutil.cpp
 	src/ldp.cpp
 	src/log.cpp
 	src/merge.cpp
