@@ -56,6 +56,7 @@ class ldp_options {
 public:
     ldp_command command;
     profile set_profile = profile::none;
+    bool no_update = false;
     bool cli_mode = false;
     string datadir;
     bool extract_only = false;

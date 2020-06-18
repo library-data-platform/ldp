@@ -38,6 +38,11 @@ static const char* option_help =
 "Options for init-database:\n"
 "  --profile <prof>    - Initialize the LDP database with profile <prof>\n"
 "                        (required)\n"
+"  --no-update         - Set update_all_tables and enable_full_updates in\n"
+"                        table ldpconfig.general to FALSE, so that tables\n"
+"                        will not be updated by default; this option nearly\n"
+"                        always should be used for consortial deployments\n"
+"                        to prevent overly broad requests for data\n"
 "Development/testing options:\n"
 "  --extract-only      - Extract data in the data directory, but do not\n"
 "                        update them in the database\n"
@@ -245,6 +250,16 @@ void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
             string("Server stopped") + (opt.cli_mode ? " (CLI mode)" : ""), -1);
 }
 
+static void no_update_by_default(etymon::odbc_env* odbc, const string& db)
+{
+    etymon::odbc_conn conn(odbc, db);
+    string sql =
+        "UPDATE ldpconfig.general\n"
+        "    SET update_all_tables = FALSE,\n"
+        "        enable_full_updates = FALSE;";
+    conn.exec(sql);
+}
+
 void cmd_init_database(const ldp_options& opt)
 {
     if (opt.set_profile == profile::none)
@@ -255,6 +270,9 @@ void cmd_init_database(const ldp_options& opt)
     disable_termination_signals();
     init_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user,
             opt.err, opt.prog);
+
+    if (opt.no_update)
+        no_update_by_default(&odbc, opt.db);
 }
 
 void cmd_upgrade_database(const ldp_options& opt)
