@@ -890,8 +890,9 @@ bool stage_table_2(const ldp_options& opt,
         }
     }
 
-    if (pass == 2)
-        index_loading_table(lg, *table, conn, dbt);
+    // TODO Re-enable after test
+    //if (pass == 2)
+    //    index_loading_table(lg, *table, conn, dbt);
 
     return true;
 }

@@ -128,6 +128,9 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
         else
             throw_value_out_of_range(prefix + "tenant_id",
                                      to_string(tenant_id), "1 to 32767");
+
+        // TODO Ensure tenant_id is unique.
+
         // Direct extraction.
         direct_extraction direct;
         // Loop through direct_tables JSON array.

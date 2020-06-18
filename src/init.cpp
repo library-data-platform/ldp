@@ -270,10 +270,12 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
             "    id VARCHAR(36) NOT NULL,\n"
             "    data " + dbt.json_type() + " NOT NULL,\n"
             "    updated TIMESTAMP WITH TIME ZONE NOT NULL,\n"
-            "    tenant_id SMALLINT NOT NULL,\n"
-            "    CONSTRAINT\n"
-            "        history_" + table.name + "_pkey\n"
-            "        PRIMARY KEY (id, updated)\n"
+            // TODO Re-enable after test
+            "    tenant_id SMALLINT NOT NULL\n"
+            //"    tenant_id SMALLINT NOT NULL,\n"
+            //"    CONSTRAINT\n"
+            //"        history_" + table.name + "_pkey\n"
+            //"        PRIMARY KEY (id, updated)\n"
             ")" + rskeys + ";";
         conn->exec(sql);
 
