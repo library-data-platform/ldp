@@ -314,7 +314,9 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
         throw runtime_error("unable to set single-row mode in database query");
 
     string output = loadDir;
-    etymon::join(&output, table.name + "_0.json");
+    etymon::join(&output, table.name);
+    output += "_" + source.source_name;
+    output += "_0.json";
     etymon::file f(output, "w");
     ext_files->files.push_back(output);
 
