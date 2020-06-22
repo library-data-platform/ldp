@@ -90,6 +90,13 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-email";
+
+    table.source_spec = "/email";
+    table.name = "email_email";
+    schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-feesfines";
 
     table.source_spec = "/accounts";

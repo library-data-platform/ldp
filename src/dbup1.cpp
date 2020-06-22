@@ -1126,6 +1126,18 @@ void database_upgrade_13(database_upgrade_options* opt)
     ulog_commit(opt);
 }
 
+void database_upgrade_14(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    upgrade_add_new_table("email_email", opt, dbt);
+
+    string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 14;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+}
+
     //vector<string> tables = {
     //    "circulation_cancellation_reasons",
     //    "circulation_fixed_due_date_schedules",
