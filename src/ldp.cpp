@@ -78,7 +78,6 @@ server_lock::server_lock(etymon::odbc_env* odbc, const string& db,
             conn->exec(sql);
         } catch (runtime_error& e) {
             delete tx;
-            delete conn;
             throw;
         }
     } catch (runtime_error& e) {
