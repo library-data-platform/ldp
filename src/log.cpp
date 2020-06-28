@@ -5,7 +5,7 @@
 #include "../etymoncpp/include/util.h"
 #include "log.h"
 
-log::log(etymon::odbc_conn* conn, level lv, bool console, bool quiet,
+ldp_log::ldp_log(etymon::odbc_conn* conn, log_level lv, bool console, bool quiet,
         const char* program)
 {
     this->conn = conn;
@@ -16,24 +16,24 @@ log::log(etymon::odbc_conn* conn, level lv, bool console, bool quiet,
     dbt = new dbtype(conn);
 }
 
-log::~log()
+ldp_log::~ldp_log()
 {
     delete dbt;
 }
 
-void log::write(level lv, const char* type, const string& table,
+void ldp_log::write(log_level lv, const char* type, const string& table,
         const string& message, double elapsed_time)
 {
     // Add a prefix to highlight error states.
     string logmsg;
     switch (lv) {
-    case level::fatal:
+    case log_level::fatal:
         logmsg = "Fatal: " + message;
         break;
-    case level::error:
+    case log_level::error:
         logmsg = "Error: " + message;
         break;
-    case level::warning:
+    case log_level::warning:
         logmsg = "Warning: " + message;
         break;
     default:
@@ -49,7 +49,7 @@ void log::write(level lv, const char* type, const string& table,
 
     // For printing, prefix with '\n' if the message has multiple lines.
     string printmsg;
-    if (lv != level::detail && message.find('\n') != string::npos)
+    if (lv != log_level::detail && message.find('\n') != string::npos)
         printmsg = "\n" + logmsg;
     else
         printmsg = logmsg;
@@ -59,43 +59,43 @@ void log::write(level lv, const char* type, const string& table,
     // Print error states and filter messages below selected log level.
     const char* level_str;
     switch (lv) {
-    case level::fatal:
+    case log_level::fatal:
         if (!quiet)
             fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
         level_str = "fatal";
         break;
-    case level::error:
+    case log_level::error:
         if (!quiet)
             fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
         level_str = "error";
         break;
-    case level::warning:
+    case log_level::warning:
         if (!quiet)
             fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
         level_str = "warning";
         break;
-    case level::info:
+    case log_level::info:
         if (!quiet)
             fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
         level_str = "info";
         break;
-    case level::debug:
-        if (this->lv != level::debug && this->lv != level::trace &&
-                this->lv != level::detail)
+    case log_level::debug:
+        if (this->lv != log_level::debug && this->lv != log_level::trace &&
+                this->lv != log_level::detail)
             return;
         if (console && !quiet)
             fprintf(stderr, "%s\n", printmsg.c_str());
         level_str = "debug";
         break;
-    case level::trace:
-        if (this->lv != level::trace && this->lv != level::detail)
+    case log_level::trace:
+        if (this->lv != log_level::trace && this->lv != log_level::detail)
             return;
         if (console && !quiet)
             fprintf(stderr, "%s\n", printmsg.c_str());
         level_str = "trace";
         break;
-    case level::detail:
-        if (this->lv != level::detail)
+    case log_level::detail:
+        if (this->lv != log_level::detail)
             return;
         if (console && !quiet)
             fprintf(stderr, "%s\n", printmsg.c_str());
@@ -103,30 +103,35 @@ void log::write(level lv, const char* type, const string& table,
     }
 
     // Log the message, and print if the log is not available.
-    string logmsgEncoded;
-    dbt->encode_string_const(logmsg.c_str(), &logmsgEncoded);
+    string logmsg_encoded;
+    dbt->encode_string_const(logmsg.c_str(), &logmsg_encoded);
     string sql =
         "INSERT INTO ldpsystem.log\n"
         "    (log_time, pid, level, type, table_name, message, elapsed_time)\n"
         "  VALUES\n"
         "    (" + string(dbt->current_timestamp()) + ", " +
         to_string(getpid()) + ", '" + level_str + "', '" + type + "', '" +
-        table + "', " + logmsgEncoded + ", " + elapsed_time_str + ");";
+        table + "', " + logmsg_encoded + ", " + elapsed_time_str + ");";
     conn->exec(sql);
 }
 
-void log::trace(const string& message)
+void ldp_log::warning(const string& message)
 {
-    write(level::trace, "", "", message, -1);
+    write(log_level::warning, "", "", message, -1);
 }
 
-void log::detail(const string& sql)
+void ldp_log::trace(const string& message)
 {
-    write(level::detail, "", "", sql, -1);
+    write(log_level::trace, "", "", message, -1);
 }
 
-void log::perf(const string& message, double elapsed_time)
+void ldp_log::detail(const string& message)
 {
-    write(level::debug, "perf", "", message, elapsed_time);
+    write(log_level::detail, "", "", message, -1);
+}
+
+void ldp_log::perf(const string& message, double elapsed_time)
+{
+    write(log_level::debug, "perf", "", message, elapsed_time);
 }
 

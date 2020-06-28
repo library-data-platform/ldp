@@ -9,7 +9,7 @@
 
 using namespace std;
 
-enum class level {
+enum class log_level {
     fatal,
     error,
     warning,
@@ -19,18 +19,19 @@ enum class level {
     detail
 };
 
-class log {
+class ldp_log {
 public:
-    log(etymon::odbc_conn* conn, level lv, bool console, bool quiet,
+    ldp_log(etymon::odbc_conn* conn, log_level lv, bool console, bool quiet,
             const char* program);
-    ~log();
-    void write(level lv, const char* type, const string& table,
+    ~ldp_log();
+    void write(log_level lv, const char* type, const string& table,
             const string& message, double elapsed_time);
+    void warning(const string& message);
     void trace(const string& message);
-    void detail(const string& sql);
+    void detail(const string& message);
     void perf(const string& message, double elapsed_time);
 private:
-    level lv;
+    log_level lv;
     bool console = false;
     bool quiet = false;
     etymon::odbc_conn* conn;

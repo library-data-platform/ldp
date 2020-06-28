@@ -13,7 +13,7 @@ string datadir;
 void safety_checks(char* argv0)
 {
     ldp_options opt;
-    config conf(datadir + "/ldpconf.json");
+    ldp_config conf(datadir + "/ldpconf.json");
     config_options(conf, &opt);
     if (opt.deploy_env != deployment_environment::testing &&
             opt.deploy_env != deployment_environment::development) {

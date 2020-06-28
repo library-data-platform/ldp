@@ -1,16 +1,16 @@
 #include "names.h"
 
-void loadingTableName(const string& table, string* newtable)
+void loading_table_name(const string& table, string* newtable)
 {
     *newtable = "ldp_" + table;
 }
 
-void latestHistoryTableName(const string& table, string* newtable)
+void latest_history_table_name(const string& table, string* newtable)
 {
     *newtable = "history_latest_" + table;
 }
 
-void historyTableName(const string& table, string* newtable)
+void history_table_name(const string& table, string* newtable)
 {
     *newtable = "history." + table;
 }

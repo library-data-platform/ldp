@@ -8,7 +8,7 @@
 
 using namespace std;
 
-enum class ColumnType {
+enum class column_type {
     bigint,
     boolean,
     id,
@@ -17,10 +17,10 @@ enum class ColumnType {
     varchar
 };
 
-class Counts {
+class type_counts {
 public:
     unsigned int string = 0;
-    unsigned int dateTime = 0;
+    unsigned int date_time = 0;
     unsigned int number = 0;
     unsigned int integer = 0;
     unsigned int floating = 0;
@@ -29,38 +29,39 @@ public:
     unsigned int uuid = 0;
 };
 
-class ColumnSchema {
+class column_schema {
 public:
-    string columnName;
-    ColumnType columnType;
-    string sourceColumnName;
-    static void columnTypeToString(ColumnType type, string* str);
-    static bool selectColumnType(log* lg, const string& table,
-            const string& source_path, const string& field,
-            const Counts& counts, ColumnType* ctype);
+    string name;
+    column_type type;
+    string source_name;
+    static void type_to_string(column_type type, string* str);
+    static bool select_type(ldp_log* lg, const string& table,
+                            const string& source_path, const string& field,
+                            const type_counts& counts, column_type* ctype);
 };
 
-enum class SourceType {
+enum class data_source_type {
     rmb,
-    rmbMarc
+    rmb_marc
 };
 
-class TableSchema {
+class table_schema {
 public:
     bool skip = false;
     bool anonymize = false;
-    string tableName;
-    string sourcePath;
-    SourceType sourceType;
-    vector<ColumnSchema> columns;
-    string moduleName;
-    string directSourceTable;
+    string name;
+    string source_spec;
+    data_source_type source_type;
+    vector<column_schema> columns;
+    string module_name;
+    string direct_source_table;
 };
 
-class Schema {
+class ldp_schema {
 public:
-    vector<TableSchema> tables;
-    static void make_default_schema(Schema* schema);
+    vector<table_schema> tables;
+    static void make_default_schema(ldp_schema* schema);
 };
 
 #endif
+

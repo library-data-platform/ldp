@@ -5,12 +5,14 @@
 #include "dbtype.h"
 #include "dbup1.h"
 #include "init.h"
+#include "initutil.h"
 #include "log.h"
+#include "schema.h"
 #include "util.h"
 
 namespace fs = std::experimental::filesystem;
 
-static int64_t ldp_latest_database_version = 11;
+static int64_t ldp_latest_database_version = 14;
 
 database_upgrade_array database_upgrades[] = {
     nullptr,  // Version 0 has no migration.
@@ -24,7 +26,10 @@ database_upgrade_array database_upgrades[] = {
     database_upgrade_8,
     database_upgrade_9,
     database_upgrade_10,
-    database_upgrade_11
+    database_upgrade_11,
+    database_upgrade_12,
+    database_upgrade_13,
+    database_upgrade_14
 };
 
 int64_t latest_database_version()
@@ -56,17 +61,17 @@ bool select_database_version(etymon::odbc_conn* conn, int64_t* version)
         string e = "No rows could be read from table: ldpsystem.main";
         throw runtime_error(e);
     }
-    string ldpSchemaVersion;
-    conn->get_data(&stmt, 1, &ldpSchemaVersion);
+    string ldp_schema_version;
+    conn->get_data(&stmt, 1, &ldp_schema_version);
     if (conn->fetch(&stmt)) {
         // This means there is more than one row.  Do not try to
         // recover automatically from this problem.
         string e = "Too many rows in table: ldpsystem.main";
         throw runtime_error(e);
     }
-    //*version = stol(ldpSchemaVersion);
+    //*version = stol(ldp_schema_version);
     {
-        stringstream stream(ldpSchemaVersion);
+        stringstream stream(ldp_schema_version);
         stream >> *version;
     }
     return true;
@@ -80,14 +85,6 @@ void validate_database_version(int64_t database_version)
                 "Unknown LDP database version: " + to_string(database_version));
 }
 
-void catalog_add_table(etymon::odbc_conn* conn, const string& table)
-{
-    string sql =
-        "INSERT INTO ldpsystem.tables (table_name) VALUES\n"
-        "    ('" + table + "');";
-    conn->exec(sql);
-}
-
 /* *
  * \brief Initializes a new database with the LDP schema.
  *
@@ -99,8 +96,8 @@ void catalog_add_table(etymon::odbc_conn* conn, const string& table)
  *
  * \param[in] db Database context.
  */
-static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
-        const string& ldpconfigUser, int64_t thisSchemaVersion, FILE* err,
+static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
+        const string& ldpconfig_user, int64_t this_schema_version, FILE* err,
         const char* prog)
 {
     fprintf(err, "%s: Initializing database\n", prog);
@@ -108,8 +105,8 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
     dbtype dbt(conn);
 
     // TODO This should probably be passed into the function as a parameter.
-    Schema schema;
-    Schema::make_default_schema(&schema);
+    ldp_schema schema;
+    ldp_schema::make_default_schema(&schema);
 
     etymon::odbc_tx tx(conn);
 
@@ -118,9 +115,9 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
     //string sql = "CREATE SCHEMA ldpsystem;";
     //db->conn->exec(sql);
 
-    string sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpUser + ";";
+    string sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldp_user + ";";
     conn->exec(sql);
-    sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpconfigUser + ";";
+    sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpconfig_user + ";";
     conn->exec(sql);
 
     sql =
@@ -129,7 +126,7 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         ");";
     conn->exec(sql);
     sql = "INSERT INTO ldpsystem.main (ldp_schema_version) VALUES (" +
-        to_string(thisSchemaVersion) + ");";
+        to_string(this_schema_version) + ");";
     conn->exec(sql);
 
     sql =
@@ -156,10 +153,11 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         "    documentation_url VARCHAR(65535)\n"
         ");";
     conn->exec(sql);
-
     // Add tables to the catalog.
-    for (auto& table : schema.tables)
-        catalog_add_table(conn, table.tableName);
+    for (auto& table : schema.tables) {
+        add_table_to_catalog_sql(conn, table.name, &sql);
+        conn->exec(sql);
+    }
 
     string rskeys;
     dbt.redshift_keys("referencing_table",
@@ -175,33 +173,34 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         ")" + rskeys + ";";
     conn->exec(sql);
 
-    //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpUser + ";";
+    //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldp_user + ";";
     //conn->exec(sql);
-    //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldpconfigUser +
+    //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " +
+    //ldpconfig_user +
     //    ";";
     //conn->exec(sql);
 
 
-    sql = "GRANT SELECT ON ldpsystem.log TO " + ldpUser + ";";
+    sql = "GRANT SELECT ON ldpsystem.log TO " + ldp_user + ";";
     conn->exec(sql);
-    sql = "GRANT SELECT ON ldpsystem.log TO " + ldpconfigUser + ";";
-    conn->exec(sql);
-
-    sql = "GRANT SELECT ON ldpsystem.main TO " + ldpUser + ";";
-    conn->exec(sql);
-    sql = "GRANT SELECT ON ldpsystem.main TO " + ldpconfigUser + ";";
+    sql = "GRANT SELECT ON ldpsystem.log TO " + ldpconfig_user + ";";
     conn->exec(sql);
 
-    sql = "GRANT SELECT ON ldpsystem.foreign_key_constraints TO " + ldpUser +
+    sql = "GRANT SELECT ON ldpsystem.main TO " + ldp_user + ";";
+    conn->exec(sql);
+    sql = "GRANT SELECT ON ldpsystem.main TO " + ldpconfig_user + ";";
+    conn->exec(sql);
+
+    sql = "GRANT SELECT ON ldpsystem.foreign_key_constraints TO " + ldp_user +
         ";";
     conn->exec(sql);
     sql = "GRANT SELECT ON ldpsystem.foreign_key_constraints TO " +
-        ldpconfigUser + ";";
+        ldpconfig_user + ";";
     conn->exec(sql);
 
-    sql = "GRANT SELECT ON ldpsystem.tables TO " + ldpUser + ";";
+    sql = "GRANT SELECT ON ldpsystem.tables TO " + ldp_user + ";";
     conn->exec(sql);
-    sql = "GRANT SELECT ON ldpsystem.tables TO " + ldpconfigUser + ";";
+    sql = "GRANT SELECT ON ldpsystem.tables TO " + ldpconfig_user + ";";
     conn->exec(sql);
 
     // Schema: ldpconfig
@@ -209,28 +208,38 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
     sql = "CREATE SCHEMA ldpconfig;";
     conn->exec(sql);
 
-    sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldpUser + ";";
+    sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldp_user + ";";
     conn->exec(sql);
-    sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldpconfigUser + ";";
+    sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldpconfig_user + ";";
     conn->exec(sql);
 
     sql =
         "CREATE TABLE ldpconfig.general (\n"
+        "    update_all_tables BOOLEAN NOT NULL,\n"
         "    enable_full_updates BOOLEAN NOT NULL,\n"
         "    next_full_update TIMESTAMP WITH TIME ZONE NOT NULL,\n"
         "    detect_foreign_keys BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    force_foreign_key_constraints BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    enable_foreign_key_warnings BOOLEAN NOT NULL DEFAULT FALSE,\n"
-        "    disable_anonymization BOOLEAN NOT NULL DEFAULT TRUE\n"
+        "    disable_anonymization BOOLEAN NOT NULL\n"
         ");";
-    conn->exec(sql);
-    sql = "DELETE FROM ldpconfig.general;";  // Temporary: pre-LDP-1.0
     conn->exec(sql);
     sql =
         "INSERT INTO ldpconfig.general\n"
-        "    (enable_full_updates, next_full_update)\n"
+        "    (update_all_tables, enable_full_updates, next_full_update,\n"
+        "     disable_anonymization)\n"
         "    VALUES\n"
-        "    (TRUE, " + string(dbt.current_timestamp()) + ");";
+        "    (TRUE, TRUE, " + string(dbt.current_timestamp()) + ",\n"
+        "     FALSE);";
+    conn->exec(sql);
+
+    // ldpconfig.update_tables
+    sql =
+        "CREATE TABLE ldpconfig.update_tables (\n"
+        "    enable_update BOOLEAN NOT NULL,\n"
+        "    table_name VARCHAR(63) NOT NULL,\n"
+        "    tenant_id SMALLINT NOT NULL\n"
+        ");";
     conn->exec(sql);
 
     sql =
@@ -243,12 +252,12 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         ");";
     conn->exec(sql);
 
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpUser + ";";
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldp_user + ";";
     conn->exec(sql);
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpconfigUser +
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpconfig_user +
         ";";
     conn->exec(sql);
-    sql = "GRANT UPDATE ON ldpconfig.general TO " + ldpconfigUser + ";";
+    sql = "GRANT UPDATE ON ldpconfig.general TO " + ldpconfig_user + ";";
     conn->exec(sql);
 
     // Schema: history
@@ -256,59 +265,30 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
     sql = "CREATE SCHEMA history;";
     conn->exec(sql);
 
-    sql = "GRANT USAGE ON SCHEMA history TO " + ldpUser + ";";
+    sql = "GRANT USAGE ON SCHEMA history TO " + ldp_user + ";";
     conn->exec(sql);
-    sql = "GRANT USAGE ON SCHEMA history TO " + ldpconfigUser + ";";
+    sql = "GRANT USAGE ON SCHEMA history TO " + ldpconfig_user + ";";
     conn->exec(sql);
 
     for (auto& table : schema.tables) {
-        string rskeys;
-        dbt.redshift_keys("id", "id, updated", &rskeys);
-        string sql =
-            "CREATE TABLE IF NOT EXISTS\n"
-            "    history." + table.tableName + " (\n"
-            "    id VARCHAR(36) NOT NULL,\n"
-            "    data " + dbt.json_type() + " NOT NULL,\n"
-            "    updated TIMESTAMP WITH TIME ZONE NOT NULL,\n"
-            "    tenant_id SMALLINT NOT NULL,\n"
-            "    CONSTRAINT\n"
-            "        history_" + table.tableName + "_pkey\n"
-            "        PRIMARY KEY (id, updated)\n"
-            ")" + rskeys + ";";
+        create_history_table_sql(table.name, conn, dbt, &sql);
         conn->exec(sql);
-
-        sql =
-            "GRANT SELECT ON\n"
-            "    history." + table.tableName + "\n"
-            "    TO " + ldpUser + ";";
+        grant_select_on_table_sql("history." + table.name, ldp_user,
+                                  conn, &sql);
         conn->exec(sql);
-        sql =
-            "GRANT SELECT ON\n"
-            "    history." + table.tableName + "\n"
-            "    TO " + ldpconfigUser + ";";
+        grant_select_on_table_sql("history." + table.name, ldpconfig_user,
+                                  conn, &sql);
         conn->exec(sql);
     }
 
     // Schema: public
 
     for (auto& table : schema.tables) {
-        string rskeys;
-        dbt.redshift_keys("id", "id", &rskeys);
-        sql =
-            "CREATE TABLE " + table.tableName + " (\n"
-            "    id VARCHAR(65535) NOT NULL,\n"
-            "    data " + dbt.json_type() + ",\n"
-            "    tenant_id SMALLINT NOT NULL,\n"
-            "    PRIMARY KEY (id)\n"
-        ")" + rskeys + ";";
+        create_main_table_sql(table.name, conn, dbt, &sql);
         conn->exec(sql);
-        sql =
-            "GRANT SELECT ON " + table.tableName + "\n"
-            "    TO " + ldpconfigUser + ";";
+        grant_select_on_table_sql(table.name, ldp_user, conn, &sql);
         conn->exec(sql);
-        sql =
-            "GRANT SELECT ON " + table.tableName + "\n"
-            "    TO " + ldpUser + ";";
+        grant_select_on_table_sql(table.name, ldpconfig_user, conn, &sql);
         conn->exec(sql);
     }
 
@@ -317,9 +297,9 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
     sql = "CREATE SCHEMA local;";
     conn->exec(sql);
 
-    sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + ldpUser + ";";
+    sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + ldp_user + ";";
     conn->exec(sql);
-    sql = "GRANT USAGE ON SCHEMA local TO " + ldpconfigUser + ";";
+    sql = "GRANT USAGE ON SCHEMA local TO " + ldpconfig_user + ";";
     conn->exec(sql);
 
     tx.commit();
@@ -327,8 +307,8 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldpUser,
     fprintf(err, "%s: Database initialization completed\n", prog);
 }
 
-static void upgrade_database_all(etymon::odbc_conn* conn, const string& ldpUser,
-        const string& ldpconfigUser, int64_t version,
+static void upgrade_database_all(etymon::odbc_conn* conn, const string& ldp_user,
+        const string& ldpconfig_user, int64_t version,
         int64_t latest_version, const string& datadir, FILE* err,
         const char* prog, bool quiet)
 {
@@ -357,8 +337,8 @@ static void upgrade_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         database_upgrade_options opt;
         opt.ulog = ulog_file.fp;
         opt.conn = conn;
-        opt.ldp_user = ldpUser;
-        opt.ldpconfig_user = ldpconfigUser;
+        opt.ldp_user = ldp_user;
+        opt.ldpconfig_user = ldpconfig_user;
         opt.datadir = datadir;
         database_upgrades[v](&opt);
         print_banner_line(ulog_file.fp, '-', 79);
@@ -375,8 +355,8 @@ static void upgrade_database_all(etymon::odbc_conn* conn, const string& ldpUser,
         fprintf(err, "%s: Database upgrade completed\n", prog);
         fprintf(err, "%s: ", prog);
         print_banner_line(err, '=', 74);
-        log lg(conn, level::info, false, quiet, prog);
-        lg.write(level::info, "server", "", "Upgraded to database version: " +
+        ldp_log lg(conn, log_level::info, false, quiet, prog);
+        lg.write(log_level::info, "server", "", "Upgraded to database version: " +
                 to_string(latest_version), -1);
     } else {
         if (!quiet)
@@ -385,7 +365,7 @@ static void upgrade_database_all(etymon::odbc_conn* conn, const string& ldpUser,
 }
 
 void init_database(etymon::odbc_env* odbc, const string& dbname,
-        const string& ldpUser, const string& ldpconfigUser, FILE* err,
+        const string& ldp_user, const string& ldpconfig_user, FILE* err,
         const char* prog)
 {
     int64_t latest_version = latest_database_version();
@@ -398,13 +378,13 @@ void init_database(etymon::odbc_env* odbc, const string& dbname,
         validate_database_version(database_version);
         throw runtime_error("Database may have been previously initialized");
     } else {
-        init_database_all(&conn, ldpUser, ldpconfigUser, latest_version, err,
+        init_database_all(&conn, ldp_user, ldpconfig_user, latest_version, err,
                 prog);
     }
 }
 
 void upgrade_database(etymon::odbc_env* odbc, const string& dbname,
-        const string& ldpUser, const string& ldpconfigUser,
+        const string& ldp_user, const string& ldpconfig_user,
         const string& datadir, FILE* err, const char* prog, bool quiet)
 {
     int64_t latest_version = latest_database_version();
@@ -417,7 +397,7 @@ void upgrade_database(etymon::odbc_env* odbc, const string& dbname,
         // Database appears to be initialized: check if it should be upgraded.
         validate_database_version(database_version);
         if (database_version < latest_version) {
-            upgrade_database_all(&conn, ldpUser, ldpconfigUser,
+            upgrade_database_all(&conn, ldp_user, ldpconfig_user,
                     database_version, latest_version, datadir, err, prog,
                     quiet);
         } else {

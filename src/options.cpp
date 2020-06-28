@@ -1,8 +1,9 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <getopt.h>
 #include <stdexcept>
+
 #include "options.h"
 #include "err.h"
 
@@ -37,6 +38,10 @@ static void evaloptlong(char* name, char* arg, ldp_options* opt)
         config_set_profile(arg, &(opt->set_profile));
         return;
     }
+    if (!strcmp(name, "no-update")) {
+        opt->no_update = true;
+        return;
+    }
     if (!strcmp(name, "savetemps")) {
         opt->savetemps = true;
         return;
@@ -46,11 +51,11 @@ static void evaloptlong(char* name, char* arg, ldp_options* opt)
         return;
     }
     if (!strcmp(name, "trace")) {
-        opt->log_level = level::trace;
+        opt->lg_level = log_level::trace;
         return;
     }
     if (!strcmp(name, "detail")) {
-        opt->log_level = level::detail;
+        opt->lg_level = log_level::detail;
         return;
     }
     if (!strcmp(name, "console")) {
@@ -95,6 +100,7 @@ int evalopt(const etymon::command_args& cargs, ldp_options *opt)
         { "debug",        no_argument,       NULL, 0   },
         { "detail",       no_argument,       NULL, 0   },
         { "extract-only", no_argument,       NULL, 0   },
+        { "no-update",    no_argument,       NULL, 0   },
         { "profile",      required_argument, NULL, 0   },
         { "quiet",        no_argument,       NULL, 0   },
         { "sourcedir",    required_argument, NULL, 0   },

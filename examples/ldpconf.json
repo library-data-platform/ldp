@@ -11,7 +11,6 @@
             "okapi_user": "diku_admin",
             "okapi_password": "(okapi password here)"
         }
-    },
-    "disable_anonymization": true
+    }
 }
 

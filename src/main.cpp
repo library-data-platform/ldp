@@ -1,5 +1,3 @@
-#include <stdexcept>
-
 #include "ldp.h"
 
 int main(int argc, char* argv[])

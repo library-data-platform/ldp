@@ -1,8 +1,12 @@
 #include <cassert>
 #include <cstring>
 #include <ctype.h>
+#include <fstream>
 #include <iostream>
+#include <iostream>
+#include <sstream>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "../etymoncpp/include/postgres.h"
 #include "../etymoncpp/include/util.h"
@@ -30,13 +34,13 @@ extraction_files::~extraction_files()
     }
 }
 
-Curl::Curl()
+curl_wrapper::curl_wrapper()
 {
     curl = curl_easy_init();
     headers = NULL;
 }
 
-Curl::~Curl()
+curl_wrapper::~curl_wrapper()
 {
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
@@ -76,24 +80,25 @@ size_t header_callback(char* buffer, size_t size, size_t nitems,
  * okapiPassword, and okapiTenant.
  * \param[out] token The authentication token received from Okapi.
  */
-void okapi_login(const ldp_options& opt, log* lg, string* token)
+void okapi_login(const ldp_options& opt, const data_source& source,
+                 ldp_log* lg, string* token)
 {
     //timer t(opt);
 
     string login;
-    encodeLogin(opt.okapi_user, opt.okapi_password, &login);
+    encodeLogin(source.okapi_user, source.okapi_password, &login);
 
-    string path = opt.okapi_url;
+    string path = source.okapi_url;
     etymon::join(&path, "/authn/login");
 
-    lg->write(level::detail, "", "", "Retrieving: " + path, -1);
+    lg->write(log_level::detail, "", "", "Retrieving: " + path, -1);
 
     string tenantHeader = "X-Okapi-Tenant: ";
-    tenantHeader += opt.okapi_tenant;
+    tenantHeader += source.okapi_tenant;
     string bodyData;
     string tokenData;
 
-    Curl c;
+    curl_wrapper c;
     if (c.curl) {
         c.headers = curl_slist_append(c.headers, tenantHeader.c_str());
         c.headers = curl_slist_append(c.headers,
@@ -150,15 +155,17 @@ enum class PageStatus {
     containsRecords
 };
 
-static PageStatus retrieve(const Curl& c, const ldp_options& opt, log* lg,
-        const string& token, const TableSchema& table, const string& loadDir,
-        extraction_files* ext_files, size_t page)
+static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
+                           const data_source& source,
+                           ldp_log* lg, const string& token,
+                           const table_schema& table, const string& loadDir,
+                           extraction_files* ext_files, size_t page)
 {
     // TODO move timing code to calling function and re-enable
     //timer t(opt);
 
-    string path = opt.okapi_url;
-    etymon::join(&path, table.sourcePath);
+    string path = source.okapi_url;
+    etymon::join(&path, table.source_spec);
 
     //path += "?offset=" + to_string(page * opt.pageSize) +
     //    "&limit=" + to_string(opt.pageSize) +
@@ -170,11 +177,12 @@ static PageStatus retrieve(const Curl& c, const ldp_options& opt, log* lg,
     path += query;
 
     //path += "?offset=0&limit=1000&query=id==*%20sortby%20id";
-    //if (table.sourcePath.find("/erm/") == 0)
+    //if (table.source_spec.find("/erm/") == 0)
     //    path += "?stats=true&offset=0&max=100";
 
     string output = loadDir;
-    etymon::join(&output, table.tableName);
+    etymon::join(&output, table.name);
+    output += "_" + source.source_name;
     output += "_" + to_string(page) + ".json";
 
     {
@@ -185,20 +193,24 @@ static PageStatus retrieve(const Curl& c, const ldp_options& opt, log* lg,
         //curl_easy_setopt(c.curl, CURLOPT_TIMEOUT, 100000);
         //curl_easy_setopt(c.curl, CURLOPT_CONNECTTIMEOUT, 100000);
 
-        curl_easy_setopt(c.curl, CURLOPT_URL, path.c_str());
-        curl_easy_setopt(c.curl, CURLOPT_WRITEDATA, f.fp);
+        CURLcode cc = curl_easy_setopt(c.curl, CURLOPT_URL, path.c_str());
+        if (cc != CURLE_OK)
+            throw runtime_error(string("Error extracting data: ") +
+                                curl_easy_strerror(cc));
+        cc = curl_easy_setopt(c.curl, CURLOPT_WRITEDATA, f.fp);
+        if (cc != CURLE_OK)
+            throw runtime_error(string("Error extracting data: ") +
+                                curl_easy_strerror(cc));
 
-        lg->write(level::detail, "", "",
+        lg->write(log_level::detail, "", "",
                 "Retrieving from:\n"
-                "    Path: " + table.sourcePath + "\n"
+                "    Path: " + table.source_spec + "\n"
                 "    Query: " + query, -1);
 
-        CURLcode code = curl_easy_perform(c.curl);
-
-        if (code) {
-            throw runtime_error(string("error retrieving data from okapi: ") +
-                    curl_easy_strerror(code));
-        }
+        cc = curl_easy_perform(c.curl);
+        if (cc != CURLE_OK)
+            throw runtime_error(string("Error extracting data: ") +
+                                curl_easy_strerror(cc));
     }
 
     long response_code = 0;
@@ -207,14 +219,17 @@ static PageStatus retrieve(const Curl& c, const ldp_options& opt, log* lg,
         return PageStatus::interfaceNotAvailable;
     }
     if (response_code != 200) {
-        string err = string("error retrieving data from okapi: ") +
-            to_string(response_code);
-            //string(": server response in file: " + output);
+        stringstream s;
+	std::ifstream f(output);
+	if (f.is_open())
+	    s << f.rdbuf() << endl;
+        string err = string("Error extracting data: ") +
+                to_string(response_code) + ":\n" + s.str();
         // TODO read and print server response, before tmp files cleaned up
         throw runtime_error(err);
     }
 
-    bool empty = pageIsEmpty(opt, output);
+    bool empty = page_is_empty(opt, output);
     return empty ? PageStatus::pageEmpty : PageStatus::containsRecords;
 
     // TODO move timing code to calling function and re-enable
@@ -223,34 +238,37 @@ static PageStatus retrieve(const Curl& c, const ldp_options& opt, log* lg,
     //    t.print("extraction time");
 }
 
-static void writeCountFile(const string& loadDir, const string& tableName,
-        extraction_files* ext_files, size_t page) {
-    string countFile = loadDir;
-    etymon::join(&countFile, tableName);
-    countFile += "_count.txt";
-    etymon::file f(countFile, "w");
-    ext_files->files.push_back(countFile);
+static void writeCountFile(const data_source& source, const string& loadDir,
+                           const string& tableName,
+                           extraction_files* ext_files, size_t page) {
+    string count_file = loadDir;
+    etymon::join(&count_file, tableName);
+    count_file += "_" + source.source_name;
+    count_file += "_count.txt";
+    etymon::file f(count_file, "w");
+    ext_files->files.push_back(count_file);
     string pageStr = to_string(page) + "\n";
     fputs(pageStr.c_str(), f.fp);
 }
 
-bool retrievePages(const Curl& c, const ldp_options& opt, log* lg,
-        const string& token, const TableSchema& table, const string& loadDir,
-        extraction_files* ext_files)
+bool retrieve_pages(const curl_wrapper& c, const ldp_options& opt,
+                    const data_source& source, ldp_log* lg,
+                    const string& token, const table_schema& table,
+                    const string& loadDir, extraction_files* ext_files)
 {
     size_t page = 0;
     while (true) {
-        lg->write(level::detail, "", "",
+        lg->write(log_level::detail, "", "",
                 "Extracting page: " + to_string(page), -1);
-        PageStatus status = retrieve(c, opt, lg, token, table, loadDir,
-                ext_files, page);
+        PageStatus status = retrieve(c, opt, source, lg, token, table, loadDir,
+                                     ext_files, page);
         switch (status) {
         case PageStatus::interfaceNotAvailable:
-            lg->write(level::trace, "", "",
-                    "Interface not available: " + table.sourcePath, -1);
+            lg->write(log_level::trace, "", "",
+                    "Interface not available: " + table.source_spec, -1);
             return false;
         case PageStatus::pageEmpty:
-            writeCountFile(loadDir, table.tableName, ext_files, page);
+            writeCountFile(source, loadDir, table.name, ext_files, page);
             return true;
         case PageStatus::containsRecords:
             break;
@@ -259,33 +277,34 @@ bool retrievePages(const Curl& c, const ldp_options& opt, log* lg,
     }
 }
 
-bool directOverride(const ldp_options& opt, const string& tableName)
+bool direct_override(const data_source& source, const string& tableName)
 {
-    for (auto& t : opt.direct.table_names) {
+    for (auto& t : source.direct.table_names) {
         if (t == tableName)
             return true;
     }
     return false;
 }
 
-bool retrieveDirect(const ldp_options& opt, log* lg, const TableSchema& table,
-        const string& loadDir, extraction_files* ext_files)
+bool retrieve_direct(const data_source& source, ldp_log* lg,
+                     const table_schema& table, const string& loadDir,
+                     extraction_files* ext_files)
 {
-    lg->write(level::trace, "", "",
-            "Direct from database: " + table.sourcePath, -1);
-    if (table.directSourceTable == "") {
-        lg->write(level::warning, "", "",
-                "Direct source table undefined: " + table.sourcePath, -1);
+    lg->write(log_level::trace, "", "",
+            "Direct from database: " + table.source_spec, -1);
+    if (table.direct_source_table == "") {
+        lg->write(log_level::warning, "", "",
+                "Direct source table undefined: " + table.source_spec, -1);
         return false;
     }
 
-    // Select jsonb from table.directSourceTable and write to JSON file.
-    etymon::Postgres db(opt.direct.database_host, opt.direct.database_port,
-            opt.direct.database_user, opt.direct.database_password,
-            opt.direct.database_name, "require");
+    // Select jsonb from table.direct_source_table and write to JSON file.
+    etymon::Postgres db(source.direct.database_host, source.direct.database_port,
+            source.direct.database_user, source.direct.database_password,
+            source.direct.database_name, "require");
     string sql = "SELECT jsonb FROM " +
-        opt.okapi_tenant + "_" + table.directSourceTable + ";";
-    lg->write(level::detail, "", "", sql, -1);
+        source.okapi_tenant + "_" + table.direct_source_table + ";";
+    lg->write(log_level::detail, "", "", sql, -1);
 
     if (PQsendQuery(db.conn, sql.c_str()) == 0) {
         string err = PQerrorMessage(db.conn);
@@ -295,7 +314,9 @@ bool retrieveDirect(const ldp_options& opt, log* lg, const TableSchema& table,
         throw runtime_error("unable to set single-row mode in database query");
 
     string output = loadDir;
-    etymon::join(&output, table.tableName + "_0.json");
+    etymon::join(&output, table.name);
+    output += "_" + source.source_name;
+    output += "_0.json";
     etymon::file f(output, "w");
     ext_files->files.push_back(output);
 
@@ -321,7 +342,7 @@ bool retrieveDirect(const ldp_options& opt, log* lg, const TableSchema& table,
     fprintf(f.fp, "\n  ]\n}\n");
 
     // Write 1 to count file.
-    writeCountFile(loadDir, table.tableName, ext_files, 1);
+    writeCountFile(source, loadDir, table.name, ext_files, 1);
 
     return true;
 }

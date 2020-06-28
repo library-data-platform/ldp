@@ -2,20 +2,20 @@
 
 #include "schema.h"
 
-void Schema::make_default_schema(Schema* schema)
+void ldp_schema::make_default_schema(ldp_schema* schema)
 {
     schema->tables.clear();
 
-    TableSchema table;
+    table_schema table;
 
-    table.sourceType = SourceType::rmb;
+    table.source_type = data_source_type::rmb;
     table.anonymize = false;
 
     ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-circulation-storage";
+    table.module_name = "mod-circulation-storage";
 
-    table.sourcePath = "/cancellation-reason-storage/cancellation-reasons";
-    table.tableName = "circulation_cancellation_reasons";
+    table.source_spec = "/cancellation-reason-storage/cancellation-reasons";
+    table.name = "circulation_cancellation_reasons";
     schema->tables.push_back(table);
 
     // TODO This seems to use a different json format.
@@ -33,500 +33,505 @@ void Schema::make_default_schema(Schema* schema)
     //     122b3d2b-4788-4f1e-9117-56daa91cb75c o
     //     15bb6216-8198-42da-bdd7-4b1e6dfb27ff "
     // }
-    table.sourcePath = "/circulation-rules-storage";
-    //table.tableName = "";
+    table.source_spec = "/circulation-rules-storage";
+    //table.name = "";
     // schema->tables.push_back(table);
 
-    table.sourcePath =
+    table.source_spec =
         "/fixed-due-date-schedule-storage/fixed-due-date-schedules";
-    table.tableName = "circulation_fixed_due_date_schedules";
+    table.name = "circulation_fixed_due_date_schedules";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/loan-policy-storage/loan-policies";
-    table.tableName = "circulation_loan_policies";
+    table.source_spec = "/loan-policy-storage/loan-policies";
+    table.name = "circulation_loan_policies";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/loan-storage/loans";
-    table.tableName = "circulation_loans";
+    table.source_spec = "/loan-storage/loans";
+    table.name = "circulation_loans";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/loan-storage/loan-history";
-    table.tableName = "circulation_loan_history";
+    table.source_spec = "/loan-storage/loan-history";
+    table.name = "circulation_loan_history";
     schema->tables.push_back(table);
 
     // okapi returns 422 Unprocessable Entity
-    table.sourcePath =
+    table.source_spec =
         "/patron-action-session-storage/expired-session-patron-ids";
-    //table.tableName = "";
+    //table.name = "";
     // schema->tables.push_back(table);
 
-    table.sourcePath = "/patron-action-session-storage/patron-action-sessions";
-    table.tableName = "circulation_patron_action_sessions";
+    table.source_spec = "/patron-action-session-storage/patron-action-sessions";
+    table.name = "circulation_patron_action_sessions";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/patron-notice-policy-storage/patron-notice-policies";
-    table.tableName = "circulation_patron_notice_policies";
+    table.source_spec = "/patron-notice-policy-storage/patron-notice-policies";
+    table.name = "circulation_patron_notice_policies";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/request-policy-storage/request-policies";
-    table.tableName = "circulation_request_policies";
-    schema->tables.push_back(table);
-
-    // Removed for lack of data
-    //table.sourcePath = "/request-preference-storage/request-preference";
-    //table.tableName = "circulation_request_preference";
-    //schema->tables.push_back(table);
-
-    table.sourcePath = "/request-storage/requests";
-    table.tableName = "circulation_requests";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/scheduled-notice-storage/scheduled-notices";
-    table.tableName = "circulation_scheduled_notices";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/staff-slips-storage/staff-slips";
-    table.tableName = "circulation_staff_slips";
-    schema->tables.push_back(table);
-
-    ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-feesfines";
-
-    table.sourcePath = "/accounts";
-    table.tableName = "feesfines_accounts";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/comments";
-    table.tableName = "feesfines_comments";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/feefines";
-    table.tableName = "feesfines_feefines";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/feefineactions";
-    table.tableName = "feesfines_feefineactions";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/lost-item-fees-policies";
-    table.tableName = "feesfines_lost_item_fees_policies";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/manualblocks";
-    table.tableName = "feesfines_manualblocks";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/overdue-fines-policies";
-    table.tableName = "feesfines_overdue_fines_policies";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/owners";
-    table.tableName = "feesfines_owners";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/payments";
-    table.tableName = "feesfines_payments";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/refunds";
-    table.tableName = "feesfines_refunds";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/transfer-criterias";
-    table.tableName = "feesfines_transfer_criterias";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/transfers";
-    table.tableName = "feesfines_transfers";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/waives";
-    table.tableName = "feesfines_waives";
-    schema->tables.push_back(table);
-
-    ///////////////////////////////////////////////////////////////////////////
-/*
-    table.moduleName = "mod-courses";
-
-    table.sourcePath = "/coursereserves/courselistings";
-    table.tableName = "course_courselistings";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/coursereserves/roles";
-    table.tableName = "course_roles";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/coursereserves/terms";
-    table.tableName = "course_terms";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/coursereserves/coursetypes";
-    table.tableName = "course_coursetypes";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/coursereserves/departments";
-    table.tableName = "course_departments";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/coursereserves/processingstatuses";
-    table.tableName = "course_processingstatuses";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/coursereserves/copyrightstatuses";
-    table.tableName = "course_copyrightstatuses";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/coursereserves/courses";
-    table.tableName = "course_courses";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/coursereserves/reserves";
-    table.tableName = "course_reserves";
-    schema->tables.push_back(table);
-*/
-
-    ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-finance-storage";
-
-    table.sourcePath = "/finance-storage/budgets";
-    table.tableName = "finance_budgets";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/finance-storage/fiscal-years";
-    table.tableName = "finance_fiscal_years";
+    table.source_spec = "/request-policy-storage/request-policies";
+    table.name = "circulation_request_policies";
     schema->tables.push_back(table);
 
     // Removed for lack of data
-    //table.sourcePath = "/finance-storage/fund-distributions";
-    //table.tableName = "finance_fund_distributions";
+    //table.source_spec = "/request-preference-storage/request-preference";
+    //table.name = "circulation_request_preference";
     //schema->tables.push_back(table);
 
-    table.sourcePath = "/finance-storage/fund-types";
-    table.tableName = "finance_fund_types";
+    table.source_spec = "/request-storage/requests";
+    table.name = "circulation_requests";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/finance-storage/funds";
-    table.tableName = "finance_funds";
+    table.source_spec = "/scheduled-notice-storage/scheduled-notices";
+    table.name = "circulation_scheduled_notices";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/finance-storage/group-fund-fiscal-years";
-    table.tableName = "finance_group_fund_fiscal_years";
+    table.source_spec = "/staff-slips-storage/staff-slips";
+    table.name = "circulation_staff_slips";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/finance-storage/groups";
-    table.tableName = "finance_groups";
+    ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-email";
+
+    table.source_spec = "/email";
+    table.name = "email_email";
+    schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-feesfines";
+
+    table.source_spec = "/accounts";
+    table.name = "feesfines_accounts";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/comments";
+    table.name = "feesfines_comments";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/feefines";
+    table.name = "feesfines_feefines";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/feefineactions";
+    table.name = "feesfines_feefineactions";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/lost-item-fees-policies";
+    table.name = "feesfines_lost_item_fees_policies";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/manualblocks";
+    table.name = "feesfines_manualblocks";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/overdue-fines-policies";
+    table.name = "feesfines_overdue_fines_policies";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/owners";
+    table.name = "feesfines_owners";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/payments";
+    table.name = "feesfines_payments";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/refunds";
+    table.name = "feesfines_refunds";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/transfer-criterias";
+    table.name = "feesfines_transfer_criterias";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/transfers";
+    table.name = "feesfines_transfers";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/waives";
+    table.name = "feesfines_waives";
+    schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-courses";
+
+    table.source_spec = "/coursereserves/copyrightstatuses";
+    table.name = "course_copyrightstatuses";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/coursereserves/courselistings";
+    table.name = "course_courselistings";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/coursereserves/courses";
+    table.name = "course_courses";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/coursereserves/coursetypes";
+    table.name = "course_coursetypes";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/coursereserves/departments";
+    table.name = "course_departments";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/coursereserves/processingstatuses";
+    table.name = "course_processingstatuses";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/coursereserves/reserves";
+    table.name = "course_reserves";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/coursereserves/roles";
+    table.name = "course_roles";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/coursereserves/terms";
+    table.name = "course_terms";
+    schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-finance-storage";
+
+    table.source_spec = "/finance-storage/budgets";
+    table.name = "finance_budgets";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/finance-storage/fiscal-years";
+    table.name = "finance_fiscal_years";
     schema->tables.push_back(table);
 
     // Removed for lack of data
-    //table.sourcePath = "/finance-storage/ledger-fiscal-years";
-    //table.tableName = "finance_ledger_fiscal_years";
+    //table.source_spec = "/finance-storage/fund-distributions";
+    //table.name = "finance_fund_distributions";
     //schema->tables.push_back(table);
 
-    table.sourcePath = "/finance-storage/ledgers";
-    table.tableName = "finance_ledgers";
+    table.source_spec = "/finance-storage/fund-types";
+    table.name = "finance_fund_types";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/finance-storage/transactions";
-    table.tableName = "finance_transactions";
+    table.source_spec = "/finance-storage/funds";
+    table.name = "finance_funds";
     schema->tables.push_back(table);
 
-    ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-inventory-storage";
-
-    table.sourcePath = "/alternative-title-types";
-    table.tableName = "inventory_alternative_title_types";
+    table.source_spec = "/finance-storage/group-fund-fiscal-years";
+    table.name = "finance_group_fund_fiscal_years";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/call-number-types";
-    table.tableName = "inventory_call_number_types";
+    table.source_spec = "/finance-storage/groups";
+    table.name = "finance_groups";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/classification-types";
-    table.tableName = "inventory_classification_types";
+    // Removed for lack of data
+    //table.source_spec = "/finance-storage/ledger-fiscal-years";
+    //table.name = "finance_ledger_fiscal_years";
+    //schema->tables.push_back(table);
+
+    table.source_spec = "/finance-storage/ledgers";
+    table.name = "finance_ledgers";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/contributor-name-types";
-    table.tableName = "inventory_contributor_name_types";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/contributor-types";
-    table.tableName = "inventory_contributor_types";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/electronic-access-relationships";
-    table.tableName = "inventory_electronic_access_relationships";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/holdings-note-types";
-    table.tableName = "inventory_holdings_note_types";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/holdings-storage/holdings";
-    table.directSourceTable = "mod_inventory_storage.holdings_record";
-    table.tableName = "inventory_holdings";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/holdings-types";
-    table.tableName = "inventory_holdings_types";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/identifier-types";
-    table.tableName = "inventory_identifier_types";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/ill-policies";
-    table.tableName = "inventory_ill_policies";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/instance-formats";
-    table.tableName = "inventory_instance_formats";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/instance-note-types";
-    table.tableName = "inventory_instance_note_types";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/instance-relationship-types";
-    table.tableName = "inventory_instance_relationship_types";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/instance-statuses";
-    table.tableName = "inventory_instance_statuses";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/instance-storage/instance-relationships";
-    table.tableName = "inventory_instance_relationships";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/instance-storage/instances";
-    table.directSourceTable = "mod_inventory_storage.instance";
-    table.tableName = "inventory_instances";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/instance-types";
-    table.tableName = "inventory_instance_types";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/item-damaged-statuses";
-    table.tableName = "inventory_item_damaged_statuses";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/item-note-types";
-    table.tableName = "inventory_item_note_types";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/item-storage/items";
-    table.directSourceTable = "mod_inventory_storage.item";
-    table.tableName = "inventory_items";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/location-units/campuses";
-    table.tableName = "inventory_campuses";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/location-units/institutions";
-    table.tableName = "inventory_institutions";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/location-units/libraries";
-    table.tableName = "inventory_libraries";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/loan-types";
-    table.tableName = "inventory_loan_types";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/locations";
-    table.tableName = "inventory_locations";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/material-types";
-    table.tableName = "inventory_material_types";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/modes-of-issuance";
-    table.tableName = "inventory_modes_of_issuance";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/nature-of-content-terms";
-    table.tableName = "inventory_nature_of_content_terms";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/service-points";
-    table.tableName = "inventory_service_points";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/service-points-users";
-    table.tableName = "inventory_service_points_users";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/statistical-code-types";
-    table.tableName = "inventory_statistical_code_types";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/statistical-codes";
-    table.tableName = "inventory_statistical_codes";
+    table.source_spec = "/finance-storage/transactions";
+    table.name = "finance_transactions";
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-invoice-storage";
+    table.module_name = "mod-inventory-storage";
+
+    table.source_spec = "/alternative-title-types";
+    table.name = "inventory_alternative_title_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/call-number-types";
+    table.name = "inventory_call_number_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/classification-types";
+    table.name = "inventory_classification_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/contributor-name-types";
+    table.name = "inventory_contributor_name_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/contributor-types";
+    table.name = "inventory_contributor_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/electronic-access-relationships";
+    table.name = "inventory_electronic_access_relationships";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/holdings-note-types";
+    table.name = "inventory_holdings_note_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/holdings-storage/holdings";
+    table.direct_source_table = "mod_inventory_storage.holdings_record";
+    table.name = "inventory_holdings";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/holdings-types";
+    table.name = "inventory_holdings_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/identifier-types";
+    table.name = "inventory_identifier_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/ill-policies";
+    table.name = "inventory_ill_policies";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/instance-formats";
+    table.name = "inventory_instance_formats";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/instance-note-types";
+    table.name = "inventory_instance_note_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/instance-relationship-types";
+    table.name = "inventory_instance_relationship_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/instance-statuses";
+    table.name = "inventory_instance_statuses";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/instance-storage/instance-relationships";
+    table.name = "inventory_instance_relationships";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/instance-storage/instances";
+    table.direct_source_table = "mod_inventory_storage.instance";
+    table.name = "inventory_instances";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/instance-types";
+    table.name = "inventory_instance_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/item-damaged-statuses";
+    table.name = "inventory_item_damaged_statuses";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/item-note-types";
+    table.name = "inventory_item_note_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/item-storage/items";
+    table.direct_source_table = "mod_inventory_storage.item";
+    table.name = "inventory_items";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/location-units/campuses";
+    table.name = "inventory_campuses";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/location-units/institutions";
+    table.name = "inventory_institutions";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/location-units/libraries";
+    table.name = "inventory_libraries";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/loan-types";
+    table.name = "inventory_loan_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/locations";
+    table.name = "inventory_locations";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/material-types";
+    table.name = "inventory_material_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/modes-of-issuance";
+    table.name = "inventory_modes_of_issuance";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/nature-of-content-terms";
+    table.name = "inventory_nature_of_content_terms";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/service-points";
+    table.name = "inventory_service_points";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/service-points-users";
+    table.name = "inventory_service_points_users";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/statistical-code-types";
+    table.name = "inventory_statistical_code_types";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/statistical-codes";
+    table.name = "inventory_statistical_codes";
+    schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-invoice-storage";
 
     // okapi returns 400 Bad Request
-    //table.sourcePath = "/invoice-storage/invoice-line-number";
-    //table.tableName = "invoice_line_number";
+    //table.source_spec = "/invoice-storage/invoice-line-number";
+    //table.name = "invoice_line_number";
     //schema->tables.push_back(table);
 
-    table.sourcePath = "/invoice-storage/invoice-lines";
-    table.tableName = "invoice_lines";
+    table.source_spec = "/invoice-storage/invoice-lines";
+    table.name = "invoice_lines";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/invoice-storage/invoices";
-    table.tableName = "invoice_invoices";
+    table.source_spec = "/invoice-storage/invoices";
+    table.name = "invoice_invoices";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/voucher-storage/voucher-lines";
-    table.tableName = "invoice_voucher_lines";
+    table.source_spec = "/voucher-storage/voucher-lines";
+    table.name = "invoice_voucher_lines";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/voucher-storage/vouchers";
-    table.tableName = "invoice_vouchers";
+    table.source_spec = "/voucher-storage/vouchers";
+    table.name = "invoice_vouchers";
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-orders-storage";
+    table.module_name = "mod-orders-storage";
 
-    table.sourcePath = "/acquisitions-units-storage/memberships";
-    table.tableName = "acquisitions_memberships";
+    table.source_spec = "/acquisitions-units-storage/memberships";
+    table.name = "acquisitions_memberships";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/acquisitions-units-storage/units";
-    table.tableName = "acquisitions_units";
+    table.source_spec = "/acquisitions-units-storage/units";
+    table.name = "acquisitions_units";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/orders-storage/alerts";
-    table.tableName = "po_alerts";
+    table.source_spec = "/orders-storage/alerts";
+    table.name = "po_alerts";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/orders-storage/order-invoice-relns";
-    table.tableName = "po_order_invoice_relns";
+    table.source_spec = "/orders-storage/order-invoice-relns";
+    table.name = "po_order_invoice_relns";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/orders-storage/order-templates";
-    table.tableName = "po_order_templates";
+    table.source_spec = "/orders-storage/order-templates";
+    table.name = "po_order_templates";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/orders-storage/pieces";
-    table.tableName = "po_pieces";
+    table.source_spec = "/orders-storage/pieces";
+    table.name = "po_pieces";
     schema->tables.push_back(table);
 
     // okapi returns 400 Bad Request
-    //table.sourcePath = "/orders-storage/po-line-number";
-    //table.tableName = "";
+    //table.source_spec = "/orders-storage/po-line-number";
+    //table.name = "";
     //schema->tables.push_back(table);
 
-    table.sourcePath = "/orders-storage/po-lines";
-    table.tableName = "po_lines";
+    table.source_spec = "/orders-storage/po-lines";
+    table.name = "po_lines";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/orders-storage/purchase-orders";
-    table.tableName = "po_purchase_orders";
+    table.source_spec = "/orders-storage/purchase-orders";
+    table.name = "po_purchase_orders";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/orders-storage/receiving-history";
-    table.tableName = "po_receiving_history";
+    table.source_spec = "/orders-storage/receiving-history";
+    table.name = "po_receiving_history";
     schema->tables.push_back(table);
 
-    table.sourcePath = "/orders-storage/reporting-codes";
-    table.tableName = "po_reporting_codes";
-    schema->tables.push_back(table);
-
-    ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-organizations-storage";
-
-    table.sourcePath = "/organizations-storage/addresses";
-    table.tableName = "organization_addresses";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/organizations-storage/categories";
-    table.tableName = "organization_categories";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/organizations-storage/contacts";
-    table.tableName = "organization_contacts";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/organizations-storage/emails";
-    table.tableName = "organization_emails";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/organizations-storage/interfaces";
-    table.tableName = "organization_interfaces";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/organizations-storage/organizations";
-    table.tableName = "organization_organizations";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/organizations-storage/phone-numbers";
-    table.tableName = "organization_phone_numbers";
-    schema->tables.push_back(table);
-
-    table.sourcePath = "/organizations-storage/urls";
-    table.tableName = "organization_urls";
+    table.source_spec = "/orders-storage/reporting-codes";
+    table.name = "po_reporting_codes";
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
-    //table.moduleName = "mod-source-record-storage";
+    table.module_name = "mod-organizations-storage";
 
-    //table.sourceType = SourceType::rmbMarc;
-    //table.sourcePath = "/source-storage/records";
-    //table.tableName = "srs_source_records";
+    table.source_spec = "/organizations-storage/addresses";
+    table.name = "organization_addresses";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/organizations-storage/categories";
+    table.name = "organization_categories";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/organizations-storage/contacts";
+    table.name = "organization_contacts";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/organizations-storage/emails";
+    table.name = "organization_emails";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/organizations-storage/interfaces";
+    table.name = "organization_interfaces";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/organizations-storage/organizations";
+    table.name = "organization_organizations";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/organizations-storage/phone-numbers";
+    table.name = "organization_phone_numbers";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/organizations-storage/urls";
+    table.name = "organization_urls";
+    schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
+    //table.module_name = "mod-source-record-storage";
+
+    //table.source_type = data_source_type::rmb_marc;
+    //table.source_spec = "/source-storage/records";
+    //table.name = "srs_source_records";
     //schema->tables.push_back(table);
-    //table.sourceType = SourceType::rmb;
+    //table.source_type = data_source_type::rmb;
 
     ///////////////////////////////////////////////////////////////////////////
-    table.moduleName = "mod-users";
+    table.module_name = "mod-users";
 
     // Removed for lack of data
-    //table.sourcePath = "/addresstypes";
-    //table.tableName = "user_addresstypes";
+    //table.source_spec = "/addresstypes";
+    //table.name = "user_addresstypes";
     //schema->tables.push_back(table);
 
-    table.sourcePath = "/groups";
-    table.tableName = "user_groups";
+    table.source_spec = "/groups";
+    table.name = "user_groups";
     schema->tables.push_back(table);
 
     // Removed for lack of data
-    //table.sourcePath = "/proxiesfor";
-    //table.tableName = "user_proxiesfor";
+    //table.source_spec = "/proxiesfor";
+    //table.name = "user_proxiesfor";
     //schema->tables.push_back(table);
 
-    table.sourcePath = "/users";
-    table.tableName = "user_users";
+    table.source_spec = "/users";
+    table.name = "user_users";
     table.anonymize = true;
     schema->tables.push_back(table);
     table.anonymize = false;
 }
 
-void ColumnSchema::columnTypeToString(ColumnType type, string* str)
+void column_schema::type_to_string(column_type type, string* str)
 {
     switch (type) {
-    case ColumnType::bigint:
+    case column_type::bigint:
         *str = "BIGINT";
         break;
-    case ColumnType::boolean:
+    case column_type::boolean:
         *str = "BOOLEAN";
         break;
-    case ColumnType::numeric:
+    case column_type::numeric:
         *str = "NUMERIC(12,2)";
         break;
-    case ColumnType::timestamptz:
+    case column_type::timestamptz:
         *str = "TIMESTAMPTZ";
         break;
-    case ColumnType::id:
+    case column_type::id:
         *str = "VARCHAR(36)";
         break;
-    case ColumnType::varchar:
+    case column_type::varchar:
         *str = "VARCHAR(65535)";
         break;
     default:
@@ -534,13 +539,15 @@ void ColumnSchema::columnTypeToString(ColumnType type, string* str)
     }
 }
 
-bool ColumnSchema::selectColumnType(log* lg, const string& table,
-        const string& source_path, const string& field, const Counts& counts,
-        ColumnType* ctype)
+bool column_schema::select_type(ldp_log* lg, const string& table,
+                                const string& source_path,
+                                const string& field,
+                                const type_counts& counts,
+                                column_type* ctype)
 {
     // Check for incompatible types.
     if (counts.string > 0 && counts.number > 0) {
-        lg->write(level::error, "", "",
+        lg->write(log_level::error, "", "",
                 "Inconsistent data types in source data:\n"
                 "    Table: " + table + "\n"
                 "    Source path: " + source_path + "\n"
@@ -553,33 +560,32 @@ bool ColumnSchema::selectColumnType(log* lg, const string& table,
     // Select a type.
     if (counts.string > 0) {
         if (counts.string == counts.uuid) {
-            *ctype = ColumnType::id;
+            *ctype = column_type::id;
             return true;
         } else {
-            if (counts.string == counts.dateTime) {
-                *ctype = ColumnType::timestamptz;
+            if (counts.string == counts.date_time) {
+                *ctype = column_type::timestamptz;
                 return true;
             } else {
-                *ctype = ColumnType::varchar;
+                *ctype = column_type::varchar;
                 return true;
             }
         }
     }
     if (counts.number > 0) {
         if (counts.floating > 0) {
-            *ctype = ColumnType::numeric;
+            *ctype = column_type::numeric;
             return true;
         } else {
-            *ctype = ColumnType::bigint;
+            *ctype = column_type::bigint;
             return true;
         }
     }
     if (counts.boolean > 0) {
-        *ctype = ColumnType::boolean;
+        *ctype = column_type::boolean;
         return true;
     }
-    *ctype = ColumnType::varchar;
+    *ctype = column_type::varchar;
     return true;
 }
-
 

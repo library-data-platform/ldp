@@ -1,7 +1,9 @@
 #ifndef LDP_OPTIONS_H
 #define LDP_OPTIONS_H
 
+#include <map>
 #include <string>
+#include <vector>
 
 #include "../etymoncpp/include/util.h"
 #include "dbtype.h"
@@ -39,20 +41,39 @@ public:
     string database_password;
 };
 
-class ldp_options {
+class data_source {
 public:
-    ldp_command command;
-    profile set_profile = profile::none;
-    bool cli_mode = false;
-    string datadir;
-    bool extract_only = false;
-    string load_from_dir;
-    string source;
+    string source_name;
     string okapi_url;
     string okapi_tenant;
     string okapi_user;
     string okapi_password;
+    int16_t tenant_id = 1;
     direct_extraction direct;
+};
+
+class ldp_options {
+public:
+    ldp_command command;
+    profile set_profile = profile::none;
+    bool no_update = false;
+    bool cli_mode = false;
+    string datadir;
+    bool extract_only = false;
+    string load_from_dir;
+    ///////////////////////////////////////////////////////////////////////////
+    // NEW SOURCE CONFIG
+    vector<data_source> enable_sources;
+    ///////////////////////////////////////////////////////////////////////////
+    // OLD SOURCE CONFIG
+    //string source;
+    //string okapi_url;
+    //string okapi_tenant;
+    //string okapi_user;
+    //string okapi_password;
+    //int16_t tenant_id = 1;
+    //direct_extraction direct;
+    ///////////////////////////////////////////////////////////////////////////
     deployment_environment deploy_env;
     string db;
     string ldp_user = "ldp";
@@ -64,7 +85,7 @@ public:
     FILE* err = stderr;
     bool verbose = false;  // Deprecated.
     bool debug = false;  // Deprecated.
-    level log_level = level::debug;
+    log_level lg_level = log_level::debug;
     bool console = false;
     bool quiet = false;
     size_t page_size = 1000;

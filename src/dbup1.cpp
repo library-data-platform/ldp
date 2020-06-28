@@ -1,13 +1,60 @@
-#include <experimental/filesystem>
-#include <sstream>
-#include <stdexcept>
-
-#include "dbtype.h"
 #include "dbup1.h"
-#include "init.h"
-#include "log.h"
+#include "initutil.h"
 
-namespace fs = std::experimental::filesystem;
+void ulog_sql(const string& sql, database_upgrade_options* opt)
+{
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+}
+
+void ulog_commit(database_upgrade_options* opt)
+{
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
+}
+
+void upgrade_add_new_table(const string& table, database_upgrade_options* opt,
+                           const dbtype& dbt)
+{
+    string sql;
+
+    create_main_table_sql(table, opt->conn, dbt, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    grant_select_on_table_sql(table, opt->ldp_user, opt->conn, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    grant_select_on_table_sql(table, opt->ldpconfig_user, opt->conn, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    create_history_table_sql(table, opt->conn, dbt, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    grant_select_on_table_sql("history." + table, opt->ldp_user, opt->conn,
+                              &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    grant_select_on_table_sql("history." + table, opt->ldpconfig_user,
+                              opt->conn, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    add_table_to_catalog_sql(opt->conn, table, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+}
 
 void database_upgrade_1(database_upgrade_options* opt)
 {
@@ -118,7 +165,8 @@ void database_upgrade_1(database_upgrade_options* opt)
     };
     for (int x = 0; table[x] != nullptr; x++) {
         // Add table to the catalog.
-        catalog_add_table(opt->conn, table[x]);
+        add_table_to_catalog_sql(opt->conn, table[x], &sql);
+        opt->conn->exec(sql);
         // Create stub table if it doesn't exist.
         sql =
             "CREATE TABLE IF NOT EXISTS " + string(table[x]) + " (\n"
@@ -615,8 +663,6 @@ void database_upgrade_7(database_upgrade_options* opt)
 
 void database_upgrade_8(database_upgrade_options* opt)
 {
-    //idmap::schemaUpgradeRemoveNewColumn(opt->datadir);
-
     string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 8;";
     fprintf(opt->ulog, "%s\n", sql.c_str());
     fflush(opt->ulog);
@@ -992,4 +1038,212 @@ void database_upgrade_11(database_upgrade_options* opt)
     fprintf(opt->ulog, "-- Committed\n");
     fflush(opt->ulog);
 }
+
+void database_upgrade_12(database_upgrade_options* opt)
+{
+    // Table: ldpconfig.general
+
+    // Column: disable_anonymization
+    // Drop default
+    string sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    ALTER COLUMN disable_anonymization DROP DEFAULT;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
+
+    // Column: update_all_tables
+    // Add column
+    sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    ADD COLUMN update_all_tables\n"
+        "    BOOLEAN;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
+    // Update value
+    sql =
+        "UPDATE ldpconfig.general\n"
+        "    SET update_all_tables = TRUE;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
+    // Set not null
+    sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    ALTER COLUMN update_all_tables SET NOT NULL;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
+
+    // Table: ldpconfig.update_tables
+    // Create table
+    sql =
+        "CREATE TABLE ldpconfig.update_tables (\n"
+        "    enable_update BOOLEAN NOT NULL,\n"
+        "    table_name VARCHAR(63) NOT NULL,\n"
+        "    tenant_id SMALLINT NOT NULL\n"
+        ");";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
+
+    sql = "UPDATE ldpsystem.main SET ldp_schema_version = 12;";
+    fprintf(opt->ulog, "%s\n", sql.c_str());
+    fflush(opt->ulog);
+    opt->conn->exec(sql);
+    fprintf(opt->ulog, "-- Committed\n");
+    fflush(opt->ulog);
+}
+
+void database_upgrade_13(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    upgrade_add_new_table("course_copyrightstatuses", opt, dbt);
+    upgrade_add_new_table("course_courselistings", opt, dbt);
+    upgrade_add_new_table("course_courses", opt, dbt);
+    upgrade_add_new_table("course_coursetypes", opt, dbt);
+    upgrade_add_new_table("course_departments", opt, dbt);
+    upgrade_add_new_table("course_processingstatuses", opt, dbt);
+    upgrade_add_new_table("course_reserves", opt, dbt);
+    upgrade_add_new_table("course_roles", opt, dbt);
+    upgrade_add_new_table("course_terms", opt, dbt);
+
+    string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 13;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+}
+
+void database_upgrade_14(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    upgrade_add_new_table("email_email", opt, dbt);
+
+    string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 14;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+}
+
+    //vector<string> tables = {
+    //    "circulation_cancellation_reasons",
+    //    "circulation_fixed_due_date_schedules",
+    //    "circulation_loan_policies",
+    //    "circulation_loans",
+    //    "circulation_loan_history",
+    //    "circulation_patron_action_sessions",
+    //    "circulation_patron_notice_policies",
+    //    "circulation_request_policies",
+    //    "circulation_requests",
+    //    "circulation_scheduled_notices",
+    //    "circulation_staff_slips",
+    //    "feesfines_accounts",
+    //    "feesfines_comments",
+    //    "feesfines_feefines",
+    //    "feesfines_feefineactions",
+    //    "feesfines_lost_item_fees_policies",
+    //    "feesfines_manualblocks",
+    //    "feesfines_overdue_fines_policies",
+    //    "feesfines_owners",
+    //    "feesfines_payments",
+    //    "feesfines_refunds",
+    //    "feesfines_transfer_criterias",
+    //    "feesfines_transfers",
+    //    "feesfines_waives",
+    //    "finance_budgets",
+    //    "finance_fiscal_years",
+    //    "finance_fund_types",
+    //    "finance_funds",
+    //    "finance_group_fund_fiscal_years",
+    //    "finance_groups",
+    //    "finance_ledgers",
+    //    "finance_transactions",
+    //    "inventory_alternative_title_types",
+    //    "inventory_call_number_types",
+    //    "inventory_classification_types",
+    //    "inventory_contributor_name_types",
+    //    "inventory_contributor_types",
+    //    "inventory_electronic_access_relationships",
+    //    "inventory_holdings_note_types",
+    //    "inventory_holdings",
+    //    "inventory_holdings_types",
+    //    "inventory_identifier_types",
+    //    "inventory_ill_policies",
+    //    "inventory_instance_formats",
+    //    "inventory_instance_note_types",
+    //    "inventory_instance_relationship_types",
+    //    "inventory_instance_statuses",
+    //    "inventory_instance_relationships",
+    //    "inventory_instances",
+    //    "inventory_instance_types",
+    //    "inventory_item_damaged_statuses",
+    //    "inventory_item_note_types",
+    //    "inventory_items",
+    //    "inventory_campuses",
+    //    "inventory_institutions",
+    //    "inventory_libraries",
+    //    "inventory_loan_types",
+    //    "inventory_locations",
+    //    "inventory_material_types",
+    //    "inventory_modes_of_issuance",
+    //    "inventory_nature_of_content_terms",
+    //    "inventory_service_points",
+    //    "inventory_service_points_users",
+    //    "inventory_statistical_code_types",
+    //    "inventory_statistical_codes",
+    //    "invoice_lines",
+    //    "invoice_invoices",
+    //    "invoice_voucher_lines",
+    //    "invoice_vouchers",
+    //    "acquisitions_memberships",
+    //    "acquisitions_units",
+    //    "po_alerts",
+    //    "po_order_invoice_relns",
+    //    "po_order_templates",
+    //    "po_pieces",
+    //    "po_lines",
+    //    "po_purchase_orders",
+    //    "po_receiving_history",
+    //    "po_reporting_codes",
+    //    "organization_addresses",
+    //    "organization_categories",
+    //    "organization_contacts",
+    //    "organization_emails",
+    //    "organization_interfaces",
+    //    "organization_organizations",
+    //    "organization_phone_numbers",
+    //    "organization_urls",
+    //    "user_groups",
+    //    "user_users"
+    //};
+
+    //{
+    //    etymon::odbc_tx tx(opt->conn);
+    //    for (auto& table : tables) {
+    //        sql =
+    //            "INSERT INTO ldpconfig.update_tables\n"
+    //            "    (enable_update, table_name, tenant_id)\n"
+    //            "    VALUES\n"
+    //            "    (TRUE, '" + table + "', 1);";
+    //        fprintf(opt->ulog, "%s\n", sql.c_str());
+    //        fflush(opt->ulog);
+    //        opt->conn->exec(sql);
+    //    }
+    //    tx.commit();
+    //    fprintf(opt->ulog, "-- Committed\n");
+    //    fflush(opt->ulog);
+    //}
 

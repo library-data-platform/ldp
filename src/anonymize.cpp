@@ -1,24 +1,14 @@
-#include <cstring>
+#include <set>
 
 #include "anonymize.h"
 
-bool possiblePersonalData(const string& field)
-{
-    const char* f = field.c_str();
-    return (
-            (strcmp(f, "/id") != 0) &&
-            (strcmp(f, "/active") != 0) &&
-            (strcmp(f, "/type") != 0) &&
-            (strcmp(f, "/patronGroup") != 0) &&
-            (strcmp(f, "/enrollmentDate") != 0) &&
-            (strcmp(f, "/expirationDate") != 0) &&
-            (strcmp(f, "/meta") != 0) &&
-            (strcmp(f, "/proxyFor") != 0) &&
-            (strcmp(f, "/createdDate") != 0) &&
-            (strcmp(f, "/updatedDate") != 0) &&
-            (strcmp(f, "/metadata") != 0) &&
-            (strcmp(f, "/tags") != 0)
-           );
-}
+static set<pair<string,string>> personal_data_fields = {
+    {"circulation_loans", "/userId"}
+};
 
+bool is_personal_data_field(const table_schema& table, const string& field)
+{
+    pair<string,string> p = pair<string,string>(table.name, field);
+    return (personal_data_fields.find(p) != personal_data_fields.end());
+}
 

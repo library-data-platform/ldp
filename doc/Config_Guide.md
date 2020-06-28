@@ -54,8 +54,11 @@ Reference
 * `enable_foreign_key_warnings` (BOOLEAN) is reserved for future use.
 
 * `disable_anonymization` (BOOLEAN) when set to `TRUE`, disables
-  anonymization of personal data.  In LDP 1.0, this value must be set
-  to `TRUE`.
+  anonymization of personal data.  Please read the section on "Data
+  privacy" in the [Administrator Guide](Admin_Guide.md) before
+  changing this setting.  As a safety precaution, the configuration
+  setting `disable_anonymization` in `ldpconf.json` also must be set
+  by the LDP system administrator.
 
 
 Further reading

@@ -4,6 +4,6 @@ set -x
 mkdir -p build
 cd build
 cmake ..
-make
-#./ldp_test
+make -j 6
+./ldp_test
 

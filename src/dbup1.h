@@ -14,6 +14,12 @@ void database_upgrade_8(database_upgrade_options* opt);
 void database_upgrade_9(database_upgrade_options* opt);
 void database_upgrade_10(database_upgrade_options* opt);
 void database_upgrade_11(database_upgrade_options* opt);
+void database_upgrade_12(database_upgrade_options* opt);
+void database_upgrade_13(database_upgrade_options* opt);
+void database_upgrade_14(database_upgrade_options* opt);
+
+void ulog_sql(const string& sql, database_upgrade_options* opt);
+void ulog_commit(database_upgrade_options* opt);
 
 #endif
 

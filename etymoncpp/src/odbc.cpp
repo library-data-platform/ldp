@@ -122,42 +122,6 @@ void odbc_conn::get_data(odbc_stmt* stmt, uint16_t column, string* data)
         *data = buffer;
 }
 
-void odbc_conn::start_transaction()
-{
-    set_auto_commit(false);
-}
-
-void odbc_conn::commit()
-{
-    SQLRETURN rc = SQLEndTran(SQL_HANDLE_DBC, conn, SQL_COMMIT);
-    try {
-        set_auto_commit(true);
-    } catch (runtime_error& e) {}
-    if (!SQL_SUCCEEDED(rc))
-        throw runtime_error("error committing transaction in database: " + dsn);
-}
-
-void odbc_conn::rollback()
-{
-    SQLRETURN rc = SQLEndTran(SQL_HANDLE_DBC, conn, SQL_ROLLBACK);
-    try {
-        set_auto_commit(true);
-    } catch (runtime_error& e) {}
-    if (!SQL_SUCCEEDED(rc))
-        throw runtime_error("error rolling back transaction in database: " +
-                dsn);
-}
-
-void odbc_conn::set_auto_commit(bool auto_commit)
-{
-    SQLRETURN rc = SQLSetConnectAttr(conn, SQL_ATTR_AUTOCOMMIT,
-            auto_commit ?
-            (SQLPOINTER) SQL_AUTOCOMMIT_ON : (SQLPOINTER) SQL_AUTOCOMMIT_OFF,
-            SQL_IS_UINTEGER);
-    if (!SQL_SUCCEEDED(rc))
-        throw runtime_error("error setting autocommit in database: " + dsn);
-}
-
 odbc_stmt::odbc_stmt(odbc_conn* conn)
 {
     SQLAllocHandle(SQL_HANDLE_STMT, conn->conn, &stmt);
@@ -168,23 +132,51 @@ odbc_stmt::~odbc_stmt()
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 }
 
-odbc_tx::odbc_tx(odbc_conn* conn)
+static bool set_auto_commit(bool auto_commit, odbc_conn* conn)
 {
-    this->conn = conn;
+    SQLRETURN rc = SQLSetConnectAttr(conn->conn,
+                                     SQL_ATTR_AUTOCOMMIT,
+                                     (auto_commit ?
+                                      (SQLPOINTER) SQL_AUTOCOMMIT_ON :
+                                      (SQLPOINTER) SQL_AUTOCOMMIT_OFF),
+                                     SQL_IS_UINTEGER);
+    return SQL_SUCCEEDED(rc);
+}
+
+odbc_tx::odbc_tx(odbc_conn* connp)
+{
+    bool ok = set_auto_commit(false, connp);
+    if (!ok)
+        throw runtime_error("Error setting autocommit in database: " +
+                            connp->dsn);
+    this->conn = connp;
     completed = false;
-    this->conn->start_transaction();
+}
+
+odbc_tx::~odbc_tx()
+{
+    rollback();
 }
 
 void odbc_tx::commit()
 {
-    conn->commit();
-    completed = true;
+    if (!completed) {
+        SQLRETURN rc = SQLEndTran(SQL_HANDLE_DBC, conn->conn, SQL_COMMIT);
+        set_auto_commit(true, conn);
+        if (!SQL_SUCCEEDED(rc))
+            throw runtime_error("Error committing transaction in database: " +
+                                conn->dsn);
+        completed = true;
+    }
 }
 
 void odbc_tx::rollback()
 {
-    conn->rollback();
-    completed = true;
+    if (!completed) {
+        SQLEndTran(SQL_HANDLE_DBC, conn->conn, SQL_ROLLBACK);
+        set_auto_commit(true, conn);
+        completed = true;
+    }
 }
 
 }

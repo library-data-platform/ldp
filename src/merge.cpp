@@ -1,59 +1,57 @@
-#include <stdexcept>
-
 #include "merge.h"
 #include "names.h"
-#include "util.h"
 
-void mergeTable(const ldp_options& opt, log* lg, const TableSchema& table,
-        etymon::odbc_env* odbc, etymon::odbc_conn* conn, const dbtype& dbt)
+void merge_table(const ldp_options& opt, ldp_log* lg, const table_schema& table,
+                 etymon::odbc_env* odbc, etymon::odbc_conn* conn,
+                 const dbtype& dbt)
 {
     // Update history tables.
 
-    string historyTable;
-    historyTableName(table.tableName, &historyTable);
+    string history_table;
+    history_table_name(table.name, &history_table);
 
-    string latestHistoryTable;
-    latestHistoryTableName(table.tableName, &latestHistoryTable);
+    string latest_history_table;
+    latest_history_table_name(table.name, &latest_history_table);
 
     string sql =
         "CREATE TEMPORARY TABLE\n"
-        "    " + latestHistoryTable + "\n"
+        "    " + latest_history_table + "\n"
         "    AS\n"
         "SELECT id, data, tenant_id\n"
-        "    FROM " + historyTable + " AS h1\n"
+        "    FROM " + history_table + " AS h1\n"
         "    WHERE NOT EXISTS\n"
         "      ( SELECT 1\n"
-        "            FROM " + historyTable + " AS h2\n"
+        "            FROM " + history_table + " AS h2\n"
         "            WHERE h1.tenant_id = h2.tenant_id AND\n"
         "                  h1.id = h2.id AND\n"
         "                  h1.updated < h2.updated\n"
         "      );";
-    lg->write(level::detail, "", "", sql, -1);
+    lg->write(log_level::detail, "", "", sql, -1);
     conn->exec(sql);
 
-    string loadingTable;
-    loadingTableName(table.tableName, &loadingTable);
+    string loading_table;
+    loading_table_name(table.name, &loading_table);
 
     sql =
-        "INSERT INTO " + historyTable + "\n"
+        "INSERT INTO " + history_table + "\n"
         "    (id, data, updated, tenant_id)\n"
         "SELECT s.id,\n"
         "       s.data,\n" +
         "       " + dbt.current_timestamp() + ",\n"
         "       s.tenant_id\n"
-        "    FROM " + loadingTable + " AS s\n"
-        "        LEFT JOIN " + latestHistoryTable + "\n"
+        "    FROM " + loading_table + " AS s\n"
+        "        LEFT JOIN " + latest_history_table + "\n"
         "            AS h\n"
         "            ON s.tenant_id = h.tenant_id AND\n"
         "               s.id = h.id\n"
         "    WHERE s.data IS NOT NULL AND\n"
         "          ( h.id IS NULL OR\n"
         "            (s.data)::VARCHAR <> (h.data)::VARCHAR );";
-    lg->write(level::detail, "", "", sql, -1);
+    lg->write(log_level::detail, "", "", sql, -1);
     conn->exec(sql);
 }
 
-void dropTable(const ldp_options& opt, log* lg, const string& tableName,
+void drop_table(const ldp_options& opt, ldp_log* lg, const string& tableName,
         etymon::odbc_conn* conn)
 {
     string sql = "DROP TABLE IF EXISTS " + tableName + ";";
@@ -61,15 +59,15 @@ void dropTable(const ldp_options& opt, log* lg, const string& tableName,
     conn->exec(sql);
 }
 
-void placeTable(const ldp_options& opt, log* lg, const TableSchema& table,
+void place_table(const ldp_options& opt, ldp_log* lg, const table_schema& table,
         etymon::odbc_conn* conn)
 {
-    string loadingTable;
-    loadingTableName(table.tableName, &loadingTable);
+    string loading_table;
+    loading_table_name(table.name, &loading_table);
     string sql =
-        "ALTER TABLE " + loadingTable + "\n"
-        "    RENAME TO " + table.tableName + ";";
-    lg->write(level::detail, "", "", sql, -1);
+        "ALTER TABLE " + loading_table + "\n"
+        "    RENAME TO " + table.name + ";";
+    lg->write(log_level::detail, "", "", sql, -1);
     conn->exec(sql);
 }
 
