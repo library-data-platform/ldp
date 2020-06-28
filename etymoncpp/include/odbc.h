@@ -31,11 +31,7 @@ public:
     void exec_direct(odbc_stmt* stmt, const string& sql);
     bool fetch(odbc_stmt* stmt);
     void get_data(odbc_stmt* stmt, uint16_t column, string* data);
-    void start_transaction();
-    void commit();
-    void rollback();
 private:
-    void set_auto_commit(bool autoCommit);
     void exec_direct_stmt(odbc_stmt* stmt, const string& sql);
 };
 
@@ -50,6 +46,7 @@ class odbc_tx {
 public:
     odbc_conn* conn;
     odbc_tx(odbc_conn* conn);
+    ~odbc_tx();
     void commit();
     void rollback();
 private:
