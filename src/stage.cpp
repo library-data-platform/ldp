@@ -588,22 +588,21 @@ static void index_loading_table(ldp_log* lg, const table_schema& table,
     }
     // If there is a table schema, define the primary key or indexes.
     for (const auto& column : table.columns) {
-        if (column.type == column_type::id) {
-            if (column.name == "id") {
+        if (column.name == "id") {
+            string sql =
+                "ALTER TABLE " + loading_table + "\n"
+                "    ADD PRIMARY KEY (id);";
+            lg->detail(sql);
+            conn->exec(sql);
+        } else {
+            if (string(dbt->type_string()) == "PostgreSQL"
+                && column.name != "data") {
                 string sql =
-                    "ALTER TABLE " + loading_table + "\n"
-                    "    ADD PRIMARY KEY (id);";
+                    "CREATE INDEX ON\n"
+                    "    " + loading_table + "\n"
+                    "    (\"" + column.name + "\");";
                 lg->detail(sql);
                 conn->exec(sql);
-            } else {
-                if (string(dbt->type_string()) == "PostgreSQL") {
-                    string sql =
-                        "CREATE INDEX ON\n"
-                        "    " + loading_table + "\n"
-                        "    (" + column.name + ");";
-                    lg->detail(sql);
-                    conn->exec(sql);
-                }
             }
         }
     }
