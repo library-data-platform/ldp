@@ -482,6 +482,24 @@ void run_update(const ldp_options& opt)
     lg.write(log_level::debug, "server", "", "Completed full update",
             full_update_timer.elapsed_time());
 
+    // Vacuum and analyze all updated tables
+    {
+        etymon::odbc_conn conn(&odbc, opt.db);
+        timer vacuum_analyze_timer(opt);
+        for (auto& table : schema.tables) {
+            if (table.skip || opt.extract_only)
+                continue;
+            string sql = "VACUUM " + table.name + ";";
+            lg.detail(sql);
+            conn.exec(sql);
+            sql = "ANALYZE " + table.name + ";";
+            lg.detail(sql);
+            conn.exec(sql);
+        }
+        lg.write(log_level::debug, "server", "", "Completed vacuum/analyze",
+                 vacuum_analyze_timer.elapsed_time());
+    }
+
     // TODO Move analysis and constraints out of update process.
     {
         etymon::odbc_conn conn(&odbc, opt.db);
