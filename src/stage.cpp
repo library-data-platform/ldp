@@ -577,6 +577,16 @@ static void index_loading_table(ldp_log* lg, const table_schema& table,
     lg->trace("Creating indexes on table: " + table.name);
     string loading_table;
     loading_table_name(table.name, &loading_table);
+    // If there is no table schema, define a primary key on (id) and return.
+    if (table.columns.size() == 0) {
+        string sql =
+            "ALTER TABLE " + loading_table + "\n"
+            "    ADD PRIMARY KEY (id);";
+        lg->detail(sql);
+        conn->exec(sql);
+        return;
+    }
+    // If there is a table schema, define the primary key or indexes.
     for (const auto& column : table.columns) {
         if (column.type == column_type::id) {
             if (column.name == "id") {

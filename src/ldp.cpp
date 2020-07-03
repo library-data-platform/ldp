@@ -222,7 +222,8 @@ void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
 
     do {
         if (opt.cli_mode || time_for_full_update(opt, &conn, &dbt, &lg) ) {
-            reschedule_next_daily_load(opt, &conn, &dbt, &lg);
+            if (!opt.cli_mode)
+                reschedule_next_daily_load(opt, &conn, &dbt, &lg);
             pid_t pid = fork();
             if (pid == 0)
                 run_update_process(opt);
