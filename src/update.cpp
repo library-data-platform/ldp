@@ -307,6 +307,9 @@ void run_update(const ldp_options& opt)
         //    fprintf(opt.err, "%s: Reading data from directory: %s\n",
         //            opt.prog, opt.loadFromDir.c_str());
         load_dir = opt.load_from_dir;
+        data_source source;
+        source_state state(source);
+        source_states.push_back(state);
     } else {
 
         for (auto& source : opt.enable_sources) {

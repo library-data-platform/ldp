@@ -113,6 +113,9 @@ void process_json_record(const table_schema& table, json::Document* root,
                     (*stats)[field.c_str() + 1].uuid++;
                 if (looks_like_date_time(node->GetString()))
                     (*stats)[field.c_str() + 1].date_time++;
+                size_t slen = strlen(node->GetString());
+                if (slen > (*stats)[field.c_str() + 1].max_length)
+                    (*stats)[field.c_str() + 1].max_length = slen;
             }
             break;
         case json::kArrayType:
@@ -533,7 +536,8 @@ size_t read_page_count(const data_source& source, ldp_log* lg,
 {
     string filename = load_dir;
     etymon::join(&filename, table_name);
-    filename += "_" + source.source_name;
+    if (source.source_name != "")
+        filename += "_" + source.source_name;
     filename += "_count.txt";
     if ( !(fs::exists(filename)) ) {
         lg->write(log_level::warning, "", "", "File not found: " + filename, -1);
@@ -564,10 +568,13 @@ static void stage_page(const ldp_options& opt, ldp_log* lg, int pass,
 
 static void compose_data_file_path(const string& load_dir,
                                    const table_schema& table,
+                                   const string& source_name,
                                    const string& suffix, string* path)
 {
     *path = load_dir;
     etymon::join(path, table.name);
+    if (source_name != "")
+        *path += ("_" + source_name);
     *path += suffix;
 }
 
@@ -622,14 +629,17 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
     sql += loading_table;
     sql += " (\n"
         "    id VARCHAR(36) NOT NULL,\n";
-    string columnType;
+    string column_type;
     for (const auto& column : table.columns) {
         if (column.name != "id") {
             sql += "    \"";
             sql += column.name;
             sql += "\" ";
-            column_schema::type_to_string(column.type, &columnType);
-            sql += columnType;
+            if (column.type == column_type::varchar)
+                column_type = "VARCHAR(" + to_string(column.length) + ")";
+            else
+                column_schema::type_to_string(column.type, &column_type);
+            sql += column_type;
             sql += ",\n";
         }
     }
@@ -801,8 +811,8 @@ bool stage_table_1(const ldp_options& opt,
 
         for (size_t page = 0; page < page_count; page++) {
             string path;
-            compose_data_file_path(load_dir, *table,
-                                   "_" + state.source.source_name +
+            compose_data_file_path(load_dir, *table, state.source.source_name,
+                                   // "_" + state.source.source_name +
                                    "_" + to_string(page) + ".json", &path);
             lg->write(log_level::detail, "", "",
                       "Staging: " + table->name +
@@ -815,7 +825,7 @@ bool stage_table_1(const ldp_options& opt,
 
     if (opt.load_from_dir != "") {
         string path;
-        compose_data_file_path(load_dir, *table, "_test.json", &path);
+        compose_data_file_path(load_dir, *table, "", "_test.json", &path);
         if (fs::exists(path)) {
             lg->write(log_level::detail, "", "",
                       "Staging: " + table->name +
@@ -845,6 +855,9 @@ bool stage_table_1(const ldp_options& opt,
                       "Stats: float: " + to_string(counts.floating), -1);
             lg->write(log_level::detail, "", "",
                       "Stats: null: " + to_string(counts.null), -1);
+            lg->write(log_level::detail, "", "",
+                      "Stats: max_length: " + to_string(counts.max_length),
+                      -1);
         }
     }
 
@@ -859,6 +872,7 @@ bool stage_table_1(const ldp_options& opt,
                 return false;
             string type_str;
             column_schema::type_to_string(column.type, &type_str);
+            column.length = max( (unsigned int) 1, counts.max_length);
             string newattr;
             decode_camel_case(field.c_str(), &newattr);
             lg->write(log_level::detail, "", "",
@@ -904,8 +918,8 @@ bool stage_table_2(const ldp_options& opt,
 
         for (size_t page = 0; page < page_count; page++) {
             string path;
-            compose_data_file_path(load_dir, *table,
-                                   "_" + state.source.source_name +
+            compose_data_file_path(load_dir, *table, state.source.source_name,
+                                   // "_" + state.source.source_name +
                                    "_" + to_string(page) + ".json", &path);
             lg->write(log_level::detail, "", "",
                       "Staging: " + table->name +
@@ -919,7 +933,7 @@ bool stage_table_2(const ldp_options& opt,
 
     if (opt.load_from_dir != "") {
         string path;
-        compose_data_file_path(load_dir, *table, "_test.json", &path);
+        compose_data_file_path(load_dir, *table, "", "_test.json", &path);
         if (fs::exists(path)) {
             lg->write(log_level::detail, "", "",
                       "Staging: " + table->name +
@@ -936,4 +950,3 @@ bool stage_table_2(const ldp_options& opt,
 
     return true;
 }
-
