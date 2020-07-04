@@ -12,7 +12,7 @@
 
 namespace fs = std::experimental::filesystem;
 
-static int64_t ldp_latest_database_version = 14;
+static int64_t ldp_latest_database_version = 15;
 
 database_upgrade_array database_upgrades[] = {
     nullptr,  // Version 0 has no migration.
@@ -29,7 +29,8 @@ database_upgrade_array database_upgrades[] = {
     database_upgrade_11,
     database_upgrade_12,
     database_upgrade_13,
-    database_upgrade_14
+    database_upgrade_14,
+    database_upgrade_15
 };
 
 int64_t latest_database_version()
@@ -215,13 +216,13 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
 
     sql =
         "CREATE TABLE ldpconfig.general (\n"
-        "    update_all_tables BOOLEAN NOT NULL,\n"
+        "    update_all_tables BOOLEAN,\n"
         "    enable_full_updates BOOLEAN NOT NULL,\n"
         "    next_full_update TIMESTAMP WITH TIME ZONE NOT NULL,\n"
         "    detect_foreign_keys BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    force_foreign_key_constraints BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    enable_foreign_key_warnings BOOLEAN NOT NULL DEFAULT FALSE,\n"
-        "    disable_anonymization BOOLEAN NOT NULL\n"
+        "    disable_anonymization BOOLEAN NOT NULL DEFAULT FALSE\n"
         ");";
     conn->exec(sql);
     sql =

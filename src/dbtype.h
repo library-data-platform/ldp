@@ -24,6 +24,7 @@ public:
         const string& table_column_name, string* sql) const;
     void encode_string_const(const char* str, string* newstr) const;
     const char* type_string() const;
+    dbsys type() const;
     void redshift_keys(const char* distkey, const char* sortkey,
             string* sql) const;
 private:

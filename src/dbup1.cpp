@@ -1045,18 +1045,18 @@ void database_upgrade_12(database_upgrade_options* opt)
 
     // Column: disable_anonymization
     // Drop default
-    string sql =
-        "ALTER TABLE ldpconfig.general\n"
-        "    ALTER COLUMN disable_anonymization DROP DEFAULT;";
-    fprintf(opt->ulog, "%s\n", sql.c_str());
-    fflush(opt->ulog);
-    opt->conn->exec(sql);
-    fprintf(opt->ulog, "-- Committed\n");
-    fflush(opt->ulog);
+    //string sql =
+    //    "ALTER TABLE ldpconfig.general\n"
+    //    "    ALTER COLUMN disable_anonymization DROP DEFAULT;";
+    //fprintf(opt->ulog, "%s\n", sql.c_str());
+    //fflush(opt->ulog);
+    //opt->conn->exec(sql);
+    //fprintf(opt->ulog, "-- Committed\n");
+    //fflush(opt->ulog);
 
     // Column: update_all_tables
     // Add column
-    sql =
+    string sql =
         "ALTER TABLE ldpconfig.general\n"
         "    ADD COLUMN update_all_tables\n"
         "    BOOLEAN;";
@@ -1075,14 +1075,14 @@ void database_upgrade_12(database_upgrade_options* opt)
     fprintf(opt->ulog, "-- Committed\n");
     fflush(opt->ulog);
     // Set not null
-    sql =
-        "ALTER TABLE ldpconfig.general\n"
-        "    ALTER COLUMN update_all_tables SET NOT NULL;";
-    fprintf(opt->ulog, "%s\n", sql.c_str());
-    fflush(opt->ulog);
-    opt->conn->exec(sql);
-    fprintf(opt->ulog, "-- Committed\n");
-    fflush(opt->ulog);
+    //sql =
+    //    "ALTER TABLE ldpconfig.general\n"
+    //    "    ALTER COLUMN update_all_tables SET NOT NULL;";
+    //fprintf(opt->ulog, "%s\n", sql.c_str());
+    //fflush(opt->ulog);
+    //opt->conn->exec(sql);
+    //fprintf(opt->ulog, "-- Committed\n");
+    //fflush(opt->ulog);
 
     // Table: ldpconfig.update_tables
     // Create table
@@ -1133,6 +1133,38 @@ void database_upgrade_14(database_upgrade_options* opt)
     upgrade_add_new_table("email_email", opt, dbt);
 
     string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 14;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+}
+
+void database_upgrade_15(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    if (dbt.type() == dbsys::postgresql) {
+        string sql =
+            "ALTER TABLE ldpconfig.general\n"
+            "    ALTER COLUMN disable_anonymization SET DEFAULT FALSE;";
+        fprintf(opt->ulog, "%s\n", sql.c_str());
+        fflush(opt->ulog);
+        opt->conn->exec(sql);
+        fprintf(opt->ulog, "-- Committed\n");
+        fflush(opt->ulog);
+    }
+
+    if (dbt.type() == dbsys::postgresql) {
+        string sql =
+            "ALTER TABLE ldpconfig.general\n"
+            "    ALTER COLUMN update_all_tables DROP NOT NULL;";
+        fprintf(opt->ulog, "%s\n", sql.c_str());
+        fflush(opt->ulog);
+        opt->conn->exec(sql);
+        fprintf(opt->ulog, "-- Committed\n");
+        fflush(opt->ulog);
+    }
+
+    string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 15;";
     ulog_sql(sql, opt);
     opt->conn->exec(sql);
     ulog_commit(opt);
