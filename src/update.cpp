@@ -495,6 +495,12 @@ void run_update(const ldp_options& opt)
             sql = "ANALYZE " + table.name + ";";
             lg.detail(sql);
             conn.exec(sql);
+            sql = "VACUUM history." + table.name + ";";
+            lg.detail(sql);
+            conn.exec(sql);
+            sql = "ANALYZE history." + table.name + ";";
+            lg.detail(sql);
+            conn.exec(sql);
         }
         lg.write(log_level::debug, "server", "", "Completed vacuum/analyze",
                  vacuum_analyze_timer.elapsed_time());
