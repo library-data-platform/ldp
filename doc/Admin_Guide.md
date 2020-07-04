@@ -85,39 +85,34 @@ with the same major version number (1.3), for example, 1.3.1 or 1.3.2,
 will not generally contain new features but only bug fixes.
 
 Stable versions of LDP are available via the release branches
-described below and from the [releases
+described below.  Releases from the latest release branch are
+available from the [releases
 page](https://github.com/folio-org/ldp/releases).
 
 Within the [source code repository](https://github.com/folio-org/ldp)
-there are several kinds of branches:
+there are several kinds of named branches:
 
 * Release branches (`*-release`):  A numbered release branch is
   created for each major version.  For example, `1.2-release` would
   point to the latest release of major version 1.2, such as 1.2.5.
-  These release branches are "stable" versions.
+  These release branches are "stable" in that they generally receive
+  bug fixes but no new features.
 
-* Master branch (`master`):  This is the branch that new major version
-  releases are made from.  It contains recently added features that
-  have had some testing.  It is effectively the "testing" version.
+* Current branch (`*-current`):  This is a development branch that
+  will eventually become the next major release.  It contains recently
+  added features that have had some testing.
 
-* Current branch (`current`):  This is for active development and
-  tends to be unstable.  This is where new features are added, before
-  they are merged to the master branch.  It is the main "development"
-  version.
+* Other development branches which may have various names.
 
-* Other branches used for development which may have various names.
+It is recommended that release branches (`*-release`) be used in
+production or any environment where stability is critical.  For faster
+access to new features, the current branch (`*-current`) may be used,
+though it is relatively less stable.
 
-If automated deployment will be used for upgrading to new versions of
-LDP, two approaches might be suggested:
-
-* For a staging environment, one option would be to pull upgrades
-  automatically from a specific release branch.  For example, using
-  `1.7-release` would mean that only bug fixes for major version 1.7
-  would be applied.
-
-* For a testing environment, which might be used to test new features
-  not yet released, the latest version can be pulled from the `master`
-  branch.
+An LDP instance based on a release branch can be "upgraded" to the
+current branch, but not generally from the current branch to a release
+branch.  Once a current branch is released, it is renamed to a release
+branch; e.g. `1.2-current` becomes `1.2-release`.
 
 ### Installing software dependencies
 
