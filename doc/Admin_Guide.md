@@ -84,40 +84,42 @@ Suppose that LDP 1.3.0 has been released.  Any subsequent versions
 with the same major version number (1.3), for example, 1.3.1 or 1.3.2,
 will not generally contain new features but only bug fixes.
 
-Stable versions of LDP are available via the release branches
-described below and from the [releases
-page](https://github.com/folio-org/ldp/releases).
+The most recent major release and related bug fix releases are
+available from the [releases
+page](https://github.com/library-data-platform/ldp/releases).
 
-Within the [source code repository](https://github.com/folio-org/ldp)
-there are several kinds of branches:
+More options are available within the [source code
+repository](https://github.com/library-data-platform/ldp), which
+contains two main kinds of branches:
 
-* Release branches (`*-release`):  A numbered release branch is
-  created for each major version.  For example, `1.2-release` would
-  point to the latest release of major version 1.2, such as 1.2.5.
-  These release branches are "stable" versions.
+* Release branches (`*-release`):  Release branches are the "stable"
+  branches.  They are the most stable versions available because they
+  generally receive only bug fixes and no new features.  A release
+  branch such as `1.2-release` would point to the latest version of
+  LDP 1.2, for example, 1.2.5.  It is recommended for production
+  environments, or any environment where stability is critical, that
+  they use only release branches.
 
-* Master branch (`master`):  This is the branch that new major version
-  releases are made from.  It contains recently added features that
-  have had some testing.  It is effectively the "testing" version.
+* Current branch (`*-current`):  The current branch is a "development"
+  branch.  It is the most stable of the development branches, in the
+  sense that it has had some testing, but it is less stable than a
+  release branch.  The advantage of using the current branch is that
+  it contains new features long before those features are available in
+  a release branch.  At any time there is only one current branch,
+  which is named for the next planned release, and it eventually comes
+  to be a release branch.  For example, `1.3-current` becomes
+  `1.3-release` once it has stabilized.  If there is a need for faster
+  access to new features than what is provided by release branches,
+  the current branch may be used, but with the caveat that it could be
+  unstable.
 
-* Current branch (`current`):  This is for active development and
-  tends to be unstable.  This is where new features are added, before
-  they are merged to the master branch.  It is the main "development"
-  version.
+Other branches having various names are used for development such as
+prototyping new features or bug fixes.
 
-* Other branches used for development which may have various names.
-
-If automated deployment will be used for upgrading to new versions of
-LDP, two approaches might be suggested:
-
-* For a staging environment, one option would be to pull upgrades
-  automatically from a specific release branch.  For example, using
-  `1.7-release` would mean that only bug fixes for major version 1.7
-  would be applied.
-
-* For a testing environment, which might be used to test new features
-  not yet released, the latest version can be pulled from the `master`
-  branch.
+An LDP instance based on a release branch can be "upgraded" to the
+current branch, but not generally from the current branch to a release
+branch.  However, as explained above, the current branch eventually
+becomes the next release branch.
 
 ### Installing software dependencies
 
@@ -329,9 +331,9 @@ to the LDP database.  To configure ODBC, install the ODBC driver for
 the database system being used (PostgreSQL or Redshift), and create
 the files `$HOME/.odbcinst.ini` and `$HOME/.odbc.ini`.  The provided
 example files
-[odbcinst.ini](https://raw.githubusercontent.com/folio-org/ldp/master/examples/odbcinst.ini)
+[odbcinst.ini](https://raw.githubusercontent.com/library-data-platform/ldp/master/examples/odbcinst.ini)
 and
-[odbc.ini](https://raw.githubusercontent.com/folio-org/ldp/master/examples/odbc.ini)
+[odbc.ini](https://raw.githubusercontent.com/library-data-platform/ldp/master/examples/odbc.ini)
 can be used as templates.
 
 __odbcinst.ini__
@@ -376,7 +378,7 @@ $ sudo chown ldp /var/lib/ldp
 Server configuration settings are stored in a file in the data
 directory called `ldpconf.json`.  In our example it would be
 `/var/lib/ldp/ldpconf.json`.  The provided example file
-[ldpconf.json](https://raw.githubusercontent.com/folio-org/ldp/master/examples/ldpconf.json)
+[ldpconf.json](https://raw.githubusercontent.com/library-data-platform/ldp/master/examples/ldpconf.json)
 can be used as a template.
 
 __ldpconf.json__
