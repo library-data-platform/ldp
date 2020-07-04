@@ -27,12 +27,14 @@ public:
     unsigned int boolean = 0;
     unsigned int null = 0;
     unsigned int uuid = 0;
+    unsigned int max_length = 0;
 };
 
 class column_schema {
 public:
     string name;
     column_type type;
+    unsigned int length = 0;
     string source_name;
     static void type_to_string(column_type type, string* str);
     static bool select_type(ldp_log* lg, const string& table,

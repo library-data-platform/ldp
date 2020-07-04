@@ -140,6 +140,11 @@ const char* dbtype::type_string() const
     }
 }
 
+dbsys dbtype::type() const
+{
+    return dbt;
+}
+
 static void encode_str(const char* str, string* newstr, bool e)
 {
     if (e)

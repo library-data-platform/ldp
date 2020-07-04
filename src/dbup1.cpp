@@ -1045,18 +1045,18 @@ void database_upgrade_12(database_upgrade_options* opt)
 
     // Column: disable_anonymization
     // Drop default
-    string sql =
-        "ALTER TABLE ldpconfig.general\n"
-        "    ALTER COLUMN disable_anonymization DROP DEFAULT;";
-    fprintf(opt->ulog, "%s\n", sql.c_str());
-    fflush(opt->ulog);
-    opt->conn->exec(sql);
-    fprintf(opt->ulog, "-- Committed\n");
-    fflush(opt->ulog);
+    //string sql =
+    //    "ALTER TABLE ldpconfig.general\n"
+    //    "    ALTER COLUMN disable_anonymization DROP DEFAULT;";
+    //fprintf(opt->ulog, "%s\n", sql.c_str());
+    //fflush(opt->ulog);
+    //opt->conn->exec(sql);
+    //fprintf(opt->ulog, "-- Committed\n");
+    //fflush(opt->ulog);
 
     // Column: update_all_tables
     // Add column
-    sql =
+    string sql =
         "ALTER TABLE ldpconfig.general\n"
         "    ADD COLUMN update_all_tables\n"
         "    BOOLEAN;";
@@ -1075,14 +1075,14 @@ void database_upgrade_12(database_upgrade_options* opt)
     fprintf(opt->ulog, "-- Committed\n");
     fflush(opt->ulog);
     // Set not null
-    sql =
-        "ALTER TABLE ldpconfig.general\n"
-        "    ALTER COLUMN update_all_tables SET NOT NULL;";
-    fprintf(opt->ulog, "%s\n", sql.c_str());
-    fflush(opt->ulog);
-    opt->conn->exec(sql);
-    fprintf(opt->ulog, "-- Committed\n");
-    fflush(opt->ulog);
+    //sql =
+    //    "ALTER TABLE ldpconfig.general\n"
+    //    "    ALTER COLUMN update_all_tables SET NOT NULL;";
+    //fprintf(opt->ulog, "%s\n", sql.c_str());
+    //fflush(opt->ulog);
+    //opt->conn->exec(sql);
+    //fprintf(opt->ulog, "-- Committed\n");
+    //fflush(opt->ulog);
 
     // Table: ldpconfig.update_tables
     // Create table
@@ -1138,6 +1138,65 @@ void database_upgrade_14(database_upgrade_options* opt)
     ulog_commit(opt);
 }
 
+void database_upgrade_15(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    if (dbt.type() == dbsys::postgresql) {
+        string sql =
+            "ALTER TABLE ldpconfig.general\n"
+            "    ALTER COLUMN disable_anonymization SET DEFAULT FALSE;";
+        fprintf(opt->ulog, "%s\n", sql.c_str());
+        fflush(opt->ulog);
+        opt->conn->exec(sql);
+        fprintf(opt->ulog, "-- Committed\n");
+        fflush(opt->ulog);
+    }
+
+    if (dbt.type() == dbsys::postgresql) {
+        string sql =
+            "ALTER TABLE ldpconfig.general\n"
+            "    ALTER COLUMN update_all_tables DROP NOT NULL;";
+        fprintf(opt->ulog, "%s\n", sql.c_str());
+        fflush(opt->ulog);
+        opt->conn->exec(sql);
+        fprintf(opt->ulog, "-- Committed\n");
+        fflush(opt->ulog);
+    }
+
+    string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 15;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+}
+
+void database_upgrade_16(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    etymon::odbc_tx tx(opt->conn);
+
+    string sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    DROP COLUMN update_all_tables;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    ADD COLUMN update_all_tables BOOLEAN NOT NULL DEFAULT FALSE;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    sql = "UPDATE ldpsystem.main SET ldp_schema_version = 16;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    tx.commit();
+    ulog_commit(opt);
+}
+
+// Example of vector<string> literal:
     //vector<string> tables = {
     //    "circulation_cancellation_reasons",
     //    "circulation_fixed_due_date_schedules",
@@ -1229,21 +1288,4 @@ void database_upgrade_14(database_upgrade_options* opt)
     //    "user_groups",
     //    "user_users"
     //};
-
-    //{
-    //    etymon::odbc_tx tx(opt->conn);
-    //    for (auto& table : tables) {
-    //        sql =
-    //            "INSERT INTO ldpconfig.update_tables\n"
-    //            "    (enable_update, table_name, tenant_id)\n"
-    //            "    VALUES\n"
-    //            "    (TRUE, '" + table + "', 1);";
-    //        fprintf(opt->ulog, "%s\n", sql.c_str());
-    //        fflush(opt->ulog);
-    //        opt->conn->exec(sql);
-    //    }
-    //    tx.commit();
-    //    fprintf(opt->ulog, "-- Committed\n");
-    //    fflush(opt->ulog);
-    //}
 
