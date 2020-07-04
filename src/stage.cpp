@@ -595,8 +595,7 @@ static void index_loading_table(ldp_log* lg, const table_schema& table,
             lg->detail(sql);
             conn->exec(sql);
         } else {
-            if (string(dbt->type_string()) == "PostgreSQL"
-                && column.name != "data") {
+            if (dbt->type() == dbsys::postgresql && column.name != "data") {
                 string sql =
                     "CREATE INDEX ON\n"
                     "    " + loading_table + "\n"
