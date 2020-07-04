@@ -1170,6 +1170,33 @@ void database_upgrade_15(database_upgrade_options* opt)
     ulog_commit(opt);
 }
 
+void database_upgrade_16(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    etymon::odbc_tx tx(opt->conn);
+
+    string sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    DROP COLUMN update_all_tables;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    sql =
+        "ALTER TABLE ldpconfig.general\n"
+        "    ADD COLUMN update_all_tables BOOLEAN NOT NULL DEFAULT FALSE;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    sql = "UPDATE ldpsystem.main SET ldp_schema_version = 16;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    tx.commit();
+    ulog_commit(opt);
+}
+
+// Example of vector<string> literal:
     //vector<string> tables = {
     //    "circulation_cancellation_reasons",
     //    "circulation_fixed_due_date_schedules",
@@ -1261,21 +1288,4 @@ void database_upgrade_15(database_upgrade_options* opt)
     //    "user_groups",
     //    "user_users"
     //};
-
-    //{
-    //    etymon::odbc_tx tx(opt->conn);
-    //    for (auto& table : tables) {
-    //        sql =
-    //            "INSERT INTO ldpconfig.update_tables\n"
-    //            "    (enable_update, table_name, tenant_id)\n"
-    //            "    VALUES\n"
-    //            "    (TRUE, '" + table + "', 1);";
-    //        fprintf(opt->ulog, "%s\n", sql.c_str());
-    //        fflush(opt->ulog);
-    //        opt->conn->exec(sql);
-    //    }
-    //    tx.commit();
-    //    fprintf(opt->ulog, "-- Committed\n");
-    //    fflush(opt->ulog);
-    //}
 
