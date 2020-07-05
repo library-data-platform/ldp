@@ -540,7 +540,7 @@ static void composeDataFilePath(const string& loadDir,
 }
 
 static void indexLoadingTable(log* lg, const TableSchema& table,
-        etymon::odbc_conn* conn, dbtype* dbt)
+                              etymon::odbc_conn* conn, dbtype* dbt)
 {
     lg->trace("Creating indexes on table: " + table.tableName);
     string loadingTable;
@@ -556,22 +556,21 @@ static void indexLoadingTable(log* lg, const TableSchema& table,
     }
     // If there is a table schema, define the primary key or indexes.
     for (const auto& column : table.columns) {
-        if (column.columnType == ColumnType::id) {
-            if (column.columnName == "id") {
+        if (column.columnName == "id") {
+            string sql =
+                "ALTER TABLE " + loadingTable + "\n"
+                "    ADD PRIMARY KEY (id);";
+            lg->detail(sql);
+            conn->exec(sql);
+        } else {
+            if (string(dbt->type_string()) == "PostgreSQL"
+                && column.columnName != "data") {
                 string sql =
-                    "ALTER TABLE " + loadingTable + "\n"
-                    "    ADD PRIMARY KEY (id);";
+                    "CREATE INDEX ON\n"
+                    "    " + loadingTable + "\n"
+                    "    (\"" + column.columnName + "\");";
                 lg->detail(sql);
                 conn->exec(sql);
-            } else {
-                if (string(dbt->type_string()) == "PostgreSQL") {
-                    string sql =
-                        "CREATE INDEX ON\n"
-                        "    " + loadingTable + "\n"
-                        "    (" + column.columnName + ");";
-                    lg->detail(sql);
-                    conn->exec(sql);
-                }
             }
         }
     }
