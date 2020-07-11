@@ -61,7 +61,7 @@ following minimum requirements:
 
 * Database:
   * Memory: 1 GB
-  * Storage: 160 GB HDD
+  * Storage: 500 GB HDD
 * LDP software:
   * Memory: 100 MB
   * Storage: 160 GB HDD
@@ -372,6 +372,7 @@ $ isql ldp
 | quit                                  |
 |                                       |
 +---------------------------------------+
+SQL>
 ```
 
 
