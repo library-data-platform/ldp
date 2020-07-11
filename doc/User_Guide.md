@@ -190,6 +190,30 @@ SELECT json_extract_path_text(data, 'status', 'name') AS status,
     GROUP BY status;
 ```
 
+This is also a good place to store tables containing intermediate
+results, as a step-by-step way of building up complex queries.
+
+After creating a local table that has many rows, it is a good idea to
+create an index on each column that may be used for filtering in a
+`JOIN ... ON` or `WHERE` clause:
+
+```sql
+CREATE TABLE local.loans_status AS
+SELECT id,
+       json_extract_path_text(data, 'status', 'name') AS status
+    FROM circulation_loans;
+
+CREATE INDEX ON local.loans_status (id);
+CREATE INDEX ON local.loans_status (status);
+```
+
+Also "vacuum" and "analyze" the table:
+
+```sql
+VACUUM local.loans_status;
+ANALYZE local.loans_status;
+```
+
 
 5\. Historical data
 -------------------

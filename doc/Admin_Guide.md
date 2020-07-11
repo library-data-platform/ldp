@@ -243,7 +243,9 @@ database or a cloud-based Redshift database.
 For libraries that deploy LDP with PostgreSQL, whether local or
 hosted, we recommend setting:
 
-* `max_wal_size`: `10GB` (`10000`)
+* `max_wal_size`: `100000` (MB)
+* `work_mem`: `64000` (KB)
+* `checkpoint_timeout`: `3600` (seconds)
 
 #### PostgreSQL hosted in RDS
 
@@ -326,11 +328,11 @@ GRANT USAGE ON SCHEMA public TO ldp;
 
 ### Configuring ODBC
 
-The LDP software uses [unixODBC](http://www.unixodbc.org/) to connect
-to the LDP database.  To configure ODBC, install the ODBC driver for
-the database system being used (PostgreSQL or Redshift), and create
-the files `$HOME/.odbcinst.ini` and `$HOME/.odbc.ini`.  The provided
-example files
+The LDP software uses unixODBC to connect to the LDP database.  To
+configure the connection, install the ODBC driver for the database
+system being used (PostgreSQL or Redshift), and create the files
+`$HOME/.odbcinst.ini` and `$HOME/.odbc.ini`.  The provided example
+files
 [odbcinst.ini](https://raw.githubusercontent.com/library-data-platform/ldp/master/examples/odbcinst.ini)
 and
 [odbc.ini](https://raw.githubusercontent.com/library-data-platform/ldp/master/examples/odbc.ini)
@@ -355,6 +357,21 @@ UserName = ldpadmin
 Password = (ldpadmin password here)
 Port = 5432
 SSLMode = require
+```
+
+The command-line tool `isql` is included with unixODBC and can be used
+to test the connection:
+
+```shell
+$ isql ldp
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
 ```
 
 
