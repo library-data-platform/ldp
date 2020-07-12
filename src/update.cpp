@@ -538,7 +538,7 @@ void run_update(const ldp_options& opt)
                 search_table_foreign_keys(&odbc, opt.db, &conn, &lg, schema,
                         table, detect_foreign_keys, &refs);
 
-            string sql = "DELETE FROM ldpconfig.foreign_keys;";
+            string sql = "DELETE FROM ldpsystem.suggested_foreign_keys;";
             lg.detail(sql);
             conn.exec(sql);
 
@@ -546,7 +546,7 @@ void run_update(const ldp_options& opt)
                 bool enable = (p.second.size() == 1);
                 for (auto& r : p.second) {
                     sql =
-                        "INSERT INTO ldpconfig.foreign_keys\n"
+                        "INSERT INTO ldpsystem.suggested_foreign_keys\n"
                         "    (enable_constraint,\n"
                         "        referencing_table, referencing_column,\n"
                         "        referenced_table, referenced_column)\n"
