@@ -394,6 +394,8 @@ void run_update(const ldp_options& opt)
         //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
         dbtype dbt(&conn);
 
+        create_latest_history_table(opt, &lg, table, &conn);
+
         {
             etymon::odbc_tx tx(&conn);
 
@@ -427,6 +429,8 @@ void run_update(const ldp_options& opt)
 
             tx.commit();
         }
+
+        drop_latest_history_table(opt, &lg, table, &conn);
 
         //vacuumAnalyzeTable(opt, table, &conn);
 
