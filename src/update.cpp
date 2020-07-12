@@ -221,7 +221,7 @@ void create_foreign_key_constraints(etymon::odbc_conn* conn, ldp_log* lg)
             lg->detail(sql);
             conn->exec(sql);
         } catch (runtime_error& e) {
-            // TODO Log warning
+            // TODO Log warning?  It may be because the column is not present.
         }
     }
 }

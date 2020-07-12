@@ -12,7 +12,7 @@
 
 namespace fs = std::experimental::filesystem;
 
-static int64_t ldp_latest_database_version = 16;
+static int64_t ldp_latest_database_version = 17;
 
 database_upgrade_array database_upgrades[] = {
     nullptr,  // Version 0 has no migration.
@@ -31,7 +31,8 @@ database_upgrade_array database_upgrades[] = {
     database_upgrade_13,
     database_upgrade_14,
     database_upgrade_15,
-    database_upgrade_16
+    database_upgrade_16,
+    database_upgrade_17
 };
 
 int64_t latest_database_version()
@@ -162,6 +163,18 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
     }
 
     string rskeys;
+    dbt.redshift_keys("referencing_table",
+            "referencing_table, referencing_column", &rskeys);
+    sql =
+        "CREATE TABLE ldpsystem.suggested_foreign_keys (\n"
+        "    enable_constraint BOOLEAN NOT NULL,\n"
+        "    referencing_table VARCHAR(63) NOT NULL,\n"
+        "    referencing_column VARCHAR(63) NOT NULL,\n"
+        "    referenced_table VARCHAR(63) NOT NULL,\n"
+        "    referenced_column VARCHAR(63) NOT NULL\n"
+        ")" + rskeys + ";";
+    conn->exec(sql);
+
     dbt.redshift_keys("referencing_table",
             "referencing_table, referencing_column", &rskeys);
     sql =
