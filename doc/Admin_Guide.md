@@ -204,7 +204,9 @@ database or a cloud-based Redshift database.
 For libraries that deploy LDP with PostgreSQL, whether local or
 hosted, we recommend setting:
 
-* `max_wal_size`: `10GB` (`10000`)
+* `checkpoint_timeout`: `3600` (seconds)
+* `max_wal_size`: `100000` (MB)
+* `work_mem`: `64000` (KB), if sufficient memory is available
 
 #### PostgreSQL hosted in RDS
 
