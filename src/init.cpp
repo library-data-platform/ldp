@@ -234,8 +234,8 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
         "    enable_full_updates BOOLEAN NOT NULL,\n"
         "    next_full_update TIMESTAMP WITH TIME ZONE NOT NULL,\n"
         "    detect_foreign_keys BOOLEAN NOT NULL DEFAULT FALSE,\n"
-        "    force_foreign_key_constraints BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    enable_foreign_key_warnings BOOLEAN NOT NULL DEFAULT FALSE,\n"
+        "    force_foreign_key_constraints BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    disable_anonymization BOOLEAN NOT NULL DEFAULT FALSE\n"
         ");";
     conn->exec(sql);

@@ -175,35 +175,124 @@ void make_foreign_key_constraint_name(const string& referencing_table,
     *constraint_name = string(p) + "_" + referencing_column + "_fk";
 }
 
-void create_foreign_key_constraints(etymon::odbc_conn* conn, ldp_log* lg)
+void log_foreign_key_warnings(const reference& ref,
+                              bool force_foreign_key_constraints,
+                              etymon::odbc_conn* conn, ldp_log* lg)
+{
+    string sql;
+    try {
+        sql =
+            "SELECT referencing_pkey,\n"
+            "       referencing_fkey\n"
+            "    FROM temp_foreign_key_exceptions;";
+        lg->detail(sql);
+        etymon::odbc_stmt stmt(conn);
+        conn->exec_direct(&stmt, sql);
+        while (conn->fetch(&stmt)) {
+            string pkey, fkey;
+            conn->get_data(&stmt, 1, &pkey);
+            conn->get_data(&stmt, 2, &fkey);
+            lg->write(log_level::warning, "foreign_key", ref.referenced_table,
+                "Foreign key is not present in referenced table:\n"
+                "    Referencing table: " + ref.referencing_table + "\n"
+                "    Referencing table primary key: " + pkey + "\n"
+                "    Referencing column: " + ref.referencing_column + "\n"
+                "    Referencing column foreign key: " + fkey + "\n"
+                "    Referenced table: " + ref.referenced_table + "\n"
+                "    Referenced column: " + ref.referenced_column + "\n"
+                "    Action: " +
+                ( force_foreign_key_constraints ?
+                  "Deleting row in referencing table" : "None" ), -1 );
+        }
+        
+    } catch (runtime_error& e) {
+        string s = e.what();
+        if ( !(s.empty()) && s.back() == '\n' )
+            s.pop_back();
+        lg->detail(s);
+    }
+}
+
+void process_foreign_keys(bool enable_foreign_key_warnings,
+                          bool force_foreign_key_constraints,
+                          etymon::odbc_conn* conn, ldp_log* lg)
 {
     vector<reference> refs;
     select_enabled_foreign_keys(conn, lg, &refs);
     for (auto& ref : refs) {
-        string sql;
         try {
-            sql =
-                "DELETE FROM\n"
-                "    " + ref.referencing_table + "\n"
-                "    WHERE " + ref.referencing_column + "\n"
+            string sql =
+                "CREATE TEMPORARY TABLE temp_foreign_key_exceptions AS\n"
+                "SELECT id AS referencing_pkey,\n"
+                "       \"" + ref.referencing_column + "\"\n"
+                "               AS referencing_fkey\n"
+                "    FROM " + ref.referencing_table + "\n"
+                "    WHERE \"" + ref.referencing_column + "\"\n"
                 "    NOT IN (\n"
-                "        SELECT " + ref.referenced_column + "\n"
+                "        SELECT \"" + ref.referenced_column + "\"\n"
                 "            FROM " + ref.referenced_table + "\n"
                 "    );";
             lg->detail(sql);
             conn->exec(sql);
+            sql =
+                "CREATE INDEX ON temp_foreign_key_exceptions\n"
+                "    (referencing_fkey);";
+            lg->detail(sql);
+            conn->exec(sql);
+            sql = "VACUUM temp_foreign_key_exceptions;";
+            lg->detail(sql);
+            conn->exec(sql);
+            sql = "ANALYZE temp_foreign_key_exceptions;";
+            lg->detail(sql);
+            conn->exec(sql);
         } catch (runtime_error& e) {
-            // TODO Log warning
+            string s = e.what();
+            if ( !(s.empty()) && s.back() == '\n' )
+                s.pop_back();
+            lg->detail(s);
         }
+
+        if (enable_foreign_key_warnings)
+            log_foreign_key_warnings(ref, force_foreign_key_constraints, conn,
+                                     lg);
+
+        if (force_foreign_key_constraints) {
+            string sql;
+            try {
+                sql =
+                    "DELETE\n"
+                    "    FROM " + ref.referencing_table + "\n"
+                    "    WHERE \"" + ref.referencing_column + "\"\n"
+                    "    IN (\n"
+                    "        SELECT referencing_fkey\n"
+                    "            FROM temp_foreign_key_exceptions\n"
+                    "    );";
+                lg->detail(sql);
+                conn->exec(sql);
+            } catch (runtime_error& e) {
+                string s = e.what();
+                if ( !(s.empty()) && s.back() == '\n' )
+                    s.pop_back();
+                lg->detail(s);
+            }
+        }
+
+        string sql = "DROP TABLE IF EXISTS temp_foreign_key_exceptions;";
+        lg->detail(sql);
+        conn->exec(sql);
+
+        if (!force_foreign_key_constraints)
+            continue;
+        
         string constraint_name;
         make_foreign_key_constraint_name(ref.referencing_table,
                 ref.referencing_column, &constraint_name);
         try {
-            sql =
+            string sql =
                 "ALTER TABLE " + ref.referencing_table + "\n"
                 "    ADD CONSTRAINT\n"
                 "    " + constraint_name + "\n"
-                "    FOREIGN KEY (" + ref.referencing_column + ")\n"
+                "    FOREIGN KEY (\"" + ref.referencing_column + "\")\n"
                 "    REFERENCES " + ref.referenced_table + " (" +
                 ref.referenced_column + ");";
             lg->detail(sql);
@@ -221,7 +310,10 @@ void create_foreign_key_constraints(etymon::odbc_conn* conn, ldp_log* lg)
             lg->detail(sql);
             conn->exec(sql);
         } catch (runtime_error& e) {
-            // TODO Log warning?  It may be because the column is not present.
+            string s = e.what();
+            if ( !(s.empty()) && s.back() == '\n' )
+                s.pop_back();
+            lg->detail(s);
         }
     }
 }
@@ -492,6 +584,8 @@ void run_update(const ldp_options& opt)
     // Vacuum and analyze all updated tables
     {
         etymon::odbc_conn conn(&odbc, opt.db);
+        lg.write(log_level::debug, "server", "",
+                 "Starting vacuum/analyze", -1);
         timer vacuum_analyze_timer(opt);
         for (auto& table : schema.tables) {
             if (table.skip || opt.extract_only)
@@ -527,7 +621,7 @@ void run_update(const ldp_options& opt)
         if (detect_foreign_keys) {
 
             lg.write(log_level::debug, "server", "",
-                    "Detecting foreign keys", -1);
+                    "Starting foreign key detection", -1);
 
             timer ref_timer(opt);
 
@@ -568,17 +662,19 @@ void run_update(const ldp_options& opt)
                     ref_timer.elapsed_time());
         }
 
-        if (force_foreign_key_constraints) {
+        if (enable_foreign_key_warnings || force_foreign_key_constraints) {
 
             lg.write(log_level::debug, "server", "",
-                    "Creating foreign key constraints", -1);
+                    "Starting foreign key constraint processing", -1);
 
             timer ref_timer(opt);
 
-            create_foreign_key_constraints(&conn, &lg);
+            process_foreign_keys(enable_foreign_key_warnings,
+                                 force_foreign_key_constraints,
+                                 &conn, &lg);
 
             lg.write(log_level::debug, "server", "",
-                    "Foreign key constraints created",
+                    "Completed foreign key constraint processing",
                     ref_timer.elapsed_time());
         }
 
