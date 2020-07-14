@@ -3,6 +3,7 @@ LDP Configuration Guide
 
 ##### Contents  
 1\. Scheduling full updates  
+2\. Foreign keys  
 Reference
 
 
@@ -17,8 +18,7 @@ setting `next_full_update` in table `ldpconfig.general`.  Note that
 the timezone is part of the value.  For example:
 
 ```sql
-UPDATE ldpconfig.general
-    SET next_full_update = '2020-05-07 22:00:00Z';
+UPDATE ldpconfig.general SET next_full_update = '2020-05-07 22:00:00Z';
 ```
 
 This schedules the next full update on May 7, 2020 at 10:00 p.m. UTC.
@@ -32,6 +32,63 @@ involve schema changes and could interrupt any long-running queries
 that are executing at the same time.  For these reasons, it is best to
 run full updates at a time when the database will be least heavily
 used.
+
+
+2\. Foreign keys
+----------------
+
+### Detecting foreign keys
+
+LDP can infer foreign key relationships in data.  To enable this
+feature:
+
+```sql
+UPDATE ldpconfig.general SET detect_foreign_keys = TRUE;
+```
+
+This will cause the foreign key analysis to run directly after every
+full update.  The results, in the form of suggested foreign key
+constraints, are placed in the table
+`ldpsystem.suggested_foreign_keys`.  Each listed pair of (referencing
+table, referencing column) appears in one or more rows that contain
+"candidate" pairs of (referenced table, referenced column).  If the
+referencing table and column have only one candidate, then the
+attribute `enable_constraint` is set to `TRUE`; otherwise it is
+`FALSE`.
+
+These relationships stored in table `ldpsystem.suggested_foreign_keys`
+do not have any further effect, but they can be used to create foreign
+key constraints, as described in the next section.
+
+### Foreign key constraints
+
+Foreign key constraints can be defined in the table
+`ldpconfig.foreign_keys`.  This table has exactly the same schema as
+table `ldpsystem.suggested_foreign_keys` described in the previous
+section, which allows the detected foreign keys to be easily used as a
+starting point for configuring constraints:
+
+```sql
+INSERT INTO ldpconfig.foreign_keys
+    SELECT * FROM ldpsystem.suggested_foreign_keys;
+```
+
+These constraints have no effect unless they are activated by setting
+`enable_foreign_key_warnings` and/or `force_foreign_key_constraints`
+in the table `ldpconfig.general`:
+
+The `enable_foreign_key_warnings` does not create any constraints, but
+it writes referential integrity warnings to `ldpsystem.log` as though
+the constraints were to be created.
+
+The `force_foreign_key_constraints` creates foreign key constraints.
+In order to do this, it deletes rows having foreign keys that are not
+present in the referenced table.  The deleted rows are the same ones
+logged as referential integrity warnings if
+`enable_foreign_key_warnings` has been set.
+
+Both of these configuration values take effect after every full
+update.
 
 
 Reference
