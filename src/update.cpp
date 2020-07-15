@@ -618,6 +618,12 @@ void run_update(const ldp_options& opt)
         select_config_general(&conn, &lg, &detect_foreign_keys,
                &force_foreign_key_constraints, &enable_foreign_key_warnings);
 
+        // Always clear suggested_foreign_keys, even if foreign key detection
+        // is disabled.
+        string sql = "DELETE FROM ldpsystem.suggested_foreign_keys;";
+        lg.detail(sql);
+        conn.exec(sql);
+
         if (detect_foreign_keys) {
 
             lg.write(log_level::debug, "server", "",
@@ -631,10 +637,6 @@ void run_update(const ldp_options& opt)
             for (auto& table : schema.tables)
                 search_table_foreign_keys(&odbc, opt.db, &conn, &lg, schema,
                         table, detect_foreign_keys, &refs);
-
-            string sql = "DELETE FROM ldpsystem.suggested_foreign_keys;";
-            lg.detail(sql);
-            conn.exec(sql);
 
             for (pair<string, vector<reference>> p : refs) {
                 bool enable = (p.second.size() == 1);
@@ -660,6 +662,7 @@ void run_update(const ldp_options& opt)
             lg.write(log_level::debug, "server", "",
                     "Completed foreign key detection",
                     ref_timer.elapsed_time());
+        } else {
         }
 
         if (enable_foreign_key_warnings || force_foreign_key_constraints) {
