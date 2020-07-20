@@ -49,16 +49,9 @@ UPDATE ldpconfig.general SET detect_foreign_keys = TRUE;
 This will cause the foreign key analysis to run directly after every
 full update.  The results, in the form of suggested foreign key
 constraints, are placed in the table
-`ldpsystem.suggested_foreign_keys`.  Each listed pair of (referencing
-table, referencing column) appears in one or more rows that contain
-"candidate" pairs of (referenced table, referenced column).  If the
-referencing table and column have only one candidate, then the
-attribute `enable_constraint` is set to `TRUE`; otherwise it is
-`FALSE`.
-
-These relationships stored in table `ldpsystem.suggested_foreign_keys`
-do not have any further effect, but they can be used to create foreign
-key constraints, as described in the next section.
+`ldpsystem.suggested_foreign_keys`.  The data in this table can be
+used to create foreign key constraints, as described in the next
+section.
 
 ### Foreign key constraints
 
@@ -83,9 +76,7 @@ the constraints were to be created.
 
 The `force_foreign_key_constraints` creates foreign key constraints.
 In order to do this, it deletes rows having foreign keys that are not
-present in the referenced table.  The deleted rows are the same ones
-logged as referential integrity warnings if
-`enable_foreign_key_warnings` has been set.
+present in referenced tables.
 
 Both of these configuration values take effect after every full
 update.
@@ -103,12 +94,31 @@ Reference
   of the next full update.  Once the full update begins, this value is
   automatically incremented to the next day at the same time.
 
-* `detect_foreign_keys` (BOOLEAN) is reserved for future use.
+* `detect_foreign_keys` (BOOLEAN) enables detection of foreign key
+  relationships between tables in the `public` schema.  If enabled,
+  the analysis runs after every full update and the table
+  `ldpsystem.suggested_foreign_keys` contains the results; otherwise
+  the table is cleared.  The table schema is (`enable_constraint`,
+  `referencing_table`, `referencing_column`, `referenced_table`,
+  `referenced_column`).  Each listed pair of (`referencing table`,
+  `referencing column`) appears in one or more rows that contain
+  "candidate" pairs of (`referenced table`, `referenced column`).  If
+  the referencing table and column have only one candidate, then the
+  attribute `enable_constraint` is set to `TRUE`; otherwise it is
+  `FALSE`.
 
-* `force_foreign_key_constraints` (BOOLEAN) is reserved for future
-  use.
+* `enable_foreign_key_warnings` (BOOLEAN) enables logging of
+  referential integrity warnings to `ldpsystem.log` that would be
+  generated if the foreign key constraints specified in
+  `ldpconfig.foreign_keys` were enforced.
 
-* `enable_foreign_key_warnings` (BOOLEAN) is reserved for future use.
+* `force_foreign_key_constraints` (BOOLEAN) enables creation of
+  foreign key constraints specified in the table
+  `ldpconfig.foreign_keys` where `enable_constraint` is set to `TRUE`.
+  This process deletes any rows having the specified foreign keys that
+  are not present in referenced tables.  The deleted rows are the same
+  ones logged as referential integrity warnings if
+  `enable_foreign_key_warnings` has been set.
 
 * `disable_anonymization` (BOOLEAN) when set to `TRUE`, disables
   anonymization of personal data.  Please read the section on "Data
