@@ -1224,6 +1224,36 @@ void database_upgrade_17(database_upgrade_options* opt)
     ulog_commit(opt);
 }
 
+void database_upgrade_18(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    etymon::odbc_tx tx(opt->conn);
+
+    // string rskeys;
+    // dbt.redshift_keys("referencing_table",
+    //         "referencing_table, referencing_column", &rskeys);
+    // string sql =
+    //     "CREATE TABLE ldpsystem.suggested_foreign_keys (\n"
+    //     "    enable_constraint BOOLEAN NOT NULL,\n"
+    //     "    referencing_table VARCHAR(63) NOT NULL,\n"
+    //     "    referencing_column VARCHAR(63) NOT NULL,\n"
+    //     "    referenced_table VARCHAR(63) NOT NULL,\n"
+    //     "    referenced_column VARCHAR(63) NOT NULL\n"
+    //     ")" + rskeys + ";";
+    // ulog_sql(sql, opt);
+    // opt->conn->exec(sql);
+
+    // sql = "UPDATE ldpsystem.main SET ldp_schema_version = 18;";
+    // ulog_sql(sql, opt);
+    // opt->conn->exec(sql);
+
+    tx.commit();
+    ulog_commit(opt);
+
+    // TODO drop old tables/schemas
+}
+
 // Example of vector<string> literal:
     //vector<string> tables = {
     //    "circulation_cancellation_reasons",

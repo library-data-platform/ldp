@@ -12,7 +12,7 @@
 
 namespace fs = std::experimental::filesystem;
 
-static int64_t ldp_latest_database_version = 17;
+static int64_t ldp_latest_database_version = 18;
 
 database_upgrade_array database_upgrades[] = {
     nullptr,  // Version 0 has no migration.
@@ -32,7 +32,8 @@ database_upgrade_array database_upgrades[] = {
     database_upgrade_14,
     database_upgrade_15,
     database_upgrade_16,
-    database_upgrade_17
+    database_upgrade_17,
+    database_upgrade_18
 };
 
 int64_t latest_database_version()
@@ -113,10 +114,9 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
 
     etymon::odbc_tx tx(conn);
 
-    // Schema: ldpsystem
+    // Schema: dp
 
-    //string sql = "CREATE SCHEMA ldpsystem;";
-    //db->conn->exec(sql);
+    ///////////////////////////////////////////////////////////////////////////
 
     string sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldp_user + ";";
     conn->exec(sql);
