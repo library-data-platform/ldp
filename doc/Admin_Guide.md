@@ -129,6 +129,7 @@ a package manager on some platforms.
 #### Debian Linux
 
 ```shell
+$ sudo apt update
 $ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
       postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev
 ```
