@@ -6,7 +6,7 @@ Overview
 1\. Data model  
 2\. JSON queries  
 3\. Relational attributes vs. JSON  
-4\. Local schemas  
+4\. Local tables  
 5\. Historical data  
 6\. Database views  
 7\. Community
@@ -175,8 +175,8 @@ SELECT u.id AS user_id,
 ```
 
 
-4\. Local schemas
------------------
+4\. Local tables
+----------------
 
 The `local` schema is created by LDP as a common area in the database
 where users can create or import their own data sets, including
@@ -188,6 +188,30 @@ SELECT json_extract_path_text(data, 'status', 'name') AS status,
        count(*)
     FROM circulation_loans
     GROUP BY status;
+```
+
+This is also a good place to store tables containing intermediate
+results, as a step-by-step way of building up complex queries.
+
+After creating a local table that has many rows, it is a good idea to
+create an index on each column that may be used for filtering in a
+`JOIN ... ON` or `WHERE` clause:
+
+```sql
+CREATE TABLE local.loans_status AS
+SELECT id,
+       json_extract_path_text(data, 'status', 'name') AS status
+    FROM circulation_loans;
+
+CREATE INDEX ON local.loans_status (id);
+CREATE INDEX ON local.loans_status (status);
+```
+
+Also "vacuum" and "analyze" the table:
+
+```sql
+VACUUM local.loans_status;
+ANALYZE local.loans_status;
 ```
 
 
