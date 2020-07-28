@@ -49,7 +49,7 @@ int64_t latest_database_version()
  * \retval true The version number was retrieved.
  * \retval false The version number was not present in the database.
  */
-bool select_database_version(etymon::odbc_conn* conn, int64_t* version)
+bool select_database_version_pre18(etymon::odbc_conn* conn, int64_t* version)
 {
     string sql = "SELECT ldp_schema_version FROM ldpsystem.main;";
     etymon::odbc_stmt stmt(conn);
@@ -76,6 +76,46 @@ bool select_database_version(etymon::odbc_conn* conn, int64_t* version)
     //*version = stol(ldp_schema_version);
     {
         stringstream stream(ldp_schema_version);
+        stream >> *version;
+    }
+    return true;
+}
+
+/* *
+ * \brief Looks up the schema version number in the LDP database.
+ *
+ * \param[in] db Database context.
+ * \param[out] version The retrieved version number.
+ * \retval true The version number was retrieved.
+ * \retval false The version number was not present in the database.
+ */
+bool select_database_version(etymon::odbc_conn* conn, int64_t* version)
+{
+    string sql = "SELECT database_version FROM db.db_main;";
+    etymon::odbc_stmt stmt(conn);
+    try {
+        conn->exec_direct(&stmt, sql);
+    } catch (runtime_error& e) {
+        // This could happen if the table does not exist.
+        return select_database_version_pre18(conn, version);
+    }
+    if (conn->fetch(&stmt) == false) {
+        // This means there are no rows.  Do not try to recover
+        // automatically from this problem.
+        string e = "No rows could be read from table: db.db_main";
+        throw runtime_error(e);
+    }
+    string database_version;
+    conn->get_data(&stmt, 1, &database_version);
+    if (conn->fetch(&stmt)) {
+        // This means there is more than one row.  Do not try to
+        // recover automatically from this problem.
+        string e = "Too many rows in table: db.db_main";
+        throw runtime_error(e);
+    }
+    //*version = stol(database_version);
+    {
+        stringstream stream(database_version);
         stream >> *version;
     }
     return true;
@@ -114,7 +154,7 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
 
     etymon::odbc_tx tx(conn);
 
-    // Schema: dp
+    // Schema: db
 
     ///////////////////////////////////////////////////////////////////////////
 

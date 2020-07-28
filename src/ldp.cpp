@@ -39,7 +39,7 @@ static const char* option_help =
 "  --profile <prof>    - Initialize the LDP database with profile <prof>\n"
 "                        (required)\n"
 "  --no-update         - Set update_all_tables and enable_full_updates in\n"
-"                        table dp.config_general to FALSE, so that tables\n"
+"                        table db.db_config_general to FALSE, so that tables\n"
 "                        will not be updated by default; this option nearly\n"
 "                        always should be used for consortial deployments\n"
 "                        to prevent overly broad requests for data\n"
@@ -69,9 +69,9 @@ server_lock::server_lock(etymon::odbc_env* odbc, const string& db,
 
     {
         etymon::odbc_conn tmp_conn(odbc, db);
-        string sql = "CREATE SCHEMA IF NOT EXISTS dp;";
+        string sql = "CREATE SCHEMA IF NOT EXISTS db;";
         tmp_conn.exec(sql);
-        sql = "CREATE TABLE IF NOT EXISTS dp.server_lock (b BOOLEAN);";
+        sql = "CREATE TABLE IF NOT EXISTS db.db_server_lock (b BOOLEAN);";
         tmp_conn.exec(sql);
     }
 
@@ -79,7 +79,7 @@ server_lock::server_lock(etymon::odbc_env* odbc, const string& db,
     try {
         tx = new etymon::odbc_tx(conn);
         try {
-            string sql = "LOCK dp.server_lock;";
+            string sql = "LOCK db.db_server_lock;";
             conn->exec(sql);
         } catch (runtime_error& e) {
             delete tx;
