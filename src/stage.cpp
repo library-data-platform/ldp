@@ -44,14 +44,8 @@ struct NameComparator {
 
 bool looksLikeDateTime(const char* str)
 {
-    static regex dateTime(
-            "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}("
-            "(\\.\\d{3}\\+\\d{4})|"
-            "(\\.\\d{3}Z)|"
-            "(Z)"
-            ")"
-            );
-    return regex_match(str, dateTime);
+    static regex dateTime("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}");
+    return regex_search(str, dateTime);
 }
 
 // Collect statistics and anonimize data
