@@ -106,7 +106,7 @@ void ldp_log::write(log_level lv, const char* type, const string& table,
     string logmsg_encoded;
     dbt->encode_string_const(logmsg.c_str(), &logmsg_encoded);
     string sql =
-        "INSERT INTO ldpsystem.log\n"
+        "INSERT INTO dbsystem.log\n"
         "    (log_time, pid, level, type, table_name, message, elapsed_time)\n"
         "  VALUES\n"
         "    (" + string(dbt->current_timestamp()) + ", " +

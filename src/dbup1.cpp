@@ -13,8 +13,18 @@ void ulog_commit(database_upgrade_options* opt)
     fflush(opt->ulog);
 }
 
-void upgrade_add_new_table(const string& table, database_upgrade_options* opt,
-                           const dbtype& dbt)
+void add_table_to_catalog_sql_ldpsystem(etymon::odbc_conn* conn,
+                                        const string& table,
+                                        string* sql)
+{
+    *sql =
+        "INSERT INTO ldpsystem.tables (table_name) VALUES\n"
+        "    ('" + table + "');";
+}
+
+void upgrade_add_new_table_ldpsystem(const string& table,
+                                     database_upgrade_options* opt,
+                                     const dbtype& dbt)
 {
     string sql;
 
@@ -50,7 +60,7 @@ void upgrade_add_new_table(const string& table, database_upgrade_options* opt,
     opt->conn->exec(sql);
     ulog_commit(opt);
 
-    add_table_to_catalog_sql(opt->conn, table, &sql);
+    add_table_to_catalog_sql_ldpsystem(opt->conn, table, &sql);
     ulog_sql(sql, opt);
     opt->conn->exec(sql);
     ulog_commit(opt);
@@ -165,7 +175,7 @@ void database_upgrade_1(database_upgrade_options* opt)
     };
     for (int x = 0; table[x] != nullptr; x++) {
         // Add table to the catalog.
-        add_table_to_catalog_sql(opt->conn, table[x], &sql);
+        add_table_to_catalog_sql_ldpsystem(opt->conn, table[x], &sql);
         opt->conn->exec(sql);
         // Create stub table if it doesn't exist.
         sql =
@@ -1110,15 +1120,15 @@ void database_upgrade_13(database_upgrade_options* opt)
 {
     dbtype dbt(opt->conn);
 
-    upgrade_add_new_table("course_copyrightstatuses", opt, dbt);
-    upgrade_add_new_table("course_courselistings", opt, dbt);
-    upgrade_add_new_table("course_courses", opt, dbt);
-    upgrade_add_new_table("course_coursetypes", opt, dbt);
-    upgrade_add_new_table("course_departments", opt, dbt);
-    upgrade_add_new_table("course_processingstatuses", opt, dbt);
-    upgrade_add_new_table("course_reserves", opt, dbt);
-    upgrade_add_new_table("course_roles", opt, dbt);
-    upgrade_add_new_table("course_terms", opt, dbt);
+    upgrade_add_new_table_ldpsystem("course_copyrightstatuses", opt, dbt);
+    upgrade_add_new_table_ldpsystem("course_courselistings", opt, dbt);
+    upgrade_add_new_table_ldpsystem("course_courses", opt, dbt);
+    upgrade_add_new_table_ldpsystem("course_coursetypes", opt, dbt);
+    upgrade_add_new_table_ldpsystem("course_departments", opt, dbt);
+    upgrade_add_new_table_ldpsystem("course_processingstatuses", opt, dbt);
+    upgrade_add_new_table_ldpsystem("course_reserves", opt, dbt);
+    upgrade_add_new_table_ldpsystem("course_roles", opt, dbt);
+    upgrade_add_new_table_ldpsystem("course_terms", opt, dbt);
 
     string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 13;";
     ulog_sql(sql, opt);
@@ -1130,7 +1140,7 @@ void database_upgrade_14(database_upgrade_options* opt)
 {
     dbtype dbt(opt->conn);
 
-    upgrade_add_new_table("email_email", opt, dbt);
+    upgrade_add_new_table_ldpsystem("email_email", opt, dbt);
 
     string sql = "UPDATE ldpsystem.main SET ldp_schema_version = 14;";
     ulog_sql(sql, opt);
@@ -1230,28 +1240,30 @@ void database_upgrade_18(database_upgrade_options* opt)
 
     etymon::odbc_tx tx(opt->conn);
 
-    // string rskeys;
-    // dbt.redshift_keys("referencing_table",
-    //         "referencing_table, referencing_column", &rskeys);
-    // string sql =
-    //     "CREATE TABLE ldpsystem.suggested_foreign_keys (\n"
-    //     "    enable_constraint BOOLEAN NOT NULL,\n"
-    //     "    referencing_table VARCHAR(63) NOT NULL,\n"
-    //     "    referencing_column VARCHAR(63) NOT NULL,\n"
-    //     "    referenced_table VARCHAR(63) NOT NULL,\n"
-    //     "    referenced_column VARCHAR(63) NOT NULL\n"
-    //     ")" + rskeys + ";";
-    // ulog_sql(sql, opt);
-    // opt->conn->exec(sql);
+    string sql = "ALTER SCHEMA ldpsystem RENAME TO dbsystem;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
 
-    // sql = "UPDATE ldpsystem.main SET ldp_schema_version = 18;";
-    // ulog_sql(sql, opt);
-    // opt->conn->exec(sql);
+    sql = "DROP TABLE dbsystem.server_lock;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    sql =
+        "ALTER TABLE dbsystem.main\n"
+        "    RENAME COLUMN ldp_schema_version TO database_version;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    sql = "ALTER SCHEMA ldpconfig RENAME TO dbconfig;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    sql = "UPDATE dbsystem.main SET database_version = 18;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
 
     tx.commit();
     ulog_commit(opt);
-
-    // TODO drop old tables/schemas
 }
 
 // Example of vector<string> literal:

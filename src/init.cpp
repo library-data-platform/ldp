@@ -49,7 +49,8 @@ int64_t latest_database_version()
  * \retval true The version number was retrieved.
  * \retval false The version number was not present in the database.
  */
-bool select_database_version_pre18(etymon::odbc_conn* conn, int64_t* version)
+bool select_database_version_ldpsystem(etymon::odbc_conn* conn,
+                                       int64_t* version)
 {
     string sql = "SELECT ldp_schema_version FROM ldpsystem.main;";
     etymon::odbc_stmt stmt(conn);
@@ -91,18 +92,18 @@ bool select_database_version_pre18(etymon::odbc_conn* conn, int64_t* version)
  */
 bool select_database_version(etymon::odbc_conn* conn, int64_t* version)
 {
-    string sql = "SELECT database_version FROM db.db_main;";
+    string sql = "SELECT database_version FROM dbsystem.main;";
     etymon::odbc_stmt stmt(conn);
     try {
         conn->exec_direct(&stmt, sql);
     } catch (runtime_error& e) {
         // This could happen if the table does not exist.
-        return select_database_version_pre18(conn, version);
+        return select_database_version_ldpsystem(conn, version);
     }
     if (conn->fetch(&stmt) == false) {
         // This means there are no rows.  Do not try to recover
         // automatically from this problem.
-        string e = "No rows could be read from table: db.db_main";
+        string e = "No rows could be read from table: dbsystem.main";
         throw runtime_error(e);
     }
     string database_version;
@@ -110,7 +111,7 @@ bool select_database_version(etymon::odbc_conn* conn, int64_t* version)
     if (conn->fetch(&stmt)) {
         // This means there is more than one row.  Do not try to
         // recover automatically from this problem.
-        string e = "Too many rows in table: db.db_main";
+        string e = "Too many rows in table: dbsystem.main";
         throw runtime_error(e);
     }
     //*version = stol(database_version);
@@ -154,26 +155,29 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
 
     etymon::odbc_tx tx(conn);
 
-    // Schema: db
+    // Schema: dbsystem
 
+    string sql = "CREATE SCHEMA dbsystem;";
+    conn->exec(sql);
+    
     ///////////////////////////////////////////////////////////////////////////
 
-    string sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldp_user + ";";
+    sql = "GRANT USAGE ON SCHEMA dbsystem TO " + ldp_user + ";";
     conn->exec(sql);
-    sql = "GRANT USAGE ON SCHEMA ldpsystem TO " + ldpconfig_user + ";";
+    sql = "GRANT USAGE ON SCHEMA dbsystem TO " + ldpconfig_user + ";";
     conn->exec(sql);
 
     sql =
-        "CREATE TABLE ldpsystem.main (\n"
+        "CREATE TABLE dbsystem.main (\n"
         "    ldp_schema_version BIGINT NOT NULL\n"
         ");";
     conn->exec(sql);
-    sql = "INSERT INTO ldpsystem.main (ldp_schema_version) VALUES (" +
+    sql = "INSERT INTO dbsystem.main (ldp_schema_version) VALUES (" +
         to_string(this_schema_version) + ");";
     conn->exec(sql);
 
     sql =
-        "CREATE TABLE ldpsystem.log (\n"
+        "CREATE TABLE dbsystem.log (\n"
         "    log_time TIMESTAMP WITH TIME ZONE NOT NULL,\n"
         "    pid BIGINT NOT NULL,\n"
         "    level VARCHAR(7) NOT NULL DEFAULT '',\n"
@@ -184,10 +188,10 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
         ");";
     conn->exec(sql);
 
-    // Table: ldpsystem.tables
+    // Table: dbsystem.tables
 
     sql =
-        "CREATE TABLE ldpsystem.tables (\n"
+        "CREATE TABLE dbsystem.tables (\n"
         "    table_name VARCHAR(63) NOT NULL,\n"
         "    updated TIMESTAMP WITH TIME ZONE,\n"
         "    row_count BIGINT,\n"
@@ -206,7 +210,7 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
     dbt.redshift_keys("referencing_table",
             "referencing_table, referencing_column", &rskeys);
     sql =
-        "CREATE TABLE ldpsystem.suggested_foreign_keys (\n"
+        "CREATE TABLE dbsystem.suggested_foreign_keys (\n"
         "    enable_constraint BOOLEAN NOT NULL,\n"
         "    referencing_table VARCHAR(63) NOT NULL,\n"
         "    referencing_column VARCHAR(63) NOT NULL,\n"
@@ -218,7 +222,7 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
     dbt.redshift_keys("referencing_table",
             "referencing_table, referencing_column", &rskeys);
     sql =
-        "CREATE TABLE ldpsystem.foreign_key_constraints (\n"
+        "CREATE TABLE dbsystem.foreign_key_constraints (\n"
         "    referencing_table VARCHAR(63) NOT NULL,\n"
         "    referencing_column VARCHAR(63) NOT NULL,\n"
         "    referenced_table VARCHAR(63) NOT NULL,\n"
@@ -228,48 +232,48 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
         ")" + rskeys + ";";
     conn->exec(sql);
 
-    //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " + ldp_user + ";";
+    //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA dbsystem TO " + ldp_user + ";";
     //conn->exec(sql);
-    //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpsystem TO " +
+    //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA dbsystem TO " +
     //ldpconfig_user +
     //    ";";
     //conn->exec(sql);
 
 
-    sql = "GRANT SELECT ON ldpsystem.log TO " + ldp_user + ";";
+    sql = "GRANT SELECT ON dbsystem.log TO " + ldp_user + ";";
     conn->exec(sql);
-    sql = "GRANT SELECT ON ldpsystem.log TO " + ldpconfig_user + ";";
-    conn->exec(sql);
-
-    sql = "GRANT SELECT ON ldpsystem.main TO " + ldp_user + ";";
-    conn->exec(sql);
-    sql = "GRANT SELECT ON ldpsystem.main TO " + ldpconfig_user + ";";
+    sql = "GRANT SELECT ON dbsystem.log TO " + ldpconfig_user + ";";
     conn->exec(sql);
 
-    sql = "GRANT SELECT ON ldpsystem.foreign_key_constraints TO " + ldp_user +
+    sql = "GRANT SELECT ON dbsystem.main TO " + ldp_user + ";";
+    conn->exec(sql);
+    sql = "GRANT SELECT ON dbsystem.main TO " + ldpconfig_user + ";";
+    conn->exec(sql);
+
+    sql = "GRANT SELECT ON dbsystem.foreign_key_constraints TO " + ldp_user +
         ";";
     conn->exec(sql);
-    sql = "GRANT SELECT ON ldpsystem.foreign_key_constraints TO " +
+    sql = "GRANT SELECT ON dbsystem.foreign_key_constraints TO " +
         ldpconfig_user + ";";
     conn->exec(sql);
 
-    sql = "GRANT SELECT ON ldpsystem.tables TO " + ldp_user + ";";
+    sql = "GRANT SELECT ON dbsystem.tables TO " + ldp_user + ";";
     conn->exec(sql);
-    sql = "GRANT SELECT ON ldpsystem.tables TO " + ldpconfig_user + ";";
-    conn->exec(sql);
-
-    // Schema: ldpconfig
-
-    sql = "CREATE SCHEMA ldpconfig;";
+    sql = "GRANT SELECT ON dbsystem.tables TO " + ldpconfig_user + ";";
     conn->exec(sql);
 
-    sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldp_user + ";";
+    // Schema: dbconfig
+
+    sql = "CREATE SCHEMA dbconfig;";
     conn->exec(sql);
-    sql = "GRANT USAGE ON SCHEMA ldpconfig TO " + ldpconfig_user + ";";
+
+    sql = "GRANT USAGE ON SCHEMA dbconfig TO " + ldp_user + ";";
+    conn->exec(sql);
+    sql = "GRANT USAGE ON SCHEMA dbconfig TO " + ldpconfig_user + ";";
     conn->exec(sql);
 
     sql =
-        "CREATE TABLE ldpconfig.general (\n"
+        "CREATE TABLE dbconfig.general (\n"
         "    update_all_tables BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    enable_full_updates BOOLEAN NOT NULL,\n"
         "    next_full_update TIMESTAMP WITH TIME ZONE NOT NULL,\n"
@@ -280,15 +284,15 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
         ");";
     conn->exec(sql);
     sql =
-        "INSERT INTO ldpconfig.general\n"
+        "INSERT INTO dbconfig.general\n"
         "    (enable_full_updates, next_full_update)\n"
         "    VALUES\n"
         "    (TRUE, " + string(dbt.current_timestamp()) + ");";
     conn->exec(sql);
 
-    // ldpconfig.update_tables
+    // dbconfig.update_tables
     sql =
-        "CREATE TABLE ldpconfig.update_tables (\n"
+        "CREATE TABLE dbconfig.update_tables (\n"
         "    enable_update BOOLEAN NOT NULL,\n"
         "    table_name VARCHAR(63) NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL\n"
@@ -296,7 +300,7 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
     conn->exec(sql);
 
     sql =
-        "CREATE TABLE ldpconfig.foreign_keys (\n"
+        "CREATE TABLE dbconfig.foreign_keys (\n"
         "    enable_constraint BOOLEAN NOT NULL,\n"
         "    referencing_table VARCHAR(63) NOT NULL,\n"
         "    referencing_column VARCHAR(63) NOT NULL,\n"
@@ -305,12 +309,12 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
         ");";
     conn->exec(sql);
 
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldp_user + ";";
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA dbconfig TO " + ldp_user + ";";
     conn->exec(sql);
-    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA ldpconfig TO " + ldpconfig_user +
+    sql = "GRANT SELECT ON ALL TABLES IN SCHEMA dbconfig TO " + ldpconfig_user +
         ";";
     conn->exec(sql);
-    sql = "GRANT UPDATE ON ldpconfig.general TO " + ldpconfig_user + ";";
+    sql = "GRANT UPDATE ON dbconfig.general TO " + ldpconfig_user + ";";
     conn->exec(sql);
 
     // Schema: history
