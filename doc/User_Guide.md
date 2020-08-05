@@ -194,8 +194,9 @@ This is also a good place to store tables containing intermediate
 results, as a step-by-step way of building up complex queries.
 
 After creating a local table that has many rows, it is a good idea to
-create an index on each column that may be used for filtering in a
-`JOIN ... ON` or `WHERE` clause:
+create an index on each column that may be used either for filtering
+in a `JOIN ... ON` or `WHERE` clause, or for sorting in an `ORDER BY`
+clause:
 
 ```sql
 CREATE TABLE local.loans_status AS
