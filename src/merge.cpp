@@ -1,12 +1,10 @@
 #include "merge.h"
 #include "names.h"
 
-void merge_table(const ldp_options& opt, ldp_log* lg, const table_schema& table,
-                 etymon::odbc_env* odbc, etymon::odbc_conn* conn,
-                 const dbtype& dbt)
+void create_latest_history_table(const ldp_options& opt, ldp_log* lg,
+                                 const table_schema& table,
+                                 etymon::odbc_conn* conn)
 {
-    // Update history tables.
-
     string history_table;
     history_table_name(table.name, &history_table);
 
@@ -29,10 +27,43 @@ void merge_table(const ldp_options& opt, ldp_log* lg, const table_schema& table,
     lg->write(log_level::detail, "", "", sql, -1);
     conn->exec(sql);
 
+    sql = "VACUUM " + latest_history_table + ";";
+    lg->detail(sql);
+    conn->exec(sql);
+    sql = "ANALYZE " + latest_history_table + ";";
+    lg->detail(sql);
+    conn->exec(sql);
+}
+
+void drop_latest_history_table(const ldp_options& opt, ldp_log* lg,
+                               const table_schema& table,
+                               etymon::odbc_conn* conn)
+{
+    string latest_history_table;
+    latest_history_table_name(table.name, &latest_history_table);
+
+    string sql = "DROP TABLE IF EXISTS " + latest_history_table + ";";
+    lg->detail(sql);
+    conn->exec(sql);
+}
+
+void merge_table(const ldp_options& opt, ldp_log* lg,
+                 const table_schema& table,
+                 etymon::odbc_env* odbc, etymon::odbc_conn* conn,
+                 const dbtype& dbt)
+{
+    // Update history tables.
+
+    string history_table;
+    history_table_name(table.name, &history_table);
+
+    string latest_history_table;
+    latest_history_table_name(table.name, &latest_history_table);
+
     string loading_table;
     loading_table_name(table.name, &loading_table);
 
-    sql =
+    string sql =
         "INSERT INTO " + history_table + "\n"
         "    (id, data, updated, tenant_id)\n"
         "SELECT s.id,\n"

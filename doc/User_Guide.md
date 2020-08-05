@@ -6,10 +6,11 @@ Overview
 1\. Data model  
 2\. JSON queries  
 3\. Relational attributes vs. JSON  
-4\. Local schemas  
+4\. Local tables  
 5\. Historical data  
 6\. Database views  
-7\. Community
+7\. JSON arrays  
+8\. Community
 
 
 Overview
@@ -175,8 +176,8 @@ SELECT u.id AS user_id,
 ```
 
 
-4\. Local schemas
------------------
+4\. Local tables
+----------------
 
 The `local` schema is created by LDP as a common area in the database
 where users can create or import their own data sets, including
@@ -188,6 +189,30 @@ SELECT json_extract_path_text(data, 'status', 'name') AS status,
        count(*)
     FROM circulation_loans
     GROUP BY status;
+```
+
+This is also a good place to store tables containing intermediate
+results, as a step-by-step way of building up complex queries.
+
+After creating a local table that has many rows, it is a good idea to
+create an index on each column that may be used for filtering in a
+`JOIN ... ON` or `WHERE` clause:
+
+```sql
+CREATE TABLE local.loans_status AS
+SELECT id,
+       json_extract_path_text(data, 'status', 'name') AS status
+    FROM circulation_loans;
+
+CREATE INDEX ON local.loans_status (id);
+CREATE INDEX ON local.loans_status (status);
+```
+
+Also "vacuum" and "analyze" the table:
+
+```sql
+VACUUM local.loans_status;
+ANALYZE local.loans_status;
 ```
 
 
@@ -317,7 +342,42 @@ TABLE ... AS SELECT ...` to store a result set, as in the local schema
 example above.
 
 
-7\. Community
+7\. JSON arrays
+---------------
+
+LDP does not yet support extracting arrays from JSON data.  However,
+there is a workaround for PostgreSQL users, if the order of the array
+elements is not needed.
+
+The function `json_array_elements()` will convert the elements of a
+JSON array to a set of rows, one row per array element.  For example:
+
+```sql
+CREATE TABLE local.instances_format_ids AS
+SELECT id AS instances_id,
+       json_array_elements(json_extract_path(data, 'instanceFormatIds'))
+               AS instance_format_id
+    FROM inventory_instances;
+```
+
+This is usually sufficient for arrays that contain a single value for
+each array element.  If the array elements are JSON objects, their
+fields can be extracted using `json_extract_path_text()`, e.g.:
+
+```sql
+CREATE TABLE local.instances_identifiers AS
+SELECT id AS instances_id,
+       json_extract_path_text(
+               json_array_elements(json_extract_path(data, 'identifiers')),
+                                   'identifierTypeId' ) AS type_id,
+       json_extract_path_text(
+               json_array_elements(json_extract_path(data, 'identifiers')),
+                                   'value' ) AS value
+    FROM inventory_instances;
+```
+
+
+8\. Community
 -------------
 
 ### Wiki
