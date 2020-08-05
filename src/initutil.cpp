@@ -45,7 +45,7 @@ void add_table_to_catalog_sql(etymon::odbc_conn* conn, const string& table,
                               string* sql)
 {
     *sql =
-        "INSERT INTO ldpsystem.tables (table_name) VALUES\n"
+        "INSERT INTO dbsystem.tables (table_name) VALUES\n"
         "    ('" + table + "');";
 }
 

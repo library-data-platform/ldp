@@ -107,7 +107,7 @@ void select_foreign_key_constraints(etymon::odbc_conn* conn, ldp_log* lg,
         "       referenced_table,\n"
         "       referenced_column,\n"
         "       constraint_name\n"
-        "    FROM ldpsystem.foreign_key_constraints;";
+        "    FROM dbsystem.foreign_key_constraints;";
     lg->detail(sql);
     etymon::odbc_stmt stmt(conn);
     conn->exec_direct(&stmt, sql);
@@ -134,7 +134,7 @@ void remove_foreign_key_constraints(etymon::odbc_conn* conn, ldp_log* lg)
         lg->detail(sql);
         conn->exec(sql);
     }
-    string sql = "DELETE FROM ldpsystem.foreign_key_constraints;";
+    string sql = "DELETE FROM dbsystem.foreign_key_constraints;";
     lg->detail(sql);
     conn->exec(sql);
     tx.commit();
@@ -149,7 +149,7 @@ void select_enabled_foreign_keys(etymon::odbc_conn* conn, ldp_log* lg,
         "       referencing_column,\n"
         "       referenced_table,\n"
         "       referenced_column\n"
-        "    FROM ldpconfig.foreign_keys\n"
+        "    FROM dbconfig.foreign_keys\n"
         "    WHERE enable_constraint = TRUE;";
     lg->detail(sql);
     etymon::odbc_stmt stmt(conn);
@@ -298,7 +298,7 @@ void process_foreign_keys(bool enable_foreign_key_warnings,
             lg->detail(sql);
             conn->exec(sql);
             sql =
-                "INSERT INTO ldpsystem.foreign_key_constraints\n"
+                "INSERT INTO dbsystem.foreign_key_constraints\n"
                 "    (referencing_table, referencing_column,\n"
                 "     referenced_table, referenced_column, constraint_name)\n"
                 "    VALUES\n"
@@ -326,7 +326,7 @@ void select_config_general(etymon::odbc_conn* conn, ldp_log* lg,
         "SELECT detect_foreign_keys,\n"
         "       force_foreign_key_constraints,\n"
         "       enable_foreign_key_warnings\n"
-        "    FROM ldpconfig.general;";
+        "    FROM dbconfig.general;";
     lg->detail(sql);
     etymon::odbc_stmt stmt(conn);
     conn->exec_direct(&stmt, sql);
@@ -347,7 +347,7 @@ bool is_anonymization_enabled(const ldp_options& opt, etymon::odbc_env* odbc,
     bool ldpconf_disable_anon = false;
     {
         etymon::odbc_conn conn(odbc, opt.db);
-        string sql = "SELECT disable_anonymization FROM ldpconfig.general;";
+        string sql = "SELECT disable_anonymization FROM dbconfig.general;";
         lg->detail(sql);
         {
             etymon::odbc_stmt stmt(&conn);
@@ -549,7 +549,7 @@ void run_update(const ldp_options& opt)
             conn.get_data(&stmt, 1, &history_row_count);
         }
         sql =
-                "UPDATE ldpsystem.tables\n"
+                "UPDATE dbsystem.tables\n"
                 "    SET updated = " + string(dbt.current_timestamp()) + ",\n"
                 "        row_count = " + rowCount + ",\n"
                 "        history_row_count = " + history_row_count + ",\n"
@@ -620,7 +620,7 @@ void run_update(const ldp_options& opt)
 
         // Always clear suggested_foreign_keys, even if foreign key detection
         // is disabled.
-        string sql = "DELETE FROM ldpsystem.suggested_foreign_keys;";
+        string sql = "DELETE FROM dbsystem.suggested_foreign_keys;";
         lg.detail(sql);
         conn.exec(sql);
 
@@ -642,7 +642,7 @@ void run_update(const ldp_options& opt)
                 bool enable = (p.second.size() == 1);
                 for (auto& r : p.second) {
                     sql =
-                        "INSERT INTO ldpsystem.suggested_foreign_keys\n"
+                        "INSERT INTO dbsystem.suggested_foreign_keys\n"
                         "    (enable_constraint,\n"
                         "        referencing_table, referencing_column,\n"
                         "        referenced_table, referenced_column)\n"

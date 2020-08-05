@@ -129,6 +129,7 @@ a package manager on some platforms.
 #### Debian Linux
 
 ```shell
+$ sudo apt update
 $ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
       postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev
 ```
@@ -275,7 +276,7 @@ Three database users are required:
   This account should be used very sparingly and carefully.
 
 * `ldpconfig` is a special user account for changing configuration
-  settings in the `ldpconfig` schema.  It is intended to enable
+  settings in the `dbconfig` schema.  It is intended to enable
   designated users to make changes to the server's operation, such as
   scheduling when data updates occur.  This user name can be modified
   using the `ldpconfig_user` configuration setting in `ldpconf.json`.
@@ -433,7 +434,7 @@ $ nohup ldp server -D /var/lib/ldp &>> logfile &
 ```
 
 The server logs details of its activities in the table
-`ldpsystem.log`.  For more detailed logging, the `--trace` option can
+`dbsystem.log`.  For more detailed logging, the `--trace` option can
 be used:
 
 ```shell
@@ -442,7 +443,7 @@ $ nohup ldp server -D /var/lib/ldp --trace &>> logfile &
 
 Once per day, the server runs a _full update_ which performs all
 supported data updates.  Full updates can be scheduled at a preferred
-time of day using the table `ldpconfig.general`.  See the
+time of day using the table `dbconfig.general`.  See the
 [Configuration Guide](Config_Guide.md) for more information.
 
 ### Upgrading to a new version
@@ -550,7 +551,7 @@ below).
 
 Anonymization can be disabled by setting `disable_anonymization` to
 `true` in `ldpconf.json`, and by setting `disable_anonymization` to
-`TRUE` in the table `ldpconfig.general`.  Both are required to be set
+`TRUE` in the table `dbconfig.general`.  Both are required to be set
 in order to disable anonymization.
 
 __WARNING:  LDP does not provide a way to anonymize the database after
@@ -615,7 +616,7 @@ Reference
   disables anonymization of personal data.  The default value is
   `false`.  Please read the section on "Data privacy" above before
   changing this setting.  As a safety precaution, the configuration
-  attribute `disable_anonymization` in table `ldpconfig.general` also
+  attribute `disable_anonymization` in table `dbconfig.general` also
   must be set.
 
 * `allow_destructive_tests` (Boolean; optional) when set to `true`,
