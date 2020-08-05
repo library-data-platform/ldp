@@ -208,7 +208,8 @@ CREATE INDEX ON local.loans_status (id);
 CREATE INDEX ON local.loans_status (status);
 ```
 
-Also "vacuum" and "analyze" the table:
+Also "vacuum" and "analyze" the table, to help queries on the table
+run faster:
 
 ```sql
 VACUUM local.loans_status;
