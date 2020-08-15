@@ -160,8 +160,6 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
     string sql = "CREATE SCHEMA dbsystem;";
     conn->exec(sql);
     
-    ///////////////////////////////////////////////////////////////////////////
-
     sql = "GRANT USAGE ON SCHEMA dbsystem TO " + ldp_user + ";";
     conn->exec(sql);
     sql = "GRANT USAGE ON SCHEMA dbsystem TO " + ldpconfig_user + ";";
@@ -169,10 +167,10 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
 
     sql =
         "CREATE TABLE dbsystem.main (\n"
-        "    ldp_schema_version BIGINT NOT NULL\n"
+        "    database_version BIGINT NOT NULL\n"
         ");";
     conn->exec(sql);
-    sql = "INSERT INTO dbsystem.main (ldp_schema_version) VALUES (" +
+    sql = "INSERT INTO dbsystem.main (database_version) VALUES (" +
         to_string(this_schema_version) + ");";
     conn->exec(sql);
 
