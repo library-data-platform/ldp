@@ -446,6 +446,21 @@ supported data updates.  Full updates can be scheduled at a preferred
 time of day using the table `dbconfig.general`.  See the
 [Configuration Guide](Config_Guide.md) for more information.
 
+### Updating data without the server
+
+As an alternative to running the server, data updates can be performed
+on an initialized database via the command line:
+
+```shell
+$ ldp update -D /var/lib/ldp
+```
+
+This will run a full update, showing progress on the console, and then
+exit.  It can be scheduled via
+[cron](https://en.wikipedia.org/wiki/Cron) to run once per day.
+
+Note that `ldp server` and `ldp update` will not run at the same time.
+
 ### Upgrading to a new version
 
 When installing a new version of LDP, the database should be
