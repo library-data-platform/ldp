@@ -51,7 +51,6 @@ LDP instance.
     * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
     * [Clang](https://clang.llvm.org/) 8.0.1 or later
   * [CMake](https://cmake.org/) 3.16.2 or later
-  * [Catch2](https://github.com/catchorg/Catch2) 2.10.2 or later
 
 ### Hardware
 
@@ -140,13 +139,10 @@ For PostgreSQL, the ODBC driver can be installed with:
 $ sudo apt install odbc-postgresql
 ```
 
-Catch2 can be [installed from
-source](https://github.com/catchorg/Catch2/blob/master/docs/cmake-integration.md#installing-catch2-from-git-repository).
-
 #### RHEL/CentOS Linux
 
 ```shell
-$ sudo dnf install catch-devel cmake gcc-c++ libcurl-devel libpq-devel make \
+$ sudo dnf install cmake gcc-c++ libcurl-devel libpq-devel make \
       postgresql-server-devel unixODBC-devel
 ```
 
@@ -164,7 +160,7 @@ source](https://rapidjson.org/index.html#autotoc_md5).
 Using [Homebrew](https://brew.sh/):
 
 ```shell
-$ brew install catch2 cmake postgresql psqlodbc rapidjson unixodbc
+$ brew install cmake postgresql psqlodbc rapidjson unixodbc
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
@@ -183,51 +179,12 @@ Then:
 $ ./all.sh
 ```
 
-The `all.sh` script creates a `build/` subdirectory and builds three
-executables there:
-
-* `ldp` is the LDP software.
-* `ldp_test` runs self-contained unit tests.
-* `ldp_testint` runs integration tests.
-
-After building these executables, the script also runs `ldp_test`.
-
-If there are no errors, the end of the output will include:
+The `all.sh` script creates a `build/` subdirectory and builds the
+`ldp` executable there:
 
 ```shell
-All tests passed
+$ ./build/ldp help
 ```
-
-To run the LDP software:
-
-```shell
-$ ./build/ldp
-```
-
-### Running tests
-
-As mentioned above, the `all.sh` script runs the unit tests, but they
-can be run separately if needed:
-
-```shell
-$ ./build/ldp_test
-```
-
-Running the integration tests requires a FOLIO instance, as well as an
-LDP testbed instance with a PostgreSQL or Redshift database.  The
-contents of the LDP database will be destroyed by these tests; so
-please be careful that the correct database is used.  The
-`deployment_environment` configuration setting for the LDP testbed
-instance should be `testing` or `development`.  Also as a safety
-precaution, the setting `allow_destructive_tests` is required for
-integration tests.  The tests are run as:
-
-```shell
-$ ./build/ldp_testint -s -D DATADIR
-```
-
-where `DATADIR` is the data directory for the test database.  See
-below for an explanation of LDP data directories and configuration.
 
 
 4\. Database configuration

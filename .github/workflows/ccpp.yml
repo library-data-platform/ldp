@@ -13,8 +13,6 @@ jobs:
       run: sudo apt update
     - name: install dependency packages
       run: sudo apt install -y cmake g++ libcurl4-openssl-dev libpq-dev postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev libsqlite3-dev
-    - name: install catch2 testing framework
-      run: git clone https://github.com/catchorg/Catch2.git && cd Catch2 && cmake -Bbuild -H. -DBUILD_TESTING=OFF && sudo cmake --build build/ --target install
     - name: symbolic link gcc
       run: sudo ln -fs /usr/bin/gcc-8 /usr/bin/gcc
     - name: symbolic link g++
