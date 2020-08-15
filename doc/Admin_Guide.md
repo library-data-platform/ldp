@@ -53,7 +53,6 @@ LDP instance.
     * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
     * [Clang](https://clang.llvm.org/) 8.0.1 or later
   * [CMake](https://cmake.org/) 3.16.2 or later
-  * [Catch2](https://github.com/catchorg/Catch2) 2.10.2 or later
 
 ### Hardware
 
@@ -142,13 +141,10 @@ For PostgreSQL, the ODBC driver can be installed with:
 $ sudo apt install odbc-postgresql
 ```
 
-Catch2 can be [installed from
-source](https://github.com/catchorg/Catch2/blob/master/docs/cmake-integration.md#installing-catch2-from-git-repository).
-
 #### RHEL/CentOS Linux
 
 ```shell
-$ sudo dnf install catch-devel cmake gcc-c++ libcurl-devel libpq-devel make \
+$ sudo dnf install cmake gcc-c++ libcurl-devel libpq-devel make \
       postgresql-server-devel unixODBC-devel
 ```
 
@@ -166,7 +162,7 @@ source](https://rapidjson.org/index.html#autotoc_md5).
 Using [Homebrew](https://brew.sh/):
 
 ```shell
-$ brew install catch2 cmake postgresql psqlodbc rapidjson unixodbc
+$ brew install cmake postgresql psqlodbc rapidjson unixodbc
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
@@ -189,7 +185,7 @@ The `all.sh` script creates a `build/` subdirectory and builds the
 `ldp` executable there:
 
 ```shell
-$ ./build/ldp
+$ ./build/ldp help
 ```
 
 
