@@ -39,7 +39,7 @@ static const char* option_help =
 "  --profile <prof>    - Initialize the LDP database with profile <prof>\n"
 "                        (required)\n"
 "  --no-update         - Set update_all_tables and enable_full_updates in\n"
-"                        table ldpconfig.general to FALSE, so that tables\n"
+"                        table dbconfig.general to FALSE, so that tables\n"
 "                        will not be updated by default; this option nearly\n"
 "                        always should be used for consortial deployments\n"
 "                        to prevent overly broad requests for data\n"
@@ -69,9 +69,9 @@ server_lock::server_lock(etymon::odbc_env* odbc, const string& db,
 
     {
         etymon::odbc_conn tmp_conn(odbc, db);
-        string sql = "CREATE SCHEMA IF NOT EXISTS ldpsystem;";
+        string sql = "CREATE SCHEMA IF NOT EXISTS dbinternal;";
         tmp_conn.exec(sql);
-        sql = "CREATE TABLE IF NOT EXISTS ldpsystem.server_lock (b BOOLEAN);";
+        sql = "CREATE TABLE IF NOT EXISTS dbinternal.server_lock (b BOOLEAN);";
         tmp_conn.exec(sql);
     }
 
@@ -79,7 +79,7 @@ server_lock::server_lock(etymon::odbc_env* odbc, const string& db,
     try {
         tx = new etymon::odbc_tx(conn);
         try {
-            string sql = "LOCK ldpsystem.server_lock;";
+            string sql = "LOCK dbinternal.server_lock;";
             conn->exec(sql);
         } catch (runtime_error& e) {
             delete tx;
@@ -145,12 +145,12 @@ bool time_for_full_update(const ldp_options& opt, etymon::odbc_conn* conn,
         "SELECT enable_full_updates,\n"
         "       (next_full_update <= " +
         string(dbt->current_timestamp()) + ") AS update_now\n"
-        "    FROM ldpconfig.general;";
+        "    FROM dbconfig.general;";
     lg->write(log_level::detail, "", "", sql, -1);
     etymon::odbc_stmt stmt(conn);
     conn->exec_direct(&stmt, sql);
     if (conn->fetch(&stmt) == false) {
-        string e = "No rows could be read from table: ldpconfig.general";
+        string e = "No rows could be read from table: dbconfig.general";
         lg->write(log_level::error, "", "", e, -1);
         throw runtime_error(e);
     }
@@ -158,7 +158,7 @@ bool time_for_full_update(const ldp_options& opt, etymon::odbc_conn* conn,
     conn->get_data(&stmt, 1, &full_update_enabled);
     conn->get_data(&stmt, 2, &update_now);
     if (conn->fetch(&stmt)) {
-        string e = "Too many rows in table: ldpconfig.general";
+        string e = "Too many rows in table: dbconfig.general";
         lg->write(log_level::error, "", "", e, -1);
         throw runtime_error(e);
     }
@@ -180,7 +180,7 @@ void reschedule_next_daily_load(const ldp_options& opt, etymon::odbc_conn* conn,
     do {
         // Increment next_full_update.
         string sql =
-            "UPDATE ldpconfig.general SET next_full_update =\n"
+            "UPDATE dbconfig.general SET next_full_update =\n"
             "    next_full_update + INTERVAL '1 day';";
         lg->write(log_level::detail, "", "", sql, -1);
         conn->exec(sql);
@@ -188,18 +188,18 @@ void reschedule_next_daily_load(const ldp_options& opt, etymon::odbc_conn* conn,
         sql =
             "SELECT (next_full_update > " + string(dbt->current_timestamp()) +
             ") AS update_in_future\n"
-            "    FROM ldpconfig.general;";
+            "    FROM dbconfig.general;";
         lg->write(log_level::detail, "", "", sql, -1);
         etymon::odbc_stmt stmt(conn);
         conn->exec_direct(&stmt, sql);
         if (conn->fetch(&stmt) == false) {
-            string e = "No rows could be read from table: ldpconfig.general";
+            string e = "No rows could be read from table: dbconfig.general";
             lg->write(log_level::error, "", "", e, -1);
             throw runtime_error(e);
         }
         conn->get_data(&stmt, 1, &update_in_future);
         if (conn->fetch(&stmt)) {
-            string e = "Too many rows in table: ldpconfig.general";
+            string e = "Too many rows in table: dbconfig.general";
             lg->write(log_level::error, "", "", e, -1);
             throw runtime_error(e);
         }
@@ -254,7 +254,7 @@ static void no_update_by_default(etymon::odbc_env* odbc, const string& db)
 {
     etymon::odbc_conn conn(odbc, db);
     string sql =
-        "UPDATE ldpconfig.general\n"
+        "UPDATE dbconfig.general\n"
         "    SET update_all_tables = FALSE,\n"
         "        enable_full_updates = FALSE;";
     conn.exec(sql);
@@ -324,7 +324,7 @@ void config_options(const ldp_config& conf, ldp_options* opt)
 
     string target = "/ldp_database/";
     conf.get_required(target + "odbc_database", &(opt->db));
-    conf.get(target + "ldpconfig_user", &(opt->ldpconfig_user));
+    conf.get(target + "dbconfig_user", &(opt->ldpconfig_user));
     conf.get(target + "ldp_user", &(opt->ldp_user));
 
     ///////////////////////////////////////////////////////////////////////////

@@ -111,37 +111,36 @@ target_link_libraries(ldp
 	${FSLIB}
 	)
 
-add_executable(ldp_test
-	$<TARGET_OBJECTS:ldp_obj>
+# add_executable(ldp_test
+# 	$<TARGET_OBJECTS:ldp_obj>
 
-	test/camelcase_test.cpp
-	test/main_test.cpp
+# 	test/camelcase_test.cpp
+# 	test/main_test.cpp
 
-	)
-target_link_libraries(ldp_test
-	${GPROFFLAG}
-	${CURL_LIBRARIES}
-	${ODBC_LIBRARY}
-	${PostgreSQL_LIBRARY}
-	#${SQLite3_LIBRARY}
-	${FSLIB}
-	)
+# 	)
+# target_link_libraries(ldp_test
+# 	${GPROFFLAG}
+# 	${CURL_LIBRARIES}
+# 	${ODBC_LIBRARY}
+# 	${PostgreSQL_LIBRARY}
+# 	#${SQLite3_LIBRARY}
+# 	${FSLIB}
+# 	)
 
-add_executable(ldp_testint
-	$<TARGET_OBJECTS:ldp_obj>
+# add_executable(ldp_testint
+# 	$<TARGET_OBJECTS:ldp_obj>
 
-	testint/main_testint.cpp
-	testint/server_testint.cpp
+# 	testint/main_testint.cpp
+# 	testint/server_testint.cpp
 
-	)
-target_link_libraries(ldp_testint
-	${GPROFFLAG}
-	${CURL_LIBRARIES}
-	${ODBC_LIBRARY}
-	${PostgreSQL_LIBRARY}
-	#${SQLite3_LIBRARY}
-	${FSLIB}
-	)
+# 	)
+# target_link_libraries(ldp_testint
+# 	${GPROFFLAG}
+# 	${CURL_LIBRARIES}
+# 	${ODBC_LIBRARY}
+# 	${PostgreSQL_LIBRARY}
+# 	#${SQLite3_LIBRARY}
+# 	${FSLIB}
+# 	)
 
 #INSTALL(PROGRAMS ldp DESTINATION /usr/local/bin)
-

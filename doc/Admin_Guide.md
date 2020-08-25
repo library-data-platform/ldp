@@ -51,7 +51,6 @@ LDP instance.
     * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
     * [Clang](https://clang.llvm.org/) 8.0.1 or later
   * [CMake](https://cmake.org/) 3.16.2 or later
-  * [Catch2](https://github.com/catchorg/Catch2) 2.10.2 or later
 
 ### Hardware
 
@@ -129,6 +128,7 @@ a package manager on some platforms.
 #### Debian Linux
 
 ```shell
+$ sudo apt update
 $ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
       postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev
 ```
@@ -139,13 +139,10 @@ For PostgreSQL, the ODBC driver can be installed with:
 $ sudo apt install odbc-postgresql
 ```
 
-Catch2 can be [installed from
-source](https://github.com/catchorg/Catch2/blob/master/docs/cmake-integration.md#installing-catch2-from-git-repository).
-
 #### RHEL/CentOS Linux
 
 ```shell
-$ sudo dnf install catch-devel cmake gcc-c++ libcurl-devel libpq-devel make \
+$ sudo dnf install cmake gcc-c++ libcurl-devel libpq-devel make \
       postgresql-server-devel unixODBC-devel
 ```
 
@@ -163,7 +160,7 @@ source](https://rapidjson.org/index.html#autotoc_md5).
 Using [Homebrew](https://brew.sh/):
 
 ```shell
-$ brew install catch2 cmake postgresql psqlodbc rapidjson unixodbc
+$ brew install cmake postgresql psqlodbc rapidjson unixodbc
 ```
 
 For PostgreSQL, the ODBC driver can be installed with:
@@ -182,51 +179,12 @@ Then:
 $ ./all.sh
 ```
 
-The `all.sh` script creates a `build/` subdirectory and builds three
-executables there:
-
-* `ldp` is the LDP software.
-* `ldp_test` runs self-contained unit tests.
-* `ldp_testint` runs integration tests.
-
-After building these executables, the script also runs `ldp_test`.
-
-If there are no errors, the end of the output will include:
+The `all.sh` script creates a `build/` subdirectory and builds the
+`ldp` executable there:
 
 ```shell
-All tests passed
+$ ./build/ldp help
 ```
-
-To run the LDP software:
-
-```shell
-$ ./build/ldp
-```
-
-### Running tests
-
-As mentioned above, the `all.sh` script runs the unit tests, but they
-can be run separately if needed:
-
-```shell
-$ ./build/ldp_test
-```
-
-Running the integration tests requires a FOLIO instance, as well as an
-LDP testbed instance with a PostgreSQL or Redshift database.  The
-contents of the LDP database will be destroyed by these tests; so
-please be careful that the correct database is used.  The
-`deployment_environment` configuration setting for the LDP testbed
-instance should be `testing` or `development`.  Also as a safety
-precaution, the setting `allow_destructive_tests` is required for
-integration tests.  The tests are run as:
-
-```shell
-$ ./build/ldp_testint -s -D DATADIR
-```
-
-where `DATADIR` is the data directory for the test database.  See
-below for an explanation of LDP data directories and configuration.
 
 
 4\. Database configuration
@@ -275,7 +233,7 @@ Three database users are required:
   This account should be used very sparingly and carefully.
 
 * `ldpconfig` is a special user account for changing configuration
-  settings in the `ldpconfig` schema.  It is intended to enable
+  settings in the `dbconfig` schema.  It is intended to enable
   designated users to make changes to the server's operation, such as
   scheduling when data updates occur.  This user name can be modified
   using the `ldpconfig_user` configuration setting in `ldpconf.json`.
@@ -433,7 +391,7 @@ $ nohup ldp server -D /var/lib/ldp &>> logfile &
 ```
 
 The server logs details of its activities in the table
-`ldpsystem.log`.  For more detailed logging, the `--trace` option can
+`dbsystem.log`.  For more detailed logging, the `--trace` option can
 be used:
 
 ```shell
@@ -442,8 +400,23 @@ $ nohup ldp server -D /var/lib/ldp --trace &>> logfile &
 
 Once per day, the server runs a _full update_ which performs all
 supported data updates.  Full updates can be scheduled at a preferred
-time of day using the table `ldpconfig.general`.  See the
+time of day using the table `dbconfig.general`.  See the
 [Configuration Guide](Config_Guide.md) for more information.
+
+### Updating data without the server
+
+As an alternative to running the server, data updates can be performed
+on an initialized database via the command line:
+
+```shell
+$ ldp update -D /var/lib/ldp
+```
+
+This will run a full update, showing progress on the console, and then
+exit.  It can be scheduled via
+[cron](https://en.wikipedia.org/wiki/Cron) to run once per day.
+
+Note that `ldp server` and `ldp update` will not run at the same time.
 
 ### Upgrading to a new version
 
@@ -550,7 +523,7 @@ below).
 
 Anonymization can be disabled by setting `disable_anonymization` to
 `true` in `ldpconf.json`, and by setting `disable_anonymization` to
-`TRUE` in the table `ldpconfig.general`.  Both are required to be set
+`TRUE` in the table `dbconfig.general`.  Both are required to be set
 in order to disable anonymization.
 
 __WARNING:  LDP does not provide a way to anonymize the database after
@@ -615,7 +588,7 @@ Reference
   disables anonymization of personal data.  The default value is
   `false`.  Please read the section on "Data privacy" above before
   changing this setting.  As a safety precaution, the configuration
-  attribute `disable_anonymization` in table `ldpconfig.general` also
+  attribute `disable_anonymization` in table `dbconfig.general` also
   must be set.
 
 * `allow_destructive_tests` (Boolean; optional) when set to `true`,
