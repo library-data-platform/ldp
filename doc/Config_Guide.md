@@ -2,9 +2,9 @@ LDP Configuration Guide
 =======================
 
 ##### Contents  
-1\. Scheduling full updates  
-2\. Foreign keys  
-Reference
+1\. [Scheduling full updates](#1-scheduling-full-updates)  
+2\. [Foreign keys](#2-foreign-keys)  
+[Reference](#reference)
 
 
 1\. Scheduling full updates
