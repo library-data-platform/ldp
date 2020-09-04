@@ -66,7 +66,7 @@ static set<pair<string,string>> personal_data_fields = {
     {"po_lines", "/requester"},
     {"po_lines", "/selector"},
 
-    {"po_purchase_orders", "/approvedByUd"},
+    {"po_purchase_orders", "/approvedById"},
     {"po_purchase_orders", "/assignedTo"},
     {"po_purchase_orders", "/vendor"},
     {"po_purchase_orders", "/billTo"},
