@@ -357,7 +357,8 @@ JSON array to a set of rows, one row per array element.  For example:
 ```sql
 CREATE TABLE local.instances_format_ids AS
 SELECT id AS instances_id,
-       json_array_elements(json_extract_path(data, 'instanceFormatIds'))
+       json_array_elements(
+	           json_extract_path(data, 'instanceFormatIds') ) #>> '{}'
                AS instance_format_id
     FROM inventory_instances;
 ```
