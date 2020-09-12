@@ -44,7 +44,11 @@ and a subset of the JSON fields is also stored in individual
 relational attributes:
 
 ```sql
-SELECT * FROM circulation_loans LIMIT 1;
+SELECT
+    *
+FROM
+    circulation_loans
+LIMIT 1;
 ```
 ```
 id            | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
@@ -93,7 +97,11 @@ be used to retrieve data from a path of up to five nested fields, for
 example:
 
 ```sql
-SELECT data FROM circulation_loans LIMIT 1;
+SELECT
+    data
+FROM
+    circulation_loans
+LIMIT 1;
 ```
 
 ```
@@ -113,10 +121,13 @@ SELECT data FROM circulation_loans LIMIT 1;
 ```
 
 ```sql
-SELECT json_extract_path_text(data, 'status', 'name') AS status,
-       count(*)
-    FROM circulation_loans
-    GROUP BY status;
+SELECT
+    json_extract_path_text(data, 'status', 'name') AS status,
+    count(*)
+FROM
+    circulation_loans
+GROUP BY
+    status;
 ```
 
 ```
@@ -144,25 +155,28 @@ retain flexibility in the future to run either.
 An example of a query written entirely using JSON data:
 
 ```sql
-SELECT json_extract_path_text(u.data, 'id') AS user_id,
-       json_extract_path_text(g.data, 'group') AS group
-    FROM user_users AS u
-        LEFT JOIN user_groups AS g
-            ON json_extract_path_text(u.data, 'patronGroup') =
-               json_extract_path_text(g.data, 'id')
-    LIMIT 5;
+SELECT
+    json_extract_path_text(u.data, 'id') AS user_id,
+    json_extract_path_text(g.data, 'group') AS "group"
+FROM
+    user_users AS u
+    LEFT JOIN user_groups AS g
+        ON json_extract_path_text(u.data, 'patronGroup') =
+           json_extract_path_text(g.data, 'id')
+LIMIT 5;
 ```
 
 This can be written in a simpler form by using the relational
 attributes rather than JSON fields:
 
 ```sql
-SELECT u.id AS user_id,
-       g.group
-    FROM user_users AS u
-        LEFT JOIN user_groups AS g
-	    ON u.patron_group = g.id
-    LIMIT 5;
+SELECT
+    u.id AS user_id,
+    g.group
+FROM
+    user_users AS u
+    LEFT JOIN user_groups AS g ON u.patron_group = g.id
+LIMIT 5;
 ```
 
 ```
@@ -185,10 +199,13 @@ storing the results of queries, e.g.:
 
 ```sql
 CREATE TABLE local.loan_status AS
-SELECT json_extract_path_text(data, 'status', 'name') AS status,
-       count(*)
-    FROM circulation_loans
-    GROUP BY status;
+SELECT
+    json_extract_path_text(data, 'status', 'name') AS status,
+    count(*)
+FROM
+    circulation_loans
+GROUP BY
+    status;
 ```
 
 This is also a good place to store tables containing intermediate
@@ -201,11 +218,14 @@ clause:
 
 ```sql
 CREATE TABLE local.loans_status AS
-SELECT id,
-       json_extract_path_text(data, 'status', 'name') AS status
-    FROM circulation_loans;
+SELECT
+    id,
+    json_extract_path_text(data, 'status', 'name') AS status
+FROM
+    circulation_loans;
 
 CREATE INDEX ON local.loans_status (id);
+
 CREATE INDEX ON local.loans_status (status);
 ```
 
@@ -214,6 +234,7 @@ table run faster:
 
 ```sql
 VACUUM local.loans_status;
+
 ANALYZE local.loans_status;
 ```
 
@@ -243,7 +264,11 @@ History tables contain these attributes:
 For example:
 
 ```sql
-SELECT * FROM history.circulation_loans LIMIT 1;
+SELECT
+    *
+FROM
+    history.circulation_loans
+LIMIT 1;
 ```
 ```
 id        | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
@@ -280,32 +305,44 @@ For a high level view of all updated records, for example, in
 `circulation_loans`:
 
 ```sql
-SELECT updated,
-       count(*)
-    FROM history.circulation_loans
-    GROUP BY updated
-    ORDER BY updated;
+SELECT
+    updated,
+    count(*)
+FROM
+    history.circulation_loans
+GROUP BY
+    updated
+ORDER BY
+    updated;
 ```
 
 To view how a single record changes over time:
 
 ```sql
-SELECT *
-    FROM history.circulation_loans
-    WHERE id = '0bab56e5-1ab6-4ac2-afdf-8b2df0434378'
-    ORDER BY updated;
+SELECT
+    *
+FROM
+    history.circulation_loans
+WHERE
+    id = '0bab56e5-1ab6-4ac2-afdf-8b2df0434378'
+ORDER BY
+    updated;
 ```
 
 The `SELECT` clause of this query can be modified to examine only
 specific fields, e.g.:
 
 ```sql
-SELECT json_extract_path_text(data, 'action'),
-       json_extract_path_text(data, 'returnDate'),
-       updated
-    FROM history.circulation_loans
-    WHERE id = '0bab56e5-1ab6-4ac2-afdf-8b2df0434378'
-    ORDER BY updated;
+SELECT
+    json_extract_path_text(data, 'action'),
+    json_extract_path_text(data, 'returnDate'),
+    updated
+FROM
+    history.circulation_loans
+WHERE
+    id = '0bab56e5-1ab6-4ac2-afdf-8b2df0434378'
+ORDER BY
+    updated;
 ```
 
 ### Data cleaning
@@ -320,11 +357,15 @@ result in a local table, e.g.:
 
 ```sql
 CREATE TABLE local.loan_status_history AS
-SELECT id,
-       json_extract_path_text(data, 'itemStatus') AS item_status,
-       updated
-    FROM history.circulation_loans
-    WHERE updated BETWEEN '2020-01-01' AND '2020-12-31';
+SELECT
+    id,
+    json_extract_path_text(data, 'itemStatus') AS item_status,
+    updated
+FROM
+    history.circulation_loans
+WHERE
+    updated >= '2020-01-01'
+    AND updated < '2021-01-01';
 ```
 
 This will make it easier to examine the data to check for inconsistent
@@ -356,10 +397,12 @@ JSON array to a set of rows, one row per array element.  For example:
 
 ```sql
 CREATE TABLE local.instances_format_ids AS
-SELECT id AS instances_id,
-       json_array_elements(json_extract_path(data, 'instanceFormatIds'))
-               AS instance_format_id
-    FROM inventory_instances;
+SELECT
+    id AS instances_id,
+    json_array_elements_text(json_extract_path(data, 'instanceFormatIds'))
+        AS instance_format_id
+FROM
+    inventory_instances;
 ```
 
 This is usually sufficient for arrays that contain a single value for
@@ -368,14 +411,16 @@ fields can be extracted using `json_extract_path_text()`, e.g.:
 
 ```sql
 CREATE TABLE local.instances_identifiers AS
-SELECT id AS instances_id,
-       json_extract_path_text(
-               json_array_elements(json_extract_path(data, 'identifiers')),
-                                   'identifierTypeId' ) AS type_id,
-       json_extract_path_text(
-               json_array_elements(json_extract_path(data, 'identifiers')),
-                                   'value' ) AS value
-    FROM inventory_instances;
+SELECT
+    id AS instances_id,
+    json_extract_path_text(json_array_elements(
+        json_extract_path(data, 'identifiers')), 'identifierTypeId')
+        AS type_id,
+    json_extract_path_text(json_array_elements(
+        json_extract_path(data, 'identifiers')), 'value')
+        AS value
+FROM
+    inventory_instances;
 ```
 
 

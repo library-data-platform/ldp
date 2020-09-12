@@ -18,7 +18,10 @@ setting `next_full_update` in table `dbconfig.general`.  Note that
 the timezone is part of the value.  For example:
 
 ```sql
-UPDATE dbconfig.general SET next_full_update = '2020-05-07 22:00:00Z';
+UPDATE
+    dbconfig.general
+SET
+    next_full_update = '2020-05-07 22:00:00Z';
 ```
 
 This schedules the next full update on May 7, 2020 at 10:00 p.m. UTC.
@@ -43,7 +46,10 @@ LDP can infer foreign key relationships in data.  To enable this
 feature:
 
 ```sql
-UPDATE dbconfig.general SET detect_foreign_keys = TRUE;
+UPDATE
+    dbconfig.general
+SET
+    detect_foreign_keys = TRUE;
 ```
 
 This will cause the foreign key analysis to run directly after every
@@ -64,7 +70,10 @@ point for configuring constraints:
 
 ```sql
 INSERT INTO dbconfig.foreign_keys
-    SELECT * FROM dbsystem.suggested_foreign_keys;
+SELECT
+    *
+FROM
+    dbsystem.suggested_foreign_keys;
 ```
 
 These constraints have no effect unless they are activated by setting

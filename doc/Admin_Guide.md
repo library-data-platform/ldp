@@ -508,18 +508,9 @@ which may be protected by a firewall.
 7\. Data privacy
 ----------------
 
-LDP can be configured to attempt "anonymization" of personal data.  It
-does this by not updating certain tables that would contain personal
-data, for example `user_users`, and by deleting foreign key references
-to them from other tables.
-
-In the current development version of LDP, this anonymization process,
-though currently very limited, is enabled in new databases unless
-otherwise configured.
-
-Databases created with LDP 1.0 must be configured to support
-anonymization by changing the `disable_anonymization` settings (see
-below).
+LDP will optionally attempt to "anonymize" personal data.  This
+anonymization feature is enabled by default when initializing a new
+database, unless otherwise configured.
 
 Anonymization can be disabled by setting `disable_anonymization` to
 `true` in `ldpconf.json`, and by setting `disable_anonymization` to
