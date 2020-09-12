@@ -393,7 +393,9 @@ there is a workaround for PostgreSQL users, if the order of the array
 elements is not needed.
 
 The function `json_array_elements()` will convert the elements of a
-JSON array to a set of rows, one row per array element.  For example:
+JSON array to a set of rows, one row per array element.  A variation
+of this function, `json_array_elements_text()`, will also convert the
+data type of each array element to `varchar`.  For example:
 
 ```sql
 CREATE TABLE local.instances_format_ids AS
