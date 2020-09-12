@@ -157,8 +157,7 @@ An example of a query written entirely using JSON data:
 ```sql
 SELECT
     json_extract_path_text(u.data, 'id') AS user_id,
-    json_extract_path_text(g.data, 'group') AS
-GROUP
+    json_extract_path_text(g.data, 'group') AS "group"
 FROM
     user_users AS u
     LEFT JOIN user_groups AS g
@@ -365,8 +364,8 @@ SELECT
 FROM
     history.circulation_loans
 WHERE
-    updated BETWEEN '2020-01-01'
-    AND '2020-12-31';
+    updated >= '2020-01-01'
+    AND updated < '2020-12-31';
 ```
 
 This will make it easier to examine the data to check for inconsistent
