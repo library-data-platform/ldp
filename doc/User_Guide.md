@@ -365,7 +365,7 @@ FROM
     history.circulation_loans
 WHERE
     updated >= '2020-01-01'
-    AND updated < '2020-12-31';
+    AND updated < '2021-01-01';
 ```
 
 This will make it easier to examine the data to check for inconsistent
