@@ -378,6 +378,16 @@ void config_options(const ldp_config& conf, ldp_options* opt)
     //}
     ///////////////////////////////////////////////////////////////////////////
 
+    bool found_disable_anonymization;
+    bool b;
+    found_disable_anonymization = conf.get_bool("/disable_anonymization", &b);
+    if (found_disable_anonymization) {
+        throw runtime_error(
+            "The configuration setting \"disable_anonymization\" is not\n"
+            "supported in LDP 1.1.  Please see the LDP Administrator Guide\n"
+            "for information on how to disable anonymization.");
+    }
+
     conf.get_bool("/anonymize", &(opt->anonymize));
 
     conf.get_bool("/allow_destructive_tests", &(opt->allow_destructive_tests));
