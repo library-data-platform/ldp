@@ -1266,6 +1266,32 @@ void database_upgrade_18(database_upgrade_options* opt)
     ulog_commit(opt);
 }
 
+void database_upgrade_19(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    etymon::odbc_tx tx(opt->conn);
+
+    string sql =
+        "ALTER TABLE dbconfig.general\n"
+        "    DROP COLUMN disable_anonymization;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    sql =
+        "ALTER TABLE dbsystem.main\n"
+        "    ADD COLUMN anonymize BOOLEAN NOT NULL DEFAULT TRUE;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    sql = "UPDATE dbsystem.main SET database_version = 19;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    tx.commit();
+    ulog_commit(opt);
+}
+
 // Example of vector<string> literal:
     //vector<string> tables = {
     //    "circulation_cancellation_reasons",
