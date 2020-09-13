@@ -38,11 +38,13 @@ static const char* option_help =
 "Options for init-database:\n"
 "  --profile <prof>    - Initialize the LDP database with profile <prof>\n"
 "                        (required)\n"
+/*
 "  --no-update         - Set update_all_tables and enable_full_updates in\n"
 "                        table dbconfig.general to FALSE, so that tables\n"
 "                        will not be updated by default; this option nearly\n"
 "                        always should be used for consortial deployments\n"
 "                        to prevent overly broad requests for data\n"
+*/
 "Development/testing options:\n"
 "  --extract-only      - Extract data in the data directory, but do not\n"
 "                        update them in the database\n"
@@ -206,10 +208,22 @@ void reschedule_next_daily_load(const ldp_options& opt, etymon::odbc_conn* conn,
     } while (update_in_future == "0");
 }
 
+static void set_dbsystem_main_anonymize(etymon::odbc_env* odbc,
+                                        const ldp_options& opt)
+{
+    etymon::odbc_conn conn(odbc, opt.db);
+    string sql = string() +
+        "UPDATE dbsystem.main\n"
+        "    SET anonymize = " + (opt.anonymize ? "TRUE" : "FALSE") + ";";
+    conn.exec(sql);
+}
+
 void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
 {
     // Check that database version is up to date.
     validate_database_latest_version(odbc, opt.db);
+
+    set_dbsystem_main_anonymize(odbc, opt);
 
     etymon::odbc_conn log_conn(odbc, opt.db);
     ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet, opt.prog);
@@ -270,6 +284,7 @@ void cmd_init_database(const ldp_options& opt)
     disable_termination_signals();
     init_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user,
             opt.err, opt.prog);
+    set_dbsystem_main_anonymize(&odbc, opt);
 
     if (opt.no_update)
         no_update_by_default(&odbc, opt.db);
@@ -283,6 +298,7 @@ void cmd_upgrade_database(const ldp_options& opt)
     upgrade_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user,
             opt.datadir,
             opt.err, opt.prog, opt.quiet);
+    set_dbsystem_main_anonymize(&odbc, opt);
 }
 
 void cmd_server(const ldp_options& opt)
@@ -324,7 +340,7 @@ void config_options(const ldp_config& conf, ldp_options* opt)
 
     string target = "/ldp_database/";
     conf.get_required(target + "odbc_database", &(opt->db));
-    conf.get(target + "dbconfig_user", &(opt->ldpconfig_user));
+    conf.get(target + "ldpconfig_user", &(opt->ldpconfig_user));
     conf.get(target + "ldp_user", &(opt->ldp_user));
 
     ///////////////////////////////////////////////////////////////////////////
@@ -365,7 +381,17 @@ void config_options(const ldp_config& conf, ldp_options* opt)
     //}
     ///////////////////////////////////////////////////////////////////////////
 
-    conf.get_bool("/disable_anonymization", &(opt->disable_anonymization));
+    bool found_disable_anonymization;
+    bool b;
+    found_disable_anonymization = conf.get_bool("/disable_anonymization", &b);
+    if (found_disable_anonymization) {
+        throw runtime_error(
+            "The configuration setting \"disable_anonymization\" is not\n"
+            "supported in LDP 1.1.  Please see the LDP Administrator Guide\n"
+            "for information on how to disable anonymization.");
+    }
+
+    conf.get_bool("/anonymize", &(opt->anonymize));
 
     conf.get_bool("/allow_destructive_tests", &(opt->allow_destructive_tests));
 }

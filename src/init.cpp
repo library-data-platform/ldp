@@ -12,7 +12,7 @@
 
 namespace fs = std::experimental::filesystem;
 
-static int64_t ldp_latest_database_version = 18;
+static int64_t ldp_latest_database_version = 19;
 
 database_upgrade_array database_upgrades[] = {
     nullptr,  // Version 0 has no migration.
@@ -33,7 +33,8 @@ database_upgrade_array database_upgrades[] = {
     database_upgrade_15,
     database_upgrade_16,
     database_upgrade_17,
-    database_upgrade_18
+    database_upgrade_18,
+    database_upgrade_19
 };
 
 int64_t latest_database_version()
@@ -167,7 +168,8 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
 
     sql =
         "CREATE TABLE dbsystem.main (\n"
-        "    database_version BIGINT NOT NULL\n"
+        "    database_version BIGINT NOT NULL,\n"
+        "    anonymize BOOLEAN NOT NULL DEFAULT TRUE\n"
         ");";
     conn->exec(sql);
     sql = "INSERT INTO dbsystem.main (database_version) VALUES (" +
@@ -277,8 +279,7 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
         "    next_full_update TIMESTAMP WITH TIME ZONE NOT NULL,\n"
         "    detect_foreign_keys BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    enable_foreign_key_warnings BOOLEAN NOT NULL DEFAULT FALSE,\n"
-        "    force_foreign_key_constraints BOOLEAN NOT NULL DEFAULT FALSE,\n"
-        "    disable_anonymization BOOLEAN NOT NULL DEFAULT FALSE\n"
+        "    force_foreign_key_constraints BOOLEAN NOT NULL DEFAULT FALSE\n"
         ");";
     conn->exec(sql);
     sql =
