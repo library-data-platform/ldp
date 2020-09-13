@@ -486,11 +486,11 @@ ldp: Database version is up to date
 6\. Direct extraction
 ---------------------
 
-LDP extracts most data via module APIs; but in some cases it is
-necessary to extract directly from a module's internal database, such
-as when the data are too large for the API to process.  In LDP this is
-referred to as _direct extraction_ and is currently supported for the
-following tables:
+LDP currently extracts most data via module APIs; but in some cases it
+is necessary to extract directly from a module's internal database,
+such as when the data are too large for the API to process.  In LDP
+this is referred to as _direct extraction_ and is currently supported
+for the following tables:
 
 * `inventory_holdings`
 * `inventory_instances`
@@ -538,10 +538,10 @@ is enabled unless otherwise configured.
 Anonymization can be disabled by setting `anonymize` to `false` in
 `ldpconf.json`.
 
-__WARNING:  LDP does not provide a way to anonymize the database after
-personal data have been loaded into it.  For this reason, these
-settings should never be used unless you are absolutely sure that you
-want to store personal data in the LDP database.__
+__WARNING: LDP does not provide a way to anonymize the database after
+personal data have been loaded into it.  For this reason, the
+`anonymize` setting should never be used unless you are absolutely
+sure that you want to store personal data in the LDP database.__
 
 
 Reference
