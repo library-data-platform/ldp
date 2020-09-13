@@ -365,7 +365,7 @@ void config_options(const ldp_config& conf, ldp_options* opt)
     //}
     ///////////////////////////////////////////////////////////////////////////
 
-    conf.get_bool("/disable_anonymization", &(opt->disable_anonymization));
+    conf.get_bool("/anonymize", &(opt->anonymize));
 
     conf.get_bool("/allow_destructive_tests", &(opt->allow_destructive_tests));
 }

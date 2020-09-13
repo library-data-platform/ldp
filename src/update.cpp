@@ -341,32 +341,6 @@ void select_config_general(etymon::odbc_conn* conn, ldp_log* lg,
     *enable_foreign_key_warnings = (s3 == "1");
 }
 
-bool is_anonymization_enabled(const ldp_options& opt, etymon::odbc_env* odbc,
-                              const string& db, ldp_log* lg)
-{
-    bool ldpconf_disable_anon = false;
-    {
-        etymon::odbc_conn conn(odbc, opt.db);
-        string sql = "SELECT disable_anonymization FROM dbconfig.general;";
-        lg->detail(sql);
-        {
-            etymon::odbc_stmt stmt(&conn);
-            conn.exec_direct(&stmt, sql);
-            conn.fetch(&stmt);
-            string s;
-            conn.get_data(&stmt, 1, &s);
-            ldpconf_disable_anon = (s == "1");
-        }
-    }
-
-    if (opt.disable_anonymization != ldpconf_disable_anon)
-        lg->warning(
-            "Configuration settings for disable_anonymization do not match:\n"
-            "    Action: Anonymization not disabled");
-
-    return (!opt.disable_anonymization || !ldpconf_disable_anon);
-}
-
 void run_update(const ldp_options& opt)
 {
     CURLcode cc;
@@ -420,9 +394,6 @@ void run_update(const ldp_options& opt)
         }
     }
 
-    bool enable_anonymization = is_anonymization_enabled(opt, &odbc, opt.db,
-                                                         &lg);
-
     for (auto& table : schema.tables) {
 
         // Skip this table if the --table option is specified and does not
@@ -431,9 +402,9 @@ void run_update(const ldp_options& opt)
             continue;
 
         // Enable anonymization of the entire table.
-        bool anonymize_table = enable_anonymization && table.anonymize;
+        bool anonymize_table = opt.anonymize && table.anonymize;
         // Enable selective anonymization of fields.
-        bool anonymize_fields = enable_anonymization;
+        bool anonymize_fields = opt.anonymize;
 
         // Skip this table if the entire table should be anonymized.
         if (anonymize_table)
