@@ -539,9 +539,9 @@ Anonymization can be disabled by setting `anonymize` to `false` in
 `ldpconf.json`.
 
 __WARNING: LDP does not provide a way to anonymize the database after
-personal data have been loaded into it.  For this reason, the
-`anonymize` setting should never be used unless you are absolutely
-sure that you want to store personal data in the LDP database.__
+personal data have been loaded into it.  For this reason,
+anonymization should never be disabled unless you are absolutely sure
+that you want to store personal data in the LDP database.__
 
 
 Reference
