@@ -210,12 +210,12 @@ tables with cstore_fdw, it may be helpful for users with large,
 frequently queried data to copy them into columnar tables.  However,
 please note that prior to PostgreSQL 13, `pg_dump` does not include
 these columnar data in backups; so the original tables should be
-retained.
+retained as well.
 
-Amazon/AWS Relational Database Service (RDS) does not support
-cstore_fdw.  In order to use cstore_fdw in AWS, PostgreSQL can be
-installed on an EC2 instance, although this is a more manual process
-than deploying PostgreSQL in RDS.
+Amazon/AWS Relational Database Service (RDS) does not currently
+support cstore_fdw.  In order to use cstore_fdw in AWS, PostgreSQL can
+be installed on an EC2 instance, although this is a more manual
+process than deploying PostgreSQL in RDS.
 
 Recent versions of Debian Linux support installing cstore_fdw via the
 `apt` package manager.
@@ -391,7 +391,7 @@ __ldpconf.json__
     "enable_sources": ["my_library"],
     "sources": {
         "my_library": {
-            "okapi_url": "https://folio-release-okapi.aws.indexdata.com",
+            "okapi_url": "https://folio-snapshot-okapi.dev.folio.org",
             "okapi_tenant": "diku",
             "okapi_user": "diku_admin",
             "okapi_password": "(okapi password here)"
