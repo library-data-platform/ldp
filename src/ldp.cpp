@@ -208,10 +208,22 @@ void reschedule_next_daily_load(const ldp_options& opt, etymon::odbc_conn* conn,
     } while (update_in_future == "0");
 }
 
+static void set_dbsystem_main_anonymize(etymon::odbc_env* odbc,
+                                        const ldp_options& opt)
+{
+    etymon::odbc_conn conn(odbc, opt.db);
+    string sql = string() +
+        "UPDATE dbsystem.main\n"
+        "    SET anonymize = " + (opt.anonymize ? "TRUE" : "FALSE") + ";";
+    conn.exec(sql);
+}
+
 void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
 {
     // Check that database version is up to date.
     validate_database_latest_version(odbc, opt.db);
+
+    set_dbsystem_main_anonymize(odbc, opt);
 
     etymon::odbc_conn log_conn(odbc, opt.db);
     ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet, opt.prog);
@@ -262,16 +274,6 @@ static void no_update_by_default(etymon::odbc_env* odbc, const string& db)
     conn.exec(sql);
 }
 
-static void set_dbsystem_main_anonymize(etymon::odbc_env* odbc,
-                                        const ldp_options& opt)
-{
-    etymon::odbc_conn conn(odbc, opt.db);
-    string sql = string() +
-        "UPDATE dbsystem.main\n"
-        "    SET anonymize = " + (opt.anonymize ? "TRUE" : "FALSE") + ";";
-    conn.exec(sql);
-}
-
 void cmd_init_database(const ldp_options& opt)
 {
     if (opt.set_profile == profile::none)
@@ -305,7 +307,6 @@ void cmd_server(const ldp_options& opt)
     server_lock svrlock(&odbc, opt.db, opt.lg_level, opt.err, opt.prog);
     if (opt.lg_level == log_level::trace || opt.lg_level == log_level::detail)
         fprintf(opt.err, "%s: Starting server\n", opt.prog);
-    set_dbsystem_main_anonymize(&odbc, opt);
     server_loop(opt, &odbc);
 }
 
@@ -339,7 +340,7 @@ void config_options(const ldp_config& conf, ldp_options* opt)
 
     string target = "/ldp_database/";
     conf.get_required(target + "odbc_database", &(opt->db));
-    conf.get(target + "dbconfig_user", &(opt->ldpconfig_user));
+    conf.get(target + "ldpconfig_user", &(opt->ldpconfig_user));
     conf.get(target + "ldp_user", &(opt->ldp_user));
 
     ///////////////////////////////////////////////////////////////////////////

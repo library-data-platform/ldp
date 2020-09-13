@@ -334,7 +334,7 @@ __odbc.ini__
 Description = ldp
 Driver = PostgreSQL
 Database = ldp
-Servername = ldp.indexdata.com
+Servername = ldp.folio.org
 UserName = ldpadmin
 Password = (ldpadmin password here)
 Port = 5432
@@ -516,7 +516,7 @@ example:
 		"inventory_items"
             ],
             "direct_database_name": "okapi",
-            "direct_database_host": "database.indexdata.com",
+            "direct_database_host": "database.folio.org",
             "direct_database_port": 5432,
             "direct_database_user": "folio_admin",
             "direct_database_password": "(database password here)"
@@ -601,12 +601,14 @@ Reference
   Please read the section on "Data privacy" above before changing this
   setting.
 
+<!--
 * `allow_destructive_tests` (Boolean; optional) when set to `true`,
   allows the LDP database to be overwritten by integration tests or
   other testing or development operations.  The default value is
   `false`.  This value should only be `true` for an LDP database that
   is being used as a testing sandbox, and never in a production or
   staging deployment.
+-->
 
 
 Further reading
