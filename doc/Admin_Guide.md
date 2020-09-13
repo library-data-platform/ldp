@@ -532,14 +532,11 @@ which may be protected by a firewall.
 7\. Data privacy
 ----------------
 
-LDP will optionally attempt to "anonymize" personal data.  This
-anonymization feature is enabled by default when initializing a new
-database, unless otherwise configured.
+LDP attempts to "anonymize" personal data.  This anonymization feature
+is enabled unless otherwise configured.
 
-Anonymization can be disabled by setting `disable_anonymization` to
-`true` in `ldpconf.json`, and by setting `disable_anonymization` to
-`TRUE` in the table `dbconfig.general`.  Both are required to be set
-in order to disable anonymization.
+Anonymization can be disabled by setting `anonymize` to `false` in
+`ldpconf.json`.
 
 __WARNING:  LDP does not provide a way to anonymize the database after
 personal data have been loaded into it.  For this reason, these
@@ -599,12 +596,10 @@ Reference
   * `direct_database_password` (string; optional) is the password for
     the specified FOLIO database user name.
 
-* `disable_anonymization` (Boolean; optional) when set to `true`,
-  disables anonymization of personal data.  The default value is
-  `false`.  Please read the section on "Data privacy" above before
-  changing this setting.  As a safety precaution, the configuration
-  attribute `disable_anonymization` in table `dbconfig.general` also
-  must be set.
+* `anonymize` (Boolean; optional) when set to `false`, disables
+  anonymization of personal data.  The default value is `true`.
+  Please read the section on "Data privacy" above before changing this
+  setting.
 
 * `allow_destructive_tests` (Boolean; optional) when set to `true`,
   allows the LDP database to be overwritten by integration tests or
