@@ -38,11 +38,13 @@ static const char* option_help =
 "Options for init-database:\n"
 "  --profile <prof>    - Initialize the LDP database with profile <prof>\n"
 "                        (required)\n"
+/*
 "  --no-update         - Set update_all_tables and enable_full_updates in\n"
 "                        table dbconfig.general to FALSE, so that tables\n"
 "                        will not be updated by default; this option nearly\n"
 "                        always should be used for consortial deployments\n"
 "                        to prevent overly broad requests for data\n"
+*/
 "Development/testing options:\n"
 "  --extract-only      - Extract data in the data directory, but do not\n"
 "                        update them in the database\n"
