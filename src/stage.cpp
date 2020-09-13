@@ -114,6 +114,10 @@ void process_json_record(const table_schema& table, json::Document* root,
             }
             break;
         case json::kArrayType:
+            if (anonymize_fields && is_personal_data_field(table, field)) {
+		json::Pointer(field.c_str()).Set(*root, json::kNullType);
+		break;
+            }
             if (data_to_filter(table, field)) {
 		json::Pointer(field.c_str()).Set(*root, json::kNullType);
 		break;
@@ -133,6 +137,10 @@ void process_json_record(const table_schema& table, json::Document* root,
             }
             break;
         case json::kObjectType:
+            if (anonymize_fields && is_personal_data_field(table, field)) {
+		json::Pointer(field.c_str()).Set(*root, json::kNullType);
+		break;
+            }
             if (data_to_filter(table, field)) {
 		json::Pointer(field.c_str()).Set(*root, json::kNullType);
 		break;

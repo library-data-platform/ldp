@@ -1266,96 +1266,28 @@ void database_upgrade_18(database_upgrade_options* opt)
     ulog_commit(opt);
 }
 
-// Example of vector<string> literal:
-    //vector<string> tables = {
-    //    "circulation_cancellation_reasons",
-    //    "circulation_fixed_due_date_schedules",
-    //    "circulation_loan_policies",
-    //    "circulation_loans",
-    //    "circulation_loan_history",
-    //    "circulation_patron_action_sessions",
-    //    "circulation_patron_notice_policies",
-    //    "circulation_request_policies",
-    //    "circulation_requests",
-    //    "circulation_scheduled_notices",
-    //    "circulation_staff_slips",
-    //    "feesfines_accounts",
-    //    "feesfines_comments",
-    //    "feesfines_feefines",
-    //    "feesfines_feefineactions",
-    //    "feesfines_lost_item_fees_policies",
-    //    "feesfines_manualblocks",
-    //    "feesfines_overdue_fines_policies",
-    //    "feesfines_owners",
-    //    "feesfines_payments",
-    //    "feesfines_refunds",
-    //    "feesfines_transfer_criterias",
-    //    "feesfines_transfers",
-    //    "feesfines_waives",
-    //    "finance_budgets",
-    //    "finance_fiscal_years",
-    //    "finance_fund_types",
-    //    "finance_funds",
-    //    "finance_group_fund_fiscal_years",
-    //    "finance_groups",
-    //    "finance_ledgers",
-    //    "finance_transactions",
-    //    "inventory_alternative_title_types",
-    //    "inventory_call_number_types",
-    //    "inventory_classification_types",
-    //    "inventory_contributor_name_types",
-    //    "inventory_contributor_types",
-    //    "inventory_electronic_access_relationships",
-    //    "inventory_holdings_note_types",
-    //    "inventory_holdings",
-    //    "inventory_holdings_types",
-    //    "inventory_identifier_types",
-    //    "inventory_ill_policies",
-    //    "inventory_instance_formats",
-    //    "inventory_instance_note_types",
-    //    "inventory_instance_relationship_types",
-    //    "inventory_instance_statuses",
-    //    "inventory_instance_relationships",
-    //    "inventory_instances",
-    //    "inventory_instance_types",
-    //    "inventory_item_damaged_statuses",
-    //    "inventory_item_note_types",
-    //    "inventory_items",
-    //    "inventory_campuses",
-    //    "inventory_institutions",
-    //    "inventory_libraries",
-    //    "inventory_loan_types",
-    //    "inventory_locations",
-    //    "inventory_material_types",
-    //    "inventory_modes_of_issuance",
-    //    "inventory_nature_of_content_terms",
-    //    "inventory_service_points",
-    //    "inventory_service_points_users",
-    //    "inventory_statistical_code_types",
-    //    "inventory_statistical_codes",
-    //    "invoice_lines",
-    //    "invoice_invoices",
-    //    "invoice_voucher_lines",
-    //    "invoice_vouchers",
-    //    "acquisitions_memberships",
-    //    "acquisitions_units",
-    //    "po_alerts",
-    //    "po_order_invoice_relns",
-    //    "po_order_templates",
-    //    "po_pieces",
-    //    "po_lines",
-    //    "po_purchase_orders",
-    //    "po_receiving_history",
-    //    "po_reporting_codes",
-    //    "organization_addresses",
-    //    "organization_categories",
-    //    "organization_contacts",
-    //    "organization_emails",
-    //    "organization_interfaces",
-    //    "organization_organizations",
-    //    "organization_phone_numbers",
-    //    "organization_urls",
-    //    "user_groups",
-    //    "user_users"
-    //};
+void database_upgrade_19(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
 
+    etymon::odbc_tx tx(opt->conn);
+
+    string sql =
+        "ALTER TABLE dbconfig.general\n"
+        "    DROP COLUMN disable_anonymization;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    sql =
+        "ALTER TABLE dbsystem.main\n"
+        "    ADD COLUMN anonymize BOOLEAN NOT NULL DEFAULT TRUE;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    sql = "UPDATE dbsystem.main SET database_version = 19;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    tx.commit();
+    ulog_commit(opt);
+}

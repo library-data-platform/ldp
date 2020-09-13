@@ -80,7 +80,7 @@ public:
     string ldpconfig_user = "ldpconfig";
     //bool unsafe = false;
     string table;
-    bool disable_anonymization;
+    bool anonymize = true;
     bool savetemps = false;
     FILE* err = stderr;
     bool verbose = false;  // Deprecated.

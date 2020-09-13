@@ -196,6 +196,30 @@ Before using the LDP software, we have to create a database that will
 store the data.  This can be a local or cloud-based PostgreSQL
 database or a cloud-based Redshift database.
 
+A robust backup process should be used to ensure that historical data
+and local tables are safe.
+
+#### Large data and PostgreSQL
+
+PostgreSQL is not optimized for analytic queries.  Users with large
+data that wish to use PostgreSQL might consider installing
+[cstore_fdw](https://github.com/citusdata/cstore_fdw), an open source
+column storage extension which enables very fast analytic queries on
+large tables.  Although LDP does not currently generate columnar
+tables with cstore_fdw, it may be helpful for users with large,
+frequently queried data to copy them into columnar tables.  However,
+please note that prior to PostgreSQL 13, `pg_dump` does not include
+these columnar data in backups; so the original tables should be
+retained as well.
+
+Amazon/AWS Relational Database Service (RDS) does not currently
+support cstore_fdw.  In order to use cstore_fdw in AWS, PostgreSQL can
+be installed on an EC2 instance, although this is a more manual
+process than deploying PostgreSQL in RDS.
+
+Recent versions of Debian Linux support installing cstore_fdw via the
+`apt` package manager.
+
 #### PostgreSQL
 
 For libraries that deploy LDP with PostgreSQL, whether local or
@@ -207,8 +231,8 @@ hosted, we recommend setting:
 
 #### PostgreSQL hosted in RDS
 
-For libraries that deploy LDP with cloud-based PostgreSQL using Amazon
-Relational Database Service (RDS), we recommend setting:
+For libraries that deploy LDP with cloud-based PostgreSQL using RDS,
+we recommend setting:
 
 * Instance type:  `db.m5.large`
 * Number of instances:  `1`
@@ -310,7 +334,7 @@ __odbc.ini__
 Description = ldp
 Driver = PostgreSQL
 Database = ldp
-Servername = ldp.indexdata.com
+Servername = ldp.folio.org
 UserName = ldpadmin
 Password = (ldpadmin password here)
 Port = 5432
@@ -367,7 +391,7 @@ __ldpconf.json__
     "enable_sources": ["my_library"],
     "sources": {
         "my_library": {
-            "okapi_url": "https://folio-release-okapi.aws.indexdata.com",
+            "okapi_url": "https://folio-snapshot-okapi.dev.folio.org",
             "okapi_tenant": "diku",
             "okapi_user": "diku_admin",
             "okapi_password": "(okapi password here)"
@@ -462,11 +486,11 @@ ldp: Database version is up to date
 6\. Direct extraction
 ---------------------
 
-LDP extracts most data via module APIs; but in some cases it is
-necessary to extract directly from a module's internal database, such
-as when the data are too large for the API to process.  In LDP this is
-referred to as _direct extraction_ and is currently supported for the
-following tables:
+LDP currently extracts most data via module APIs; but in some cases it
+is necessary to extract directly from a module's internal database,
+such as when the data are too large for the API to process.  In LDP
+this is referred to as _direct extraction_ and is currently supported
+for the following tables:
 
 * `inventory_holdings`
 * `inventory_instances`
@@ -492,7 +516,7 @@ example:
 		"inventory_items"
             ],
             "direct_database_name": "okapi",
-            "direct_database_host": "database.indexdata.com",
+            "direct_database_host": "database.folio.org",
             "direct_database_port": 5432,
             "direct_database_user": "folio_admin",
             "direct_database_password": "(database password here)"
@@ -508,28 +532,16 @@ which may be protected by a firewall.
 7\. Data privacy
 ----------------
 
-LDP can be configured to attempt "anonymization" of personal data.  It
-does this by not updating certain tables that would contain personal
-data, for example `user_users`, and by deleting foreign key references
-to them from other tables.
+LDP attempts to "anonymize" personal data.  This anonymization feature
+is enabled unless otherwise configured.
 
-In the current development version of LDP, this anonymization process,
-though currently very limited, is enabled in new databases unless
-otherwise configured.
+Anonymization can be disabled by setting `anonymize` to `false` in
+`ldpconf.json`.
 
-Databases created with LDP 1.0 must be configured to support
-anonymization by changing the `disable_anonymization` settings (see
-below).
-
-Anonymization can be disabled by setting `disable_anonymization` to
-`true` in `ldpconf.json`, and by setting `disable_anonymization` to
-`TRUE` in the table `dbconfig.general`.  Both are required to be set
-in order to disable anonymization.
-
-__WARNING:  LDP does not provide a way to anonymize the database after
-personal data have been loaded into it.  For this reason, these
-settings should never be used unless you are absolutely sure that you
-want to store personal data in the LDP database.__
+__WARNING: LDP does not provide a way to anonymize the database after
+personal data have been loaded into it.  For this reason,
+anonymization should never be disabled unless you are absolutely sure
+that you want to store personal data in the LDP database.__
 
 
 Reference
@@ -584,19 +596,19 @@ Reference
   * `direct_database_password` (string; optional) is the password for
     the specified FOLIO database user name.
 
-* `disable_anonymization` (Boolean; optional) when set to `true`,
-  disables anonymization of personal data.  The default value is
-  `false`.  Please read the section on "Data privacy" above before
-  changing this setting.  As a safety precaution, the configuration
-  attribute `disable_anonymization` in table `dbconfig.general` also
-  must be set.
+* `anonymize` (Boolean; optional) when set to `false`, disables
+  anonymization of personal data.  The default value is `true`.
+  Please read the section on "Data privacy" above before changing this
+  setting.
 
+<!--
 * `allow_destructive_tests` (Boolean; optional) when set to `true`,
   allows the LDP database to be overwritten by integration tests or
   other testing or development operations.  The default value is
   `false`.  This value should only be `true` for an LDP database that
   is being used as a testing sandbox, and never in a production or
   staging deployment.
+-->
 
 
 Further reading
