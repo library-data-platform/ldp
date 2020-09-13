@@ -196,6 +196,30 @@ Before using the LDP software, we have to create a database that will
 store the data.  This can be a local or cloud-based PostgreSQL
 database or a cloud-based Redshift database.
 
+A robust backup process should be used to ensure that historical data
+and local tables are safe.
+
+#### Large data and PostgreSQL
+
+PostgreSQL is not optimized for analytic queries.  Users with large
+data that wish to use PostgreSQL might consider installing
+[cstore_fdw](https://github.com/citusdata/cstore_fdw), an open source
+column storage extension which enables very fast analytic queries on
+large tables.  Although LDP does not currently generate columnar
+tables with cstore_fdw, it may be helpful for users with large,
+frequently queried data to copy them into columnar tables.  However,
+please note that prior to PostgreSQL 13, `pg_dump` does not include
+these columnar data in backups; so the original tables should be
+retained.
+
+Amazon/AWS Relational Database Service (RDS) does not support
+cstore_fdw.  In order to use cstore_fdw in AWS, PostgreSQL can be
+installed on an EC2 instance, although this is a more manual process
+than deploying PostgreSQL in RDS.
+
+Recent versions of Debian Linux support installing cstore_fdw via the
+`apt` package manager.
+
 #### PostgreSQL
 
 For libraries that deploy LDP with PostgreSQL, whether local or
@@ -207,8 +231,8 @@ hosted, we recommend setting:
 
 #### PostgreSQL hosted in RDS
 
-For libraries that deploy LDP with cloud-based PostgreSQL using Amazon
-Relational Database Service (RDS), we recommend setting:
+For libraries that deploy LDP with cloud-based PostgreSQL using RDS,
+we recommend setting:
 
 * Instance type:  `db.m5.large`
 * Number of instances:  `1`
