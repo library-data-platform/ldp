@@ -220,6 +220,7 @@ static void writeTuple(const ldp_options& opt, log* lg, const dbtype& dbt,
     *insertBuffer += ',';
 
     string s;
+    double d;
     for (const auto& column : table.columns) {
         if (column.columnName == "id")
             continue;
@@ -241,7 +242,19 @@ static void writeTuple(const ldp_options& opt, log* lg, const dbtype& dbt,
             *insertBuffer += ( jsonValue.GetBool() ?  "TRUE" : "FALSE" );
             break;
         case ColumnType::numeric:
-            *insertBuffer += to_string(jsonValue.GetDouble());
+            d = jsonValue.GetDouble();
+            s = to_string(d);
+            if (d > 10000000000.0) {
+                lg->write(level::warning, "", "",
+                          "Numeric value exceeds 10^10:\n"
+                          "    Table: " + table.tableName + "\n"
+                          "    Column: " + column.columnName + "\n"
+                          "    ID: " + id + "\n"
+                          "    Value: " + to_string(d) + "\n"
+                          "    Action: Value set to 0", -1);
+                s = "0";
+            }
+            *insertBuffer += s;
             break;
         case ColumnType::id:
         case ColumnType::timestamptz:
