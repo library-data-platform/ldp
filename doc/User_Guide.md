@@ -10,8 +10,7 @@ Overview
 5\. Historical data  
 6\. Database views  
 7\. JSON arrays  
-8\. PostgreSQL with columnar tables  
-9\. Community
+8\. Community
 
 
 Overview
@@ -427,96 +426,7 @@ FROM
 ```
 
 
-8\. PostgreSQL with columnar tables
------------------------------------
-
-Users of PostgreSQL that experience very slow queries, even after
-creating indexes on the columns and running vacuum and analyze, may
-benefit from using "columnar" tables via the
-[cstore_fdw](https://github.com/citusdata/cstore_fdw) extension.  For
-very large data, columnar tables can be much faster to query than
-normal tables; in particular with queries that access many rows but
-only a few columns, such as subtotaling or other [aggregate
-functions](https://www.postgresql.org/docs/13/functions-aggregate.html).
-See the [Administrator Guide](Admin_Guide.md) for more information
-about installing cstore_fdw.
-
-Creating a columnar table is similar to creating a normal table by
-defining the schema.  Here is an example of a normal table schema
-definition:
-
-```sql
-CREATE TABLE local.instances (
-    id varchar(36),
-    discovery_suppress boolean,
-    hrid varchar(65535),
-    index_title varchar(65535),
-    instance_type_id varchar(36),
-    mode_of_issuance_id varchar(36),
-    previously_held boolean,
-    source varchar(65535),
-    staff_suppress boolean,
-    status_id varchar(36),
-    status_updated_date timestamp with time zone,
-    title varchar(65535)
-);
-```
-
-The same schema can be defined as a columnar table:
-
-```sql
-CREATE FOREIGN TABLE local.instances (    -- Note the "FOREIGN" keyword.
-    id varchar(36),
-    discovery_suppress boolean,
-    hrid varchar(65535),
-    index_title varchar(65535),
-    instance_type_id varchar(36),
-    mode_of_issuance_id varchar(36),
-    previously_held boolean,
-    source varchar(65535),
-    staff_suppress boolean,
-    status_id varchar(36),
-    status_updated_date timestamp with time zone,
-    title varchar(65535)
-)
-SERVER cstore_server    -- Note these additional parameters.
-OPTIONS (
-    compression 'pglz'
-);
-```
-
-The `INSERT INTO ... SELECT ...` command or the
-[`\COPY`](https://www.postgresql.org/docs/13/sql-copy.html) command
-can be used to load data into the table, for example:
-
-```sql
-INSERT INTO local.instances
-SELECT
-    id,
-    discovery_suppress,
-    hrid,
-    index_title,
-    instance_type_id,
-    mode_of_issuance_id,
-    previously_held,
-    source,
-    staff_suppress,
-    status_id,
-    status_updated_date,
-    title
-FROM
-    inventory_instances;
-
--- Note that CREATE INDEX and VACUUM are not used with columnar tables.
-
-ANALYZE local.instances;
-```
-
-Inserting data into a columnar table can be slower than with a normal
-table.
-
-
-9\. Community
+8\. Community
 -------------
 
 ### Wiki
