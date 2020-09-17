@@ -22,6 +22,15 @@ void add_table_to_catalog_sql_ldpsystem(etymon::odbc_conn* conn,
         "    ('" + table + "');";
 }
 
+void add_table_to_catalog_sql_dbsystem(etymon::odbc_conn* conn,
+                                       const string& table,
+                                       string* sql)
+{
+    *sql =
+        "INSERT INTO dbsystem.tables (table_name) VALUES\n"
+        "    ('" + table + "');";
+}
+
 void upgrade_add_new_table_ldpsystem(const string& table,
                                      database_upgrade_options* opt,
                                      const dbtype& dbt)
@@ -61,6 +70,50 @@ void upgrade_add_new_table_ldpsystem(const string& table,
     ulog_commit(opt);
 
     add_table_to_catalog_sql_ldpsystem(opt->conn, table, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+}
+
+void upgrade_add_new_table_dbsystem(const string& table,
+                                    database_upgrade_options* opt,
+                                    const dbtype& dbt)
+{
+    string sql;
+
+    create_main_table_sql(table, opt->conn, dbt, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    grant_select_on_table_sql(table, opt->ldp_user, opt->conn, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    grant_select_on_table_sql(table, opt->ldpconfig_user, opt->conn, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    create_history_table_sql(table, opt->conn, dbt, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    grant_select_on_table_sql("history." + table, opt->ldp_user, opt->conn,
+                              &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    grant_select_on_table_sql("history." + table, opt->ldpconfig_user,
+                              opt->conn, &sql);
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+    ulog_commit(opt);
+
+    add_table_to_catalog_sql_dbsystem(opt->conn, table, &sql);
     ulog_sql(sql, opt);
     opt->conn->exec(sql);
     ulog_commit(opt);
@@ -1298,12 +1351,12 @@ void database_upgrade_20(database_upgrade_options* opt)
 
     etymon::odbc_tx tx(opt->conn);
 
-    upgrade_add_new_table_ldpsystem("circulation_request_preference", opt,
+    upgrade_add_new_table_dbsystem("circulation_request_preference", opt,
                                     dbt);
-    upgrade_add_new_table_ldpsystem("finance_ledger_fiscal_years", opt, dbt);
-    upgrade_add_new_table_ldpsystem("user_addresstypes", opt, dbt);
-    upgrade_add_new_table_ldpsystem("user_departments", opt, dbt);
-    upgrade_add_new_table_ldpsystem("user_proxiesfor", opt, dbt);
+    upgrade_add_new_table_dbsystem("finance_ledger_fiscal_years", opt, dbt);
+    upgrade_add_new_table_dbsystem("user_addresstypes", opt, dbt);
+    upgrade_add_new_table_dbsystem("user_departments", opt, dbt);
+    upgrade_add_new_table_dbsystem("user_proxiesfor", opt, dbt);
 
     string sql = "UPDATE dbsystem.main SET database_version = 20;";
     ulog_sql(sql, opt);
