@@ -12,7 +12,7 @@
 
 namespace fs = std::experimental::filesystem;
 
-static int64_t ldp_latest_database_version = 19;
+static int64_t ldp_latest_database_version = 20;
 
 database_upgrade_array database_upgrades[] = {
     nullptr,  // Version 0 has no migration.
@@ -34,7 +34,8 @@ database_upgrade_array database_upgrades[] = {
     database_upgrade_16,
     database_upgrade_17,
     database_upgrade_18,
-    database_upgrade_19
+    database_upgrade_19,
+    database_upgrade_20
 };
 
 int64_t latest_database_version()

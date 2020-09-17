@@ -1291,3 +1291,24 @@ void database_upgrade_19(database_upgrade_options* opt)
     tx.commit();
     ulog_commit(opt);
 }
+
+void database_upgrade_20(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    etymon::odbc_tx tx(opt->conn);
+
+    upgrade_add_new_table_ldpsystem("circulation_request_preference", opt,
+                                    dbt);
+    upgrade_add_new_table_ldpsystem("finance_ledger_fiscal_years", opt, dbt);
+    upgrade_add_new_table_ldpsystem("user_addresstypes", opt, dbt);
+    upgrade_add_new_table_ldpsystem("user_departments", opt, dbt);
+    upgrade_add_new_table_ldpsystem("user_proxiesfor", opt, dbt);
+
+    string sql = "UPDATE dbsystem.main SET database_version = 20;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    tx.commit();
+    ulog_commit(opt);
+}
