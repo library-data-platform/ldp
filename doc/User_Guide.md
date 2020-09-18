@@ -400,7 +400,7 @@ data type of each array element to `varchar`.  For example:
 ```sql
 CREATE TABLE local.instances_format_ids AS
 SELECT
-    id AS instances_id,
+    id AS instance_id,
     json_array_elements_text(json_extract_path(data, 'instanceFormatIds'))
         AS instance_format_id
 FROM
@@ -409,20 +409,22 @@ FROM
 
 This is usually sufficient for arrays that contain a single value for
 each array element.  If the array elements are JSON objects, their
-fields can be extracted using `json_extract_path_text()`, e.g.:
+fields can be extracted using `json_to_record()`, e.g.:
 
 ```sql
-CREATE TABLE local.instances_identifiers AS
 SELECT
-    id AS instances_id,
-    json_extract_path_text(json_array_elements(
-        json_extract_path(data, 'identifiers')), 'identifierTypeId')
-        AS type_id,
-    json_extract_path_text(json_array_elements(
-        json_extract_path(data, 'identifiers')), 'value')
-        AS value
-FROM
-    inventory_instances;
+    id AS instance_id,
+    r."identifierTypeId" AS type_id,
+    r."value" AS value
+FROM (
+    SELECT
+        id,
+        json_array_elements(json_extract_path(data, 'identifiers'))
+                AS identifiers
+    FROM
+        inventory_instances) e,
+    json_to_record(identifiers)
+            AS r("identifierTypeId" varchar, "value" varchar);
 ```
 
 
