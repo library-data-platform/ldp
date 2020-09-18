@@ -218,27 +218,6 @@ Amazon/AWS Relational Database Service (RDS), we recommend setting:
 * Storage:  `General Purpose SSD`
 * Snapshots:  Automated snapshots enabled
 
-#### PostgreSQL columnar storage with cstore_fdw
-
-PostgreSQL is optimized for transaction processing rather than
-analytic queries.  Users with large data that wish to use PostgreSQL
-might consider installing
-[cstore_fdw](https://github.com/citusdata/cstore_fdw), an open source
-column storage extension which enables very fast analytic queries on
-large tables.  Although LDP does not currently generate columnar
-tables with cstore_fdw, it may be helpful for users with large,
-frequently queried data to copy them into columnar tables.  However,
-please note that prior to PostgreSQL 13, `pg_dump` does not include
-these columnar data in backups; so the original tables should be
-retained as well.
-
-RDS does not currently support cstore_fdw.  In order to use cstore_fdw
-in AWS, PostgreSQL can be installed on an EC2 instance, although this
-is a more manual process than deploying PostgreSQL in RDS.
-
-Recent versions of Debian Linux support installing cstore_fdw via the
-`apt` package manager.
-
 #### Redshift
 
 For libraries that deploy LDP with Redshift, we recommend setting:

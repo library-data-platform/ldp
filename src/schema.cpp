@@ -72,10 +72,9 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.name = "circulation_request_policies";
     schema->tables.push_back(table);
 
-    // Removed for lack of data
-    //table.source_spec = "/request-preference-storage/request-preference";
-    //table.name = "circulation_request_preference";
-    //schema->tables.push_back(table);
+    table.source_spec = "/request-preference-storage/request-preference";
+    table.name = "circulation_request_preference";
+    schema->tables.push_back(table);
 
     table.source_spec = "/request-storage/requests";
     table.name = "circulation_requests";
@@ -222,10 +221,9 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.name = "finance_groups";
     schema->tables.push_back(table);
 
-    // Removed for lack of data
-    //table.source_spec = "/finance-storage/ledger-fiscal-years";
-    //table.name = "finance_ledger_fiscal_years";
-    //schema->tables.push_back(table);
+    table.source_spec = "/finance-storage/ledger-fiscal-years";
+    table.name = "finance_ledger_fiscal_years";
+    schema->tables.push_back(table);
 
     table.source_spec = "/finance-storage/ledgers";
     table.name = "finance_ledgers";
@@ -492,19 +490,21 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-users";
 
-    // Removed for lack of data
-    //table.source_spec = "/addresstypes";
-    //table.name = "user_addresstypes";
-    //schema->tables.push_back(table);
+    table.source_spec = "/addresstypes";
+    table.name = "user_addresstypes";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/departments";
+    table.name = "user_departments";
+    schema->tables.push_back(table);
 
     table.source_spec = "/groups";
     table.name = "user_groups";
     schema->tables.push_back(table);
 
-    // Removed for lack of data
-    //table.source_spec = "/proxiesfor";
-    //table.name = "user_proxiesfor";
-    //schema->tables.push_back(table);
+    table.source_spec = "/proxiesfor";
+    table.name = "user_proxiesfor";
+    schema->tables.push_back(table);
 
     table.source_spec = "/users";
     table.name = "user_users";
