@@ -77,46 +77,54 @@ void upgrade_add_new_table_ldpsystem(const string& table,
 
 void upgrade_add_new_table_dbsystem(const string& table,
                                     database_upgrade_options* opt,
-                                    const dbtype& dbt)
+                                    const dbtype& dbt,
+                                    bool autocommit)
 {
     string sql;
 
     create_main_table_sql(table, opt->conn, dbt, &sql);
     ulog_sql(sql, opt);
     opt->conn->exec(sql);
-    ulog_commit(opt);
+    if (autocommit)
+        ulog_commit(opt);
 
     grant_select_on_table_sql(table, opt->ldp_user, opt->conn, &sql);
     ulog_sql(sql, opt);
     opt->conn->exec(sql);
-    ulog_commit(opt);
+    if (autocommit)
+        ulog_commit(opt);
 
     grant_select_on_table_sql(table, opt->ldpconfig_user, opt->conn, &sql);
     ulog_sql(sql, opt);
     opt->conn->exec(sql);
-    ulog_commit(opt);
+    if (autocommit)
+        ulog_commit(opt);
 
     create_history_table_sql(table, opt->conn, dbt, &sql);
     ulog_sql(sql, opt);
     opt->conn->exec(sql);
-    ulog_commit(opt);
+    if (autocommit)
+        ulog_commit(opt);
 
     grant_select_on_table_sql("history." + table, opt->ldp_user, opt->conn,
                               &sql);
     ulog_sql(sql, opt);
     opt->conn->exec(sql);
-    ulog_commit(opt);
+    if (autocommit)
+        ulog_commit(opt);
 
     grant_select_on_table_sql("history." + table, opt->ldpconfig_user,
                               opt->conn, &sql);
     ulog_sql(sql, opt);
     opt->conn->exec(sql);
-    ulog_commit(opt);
+    if (autocommit)
+        ulog_commit(opt);
 
     add_table_to_catalog_sql_dbsystem(opt->conn, table, &sql);
     ulog_sql(sql, opt);
     opt->conn->exec(sql);
-    ulog_commit(opt);
+    if (autocommit)
+        ulog_commit(opt);
 }
 
 void database_upgrade_1(database_upgrade_options* opt)
@@ -1352,11 +1360,11 @@ void database_upgrade_20(database_upgrade_options* opt)
     etymon::odbc_tx tx(opt->conn);
 
     upgrade_add_new_table_dbsystem("circulation_request_preference", opt,
-                                    dbt);
-    upgrade_add_new_table_dbsystem("finance_ledger_fiscal_years", opt, dbt);
-    upgrade_add_new_table_dbsystem("user_addresstypes", opt, dbt);
-    upgrade_add_new_table_dbsystem("user_departments", opt, dbt);
-    upgrade_add_new_table_dbsystem("user_proxiesfor", opt, dbt);
+                                   dbt, false);
+    upgrade_add_new_table_dbsystem("finance_ledger_fiscal_years", opt, dbt, false);
+    upgrade_add_new_table_dbsystem("user_addresstypes", opt, dbt, false);
+    upgrade_add_new_table_dbsystem("user_departments", opt, dbt, false);
+    upgrade_add_new_table_dbsystem("user_proxiesfor", opt, dbt, false);
 
     string sql = "UPDATE dbsystem.main SET database_version = 20;";
     ulog_sql(sql, opt);
