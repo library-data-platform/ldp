@@ -453,9 +453,7 @@ LDP-related channels.
 Further reading
 ---------------
 
-[__Learn about configuring LDP in the
-Configuration Guide > > >__](Config_Guide.md)
+[__Learn about configuring LDP in the Configuration Guide > > >__](Config_Guide.md)
 
-[__Learn about installing and administering LDP in the
-Administrator Guide > > >__](Admin_Guide.md)
+[__Learn about installing and administering LDP in the Administrator Guide > > >__](Admin_Guide.md)
 
