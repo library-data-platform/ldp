@@ -2,7 +2,7 @@
 pipeline {
 
   environment {
-    VERSION = '1.1'
+    bare_version = '1.1'
     name = 'ldp'
   }
 
@@ -28,18 +28,26 @@ pipeline {
             if ( foliociLib.isRelease() ) {
               env.isRelease = true 
               env.dockerRepo = 'folioorg'
-              env.version = env.VERSION
+              env.version = env.bare_version
             }
             else {
               env.dockerRepo = 'folioci'
-              env.version = "${env.VERSION}-master.${env.BUILD_NUMBER}"
+              env.version = "${env.bare_version}-master.${env.BUILD_NUMBER}"
             }
           }
         }
         sendNotifications 'STARTED'  
       }
     }
-    
+
+    stage('Build') { 
+      steps {
+        dir(env.WORKSPACE) {
+          sh "./all.sh"
+        }
+      }
+    } 
+
     stage('Build Docker') {
       steps {
         script {
@@ -49,22 +57,6 @@ pipeline {
           }
         }
       } 
-    }
-
-    stage('Publish Module Descriptor') {
-      when {
-        anyOf { 
-          branch 'master'
-          expression { return env.isRelease }
-        }
-      }
-      steps {
-        script {
-          def foliociLib = new org.folio.foliociCommands()
-          foliociLib.updateModDescriptor(env.modDescriptor) 
-        }
-        postModuleDescriptor(env.modDescriptor)
-      }
     }
 
   } // end stages

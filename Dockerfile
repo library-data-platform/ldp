@@ -9,4 +9,4 @@ RUN apt update -y && apt install -y unixodbc odbc-postgresql \
 
 COPY ./build/ldp /bin/ldp
 
-ENTRYPOINT ["/bin/bash", "-c", "/bin/ldp"]
+ENTRYPOINT ["ldp"]
