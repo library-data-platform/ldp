@@ -28,8 +28,8 @@ analytics in libraries, offering a number of features:
 * Data integration:  Offers a robust platform for combining data from
   beyond library systems
 
-* Historical data:  Enables analyzing trends over time to gain
-  strategic insights about your library
+* Historical data:  Enables analyzing trends over time to gain insights
+  about your library
 
 * Scalability:  Provides an upgrade path that scales to virtually any
   amount of data that libraries can collect
@@ -431,12 +431,6 @@ FROM (
 8\. Community
 -------------
 
-### Wiki
-
-[A wiki](https://github.com/folio-org/ldp/wiki) is available for the
-LDP community.  It provides information about database tools that can
-be used with LDP and links to related projects.
-
 ### Issue tracking
 
 Please use the [issue
@@ -453,9 +447,7 @@ LDP-related channels.
 Further reading
 ---------------
 
-[__Learn about configuring LDP in the
-Configuration Guide > > >__](Config_Guide.md)
+[__Learn about configuring LDP in the Configuration Guide > > >__](Config_Guide.md)
 
-[__Learn about installing and administering LDP in the
-Administrator Guide > > >__](Admin_Guide.md)
+[__Learn about installing and administering LDP in the Administrator Guide > > >__](Admin_Guide.md)
 

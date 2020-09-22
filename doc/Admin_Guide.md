@@ -62,7 +62,7 @@ following minimum requirements:
   * Memory: 1 GB
   * Storage: 500 GB HDD
 * LDP software:
-  * Memory: 100 MB
+  * Memory: 200 MB
   * Storage: 160 GB HDD
 
 For large libraries, or if very high performance is desired, the
@@ -74,51 +74,6 @@ also can be increased as needed.
 
 3\. Installation
 ----------------
-
-### Releases and branches
-
-LDP releases use version numbers in the form, _a_._b_._c_, where
-_a_._b_ is the major version and _c_ > 0 indicates a bug fix version.
-Suppose that LDP 1.3.0 has been released.  Any subsequent versions
-with the same major version number (1.3), for example, 1.3.1 or 1.3.2,
-will not generally contain new features but only bug fixes.
-
-The most recent major release and related bug fix releases are
-available from the [releases
-page](https://github.com/library-data-platform/ldp/releases).
-
-More options are available within the [source code
-repository](https://github.com/library-data-platform/ldp), which
-contains two main kinds of branches:
-
-* Release branches (`*-release`):  Release branches are the "stable"
-  branches.  They are the most stable versions available because they
-  generally receive only bug fixes and no new features.  A release
-  branch such as `1.2-release` would point to the latest version of
-  LDP 1.2, for example, 1.2.5.  It is recommended for production
-  environments, or any environment where stability is critical, that
-  they use only release branches.
-
-* Current branch (`*-current`):  The current branch is a "development"
-  branch.  It is the most stable of the development branches, in the
-  sense that it has had some testing, but it is less stable than a
-  release branch.  The advantage of using the current branch is that
-  it contains new features long before those features are available in
-  a release branch.  At any time there is only one current branch,
-  which is named for the next planned release, and it eventually comes
-  to be a release branch.  For example, `1.3-current` becomes
-  `1.3-release` once it has stabilized.  If there is a need for faster
-  access to new features than what is provided by release branches,
-  the current branch may be used, but with the caveat that it could be
-  unstable.
-
-Other branches having various names are used for development such as
-prototyping new features or bug fixes.
-
-An LDP instance based on a release branch can be "upgraded" to the
-current branch, but not generally from the current branch to a release
-branch.  However, as explained above, the current branch eventually
-becomes the next release branch.
 
 ### Installing software dependencies
 
@@ -593,9 +548,7 @@ Reference
 Further reading
 ---------------
 
-[__Learn about configuring LDP in the
-Configuration Guide > > >__](Config_Guide.md)
+[__Learn about configuring LDP in the Configuration Guide > > >__](Config_Guide.md)
 
-[__Learn about using the LDP database in the
-User Guide > > >__](User_Guide.md)
+[__Learn about using the LDP database in the User Guide > > >__](User_Guide.md)
 
