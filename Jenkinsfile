@@ -32,7 +32,7 @@ pipeline {
             }
             else {
               env.dockerRepo = 'folioci'
-              env.version = "${env.bare_version}-master.${env.BUILD_NUMBER}"
+              env.version = "${env.bare_version}-${env.BRANCH_NAME}.${env.BUILD_NUMBER}"
             }
           }
         }
