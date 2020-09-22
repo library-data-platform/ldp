@@ -398,7 +398,7 @@ of this function, `json_array_elements_text()`, will also convert the
 data type of each array element to `varchar`.  For example:
 
 ```sql
-CREATE TABLE local.instances_format_ids AS
+CREATE TABLE local.array_test_simple AS
 SELECT
     id AS instance_id,
     json_array_elements_text(json_extract_path(data, 'instanceFormatIds'))
@@ -412,6 +412,7 @@ each array element.  If the array elements are JSON objects, their
 fields can be extracted using `json_to_record()`, e.g.:
 
 ```sql
+CREATE TABLE local.array_test_objects AS
 SELECT
     id AS instance_id,
     r."identifierTypeId" AS type_id,
@@ -422,8 +423,8 @@ FROM (
         json_array_elements(json_extract_path(data, 'identifiers'))
                 AS identifiers
     FROM
-        inventory_instances) e,
-    json_to_record(identifiers)
+        inventory_instances) AS e
+    CROSS JOIN json_to_record(identifiers)
             AS r("identifierTypeId" varchar, "value" varchar);
 ```
 
