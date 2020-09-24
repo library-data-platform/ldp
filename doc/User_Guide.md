@@ -398,7 +398,7 @@ of this function, `json_array_elements_text()`, will also convert the
 data type of each array element to `varchar`.  For example:
 
 ```sql
-CREATE TABLE local.array_test_simple AS
+CREATE TABLE local.example_array_simple AS
 SELECT
     id AS instance_id,
     json_array_elements_text(json_extract_path(data, 'instanceFormatIds'))
@@ -409,23 +409,20 @@ FROM
 
 This is usually sufficient for arrays that contain a single value for
 each array element.  If the array elements are JSON objects, their
-fields can be extracted using `json_to_record()`, e.g.:
+fields can be extracted using a cross join, e.g.:
 
 ```sql
-CREATE TABLE local.array_test_objects AS
+CREATE TABLE local.example_array_objects AS
 SELECT
-    id AS instance_id,
-    r."identifierTypeId" AS type_id,
-    r."value" AS value
-FROM (
-    SELECT
-        id,
-        json_array_elements(json_extract_path(data, 'identifiers'))
-                AS identifiers
-    FROM
-        inventory_instances) AS e
-    CROSS JOIN json_to_record(identifiers)
-            AS r("identifierTypeId" varchar, "value" varchar);
+    id AS holdings_id,
+    json_extract_path_text(notes.data, 'holdingsNoteTypeId')
+        AS holdings_note_type_id,
+    json_extract_path_text(notes.data, 'note') AS note,
+    (json_extract_path_text(notes.data, 'staffOnly'))::boolean AS staff_only
+FROM
+    inventory_holdings
+    CROSS JOIN json_array_elements(json_extract_path(data, 'notes'))
+        AS notes(data);
 ```
 
 
