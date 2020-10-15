@@ -67,6 +67,8 @@ bool data_to_filter(const table_schema& table, const string& field)
         return false;
     if (!ends_with(field, "Object") && !ends_with(field, "Objects"))
         return false;
+    if (table.name == "course_courselistings" && field == "instructorObjects")
+        return false;
     return true;
 }
 
