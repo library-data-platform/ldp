@@ -596,37 +596,47 @@ static void compose_data_file_path(const string& load_dir,
     *path += suffix;
 }
 
-static void index_loading_table(ldp_log* lg, const table_schema& table,
-                                etymon::odbc_conn* conn, dbtype* dbt)
+void index_loaded_table(ldp_log* lg, const table_schema& table,
+                        etymon::odbc_conn* conn, dbtype* dbt)
 {
     lg->trace("Creating indexes on table: " + table.name);
-    string loading_table;
-    loading_table_name(table.name, &loading_table);
     // If there is no table schema, define a primary key on (id) and return.
     if (table.columns.size() == 0) {
         string sql =
-            "ALTER TABLE " + loading_table + "\n"
+            "ALTER TABLE " + table.name + "\n"
             "    ADD PRIMARY KEY (id);";
         lg->detail(sql);
-        conn->exec(sql);
+        try {
+            conn->exec(sql);
+        } catch (runtime_error& e) {
+            lg->write(log_level::warning, "server", "", e.what(), -1);
+        }
         return;
     }
     // If there is a table schema, define the primary key or indexes.
     for (const auto& column : table.columns) {
         if (column.name == "id") {
             string sql =
-                "ALTER TABLE " + loading_table + "\n"
+                "ALTER TABLE " + table.name + "\n"
                 "    ADD PRIMARY KEY (id);";
             lg->detail(sql);
-            conn->exec(sql);
+            try {
+                conn->exec(sql);
+            } catch (runtime_error& e) {
+                lg->write(log_level::warning, "server", "", e.what(), -1);
+            }
         } else {
             if (dbt->type() == dbsys::postgresql && column.name != "data") {
                 string sql =
                     "CREATE INDEX ON\n"
-                    "    " + loading_table + "\n"
+                    "    " + table.name + "\n"
                     "    (\"" + column.name + "\");";
                 lg->detail(sql);
-                conn->exec(sql);
+                try {
+                    conn->exec(sql);
+                } catch (runtime_error& e) {
+                    lg->write(log_level::warning, "server", "", e.what(), -1);
+                }
             }
         }
     }
@@ -962,9 +972,6 @@ bool stage_table_2(const ldp_options& opt,
                        anonymize_fields, 1);
         }
     }
-
-    if (pass == 2)
-        index_loading_table(lg, *table, conn, dbt);
 
     return true;
 }
