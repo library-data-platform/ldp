@@ -21,5 +21,8 @@ bool stage_table_2(const ldp_options& opt,
                  etymon::odbc_conn* conn, dbtype* dbt, const string& loadDir,
                  bool anonymize_fields);
 
+void index_loaded_table(ldp_log* lg, const table_schema& table,
+                        etymon::odbc_conn* conn, dbtype* dbt);
+
 #endif
 

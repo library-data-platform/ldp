@@ -495,6 +495,8 @@ void run_update(const ldp_options& opt)
                 tx.commit();
             }
 
+            index_loaded_table(&lg, table, &conn, &dbt);
+
             drop_latest_history_table(opt, &lg, table, &conn);
 
             //vacuumAnalyzeTable(opt, table, &conn);
