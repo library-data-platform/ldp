@@ -93,7 +93,9 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
 
     table.source_spec = "/configurations/entries";
     table.name = "configuration_entries";
+    table.anonymize = true;
     schema->tables.push_back(table);
+    table.anonymize = false;
 
     // No data found in reference environment
     // table.source_spec = "/configurations/audit";
