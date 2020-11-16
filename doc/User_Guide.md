@@ -392,24 +392,24 @@ LDP does not yet support extracting arrays from JSON data.  However,
 there is a workaround for PostgreSQL users, if the order of the array
 elements is not needed.
 
-The function `json_array_elements()` will convert the elements of a
-JSON array to a set of rows, one row per array element.  A variation
-of this function, `json_array_elements_text()`, will also convert the
-data type of each array element to `varchar`.  For example:
+A cross join can be used with the function `json_array_elements()` to
+convert the elements of a JSON array to a set of rows, one row per
+array element.
+
+For example, if the array elements are simple `varchar` strings:
 
 ```sql
 CREATE TABLE local.example_array_simple AS
 SELECT
     id AS instance_id,
-    json_array_elements_text(json_extract_path(data, 'instanceFormatIds'))
-        AS instance_format_id
+    instance_format_ids.data #>> '{}' AS instance_format_id
 FROM
-    inventory_instances;
+    inventory_instances
+    CROSS JOIN json_array_elements(json_extract_path(data, 'instanceFormatIds'))
+        AS instance_format_ids(data);
 ```
 
-This is usually sufficient for arrays that contain a single value for
-each array element.  If the array elements are JSON objects, their
-fields can be extracted using a cross join, e.g.:
+If the array elements are JSON objects:
 
 ```sql
 CREATE TABLE local.example_array_objects AS
