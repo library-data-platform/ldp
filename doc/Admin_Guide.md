@@ -217,7 +217,8 @@ $ createuser ldpadmin --username=<admin_user> --pwprompt
 $ createuser ldpconfig --username=<admin_user> --pwprompt
 $ createuser ldp --username=<admin_user> --pwprompt
 $ createdb ldp --username=<admin_user> --owner=ldpadmin
-$ psql ldp --username=<admin_user> --single-transaction \
+$ psql ldp --username=<admin_user> \
+      --command="ALTER DATABASE ldp SET search_path TO public;" \
       --command="REVOKE ALL ON SCHEMA public FROM public;" \
       --command="GRANT ALL ON SCHEMA public TO ldpadmin;" \
       --command="GRANT USAGE ON SCHEMA public TO ldpconfig;" \
@@ -235,6 +236,7 @@ CREATE USER ldpadmin PASSWORD '(ldpadmin password here)';
 CREATE USER ldpconfig PASSWORD '(ldpconfig password here)';
 CREATE USER ldp PASSWORD '(ldp password here)';
 ALTER DATABASE ldp OWNER TO ldpadmin;
+ALTER DATABASE ldp SET search_path TO public;
 REVOKE ALL ON SCHEMA public FROM public;
 GRANT ALL ON SCHEMA public TO ldpadmin;
 GRANT USAGE ON SCHEMA public TO ldpconfig;
