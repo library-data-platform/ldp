@@ -273,7 +273,7 @@ bool retrieve_pages(const curl_wrapper& c, const ldp_options& opt,
                                      ext_files, page, &http_code);
         switch (status) {
         case PageStatus::interfaceNotAvailable:
-            lg->write(log_level::error, "", "",
+            lg->write(log_level::warning, "", "",
                       "Interface not available for extracting data:\n"
                       "    Table: " + table.name + "\n"
                       "    Module: " + table.module_name + "\n"
