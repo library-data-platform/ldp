@@ -162,8 +162,11 @@ static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
                            const data_source& source,
                            ldp_log* lg, const string& token,
                            const table_schema& table, const string& loadDir,
-                           extraction_files* ext_files, size_t page)
+                           extraction_files* ext_files, size_t page,
+                           long* http_code)
 {
+    *http_code = 0;
+
     // TODO move timing code to calling function and re-enable
     //timer t(opt);
 
@@ -216,6 +219,7 @@ static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
 
     long response_code = 0;
     curl_easy_getinfo(c.curl, CURLINFO_RESPONSE_CODE, &response_code);
+    *http_code = response_code;
     lg->write(log_level::detail, "", "",
               "Response code: " + table.module_name + ": " +
               table.source_spec + ": " + to_string(response_code), -1);
@@ -264,12 +268,18 @@ bool retrieve_pages(const curl_wrapper& c, const ldp_options& opt,
     while (true) {
         lg->write(log_level::detail, "", "",
                 "Extracting page: " + to_string(page), -1);
+        long http_code = 0;
         PageStatus status = retrieve(c, opt, source, lg, token, table, loadDir,
-                                     ext_files, page);
+                                     ext_files, page, &http_code);
         switch (status) {
         case PageStatus::interfaceNotAvailable:
-            lg->write(log_level::trace, "", "",
-                    "Interface not available: " + table.source_spec, -1);
+            lg->write(log_level::error, "", "",
+                      "Interface not available for extracting data:\n"
+                      "    Table: " + table.name + "\n"
+                      "    Module: " + table.module_name + "\n"
+                      "    Interface: " + table.source_spec + "\n"
+                      "    HTTP response: " + to_string(http_code) + "\n"
+                      "    Action: Table not updated", -1);
             return false;
         case PageStatus::pageEmpty:
             writeCountFile(source, loadDir, table.name, ext_files, page);
