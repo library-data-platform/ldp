@@ -235,9 +235,9 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.name = "finance_groups";
     schema->tables.push_back(table);
 
-    table.source_spec = "/finance-storage/ledger-fiscal-years";
-    table.name = "finance_ledger_fiscal_years";
-    schema->tables.push_back(table);
+    // table.source_spec = "/finance-storage/ledger-fiscal-years";
+    // table.name = "finance_ledger_fiscal_years";
+    // schema->tables.push_back(table);
 
     table.source_spec = "/finance-storage/ledgers";
     table.name = "finance_ledgers";
