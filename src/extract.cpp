@@ -216,6 +216,9 @@ static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
 
     long response_code = 0;
     curl_easy_getinfo(c.curl, CURLINFO_RESPONSE_CODE, &response_code);
+    lg->write(log_level::detail, "", "",
+              "Response code: " + table.module_name + ": " +
+              table.source_spec + ": " + to_string(response_code), -1);
     if (response_code == 403 || response_code == 404 || response_code == 500) {
         return PageStatus::interfaceNotAvailable;
     }
