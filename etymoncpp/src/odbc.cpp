@@ -162,7 +162,10 @@ void odbc_tx::commit()
 {
     if (!completed) {
         SQLRETURN rc = SQLEndTran(SQL_HANDLE_DBC, conn->conn, SQL_COMMIT);
-        set_auto_commit(true, conn);
+        bool ok = set_auto_commit(true, conn);
+        if (!ok)
+            throw runtime_error("Error setting autocommit in database: " +
+                                conn->dsn);
         if (!SQL_SUCCEEDED(rc))
             throw runtime_error("Error committing transaction in database: " +
                                 conn->dsn);
@@ -174,7 +177,10 @@ void odbc_tx::rollback()
 {
     if (!completed) {
         SQLEndTran(SQL_HANDLE_DBC, conn->conn, SQL_ROLLBACK);
-        set_auto_commit(true, conn);
+        bool ok = set_auto_commit(true, conn);
+        if (!ok)
+            throw runtime_error("Error setting autocommit in database: " +
+                                conn->dsn);
         completed = true;
     }
 }

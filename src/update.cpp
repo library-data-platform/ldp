@@ -124,7 +124,6 @@ void select_foreign_key_constraints(etymon::odbc_conn* conn, ldp_log* lg,
 
 void remove_foreign_key_constraints(etymon::odbc_conn* conn, ldp_log* lg)
 {
-    etymon::odbc_tx tx(conn);
     vector<reference> refs;
     select_foreign_key_constraints(conn, lg, &refs);
     for (auto& ref : refs) {
@@ -137,7 +136,6 @@ void remove_foreign_key_constraints(etymon::odbc_conn* conn, ldp_log* lg)
     string sql = "DELETE FROM dbsystem.foreign_key_constraints;";
     lg->detail(sql);
     conn->exec(sql);
-    tx.commit();
 }
 
 void select_enabled_foreign_keys(etymon::odbc_conn* conn, ldp_log* lg,

@@ -649,7 +649,10 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
 {
     string loading_table;
     loading_table_name(table.name, &loading_table);
-    string sql;
+
+    string sql = "DROP TABLE IF EXISTS " + loading_table + ";";
+    lg->detail(sql);
+    conn->exec(sql);
 
     string rskeys;
     dbt.redshift_keys("id", "id", &rskeys);
