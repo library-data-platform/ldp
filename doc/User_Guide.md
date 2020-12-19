@@ -429,17 +429,17 @@ FROM
 8\. Community
 -------------
 
-### Issue tracking
+### Getting help
 
-Please use the [issue
-tracker](https://github.com/folio-org/ldp/issues) to report a bug or
-feature request.
+For questions or to share your work, please use the
+[discussions](https://github.com/library-data-platform/ldp/discussions)
+area.
 
-### Discussion
+### Bug reports
 
-The FOLIO project's [Slack
-organization](https://slack-invitation.folio.org/) hosts a few
-LDP-related channels.
+The [issue
+tracker](https://github.com/library-data-platform/ldp/issues) can be
+used to report a bug.
 
 
 Further reading
