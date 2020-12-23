@@ -466,12 +466,7 @@ static void encode_json(const char* str, string* newstr)
                 *newstr += "\\t";
                 break;
             default:
-                if (isprint(c)) {
-                    *newstr += c;
-                } else {
-                    sprintf(buffer, "\\u%04X", (unsigned char) c);
-                    *newstr += buffer;
-                }
+                *newstr += c;
         }
         p++;
     }
