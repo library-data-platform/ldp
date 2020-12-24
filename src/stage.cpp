@@ -439,6 +439,7 @@ bool JSONHandler::Key(const char* str, json::SizeType length, bool copy)
 
 static void encode_json(const char* str, string* newstr)
 {
+    char buffer[8];
     const char *p = str;
     char c;
     while ( (c=*p) != '\0') {
@@ -465,7 +466,12 @@ static void encode_json(const char* str, string* newstr)
                 *newstr += "\\t";
                 break;
             default:
-                *newstr += c;
+                if ( 0 <= ((int) c) && ((int) c) <= 31 ) {
+                    sprintf(buffer, "\\u%04X", (unsigned char) c);
+                    *newstr += buffer;
+                } else {
+                    *newstr += c;
+                }
         }
         p++;
     }
