@@ -75,6 +75,20 @@ also can be increased as needed.
 3\. Installation
 ----------------
 
+### Branches
+
+The LDP repository has three types of branches:
+
+* `main` is the main development branch, where new features are first
+  added.
+
+* `stable` is a development branch that is made from `main` and is
+  thought to be somewhat more stable than `main`.
+
+* `*-release` are release branches made from `stable`.  They are the
+  most stable branches.  Production deployments should use the latest
+  release branch.
+
 ### Installing software dependencies
 
 Dependencies required for building the LDP software can be installed via
