@@ -389,11 +389,10 @@ example above.
 ---------------
 
 LDP does not yet support extracting arrays from JSON data.  However,
-there is a workaround for PostgreSQL users, if the order of the array
-elements is not needed.
+there is a workaround for PostgreSQL users.
 
-A cross join can be used with the function `json_array_elements()` to
-convert the elements of a JSON array to a set of rows, one row per
+A lateral join can be used with the function `json_array_elements()`
+to convert the elements of a JSON array to a set of rows, one row per
 array element.
 
 For example, if the array elements are simple `varchar` strings:
@@ -402,11 +401,13 @@ For example, if the array elements are simple `varchar` strings:
 CREATE TABLE local.example_array_simple AS
 SELECT
     id AS instance_id,
-    instance_format_ids.data #>> '{}' AS instance_format_id
+    instance_format_ids.data #>> '{}' AS instance_format_id,
+    instance_format_ids.ordinality
 FROM
     inventory_instances
-    CROSS JOIN json_array_elements(json_extract_path(data, 'instanceFormatIds'))
-        AS instance_format_ids(data);
+    CROSS JOIN LATERAL json_array_elements(json_extract_path(data, 'instanceFormatIds'))
+        WITH ORDINALITY
+        AS instance_format_ids (data);
 ```
 
 If the array elements are JSON objects:
@@ -418,11 +419,13 @@ SELECT
     json_extract_path_text(notes.data, 'holdingsNoteTypeId')
         AS holdings_note_type_id,
     json_extract_path_text(notes.data, 'note') AS note,
-    (json_extract_path_text(notes.data, 'staffOnly'))::boolean AS staff_only
+    (json_extract_path_text(notes.data, 'staffOnly'))::boolean AS staff_only,
+    notes.ordinality
 FROM
     inventory_holdings
-    CROSS JOIN json_array_elements(json_extract_path(data, 'notes'))
-        AS notes(data);
+    CROSS JOIN LATERAL json_array_elements(json_extract_path(data, 'notes'))
+        WITH ORDINALITY
+        AS notes (data);
 ```
 
 
