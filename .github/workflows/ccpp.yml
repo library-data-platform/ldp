@@ -9,13 +9,15 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
-    - name: update apt
+    - name: Update apt
       run: sudo apt update
-    - name: install dependency packages
+    - name: Install dependency packages
       run: sudo apt install -y cmake g++ libcurl4-openssl-dev libpq-dev postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev libsqlite3-dev
-    - name: symbolic link gcc
+    - name: Symbolic-link gcc
       run: sudo ln -fs /usr/bin/gcc-8 /usr/bin/gcc
-    - name: symbolic link g++
+    - name: Symbolic-link g++
       run: sudo ln -fs /usr/bin/g++-8 /usr/bin/g++
-    - name: build
+    - name: Build
       run: ./all.sh
+    - name: Run
+      run: ./build/ldp
