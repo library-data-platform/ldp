@@ -259,6 +259,10 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
         *insert_buffer += ',';
     *insert_buffer += '(';
 
+    if (doc.HasMember("id") == false)
+        throw runtime_error("required field \"id\" not found in record");
+    if (!doc["id"].IsString())
+        throw runtime_error("required field \"id\" is not a string type");
     const char* id = doc["id"].GetString();
     // id
     string idenc;
