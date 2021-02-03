@@ -3,6 +3,7 @@
 
 #include "options.h"
 
+void run_update(const ldp_options& opt);
 void run_update_process(const ldp_options& opt);
 
 #endif

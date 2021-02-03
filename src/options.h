@@ -88,6 +88,7 @@ public:
     log_level lg_level = log_level::debug;
     bool console = false;
     bool quiet = false;
+    bool single_process = false;
     size_t page_size = 1000;
     int nargc = 0;
     char **nargv = nullptr;

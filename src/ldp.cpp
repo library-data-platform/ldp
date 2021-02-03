@@ -238,22 +238,36 @@ void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
         if (opt.cli_mode || time_for_full_update(opt, &conn, &dbt, &lg) ) {
             if (!opt.cli_mode)
                 reschedule_next_daily_load(opt, &conn, &dbt, &lg);
-            pid_t pid = fork();
-            if (pid == 0)
-                run_update_process(opt);
-            if (pid > 0) {
-                int stat;
-                waitpid(pid, &stat, 0);
-                if (WIFEXITED(stat))
-                    lg.write(log_level::trace, "", "",
-                            "Status code of full update: " +
-                            to_string(WEXITSTATUS(stat)), -1);
-                else
-                    lg.write(log_level::trace, "", "",
-                            "Full update did not terminate normally", -1);
+            if (!opt.single_process) {  // forked process
+                pid_t pid = fork();
+                if (pid == 0)
+                    run_update_process(opt);
+                if (pid > 0) {
+                    int stat;
+                    waitpid(pid, &stat, 0);
+                    if (WIFEXITED(stat))
+                        lg.write(log_level::trace, "", "",
+                                 "Status code of full update: " +
+                                 to_string(WEXITSTATUS(stat)), -1);
+                    else
+                        lg.write(log_level::trace, "", "",
+                                 "Full update did not terminate normally", -1);
+                }
+                if (pid < 0)
+                    throw runtime_error("Error starting child process");
+            } else {  // single process
+                try {
+                    run_update(opt);
+                } catch (runtime_error& e) {
+                    string s = e.what();
+                    if ( !(s.empty()) && s.back() == '\n' )
+                        s.pop_back();
+                    etymon::odbc_env odbc;
+                    etymon::odbc_conn log_conn(&odbc, opt.db);
+                    ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet, opt.prog);
+                    lg.write(log_level::error, "server", "", s, -1);
+                }
             }
-            if (pid < 0)
-                throw runtime_error("Error starting child process");
         }
 
         if (!opt.cli_mode)

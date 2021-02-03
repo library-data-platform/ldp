@@ -66,6 +66,10 @@ static void evaloptlong(char* name, char* arg, ldp_options* opt)
         opt->quiet = true;
         return;
     }
+    if (!strcmp(name, "single-process")) {
+        opt->single_process = true;
+        return;
+    }
 }
 
 void config_set_command(const string& command_str, ldp_command* command)
@@ -96,19 +100,20 @@ void config_set_command(const string& command_str, ldp_command* command)
 int evalopt(const etymon::command_args& cargs, ldp_options *opt)
 {
     static struct option longopts[] = {
-        { "console",      no_argument,       NULL, 0   },
-        { "debug",        no_argument,       NULL, 0   },
-        { "detail",       no_argument,       NULL, 0   },
-        { "extract-only", no_argument,       NULL, 0   },
-        { "no-update",    no_argument,       NULL, 0   },
-        { "profile",      required_argument, NULL, 0   },
-        { "quiet",        no_argument,       NULL, 0   },
-        { "sourcedir",    required_argument, NULL, 0   },
-        { "savetemps",    no_argument,       NULL, 0   },
-        { "table",        required_argument, NULL, 0   },
-        { "trace",        no_argument,       NULL, 0   },
-        { "verbose",      no_argument,       NULL, 'v' },
-        { 0,              0,                 0,    0   }
+        { "console",        no_argument,       NULL, 0   },
+        { "debug",          no_argument,       NULL, 0   },
+        { "detail",         no_argument,       NULL, 0   },
+        { "extract-only",   no_argument,       NULL, 0   },
+        { "no-update",      no_argument,       NULL, 0   },
+        { "profile",        required_argument, NULL, 0   },
+        { "quiet",          no_argument,       NULL, 0   },
+        { "single-process", no_argument,       NULL, 0   },
+        { "sourcedir",      required_argument, NULL, 0   },
+        { "savetemps",      no_argument,       NULL, 0   },
+        { "table",          required_argument, NULL, 0   },
+        { "trace",          no_argument,       NULL, 0   },
+        { "verbose",        no_argument,       NULL, 'v' },
+        { 0,                0,                 0,    0   }
     };
     int g, x;
 
