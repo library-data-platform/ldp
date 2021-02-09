@@ -89,6 +89,7 @@ public:
     bool console = false;
     bool quiet = false;
     bool single_process = false;
+    int okapi_timeout = 60;
     size_t page_size = 1000;
     int nargc = 0;
     char **nargv = nullptr;

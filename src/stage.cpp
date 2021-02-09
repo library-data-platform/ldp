@@ -1,3 +1,5 @@
+#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
+
 #include <algorithm>
 #include <cstdio>
 #include <experimental/filesystem>

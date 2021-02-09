@@ -70,6 +70,12 @@ static void evaloptlong(char* name, char* arg, ldp_options* opt)
         opt->single_process = true;
         return;
     }
+    if (!strcmp(name, "okapi-timeout")) {
+        opt->okapi_timeout = stoi(string(arg));
+        if (opt->okapi_timeout < 1)
+            opt->okapi_timeout = 1;
+        return;
+    }
 }
 
 void config_set_command(const string& command_str, ldp_command* command)
@@ -105,6 +111,7 @@ int evalopt(const etymon::command_args& cargs, ldp_options *opt)
         { "detail",         no_argument,       NULL, 0   },
         { "extract-only",   no_argument,       NULL, 0   },
         { "no-update",      no_argument,       NULL, 0   },
+        { "okapi-timeout",  required_argument, NULL, 0   },
         { "profile",        required_argument, NULL, 0   },
         { "quiet",          no_argument,       NULL, 0   },
         { "single-process", no_argument,       NULL, 0   },

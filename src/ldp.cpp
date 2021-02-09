@@ -33,6 +33,7 @@ static const char* option_help =
 "  help                - Display help information\n"
 "Options:\n"
 "  -D <path>           - Use <path> as the data directory\n"
+"  --okapi-timeout     - Timeout in seconds for Okapi requests (default: 60)\n"
 "  --trace             - Enable detailed logging\n"
 "  --quiet             - Reduce console output\n"
 "Options for init-database:\n"

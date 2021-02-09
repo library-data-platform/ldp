@@ -15,8 +15,6 @@
 #include "timer.h"
 #include "util.h"
 
-static const int curl_timeout_seconds = 60L;
-
 extraction_files::~extraction_files()
 {
     if (!opt.savetemps) {
@@ -108,7 +106,7 @@ void okapi_login(const ldp_options& opt, const data_source& source,
         c.headers = curl_slist_append(c.headers,
                 "Accept: "
                 "application/json,text/plain");
-        curl_easy_setopt(c.curl, CURLOPT_TIMEOUT, curl_timeout_seconds);
+        curl_easy_setopt(c.curl, CURLOPT_TIMEOUT, opt.okapi_timeout);
         curl_easy_setopt(c.curl, CURLOPT_URL, path.c_str());
         curl_easy_setopt(c.curl, CURLOPT_POSTFIELDS, login.c_str());
         curl_easy_setopt(c.curl, CURLOPT_POSTFIELDSIZE, login.size());
@@ -195,7 +193,7 @@ static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
         etymon::file f(output, "wb");
         ext_files->files.push_back(output);
 
-        curl_easy_setopt(c.curl, CURLOPT_TIMEOUT, curl_timeout_seconds);
+        curl_easy_setopt(c.curl, CURLOPT_TIMEOUT, opt.okapi_timeout);
 
         CURLcode cc = curl_easy_setopt(c.curl, CURLOPT_URL, path.c_str());
         if (cc != CURLE_OK)

@@ -1,3 +1,5 @@
+#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
+
 #include <cstdint>
 #include <curl/curl.h>
 #include <experimental/filesystem>
@@ -355,6 +357,8 @@ void run_update(const ldp_options& opt)
 
     lg.write(log_level::debug, "server", "", "Starting full update", -1);
     timer full_update_timer(opt);
+
+    lg.write(log_level::detail, "", "", "Okapi timeout: " + to_string(opt.okapi_timeout), -1);
 
     ldp_schema schema;
     ldp_schema::make_default_schema(&schema);
