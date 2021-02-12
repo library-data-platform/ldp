@@ -445,7 +445,7 @@ void run_update(const ldp_options& opt)
                              "Extracting: " + table.source_spec, -1);
                     bool found_data = direct_override(state.source, table.name) ?
                         retrieve_direct(state.source, &lg, table, load_dir,
-                                        &ext_files) :
+                                        &ext_files, opt.direct_extraction_no_ssl) :
                         retrieve_pages(curlw, opt, state.source, &lg,
                                        state.token, table, load_dir,
                                        &ext_files);

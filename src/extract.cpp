@@ -401,7 +401,7 @@ bool direct_override(const data_source& source, const string& tableName)
 
 bool retrieve_direct(const data_source& source, ldp_log* lg,
                      const table_schema& table, const string& loadDir,
-                     extraction_files* ext_files)
+                     extraction_files* ext_files, bool direct_extraction_no_ssl)
 {
     lg->write(log_level::trace, "", "",
             "Direct from database: " + table.source_spec, -1);
@@ -412,9 +412,12 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
     }
 
     // Select jsonb from table.direct_source_table and write to JSON file.
-    etymon::Postgres db(source.direct.database_host, source.direct.database_port,
-            source.direct.database_user, source.direct.database_password,
-            source.direct.database_name, "require");
+    etymon::Postgres db(source.direct.database_host,
+                        source.direct.database_port,
+                        source.direct.database_user,
+                        source.direct.database_password,
+                        source.direct.database_name,
+                        direct_extraction_no_ssl ? "disable" : "require");
     string sql = "SELECT jsonb FROM " +
         source.okapi_tenant + "_" + table.direct_source_table + ";";
     lg->write(log_level::detail, "", "", sql, -1);

@@ -47,6 +47,8 @@ static const char* option_help =
 "                        to prevent overly broad requests for data\n"
 */
 "Development/testing options:\n"
+"  --direct-extraction-no-ssl\n"
+"                      - Disable SSL for direct extraction\n"
 "  --extract-only      - Extract data in the data directory, but do not\n"
 "                        update them in the database\n"
 "  --savetemps         - Disable deletion of temporary files containing\n"
@@ -231,6 +233,9 @@ void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
 
     lg.write(log_level::info, "server", "",
             string("Server started") + (opt.cli_mode ? " (CLI mode)" : ""), -1);
+    if (opt.direct_extraction_no_ssl) {
+        lg.write(log_level::info, "server", "", "SSL disabled for direct extraction", -1);
+    }
 
     etymon::odbc_conn conn(odbc, opt.db);
     dbtype dbt(&conn);
