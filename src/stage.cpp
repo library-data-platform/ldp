@@ -646,7 +646,7 @@ void index_loaded_table(ldp_log* lg, const table_schema& table,
                 try {
                     conn->exec(sql);
                 } catch (runtime_error& e) {
-                    lg->write(log_level::warning, "server", "", e.what(), -1);
+                    lg->write(log_level::info, "server", "", "Index not created: table=" + table.name + " column=" + column.name, -1);
                 }
             }
         }
