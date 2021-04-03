@@ -77,17 +77,16 @@ also can be increased as needed.
 
 ### Branches
 
-The LDP repository has three types of branches:
+The LDP repository has two types of branches:
 
-* `main` is the main development branch, where new features are first
-  added.
+* The main branch (`main`).  This is a development branch where new
+  features are first merged.  This branch is relatively unstable.  It
+  is also the default view when browsing the repository on GitHub.
 
-* `stable` is a development branch that is made from `main` and is
-  thought to be somewhat more stable than `main`.
-
-* `*-release` are release branches made from `stable`.  They are the
-  most stable branches.  Production deployments should use the latest
-  release branch.
+* Release branches (`release-*`).  These are releases made from
+  `main`.  They are managed as stable branches; i.e. they may receive
+  bug fixes but generally no new features.  Most users should run a
+  recent release branch.
 
 ### Installing software dependencies
 
