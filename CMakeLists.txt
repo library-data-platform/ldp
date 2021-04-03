@@ -26,10 +26,7 @@ set(RapidJSON_DIR "${CMAKE_SOURCE_DIR}/cmake")
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall")
 
-IF(CMAKE_COMPILER_IS_GNUCXX)
-	#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall")
-	set(FSLIB "-lstdc++fs")
-ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+set(FSLIB "-lstdc++fs")
 
 OPTION(OPTIMIZE
 	"Build the project with compiler optimization"
