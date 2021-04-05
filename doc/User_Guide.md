@@ -2,7 +2,6 @@ LDP User Guide
 ==============
 
 ##### Contents  
-[Overview](#overview)  
 1\. [Data model](#1-data-model)  
 2\. [JSON queries](#2-json-queries)  
 3\. [Relational attributes vs. JSON](#3-relational-attributes-vs-json)  
@@ -11,28 +10,6 @@ LDP User Guide
 6\. [Database views](#6-database-views)  
 7\. [JSON arrays](#7-json-arrays)  
 8\. [Community](#8-community)
-
-
-Overview
---------
-
-The Library Data Platform (LDP) is an open source platform for
-analytics in libraries, offering a number of features:
-
-* Query capability:  Ad hoc, cross-domain querying of data which are
-  automatically extracted from source databases
-
-* Compatibility:  Designed to work with popular tools for database
-  access, analysis and visualization
-
-* Data integration:  Offers a robust platform for combining data from
-  beyond library systems
-
-* Historical data:  Enables analyzing trends over time to gain insights
-  about your library
-
-* Scalability:  Provides an upgrade path that scales to virtually any
-  amount of data that libraries can collect
 
 
 1\. Data model
@@ -448,7 +425,7 @@ used to report a bug.
 Further reading
 ---------------
 
-[__Learn about configuring LDP in the Configuration Guide > > >__](Config_Guide.md)
+[__Configuration Guide__](Config_Guide.md)
 
-[__Learn about installing and administering LDP in the Administrator Guide > > >__](Admin_Guide.md)
+[__Administrator Guide__](Admin_Guide.md)
 

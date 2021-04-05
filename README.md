@@ -1,7 +1,7 @@
 Library Data Platform
 =====================
 
-Copyright (C) 2019-2020 The Open Library Foundation  
+Copyright (C) 2019-2021 The Open Library Foundation  
 Copyright (C) 2019-2020 Index Data  
 Copyright (C) 1998-2006 Etymon Systems
 
@@ -45,9 +45,9 @@ data          | {
 tenant_id     | 1
 ```
 
-[__Learn about using the LDP database in the User Guide > > >__](doc/User_Guide.md)
+[__User Guide__](doc/User_Guide.md)
 
-[__Learn about configuring LDP in the Configuration Guide > > >__](doc/Config_Guide.md)
+[__Configuration Guide__](doc/Config_Guide.md)
 
-[__Learn about installing and administering LDP in the Administrator Guide > > >__](doc/Admin_Guide.md)
+[__Administrator Guide__](doc/Admin_Guide.md)
 

@@ -6,7 +6,7 @@ LDP Administrator Guide
 2\. [System requirements](#2-system-requirements)  
 3\. [Installation](#3-installation)  
 4\. [Database configuration](#4-database-configuration)  
-5\. [Server configuration](#5-server-configuration)  
+5\. [LDP configuration](#5-ldp-configuration)  
 6\. [Direct extraction](#6-direct-extraction)  
 7\. [Data privacy](#7-data-privacy)  
 [Reference](#reference)
@@ -21,9 +21,7 @@ FOLIO modules, and users connect directly to the database to perform
 reporting and analytics.
 
 LDP is not multitenant in the usual sense, and normally one LDP
-instance is deployed per library.  However, shared data from multiple
-libraries of a consortium can be stored in a single LDP instance, and
-in that case we refer to each of the libraries as a tenant.
+instance is deployed per library.
 
 This administrator guide covers installation and configuration of an
 LDP instance.
@@ -47,9 +45,7 @@ LDP instance.
   * [libcurl](https://curl.haxx.se/) 7.64.0 or later
   * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
 * Required to build from source code:
-  * C++ compilers supported:
-    * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
-    * [Clang](https://clang.llvm.org/) 8.0.1 or later
+  * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
   * [CMake](https://cmake.org/) 3.16.2 or later
 
 ### Hardware
@@ -123,20 +119,6 @@ $ sudo dnf install postgresql-odbc
 RapidJSON can be [installed from
 source](https://rapidjson.org/index.html#autotoc_md5).
 
-#### macOS
-
-Using [Homebrew](https://brew.sh/):
-
-```shell
-$ brew install cmake postgresql psqlodbc rapidjson unixodbc
-```
-
-For PostgreSQL, the ODBC driver can be installed with:
-
-```shell
-$ brew install psqlodbc
-```
-
 ### Building the software
 
 If the LDP software was built previously in the same directory, first
@@ -172,8 +154,8 @@ and local tables are safe.
 For libraries that deploy LDP with PostgreSQL, whether local or
 hosted, we recommend setting:
 
-* `checkpoint_timeout`: `3600` (seconds)
-* `max_wal_size`: `100000` (MB)
+* `checkpoint_timeout`: `3000` (seconds)
+* `max_wal_size`: `10240` (MB)
 
 #### PostgreSQL hosted in RDS
 
@@ -306,8 +288,8 @@ SQL>
 ```
 
 
-5\. Server configuration
-------------------------
+5\. LDP configuration
+---------------------
 
 ### Creating a data directory
 
@@ -348,7 +330,7 @@ __ldpconf.json__
 }
 ```
 
-### Starting the server
+### Running LDP
 
 If this is a new database, it should first be initialized:
 
@@ -356,29 +338,7 @@ If this is a new database, it should first be initialized:
 $ ldp init-database -D /var/lib/ldp --profile folio
 ```
 
-To start the LDP server:
-
-```shell
-$ nohup ldp server -D /var/lib/ldp &>> logfile &
-```
-
-The server logs details of its activities in the table
-`dbsystem.log`.  For more detailed logging, the `--trace` option can
-be used:
-
-```shell
-$ nohup ldp server -D /var/lib/ldp --trace &>> logfile &
-```
-
-Once per day, the server runs a _full update_ which performs all
-supported data updates.  Full updates can be scheduled at a preferred
-time of day using the table `dbconfig.general`.  See the
-[Configuration Guide](Config_Guide.md) for more information.
-
-### Updating data without the server
-
-As an alternative to running the server, data updates can be performed
-on an initialized database via the command line:
+To start LDP:
 
 ```shell
 $ ldp update -D /var/lib/ldp
@@ -388,7 +348,9 @@ This will run a full update, showing progress on the console, and then
 exit.  It can be scheduled via
 [cron](https://en.wikipedia.org/wiki/Cron) to run once per day.
 
-Note that `ldp server` and `ldp update` will not run at the same time.
+The server logs details of its activities in the table
+`dbsystem.log`.  For more detailed logging, the `--trace` option can
+be used.
 
 ### Upgrading to a new version
 
@@ -400,16 +362,12 @@ When installing a new version of LDP, the database should be
 
 2. Make a backup of the database.
 
-3. Stop the old version of the server.
-
-4. Use the `upgrade-database` command in the new version of LDP to
+3. Use the `upgrade-database` command in the new version of LDP to
    perform the upgrade, e.g.:
 
 ```shell
 $ ldp upgrade-database -D /var/lib/ldp
 ```
-
-5. Start the new version of the server.
 
 Do not interrupt the database upgrade process in step 4.  Some schema
 changes use DDL statements that cannot be run within a transaction,
@@ -481,7 +439,8 @@ which may be protected by a firewall.
 ----------------
 
 LDP attempts to "anonymize" personal data.  This anonymization feature
-is enabled unless otherwise configured.
+is enabled unless otherwise configured.  Some tables may be completely 
+empty when anonymization is enabled.
 
 Anonymization can be disabled by setting `anonymize` to `false` in
 `ldpconf.json`.
@@ -497,72 +456,63 @@ Reference
 
 ### Configuration file: ldpconf.json
 
+* `anonymize` (Boolean; optional) when set to `false`, disables
+  anonymization of personal data.  The default value is `true`.
+  Please read the section on "Data privacy" above before changing this
+  setting.
+
 * `deployment_environment` (string; required) is the deployment
   environment of the LDP instance.  Supported values are `production`,
   `staging`, `testing`, and `development`.  This setting is used to
   determine whether certain operations should be allowed to run on the
   instance.
 
-* `ldp_database` (object; required) is a group of database-related
-  settings.
-  * `odbc_database` (string; required) is the ODBC "data source name"
-    of the LDP database.
-  * `ldpconfig_user` (string; optional) is the database user that is
-    defined by default as `ldpconfig`.
-  * `ldp_user` (string; optional) is the database user that is defined
-    by default as `ldp`.
-
 * `enable_sources` (array; required) is a list of sources that are
   enabled for LDP to extract data from.  The source names refer to a
   subset of those defined under `sources` (see below).  Only one
   source should be provided in the case of non-consortial deployments.
 
+* `ldp_database` (object; required) is a group of database-related
+  settings.
+  * `ldpconfig_user` (string; optional) is the database user that is
+    defined by default as `ldpconfig`.
+  * `ldp_user` (string; optional) is the database user that is defined
+    by default as `ldp`.
+  * `odbc_database` (string; required) is the ODBC "data source name"
+    of the LDP database.
+
 * `sources` (object; required) is a collection of sources that LDP can
   extract data from.  Only one source should be provided in the case
   of non-consortial deployments.  A source is defined by a source name
   and an associated object containing several settings:
-  * `okapi_url` (string; required) is the URL for the Okapi instance
-    to extract data from.
-  * `okapi_tenant` (string; required) is the Okapi tenant.
-  * `okapi_user` (string; required) is the Okapi user name.
-  * `okapi_password` (string; required) is the password for the
-    specified Okapi user name.
-  * `tenant_id` (integer; optional) uniquely identifies a tenant in a
-    consortial LDP deployment.  The default value is `1`.
-  * `direct_tables` (array; optional) is a list of tables that should
-    be updated using direct extraction.  Only these tables may be
-    included: `inventory_holdings`, `inventory_instances`, and
-    `inventory_items`.
-  * `direct_database_name` (string; optional) is the FOLIO database
-    name.
   * `direct_database_host` (string; optional) is the FOLIO database
     host name.
+  * `direct_database_name` (string; optional) is the FOLIO database
+    name.
+  * `direct_database_password` (string; optional) is the password for
+    the specified FOLIO database user name.
   * `direct_database_port` (integer; optional) is the FOLIO database
     port.
   * `direct_database_user` (string; optional) is the FOLIO database
     user name.
-  * `direct_database_password` (string; optional) is the password for
-    the specified FOLIO database user name.
-
-* `anonymize` (Boolean; optional) when set to `false`, disables
-  anonymization of personal data.  The default value is `true`.
-  Please read the section on "Data privacy" above before changing this
-  setting.
-
-<!--
-* `allow_destructive_tests` (Boolean; optional) when set to `true`,
-  allows the LDP database to be overwritten by integration tests or
-  other testing or development operations.  The default value is
-  `false`.  This value should only be `true` for an LDP database that
-  is being used as a testing sandbox, and never in a production or
-  staging deployment.
--->
+  * `direct_tables` (array; optional) is a list of tables that should
+    be updated using direct extraction.  Only these tables may be
+    included: `inventory_holdings`, `inventory_instances`, and
+    `inventory_items`.
+  * `okapi_password` (string; required) is the password for the
+  * `okapi_tenant` (string; required) is the Okapi tenant.
+  * `okapi_url` (string; required) is the URL for the Okapi instance
+    to extract data from.
+  * `okapi_user` (string; required) is the Okapi user name.
+    specified Okapi user name.
+  * `tenant_id` (integer; optional) uniquely identifies a tenant in a
+    consortial LDP deployment.  The default value is `1`.
 
 
 Further reading
 ---------------
 
-[__Learn about configuring LDP in the Configuration Guide > > >__](Config_Guide.md)
+[__Configuration Guide__](Config_Guide.md)
 
-[__Learn about using the LDP database in the User Guide > > >__](User_Guide.md)
+[__User Guide__](User_Guide.md)
 
