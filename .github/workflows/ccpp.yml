@@ -13,10 +13,6 @@ jobs:
       run: sudo apt update
     - name: Install dependency packages
       run: sudo apt install -y cmake g++ libcurl4-openssl-dev libpq-dev postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev libsqlite3-dev
-    - name: Symbolic-link gcc
-      run: sudo ln -fs /usr/bin/gcc-8 /usr/bin/gcc
-    - name: Symbolic-link g++
-      run: sudo ln -fs /usr/bin/g++-8 /usr/bin/g++
     - name: Build
       run: ./all.sh
     - name: Run
