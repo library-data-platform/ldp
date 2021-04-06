@@ -210,6 +210,10 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.name = "finance_budgets";
     schema->tables.push_back(table);
 
+    table.source_spec = "/finance-storage/expense-classes";
+    table.name = "finance_expense_classes";
+    schema->tables.push_back(table);
+
     table.source_spec = "/finance-storage/fiscal-years";
     table.name = "finance_fiscal_years";
     schema->tables.push_back(table);
@@ -408,6 +412,15 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.source_spec = "/voucher-storage/vouchers";
     table.name = "invoice_vouchers";
     schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-notes";
+
+    table.source_spec = "/notes";
+    table.name = "notes";
+    table.anonymize = true;
+    schema->tables.push_back(table);
+    table.anonymize = false;
 
     ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-orders-storage";
