@@ -24,12 +24,11 @@
 
 static const char* option_help =
 "Usage:  ldp <command> <options>\n"
-"  e.g.  ldp server -D /usr/local/ldp/data\n"
+"  e.g.  ldp update -D /usr/local/ldp/data\n"
 "Commands:\n"
-"  server              - Run the LDP server\n"
+"  update              - Run a full update\n"
 "  init-database       - Initialize a new LDP database\n"
 "  upgrade-database    - Upgrade an LDP database to the current version\n"
-"  update              - Run a full update and exit\n"
 "  help                - Display help information\n"
 "Options:\n"
 "  -D <path>           - Use <path> as the data directory\n"
