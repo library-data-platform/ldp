@@ -401,6 +401,10 @@ for the following tables:
 * `inventory_holdings`
 * `inventory_instances`
 * `inventory_items`
+* `srs_marc`
+
+The last of these, `srs_marc`, can only be retrieved by direct 
+extraction.
 
 Direct extraction can be enabled by adding the list of tables and
 database connection parameters to a source configuration, as in this
@@ -419,7 +423,8 @@ example:
 	    "direct_tables": [
 	        "inventory_holdings",
 		"inventory_instances",
-		"inventory_items"
+		"inventory_items",
+		"srs_marc"
             ],
             "direct_database_name": "okapi",
             "direct_database_host": "database.folio.org",

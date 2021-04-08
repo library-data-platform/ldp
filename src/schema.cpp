@@ -506,15 +506,6 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
-    //table.module_name = "mod-source-record-storage";
-
-    //table.source_type = data_source_type::rmb_marc;
-    //table.source_spec = "/source-storage/records";
-    //table.name = "srs_source_records";
-    //schema->tables.push_back(table);
-    //table.source_type = data_source_type::rmb;
-
-    ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-users";
 
     table.source_spec = "/addresstypes";
@@ -538,6 +529,16 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.anonymize = true;
     schema->tables.push_back(table);
     table.anonymize = false;
+
+    ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-source-record-storage";
+
+    table.source_type = data_source_type::srs_marc_records;
+    table.source_spec = "srs::marc_records_lb";
+    table.direct_source_table = "mod_source_record_storage.marc_records_lb";
+    table.name = "srs_marc";
+    schema->tables.push_back(table);
+    table.source_type = data_source_type::rmb;
 }
 
 void column_schema::type_to_string(column_type type, string* str)

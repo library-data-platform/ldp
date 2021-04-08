@@ -411,15 +411,19 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
         return false;
     }
 
-    // Select jsonb from table.direct_source_table and write to JSON file.
+    string json_attr = "'' AS id, jsonb";
+    if (table.source_type == data_source_type::srs_marc_records) {
+        json_attr = "id, content";
+    }
+
+    // Select from table.direct_source_table and write to JSON file.
     etymon::Postgres db(source.direct.database_host,
                         source.direct.database_port,
                         source.direct.database_user,
                         source.direct.database_password,
                         source.direct.database_name,
                         direct_extraction_no_ssl ? "disable" : "require");
-    string sql = "SELECT jsonb FROM " +
-        source.okapi_tenant + "_" + table.direct_source_table + ";";
+    string sql = "SELECT " + json_attr + " FROM " + source.okapi_tenant + "_" + table.direct_source_table + ";";
     lg->write(log_level::detail, "", "", sql, -1);
 
     if (PQsendQuery(db.conn, sql.c_str()) == 0) {
@@ -444,12 +448,22 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
         if (res.result == nullptr ||
                 PQresultStatus(res.result) != PGRES_SINGLE_TUPLE)
             break;
-        const char* j = PQgetvalue(res.result, 0, 0);
+        const char* i = PQgetvalue(res.result, 0, 0);
+        const char* j = PQgetvalue(res.result, 0, 1);
         //if (j == nullptr)
         //    break;
         if (row > 0)
             fprintf(f.fp, ",\n");
-        fprintf(f.fp, "%s\n", j);
+        string is = i;
+        string js = j;
+        if (table.source_type == data_source_type::srs_marc_records) {
+            etymon::trim(&js);
+            if (js.size() == 0 || js[0] != '{') {
+                throw runtime_error("expected '{' in JSON data: " + table.source_spec);
+            }
+            js = "{\"id\": \"" + is + "\"," + js.substr(1, js.size() - 1);
+        }
+        fprintf(f.fp, "%s\n", js.data());
         row++;
     }
     if (row == 0)
