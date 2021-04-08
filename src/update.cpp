@@ -442,13 +442,20 @@ void run_update(const ldp_options& opt)
 
                 if (opt.load_from_dir == "") {
                     lg.write(log_level::trace, "", "",
-                             "Extracting: " + table.source_spec, -1);
-                    bool found_data = direct_override(state.source, table.name) ?
-                        retrieve_direct(state.source, &lg, table, load_dir,
-                                        &ext_files, opt.direct_extraction_no_ssl) :
-                        retrieve_pages(curlw, opt, state.source, &lg,
-                                       state.token, table, load_dir,
-                                       &ext_files);
+                             "Extracting from: " + table.source_spec, -1);
+                    bool found_data = false;
+                    if (direct_override(state.source, table.name)) {
+                        found_data = retrieve_direct(state.source, &lg, table, load_dir, &ext_files,
+                                                     opt.direct_extraction_no_ssl);
+                    } else {
+                        if (table.source_type != data_source_type::srs_marc_records) {
+                            found_data = retrieve_pages(curlw, opt, state.source, &lg, state.token, table, load_dir,
+                                                        &ext_files);
+                        } else {
+                            lg.write(log_level::trace, "", "",
+                                     "Table not updated: requires direct extraction: " + table.name, -1);
+                        }
+                    }
                     if (!found_data)
                         table.skip = true;
                 }
