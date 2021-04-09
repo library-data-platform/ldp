@@ -58,7 +58,7 @@ following minimum requirements:
   * Memory: 1 GB
   * Storage: 500 GB HDD
 * LDP software:
-  * Memory: 200 MB
+  * Memory: 300 MB
   * Storage: 160 GB HDD
 
 For large libraries, or if very high performance is desired, the
@@ -403,8 +403,8 @@ for the following tables:
 * `inventory_items`
 * `srs_marc`
 
-The last of these, `srs_marc`, can only be retrieved by direct 
-extraction.
+The last of these, `srs_marc`, is made available in LDP only by direct 
+extraction.  No historical data are retained for `srs_marc`.
 
 Direct extraction can be enabled by adding the list of tables and
 database connection parameters to a source configuration, as in this

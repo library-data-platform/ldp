@@ -391,8 +391,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
 
         if (pass == 2) {
 
-            if (insert_buffer.length() > 16500000) {
-            //if (insert_buffer.length() > 10000000) {
+            if (insert_buffer.length() > 70000000) {
                 end_inserts(opt, lg, table.name, &insert_buffer,
                             conn);
                 begin_inserts(table.name, &insert_buffer);

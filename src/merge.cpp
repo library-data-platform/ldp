@@ -5,6 +5,10 @@ void create_latest_history_table(const ldp_options& opt, ldp_log* lg,
                                  const table_schema& table,
                                  etymon::odbc_conn* conn)
 {
+    if (table.source_type == data_source_type::srs_marc_records) {
+        return;
+    }
+
     string history_table;
     history_table_name(table.name, &history_table);
 
@@ -39,6 +43,10 @@ void drop_latest_history_table(const ldp_options& opt, ldp_log* lg,
                                const table_schema& table,
                                etymon::odbc_conn* conn)
 {
+    if (table.source_type == data_source_type::srs_marc_records) {
+        return;
+    }
+
     string latest_history_table;
     latest_history_table_name(table.name, &latest_history_table);
 
@@ -52,6 +60,10 @@ void merge_table(const ldp_options& opt, ldp_log* lg,
                  etymon::odbc_env* odbc, etymon::odbc_conn* conn,
                  const dbtype& dbt)
 {
+    if (table.source_type == data_source_type::srs_marc_records) {
+        return;
+    }
+
     // Update history tables.
 
     string history_table;
