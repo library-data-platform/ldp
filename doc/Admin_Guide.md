@@ -172,8 +172,8 @@ and local tables are safe.
 For libraries that deploy LDP with PostgreSQL, whether local or
 hosted, we recommend setting:
 
-* `checkpoint_timeout`: `3600` (seconds)
-* `max_wal_size`: `100000` (MB)
+* `checkpoint_timeout`: `3000` (seconds)
+* `max_wal_size`: `10240` (MB)
 
 #### PostgreSQL hosted in RDS
 
