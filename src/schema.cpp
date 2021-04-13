@@ -14,6 +14,10 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-circulation-storage";
 
+    table.source_spec = "/check-in-storage/check-ins";
+    table.name = "circulation_check_ins";
+    schema->tables.push_back(table);
+
     table.source_spec = "/cancellation-reason-storage/cancellation-reasons";
     table.name = "circulation_cancellation_reasons";
     schema->tables.push_back(table);
