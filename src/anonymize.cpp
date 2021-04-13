@@ -6,6 +6,8 @@ static set<pair<string,string>> personal_data_fields = {
 
     {"acquisitions_memberships", "/userId"},
 
+    {"circulation_check_ins", "/performedByUserId"},
+
     {"circulation_loans", "/userId"},
     {"circulation_loans", "/proxyUserId"},
 
