@@ -12,6 +12,15 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.anonymize = false;
 
     ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-audit";
+
+    table.source_spec = "/audit-data/circulation/logs";
+    table.name = "audit_circulation_logs";
+    table.anonymize = true;
+    schema->tables.push_back(table);
+    table.anonymize = false;
+
+    ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-circulation-storage";
 
     table.source_spec = "/check-in-storage/check-ins";

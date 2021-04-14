@@ -1438,3 +1438,20 @@ void database_upgrade_24(database_upgrade_options* opt)
     tx.commit();
     ulog_commit(opt);
 }
+
+void database_upgrade_25(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    etymon::odbc_tx tx(opt->conn);
+
+    upgrade_add_new_table_dbsystem("audit_circulation_logs", opt, dbt, false);
+
+    string sql = "UPDATE dbsystem.main SET database_version = 25;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    tx.commit();
+    ulog_commit(opt);
+}
+
