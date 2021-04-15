@@ -9,6 +9,7 @@ LDP Administrator Guide
 5\. [LDP configuration](#5-ldp-configuration)  
 6\. [Direct extraction](#6-direct-extraction)  
 7\. [Data privacy](#7-data-privacy)  
+8\. [Optional columns](#8-optional-columns)  
 [Reference](#reference)
 
 
@@ -454,6 +455,36 @@ __WARNING: LDP does not provide a way to anonymize the database after
 personal data have been loaded into it.  For this reason,
 anonymization should never be disabled unless you are absolutely sure
 that you want to store personal data in the LDP database.__
+
+
+8\. Optional columns
+--------------------
+
+LDP creates table columns based on the presence of data in JSON
+fields.  Sometimes a JSON field is optional or missing, and the
+corresponding column in LDP is not created.  This can cause errors in
+queries that otherwise may be valid and useful.
+
+Optional or missing columns can be added in LDP by creating a
+configuration file `ldp_column.conf` in the data directory.  If this
+file is present, LDP will add the specified columns during the update
+process.  Each line of the file should provide the table name, column
+name, and SQL data type in the form:
+
+```
+<table>.<column> <type>
+```
+
+Most columns have the data type `varchar(...)`, and this can be
+written as `varchar` in the configuration file.
+
+For example:
+
+```
+inventory_instance_relationship_types.name varchar
+po_purchase_orders.po_number varchar
+po_purchase_orders.vendor varchar
+```
 
 
 Reference

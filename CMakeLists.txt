@@ -76,6 +76,7 @@ add_library(ldp_obj OBJECT
 	etymoncpp/src/odbc.cpp
 	etymoncpp/src/postgres.cpp
 	etymoncpp/src/util.cpp
+	src/addcolumns.cpp
 	src/anonymize.cpp
 	src/camelcase.cpp
 	src/config.cpp

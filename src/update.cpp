@@ -10,6 +10,7 @@
 #include <sys/types.h>
 
 #include "../etymoncpp/include/curl.h"
+#include "addcolumns.h"
 #include "extract.h"
 #include "init.h"
 #include "log.h"
@@ -575,6 +576,9 @@ void run_update(const ldp_options& opt)
 
     lg.write(log_level::debug, "server", "", "Completed full update",
             full_update_timer.elapsed_time());
+
+    // Add optional columns
+    add_optional_columns(opt, &lg, &odbc);
 
     // Vacuum and analyze all updated tables
     {
