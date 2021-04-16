@@ -17,6 +17,51 @@ void get_addcolumns_filename(const ldp_options& opt, string* filename)
     *filename = addcolumns;
 }
 
+bool valid_ident(const string& s, bool allow_paren)
+{
+    if (s == "") {
+        return false;
+    }
+    if (!isalpha(s[0]) && s[0] != '_') {
+        return false;
+    }
+    bool open_p = false;
+    bool close_p = false;
+    for (auto c : s) {
+        if (allow_paren) {
+            if (c == ',' && !open_p) {
+                return false;
+            }
+            if (!isalnum(c) && c != '_' && c != '(' && c != ')' && c != ',') {
+                return false;
+            }
+        } else {
+            if (!isalnum(c) && c != '_') {
+                return false;
+            }
+        }
+        if (open_p && c == '(') {
+            return false;
+        }
+        if (close_p) {
+            return false;
+        }
+        if (c == '(') {
+            open_p = true;
+        }
+        if (c == ')') {
+            close_p = true;
+        }
+    }
+    if (open_p && !close_p) {
+        return false;
+    }
+    if (close_p && !open_p) {
+        return false;
+    }
+    return true;
+}
+
 void add_columns(const ldp_options& opt, ldp_log* lg, etymon::odbc_conn* conn)
 {
     string filename;
@@ -42,9 +87,11 @@ void add_columns(const ldp_options& opt, ldp_log* lg, etymon::odbc_conn* conn)
                 split_space.push_back(split_space_token);
         }
         if (split_space.size() != 2)
-            throw runtime_error(string("Error parsing optional column: ") + line);
+            throw runtime_error(string("adding column: parsing error: ") + line);
         string table_column = split_space[0];
         string datatype = split_space[1];
+        if (!valid_ident(datatype, true))
+            throw runtime_error(string("adding column: invalid character in \"") + datatype + "\"");
         transform(datatype.begin(), datatype.end(), datatype.begin(), [](unsigned char c){ return tolower(c); });
         if (datatype == "varchar")
             datatype = "varchar(1)";
@@ -56,10 +103,14 @@ void add_columns(const ldp_options& opt, ldp_log* lg, etymon::odbc_conn* conn)
             split_dot.push_back(split_dot_token);
         }
         if (split_dot.size() != 2)
-            throw runtime_error(string("Error parsing optional column: ") + line);
+            throw runtime_error(string("adding column: parsing error: ") + line);
         string table = split_dot[0];
+        if (!valid_ident(table, false))
+            throw runtime_error(string("adding column: invalid character in \"") + table + "\"");
         transform(table.begin(), table.end(), table.begin(), [](unsigned char c){ return tolower(c); });
         string column = split_dot[1];
+        if (!valid_ident(column, false))
+            throw runtime_error(string("adding column: invalid character in \"") + column + "\"");
         transform(column.begin(), column.end(), column.begin(), [](unsigned char c){ return tolower(c); });
         // Add column
         lg->write(log_level::detail, "", "", "Adding column: " + table + "." + column + " " + datatype, -1);
