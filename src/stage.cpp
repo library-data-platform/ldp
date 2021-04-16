@@ -10,7 +10,6 @@
 #include "../etymoncpp/include/mallocptr.h"
 #include "../etymoncpp/include/postgres.h"
 #include "../etymoncpp/include/util.h"
-#include "anonymize.h"
 #include "camelcase.h"
 #include "dbtype.h"
 #include "names.h"
@@ -75,9 +74,14 @@ bool data_to_filter(const table_schema& table, const string& field)
 }
 
 // Collect statistics and anonymize data
-void process_json_record(const table_schema& table, json::Document* root,
-        json::Value* node, bool collect_stats, bool anonymize_fields,
-        const string& field, unsigned int depth, map<string,type_counts>* stats)
+void process_json_record(const table_schema& table,
+                         json::Document* root,
+                         json::Value* node,
+                         bool collect_stats,
+                         field_set* drop_fields,
+                         const string& field,
+                         unsigned int depth,
+                         map<string,type_counts>* stats)
 {
     switch (node->GetType()) {
         case json::kNullType:
@@ -86,13 +90,13 @@ void process_json_record(const table_schema& table, json::Document* root,
             break;
         case json::kTrueType:
         case json::kFalseType:
-            if (anonymize_fields && is_personal_data_field(table, field))
+            if (drop_fields->find(table.name, field))
                 json::Pointer(field.c_str()).Set(*root, false);
             if (collect_stats && depth == 1)
                 (*stats)[field.c_str() + 1].boolean++;
             break;
         case json::kNumberType:
-            if (anonymize_fields && is_personal_data_field(table, field))
+            if (drop_fields->find(table.name, field))
                 json::Pointer(field.c_str()).Set(*root, 0);
             if (collect_stats && depth == 1) {
                 (*stats)[field.c_str() + 1].number++;
@@ -104,7 +108,7 @@ void process_json_record(const table_schema& table, json::Document* root,
             }
             break;
         case json::kStringType:
-            if (anonymize_fields && is_personal_data_field(table, field))
+            if (drop_fields->find(table.name, field))
                 json::Pointer(field.c_str()).Set(*root, "");
             if (collect_stats && depth == 1) {
                 (*stats)[field.c_str() + 1].string++;
@@ -118,7 +122,7 @@ void process_json_record(const table_schema& table, json::Document* root,
             }
             break;
         case json::kArrayType:
-            if (anonymize_fields && is_personal_data_field(table, field)) {
+            if (drop_fields->find(table.name, field)) {
 		json::Pointer(field.c_str()).Set(*root, json::kNullType);
 		break;
             }
@@ -133,15 +137,13 @@ void process_json_record(const table_schema& table, json::Document* root,
                     string new_field = field;
                     new_field += '/';
                     new_field += to_string(x);
-                    process_json_record(table, root, i, collect_stats,
-                                        anonymize_fields, new_field,
-                                        depth + 1, stats);
+                    process_json_record(table, root, i, collect_stats, drop_fields, new_field, depth + 1, stats);
                     x++;
                 }
             }
             break;
         case json::kObjectType:
-            if (anonymize_fields && is_personal_data_field(table, field)) {
+            if (drop_fields->find(table.name, field)) {
 		json::Pointer(field.c_str()).Set(*root, json::kNullType);
 		break;
             }
@@ -155,9 +157,7 @@ void process_json_record(const table_schema& table, json::Document* root,
                 string new_field = field;
                 new_field += '/';
                 new_field += i->name.GetString();
-                process_json_record(table, root, &(i->value), collect_stats,
-                                    anonymize_fields, new_field,
-                                    depth + 1, stats);
+                process_json_record(table, root, &(i->value), collect_stats, drop_fields, new_field, depth + 1, stats);
             }
             break;
         default:
@@ -180,8 +180,7 @@ void process_json_record(const table_schema& table, json::Document* root,
   * historical data.  (iii) SQL insert statements are generated and
   * submitted to the database to stage the data for merging.
   */
-class JSONHandler :
-    public json::BaseReaderHandler<json::UTF8<>, JSONHandler> {
+class JSONHandler : public json::BaseReaderHandler<json::UTF8<>, JSONHandler> {
 public:
     int pass;
     const ldp_options& opt;
@@ -195,18 +194,29 @@ public:
     // Loading to database
     etymon::odbc_conn* conn;
     const dbtype& dbt;
-    bool anonymize_fields = true;
+    field_set* drop_fields = nullptr;
     int16_t tenant_id = 1;
     size_t record_count = 0;
     size_t total_record_count = 0;
     string insert_buffer;
-    JSONHandler(int pass, const ldp_options& options, ldp_log* lg,
-                const table_schema& table, etymon::odbc_conn* conn,
-                const dbtype& dbt, bool anonymize_fields, int16_t tenant_id,
+    JSONHandler(int pass,
+                const ldp_options& options,
+                ldp_log* lg,
+                const table_schema& table,
+                etymon::odbc_conn* conn,
+                const dbtype& dbt,
+                field_set* drop_fields,
+                int16_t tenant_id,
                 map<string,type_counts>* statistics) :
-        pass(pass), opt(options), lg(lg), table(table),
-        stats(statistics), conn(conn), dbt(dbt),
-        anonymize_fields(anonymize_fields), tenant_id(tenant_id) {}
+        pass(pass),
+        opt(options),
+        lg(lg),
+        table(table),
+        stats(statistics),
+        conn(conn),
+        dbt(dbt),
+        drop_fields(drop_fields),
+        tenant_id(tenant_id) {}
     bool StartObject();
     bool EndObject(json::SizeType memberCount);
     bool StartArray();
@@ -383,11 +393,9 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
         doc.ParseInsitu<pflags>(buffer);
 
         bool collect_stats = (pass == 1);
-        bool anonymize = (pass == 1) ? false : anonymize_fields;
         string path;
         // Collect statistics and anonymize data.
-        process_json_record(table, &doc, &doc, collect_stats, anonymize,
-                            path, 0, stats);
+        process_json_record(table, &doc, &doc, collect_stats, drop_fields, path, 0, stats);
 
         if (pass == 2) {
 
@@ -584,13 +592,13 @@ static void stage_page(const ldp_options& opt, ldp_log* lg, int pass,
                        etymon::odbc_conn* conn, const dbtype &dbt,
                        map<string,type_counts>* stats, const string& filename,
                        char* read_buffer, size_t read_buffer_size,
-                       bool anonymize_fields, int16_t tenant_id)
+                       field_set* drop_fields,
+                       int16_t tenant_id)
 {
     json::Reader reader;
     etymon::file f(filename, "r");
     json::FileReadStream is(f.fp, read_buffer, read_buffer_size);
-    JSONHandler handler(pass, opt, lg, table, conn, dbt,
-                        anonymize_fields, tenant_id, stats);
+    JSONHandler handler(pass, opt, lg, table, conn, dbt, drop_fields, tenant_id, stats);
     reader.Parse(is, handler);
 }
 
@@ -719,115 +727,15 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
     conn->exec(sql);
 }
 
-/*
-bool stage_table(const ldp_options& opt,
-                 ldp_log* lg, table_schema* table, etymon::odbc_env* odbc,
-                 etymon::odbc_conn* conn, dbtype* dbt, const string& load_dir,
-                 bool anonymize_fields)
-{
-    size_t page_count = read_page_count(opt, lg, load_dir, table->name);
-
-    lg->write(log_level::detail, "", "",
-            "Staging: " + table->name + ": page count: " +
-            to_string(page_count), -1);
-
-    // TODO remove this and create the load table from merge.cpp after
-    // pass 1
-    //createStagingTable(opt, table->name, db);
-
-    map<string,type_counts> stats;
-    char read_buffer[65536];
-
-    for (int pass = 1; pass <= 2; pass++) {
-
-        lg->write(log_level::detail, "", "",
-                "Staging: " + table->name +
-                (pass == 1 ?  ": analyze" : ": load"), -1);
-
-        for (size_t page = 0; page < page_count; page++) {
-            string path;
-            compose_data_file_path(load_dir, *table,
-                    "_" + to_string(page) + ".json", &path);
-            lg->write(log_level::detail, "", "",
-                    "Staging: " + table->name +
-                    (pass == 1 ?  ": analyze" : ": load") + ": page: " +
-                    to_string(page), -1);
-            stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
-                      read_buffer, sizeof read_buffer, anonymize_fields,
-                      source.tenant_id);
-        }
-
-        if (opt.load_from_dir != "") {
-            string path;
-            compose_data_file_path(load_dir, *table, "_test.json", &path);
-            if (fs::exists(path)) {
-                lg->write(log_level::detail, "", "",
-                        "Staging: " + table->name +
-                        (pass == 1 ?  ": analyze" : ": load") +
-                        ": test file", -1);
-                stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats,
-                          path, read_buffer, sizeof read_buffer,
-                          anonymize_fields, source.tenant_id);
-            }
-        }
-
-        if (pass == 1) {
-            for (const auto& [field, counts] : stats) {
-                lg->write(log_level::detail, "", "",
-                        "Stats: in field: " + field, -1);
-                lg->write(log_level::detail, "", "",
-                        "Stats: string: " + to_string(counts.string), -1);
-                lg->write(log_level::detail, "", "",
-                        "Stats: datetime: " + to_string(counts.date_time), -1);
-                lg->write(log_level::detail, "", "",
-                        "Stats: bool: " + to_string(counts.boolean), -1);
-                lg->write(log_level::detail, "", "",
-                        "Stats: number: " + to_string(counts.number), -1);
-                lg->write(log_level::detail, "", "",
-                        "Stats: int: " + to_string(counts.integer), -1);
-                lg->write(log_level::detail, "", "",
-                        "Stats: float: " + to_string(counts.floating), -1);
-                lg->write(log_level::detail, "", "",
-                        "Stats: null: " + to_string(counts.null), -1);
-            }
-        }
-
-        if (pass == 1) {
-            for (const auto& [field, counts] : stats) {
-                column_schema column;
-                bool ok =
-                    column_schema::select_type(lg, table->name,
-                            table->source_spec, field, counts,
-                            &column.type);
-                if (!ok)
-                    return false;
-                string type_str;
-                column_schema::type_to_string(column.type, &type_str);
-                string newattr;
-                decode_camel_case(field.c_str(), &newattr);
-                lg->write(log_level::detail, "", "",
-                        string("Column: ") + newattr + string(" ") + type_str,
-                        -1);
-                column.name = newattr;
-                column.source_name = field;
-                table->columns.push_back(column);
-            }
-            create_loading_table(opt, lg, *table, odbc, conn, *dbt);
-        }
-
-        if (pass == 2)
-            index_loading_table(lg, *table, conn, dbt);
-    }
-
-    return true;
-}
-*/
-
 bool stage_table_1(const ldp_options& opt,
                    const vector<source_state>& source_states,
-                 ldp_log* lg, table_schema* table, etymon::odbc_env* odbc,
-                 etymon::odbc_conn* conn, dbtype* dbt, const string& load_dir,
-                 bool anonymize_fields)
+                   ldp_log* lg,
+                   table_schema* table,
+                   etymon::odbc_env* odbc,
+                   etymon::odbc_conn* conn,
+                   dbtype* dbt,
+                   const string& load_dir,
+                   field_set* drop_fields)
 {
     // TODO remove this and create the load table from merge.cpp after
     // pass 1
@@ -860,7 +768,7 @@ bool stage_table_1(const ldp_options& opt,
                       (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                       to_string(page), -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
-                       read_buffer, sizeof read_buffer, anonymize_fields, -1);
+                       read_buffer, sizeof read_buffer, drop_fields, -1);
         }
     }
 
@@ -874,7 +782,7 @@ bool stage_table_1(const ldp_options& opt,
                       ": test file", -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats,
                        path, read_buffer, sizeof read_buffer,
-                       anonymize_fields, -1);
+                       drop_fields, -1);
         }
     }
 
@@ -932,12 +840,15 @@ bool stage_table_1(const ldp_options& opt,
     return true;
 }
 
-
 bool stage_table_2(const ldp_options& opt,
                    const vector<source_state>& source_states,
-                 ldp_log* lg, table_schema* table, etymon::odbc_env* odbc,
-                 etymon::odbc_conn* conn, dbtype* dbt, const string& load_dir,
-                 bool anonymize_fields)
+                   ldp_log* lg,
+                   table_schema* table,
+                   etymon::odbc_env* odbc,
+                   etymon::odbc_conn* conn,
+                   dbtype* dbt,
+                   const string& load_dir,
+                   field_set* drop_fields)
 {
     // TODO remove this and create the load table from merge.cpp after
     // pass 1
@@ -970,8 +881,8 @@ bool stage_table_2(const ldp_options& opt,
                       (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                       to_string(page), -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
-                       read_buffer, sizeof read_buffer, anonymize_fields,
-                       state.source.tenant_id);
+                       read_buffer, sizeof read_buffer,
+                       drop_fields, state.source.tenant_id);
         }
     }
 
@@ -985,7 +896,7 @@ bool stage_table_2(const ldp_options& opt,
                       ": test file", -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats,
                        path, read_buffer, sizeof read_buffer,
-                       anonymize_fields, 1);
+                       drop_fields, 1);
         }
     }
 

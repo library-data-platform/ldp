@@ -444,6 +444,8 @@ which may be protected by a firewall.
 7\. Data privacy
 ----------------
 
+### Anonymization
+
 LDP attempts to "anonymize" tables or columns that contain personal
 data.  This anonymization feature is enabled unless otherwise
 configured.  Some tables are redacted entirely when anonymization is
@@ -457,6 +459,32 @@ __WARNING: LDP does not provide a way to anonymize the database after
 personal data have been loaded into it.  For this reason,
 anonymization should never be disabled unless you are absolutely sure
 that you want to store personal data in the LDP database.__
+
+### Filtering data fields
+
+In addition or as an alternative to the pre-defined anonymization
+described above, a filter can be used to drop specific JSON fields.
+The filter is defined by creating a configuration file
+`ldp_drop_field.conf` in the data directory.  If this file is present,
+LDP will try to parse the JSON objects and remove the specified field
+data during the update process.  Each line should provide the table
+name and field path in the form:
+
+```
+<table> <field_path>
+```
+
+For example:
+
+```
+circulation_loans /userId
+circulation_loans /proxyUserId
+circulation_requests /requester/firstName
+circulation_requests /requester/lastName
+circulation_requests /requester/middleName
+circulation_requests /requester/barcode
+circulation_requests /requester/patronGroup
+```
 
 
 8\. Optional columns

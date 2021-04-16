@@ -10,11 +10,11 @@
 
 namespace fs = std::experimental::filesystem;
 
-void get_addcolumns_filename(const ldp_options& opt, string* filename)
+void get_add_column_filename(const ldp_options& opt, string* filename)
 {
     fs::path datadir = opt.datadir;
-    fs::path addcolumns = datadir / "ldp_add_column.conf";
-    *filename = addcolumns;
+    fs::path add_column = datadir / "ldp_add_column.conf";
+    *filename = add_column;
 }
 
 bool valid_ident(const string& s, bool allow_paren)
@@ -65,9 +65,9 @@ bool valid_ident(const string& s, bool allow_paren)
 void add_columns(const ldp_options& opt, ldp_log* lg, etymon::odbc_conn* conn)
 {
     string filename;
-    get_addcolumns_filename(opt, &filename);
+    get_add_column_filename(opt, &filename);
     if ( !(fs::exists(filename)) ) {
-        lg->write(log_level::detail, "", "", "Skip adding columns: file not found: " + filename, -1);
+        lg->write(log_level::detail, "", "", "Skip add column list: file not found: " + filename, -1);
         return;
     }
     lg->write(log_level::trace, "", "", "Adding optional columns", -1);
@@ -119,7 +119,6 @@ void add_columns(const ldp_options& opt, ldp_log* lg, etymon::odbc_conn* conn)
             conn->exec(sql);
         } catch (runtime_error& e) {}
     }
-    return;
 }
 
 void add_optional_columns(const ldp_options& opt, ldp_log* lg, etymon::odbc_env* odbc)

@@ -2,7 +2,7 @@
 
 #include "anonymize.h"
 
-static set<pair<string,string>> personal_data_fields = {
+static set<pair<string,string>> anonymize_field_list = {
 
     {"acquisitions_memberships", "/userId"},
 
@@ -80,9 +80,16 @@ static set<pair<string,string>> personal_data_fields = {
 
 };
 
-bool is_personal_data_field(const table_schema& table, const string& field)
+void load_anonymize_field_list(field_set* drop_fields)
 {
-    pair<string,string> p = pair<string,string>(table.name, field);
-    return (personal_data_fields.find(p) != personal_data_fields.end());
+    for (auto& p : anonymize_field_list) {
+        drop_fields->fields.insert(p);
+    }
+}
+
+bool field_set::find(const string& table, const string& field)
+{
+    pair<string,string> p = pair<string,string>(table, field);
+    return this->fields.find(p) != this->fields.end();
 }
 

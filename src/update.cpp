@@ -11,6 +11,7 @@
 
 #include "../etymoncpp/include/curl.h"
 #include "addcolumns.h"
+#include "dropfields.h"
 #include "extract.h"
 #include "init.h"
 #include "log.h"
@@ -408,8 +409,11 @@ void run_update(const ldp_options& opt)
 
             // Enable anonymization of the entire table.
             bool anonymize_table = opt.anonymize && table.anonymize;
-            // Enable selective anonymization of fields.
-            bool anonymize_fields = opt.anonymize;
+            field_set drop_fields;
+            if (opt.anonymize) {
+                load_anonymize_field_list(&drop_fields);
+            }
+            read_drop_fields(opt, &lg, &drop_fields);
 
             // Skip this table if the entire table should be anonymized.
             if (anonymize_table)
@@ -477,13 +481,13 @@ void run_update(const ldp_options& opt)
                 lg.write(log_level::trace, "", "",
                          "Staging table: " + table.name, -1);
                 bool ok = stage_table_1(opt, source_states, &lg, &table, &odbc,
-                                        &conn, &dbt, load_dir, anonymize_fields);
+                                        &conn, &dbt, load_dir, &drop_fields);
                 if (!ok)
                     continue;
 
                 ok = stage_table_2(opt, source_states, &lg, &table, &odbc,
                                    &conn, &dbt, load_dir,
-                                   anonymize_fields);
+                                   &drop_fields);
                 if (!ok)
                     continue;
 

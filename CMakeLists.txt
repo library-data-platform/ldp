@@ -82,6 +82,7 @@ add_library(ldp_obj OBJECT
 	src/config.cpp
 	src/dbtype.cpp
 	src/dbup1.cpp
+	src/dropfields.cpp
 	src/extract.cpp
 	src/init.cpp
 	src/initutil.cpp

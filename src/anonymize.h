@@ -1,9 +1,17 @@
 #ifndef LDP_ANONYMIZE_H
 #define LDP_ANONYMIZE_H
 
+#include <set>
+
 #include "schema.h"
 
-bool is_personal_data_field(const table_schema& table, const string& field);
+class field_set {
+public:
+    set<pair<string,string>> fields;
+    bool find(const string& table, const string& field);
+};
+
+void load_anonymize_field_list(field_set* drop_fields);
 
 #endif
 
