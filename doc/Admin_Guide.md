@@ -444,9 +444,11 @@ which may be protected by a firewall.
 7\. Data privacy
 ----------------
 
-LDP attempts to "anonymize" personal data.  This anonymization feature
-is enabled unless otherwise configured.  Some tables may be completely 
-empty when anonymization is enabled.
+LDP attempts to "anonymize" tables or columns that contain personal
+data.  This anonymization feature is enabled unless otherwise
+configured.  Some tables are redacted entirely when anonymization is
+enabled, including `audit_circulation_logs`, `configuration_entries`,
+`notes`, and `user_users`.
 
 Anonymization can be disabled by setting `anonymize` to `false` in
 `ldpconf.json`.
@@ -469,14 +471,11 @@ Optional or missing columns can be added in LDP by creating a
 configuration file `ldp_add_column.conf` in the data directory.  If
 this file is present, LDP will add the specified columns during the
 update process.  Each line of the file should provide the table name,
-column name, and SQL data type in the form:
+column name, and data type in the form:
 
 ```
 <table>.<column> <type>
 ```
-
-Most columns have the data type `varchar(...)`, and this can be
-written as `varchar` in the configuration file.
 
 For example:
 
@@ -485,6 +484,10 @@ inventory_instance_relationship_types.name varchar
 po_purchase_orders.po_number varchar
 po_purchase_orders.vendor varchar
 ```
+
+Most columns have the data type `varchar(...)`, and this can be
+written as `varchar` in the configuration file.  Other supported data
+types include `bigint`, `boolean`, `numeric(12,2)`, and `timestamptz`.
 
 
 Reference
