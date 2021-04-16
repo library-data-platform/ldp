@@ -466,10 +466,10 @@ corresponding column in LDP is not created.  This can cause errors in
 queries that otherwise may be valid and useful.
 
 Optional or missing columns can be added in LDP by creating a
-configuration file `ldp_column.conf` in the data directory.  If this
-file is present, LDP will add the specified columns during the update
-process.  Each line of the file should provide the table name, column
-name, and SQL data type in the form:
+configuration file `ldp_add_column.conf` in the data directory.  If
+this file is present, LDP will add the specified columns during the
+update process.  Each line of the file should provide the table name,
+column name, and SQL data type in the form:
 
 ```
 <table>.<column> <type>

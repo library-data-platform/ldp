@@ -13,7 +13,7 @@ namespace fs = std::experimental::filesystem;
 void get_addcolumns_filename(const ldp_options& opt, string* filename)
 {
     fs::path datadir = opt.datadir;
-    fs::path addcolumns = datadir / "ldp_column.conf";
+    fs::path addcolumns = datadir / "ldp_add_column.conf";
     *filename = addcolumns;
 }
 
