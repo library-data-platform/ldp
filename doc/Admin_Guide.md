@@ -10,6 +10,7 @@ LDP Administrator Guide
 6\. [Direct extraction](#6-direct-extraction)  
 7\. [Data privacy](#7-data-privacy)  
 8\. [Optional columns](#8-optional-columns)  
+9\. [Historical data](#9-historical-data)  
 [Reference](#reference)
 
 
@@ -516,6 +517,19 @@ po_purchase_orders.vendor varchar
 Most columns have the data type `varchar(...)`, and this can be
 written as `varchar` in the configuration file.  Other supported data
 types include `bigint`, `boolean`, `numeric(12,2)`, and `timestamptz`.
+
+
+9\. Historical data
+-------------------
+
+Historical data are stored in the `history` schema whenever LDP
+detects that a record has changed since the last update.  This feature
+is enabled by default.
+
+LDP can be configured not to record history, by setting
+`record_history` to `false` in `ldpconf.json`.  If historical data
+will not be needed, this can have the benefit of reducing the running
+time of updates.
 
 
 Reference

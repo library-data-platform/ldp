@@ -81,6 +81,7 @@ public:
     //bool unsafe = false;
     string table;
     bool anonymize = true;
+    bool record_history = true;
     bool savetemps = false;
     FILE* err = stderr;
     bool verbose = false;  // Deprecated.

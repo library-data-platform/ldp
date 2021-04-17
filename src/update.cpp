@@ -357,6 +357,10 @@ void run_update(const ldp_options& opt)
     etymon::odbc_conn log_conn(&odbc, opt.db);
     ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet, opt.prog);
 
+    if (!opt.record_history) {
+        lg.write(log_level::info, "server", "", "Recording history is disabled", -1);
+    }
+
     lg.write(log_level::debug, "server", "", "Starting full update", -1);
     timer full_update_timer(opt);
 
@@ -473,7 +477,9 @@ void run_update(const ldp_options& opt)
             //PQsetNoticeProcessor(db.conn, debugNoticeProcessor, (void*) &opt);
             dbtype dbt(&conn);
 
-            create_latest_history_table(opt, &lg, table, &conn);
+            if (opt.record_history) {
+                create_latest_history_table(opt, &lg, table, &conn);
+            }
 
             {
                 etymon::odbc_tx tx(&conn);
@@ -491,9 +497,10 @@ void run_update(const ldp_options& opt)
                 if (!ok)
                     continue;
 
-                lg.write(log_level::trace, "", "",
-                         "Merging table: " + table.name, -1);
-                merge_table(opt, &lg, table, &odbc, &conn, dbt);
+                if (opt.record_history && table.source_type != data_source_type::srs_marc_records) {
+                    lg.write(log_level::trace, "", "", "Merging table: " + table.name, -1);
+                    merge_table(opt, &lg, table, &odbc, &conn, dbt);
+                }
 
                 lg.write(log_level::trace, "", "",
                          "Replacing table: " + table.name, -1);
@@ -511,7 +518,9 @@ void run_update(const ldp_options& opt)
 
             index_loaded_table(&lg, table, &conn, &dbt);
 
-            drop_latest_history_table(opt, &lg, table, &conn);
+            if (opt.record_history) {
+                drop_latest_history_table(opt, &lg, table, &conn);
+            }
 
             //vacuumAnalyzeTable(opt, table, &conn);
 
@@ -599,12 +608,14 @@ void run_update(const ldp_options& opt)
             sql = "ANALYZE " + table.name + ";";
             lg.detail(sql);
             conn.exec(sql);
-            sql = "VACUUM history." + table.name + ";";
-            lg.detail(sql);
-            conn.exec(sql);
-            sql = "ANALYZE history." + table.name + ";";
-            lg.detail(sql);
-            conn.exec(sql);
+            if (opt.record_history) {
+                sql = "VACUUM history." + table.name + ";";
+                lg.detail(sql);
+                conn.exec(sql);
+                sql = "ANALYZE history." + table.name + ";";
+                lg.detail(sql);
+                conn.exec(sql);
+            }
         }
         lg.write(log_level::debug, "server", "", "Completed vacuum/analyze",
                  vacuum_analyze_timer.elapsed_time());

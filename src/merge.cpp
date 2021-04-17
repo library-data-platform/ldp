@@ -60,10 +60,6 @@ void merge_table(const ldp_options& opt, ldp_log* lg,
                  etymon::odbc_env* odbc, etymon::odbc_conn* conn,
                  const dbtype& dbt)
 {
-    if (table.source_type == data_source_type::srs_marc_records) {
-        return;
-    }
-
     // Update history tables.
 
     string history_table;

@@ -412,6 +412,8 @@ void config_options(const ldp_config& conf, ldp_options* opt)
 
     conf.get_bool("/anonymize", &(opt->anonymize));
 
+    conf.get_bool("/record_history", &(opt->record_history));
+
     conf.get_bool("/allow_destructive_tests", &(opt->allow_destructive_tests));
 }
 
