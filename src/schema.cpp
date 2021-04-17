@@ -23,12 +23,12 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-circulation-storage";
 
-    table.source_spec = "/check-in-storage/check-ins";
-    table.name = "circulation_check_ins";
-    schema->tables.push_back(table);
-
     table.source_spec = "/cancellation-reason-storage/cancellation-reasons";
     table.name = "circulation_cancellation_reasons";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/check-in-storage/check-ins";
+    table.name = "circulation_check_ins";
     schema->tables.push_back(table);
 
     // TODO This seems to use a different json format.
@@ -46,13 +46,17 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     //     122b3d2b-4788-4f1e-9117-56daa91cb75c o
     //     15bb6216-8198-42da-bdd7-4b1e6dfb27ff "
     // }
-    table.source_spec = "/circulation-rules-storage";
+    //table.source_spec = "/circulation-rules-storage";
     //table.name = "";
     // schema->tables.push_back(table);
 
     table.source_spec =
         "/fixed-due-date-schedule-storage/fixed-due-date-schedules";
     table.name = "circulation_fixed_due_date_schedules";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/loan-storage/loan-history";
+    table.name = "circulation_loan_history";
     schema->tables.push_back(table);
 
     table.source_spec = "/loan-policy-storage/loan-policies";
@@ -63,13 +67,8 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.name = "circulation_loans";
     schema->tables.push_back(table);
 
-    table.source_spec = "/loan-storage/loan-history";
-    table.name = "circulation_loan_history";
-    schema->tables.push_back(table);
-
     // okapi returns 422 Unprocessable Entity
-    table.source_spec =
-        "/patron-action-session-storage/expired-session-patron-ids";
+    //table.source_spec = "/patron-action-session-storage/expired-session-patron-ids";
     //table.name = "";
     // schema->tables.push_back(table);
 
@@ -116,68 +115,6 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     // schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
-    table.module_name = "mod-email";
-
-    table.source_spec = "/email";
-    table.name = "email_email";
-    schema->tables.push_back(table);
-
-    ///////////////////////////////////////////////////////////////////////////
-    table.module_name = "mod-feesfines";
-
-    table.source_spec = "/accounts";
-    table.name = "feesfines_accounts";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/comments";
-    table.name = "feesfines_comments";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/feefines";
-    table.name = "feesfines_feefines";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/feefineactions";
-    table.name = "feesfines_feefineactions";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/lost-item-fees-policies";
-    table.name = "feesfines_lost_item_fees_policies";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/manualblocks";
-    table.name = "feesfines_manualblocks";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/overdue-fines-policies";
-    table.name = "feesfines_overdue_fines_policies";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/owners";
-    table.name = "feesfines_owners";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/payments";
-    table.name = "feesfines_payments";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/refunds";
-    table.name = "feesfines_refunds";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/transfer-criterias";
-    table.name = "feesfines_transfer_criterias";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/transfers";
-    table.name = "feesfines_transfers";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/waives";
-    table.name = "feesfines_waives";
-    schema->tables.push_back(table);
-
-    ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-courses";
 
     table.source_spec = "/coursereserves/copyrightstatuses";
@@ -214,6 +151,68 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
 
     table.source_spec = "/coursereserves/terms";
     table.name = "course_terms";
+    schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-email";
+
+    table.source_spec = "/email";
+    table.name = "email_email";
+    schema->tables.push_back(table);
+
+    ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-feesfines";
+
+    table.source_spec = "/accounts";
+    table.name = "feesfines_accounts";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/comments";
+    table.name = "feesfines_comments";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/feefineactions";
+    table.name = "feesfines_feefineactions";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/feefines";
+    table.name = "feesfines_feefines";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/lost-item-fees-policies";
+    table.name = "feesfines_lost_item_fees_policies";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/manualblocks";
+    table.name = "feesfines_manualblocks";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/overdue-fines-policies";
+    table.name = "feesfines_overdue_fines_policies";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/owners";
+    table.name = "feesfines_owners";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/payments";
+    table.name = "feesfines_payments";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/refunds";
+    table.name = "feesfines_refunds";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/transfer-criterias";
+    table.name = "feesfines_transfer_criterias";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/transfers";
+    table.name = "feesfines_transfers";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/waives";
+    table.name = "feesfines_waives";
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
@@ -275,6 +274,10 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.name = "inventory_call_number_types";
     schema->tables.push_back(table);
 
+    table.source_spec = "/location-units/campuses";
+    table.name = "inventory_campuses";
+    schema->tables.push_back(table);
+
     table.source_spec = "/classification-types";
     table.name = "inventory_classification_types";
     schema->tables.push_back(table);
@@ -291,13 +294,13 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.name = "inventory_electronic_access_relationships";
     schema->tables.push_back(table);
 
-    table.source_spec = "/holdings-note-types";
-    table.name = "inventory_holdings_note_types";
-    schema->tables.push_back(table);
-
     table.source_spec = "/holdings-storage/holdings";
     table.direct_source_table = "mod_inventory_storage.holdings_record";
     table.name = "inventory_holdings";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/holdings-note-types";
+    table.name = "inventory_holdings_note_types";
     schema->tables.push_back(table);
 
     table.source_spec = "/holdings-types";
@@ -324,21 +327,21 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.name = "inventory_instance_relationship_types";
     schema->tables.push_back(table);
 
+    table.source_spec = "/instance-storage/instance-relationships";
+    table.name = "inventory_instance_relationships";
+    schema->tables.push_back(table);
+
     table.source_spec = "/instance-statuses";
     table.name = "inventory_instance_statuses";
     schema->tables.push_back(table);
 
-    table.source_spec = "/instance-storage/instance-relationships";
-    table.name = "inventory_instance_relationships";
+    table.source_spec = "/instance-types";
+    table.name = "inventory_instance_types";
     schema->tables.push_back(table);
 
     table.source_spec = "/instance-storage/instances";
     table.direct_source_table = "mod_inventory_storage.instance";
     table.name = "inventory_instances";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/instance-types";
-    table.name = "inventory_instance_types";
     schema->tables.push_back(table);
 
     table.source_spec = "/item-damaged-statuses";
@@ -352,10 +355,6 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.source_spec = "/item-storage/items";
     table.direct_source_table = "mod_inventory_storage.item";
     table.name = "inventory_items";
-    schema->tables.push_back(table);
-
-    table.source_spec = "/location-units/campuses";
-    table.name = "inventory_campuses";
     schema->tables.push_back(table);
 
     table.source_spec = "/location-units/institutions";
@@ -410,12 +409,12 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     //table.name = "invoice_line_number";
     //schema->tables.push_back(table);
 
-    table.source_spec = "/invoice-storage/invoice-lines";
-    table.name = "invoice_lines";
-    schema->tables.push_back(table);
-
     table.source_spec = "/invoice-storage/invoices";
     table.name = "invoice_invoices";
+    schema->tables.push_back(table);
+
+    table.source_spec = "/invoice-storage/invoice-lines";
+    table.name = "invoice_lines";
     schema->tables.push_back(table);
 
     table.source_spec = "/voucher-storage/voucher-lines";
@@ -450,6 +449,10 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.name = "po_alerts";
     schema->tables.push_back(table);
 
+    table.source_spec = "/orders-storage/po-lines";
+    table.name = "po_lines";
+    schema->tables.push_back(table);
+
     table.source_spec = "/orders-storage/order-invoice-relns";
     table.name = "po_order_invoice_relns";
     schema->tables.push_back(table);
@@ -466,10 +469,6 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     //table.source_spec = "/orders-storage/po-line-number";
     //table.name = "";
     //schema->tables.push_back(table);
-
-    table.source_spec = "/orders-storage/po-lines";
-    table.name = "po_lines";
-    schema->tables.push_back(table);
 
     table.source_spec = "/orders-storage/purchase-orders";
     table.name = "po_purchase_orders";
@@ -519,6 +518,16 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     schema->tables.push_back(table);
 
     ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-source-record-storage";
+
+    table.source_type = data_source_type::srs_marc_records;
+    table.source_spec = "srs::marc_records_lb";
+    table.direct_source_table = "mod_source_record_storage.marc_records_lb";
+    table.name = "srs_marc";
+    schema->tables.push_back(table);
+    table.source_type = data_source_type::rmb;
+
+    ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-users";
 
     table.source_spec = "/addresstypes";
@@ -542,16 +551,6 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.anonymize = true;
     schema->tables.push_back(table);
     table.anonymize = false;
-
-    ///////////////////////////////////////////////////////////////////////////
-    table.module_name = "mod-source-record-storage";
-
-    table.source_type = data_source_type::srs_marc_records;
-    table.source_spec = "srs::marc_records_lb";
-    table.direct_source_table = "mod_source_record_storage.marc_records_lb";
-    table.name = "srs_marc";
-    schema->tables.push_back(table);
-    table.source_type = data_source_type::rmb;
 }
 
 void column_schema::type_to_string(column_type type, string* str)

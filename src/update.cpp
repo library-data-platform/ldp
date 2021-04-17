@@ -402,6 +402,8 @@ void run_update(const ldp_options& opt)
         }
     }
 
+    string current_module = "";
+
     for (auto& table : schema.tables) {
 
         try {
@@ -423,8 +425,12 @@ void run_update(const ldp_options& opt)
             if (anonymize_table)
                 continue;
 
-            lg.write(log_level::trace, "", "",
-                     "Updating table: " + table.name, -1);
+            if (table.module_name != current_module) {
+                current_module = table.module_name;
+                lg.write(log_level::debug, "update", "", "Reading: " + current_module, -1);
+            }
+
+            lg.write(log_level::trace, "", "", "Updating table: " + table.name, -1);
 
             timer update_timer(opt);
 
@@ -461,8 +467,7 @@ void run_update(const ldp_options& opt)
                             found_data = retrieve_pages(curlw, opt, state.source, &lg, state.token, table, load_dir,
                                                         &ext_files);
                         } else {
-                            lg.write(log_level::trace, "", "",
-                                     "Table not updated: requires direct extraction: " + table.name, -1);
+                            lg.write(log_level::debug, "", "", "Table not updated: " + table.name + ": requires direct extraction", -1);
                         }
                     }
                     if (!found_data)
@@ -559,9 +564,7 @@ void run_update(const ldp_options& opt)
             lg.detail(sql);
             conn.exec(sql);
 
-            lg.write(log_level::debug, "update", table.name,
-                     "Updated table: " + table.name,
-                     update_timer.elapsed_time());
+            lg.write(log_level::debug, "update", table.name, "Updated table: " + table.name, update_timer.elapsed_time());
 
             //if (opt.logLevel == log_level::trace)
             //    loadTimer.print("load time");
