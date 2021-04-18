@@ -18,6 +18,7 @@
 #include "init.h"
 #include "ldp.h"
 #include "log.h"
+#include "schema.h"
 #include "timer.h"
 #include "update.h"
 #include "util.h"
@@ -29,6 +30,7 @@ static const char* option_help =
 "  update              - Run a full update\n"
 "  init-database       - Initialize a new LDP database\n"
 "  upgrade-database    - Upgrade an LDP database to the current version\n"
+"  list-tables         - Print a list of LDP tables in schema public\n"
 "  help                - Display help information\n"
 "Options:\n"
 "  -D <path>           - Use <path> as the data directory\n"
@@ -320,6 +322,15 @@ void cmd_upgrade_database(const ldp_options& opt)
     set_dbsystem_main_anonymize(&odbc, opt);
 }
 
+void cmd_list_tables(const ldp_options& opt)
+{
+    ldp_schema schema;
+    ldp_schema::make_default_schema(&schema);
+    for (auto& table : schema.tables) {
+        printf("public.%s\n", table.name.data());
+    }
+}
+
 void cmd_server(const ldp_options& opt)
 {
     etymon::odbc_env odbc;
@@ -505,6 +516,11 @@ static void setup_ldp_exec(const etymon::command_args& cargs)
 
     if (evalopt(cargs, &opt) < 0)
         throw runtime_error("unable to parse command line options");
+
+    if (opt.command == ldp_command::list_tables) {
+        cmd_list_tables(opt);
+        return;
+    }
 
     if (cargs.argc < 2 || opt.command == ldp_command::help) {
         printf("%s", option_help);

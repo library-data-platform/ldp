@@ -92,6 +92,10 @@ void config_set_command(const string& command_str, ldp_command* command)
         *command = ldp_command::upgrade_database;
         return;
     }
+    if (command_str == "list-tables") {
+        *command = ldp_command::list_tables;
+        return;
+    }
     if (command_str == "init-database") {
         *command = ldp_command::init_database;
         return;

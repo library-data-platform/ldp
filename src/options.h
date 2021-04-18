@@ -14,6 +14,7 @@ using namespace std;
 enum class ldp_command {
     server,
     upgrade_database,
+    list_tables,
     init_database,
     update,
     help
