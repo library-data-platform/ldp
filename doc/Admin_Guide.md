@@ -562,6 +562,11 @@ Reference
   * `odbc_database` (string; required) is the ODBC "data source name"
     of the LDP database.
 
+* `record_history` (Boolean; optional) when set to `false`, disables
+  recording historical data.  The default value is `true`.  Please
+  read the section on "Historical data" above before changing this
+  setting.
+
 * `sources` (object; required) is a collection of sources that LDP can
   extract data from.  Only one source should be provided in the case
   of non-consortial deployments.  A source is defined by a source name
