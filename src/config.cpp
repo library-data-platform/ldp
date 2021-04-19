@@ -144,6 +144,12 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
                 throw_invalid_data_type(key, "string");
             string table_name = value->GetString();
 
+            if (table_name != "inventory_holdings" &&
+                table_name != "inventory_instances" &&
+                table_name != "inventory_items" &&
+                table_name != "srs_marc") {
+                throw runtime_error("Direct extraction not supported for table: " + table_name);
+            }
             direct.table_names.push_back(table_name);
             direct_index++;
         }
