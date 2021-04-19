@@ -56,7 +56,7 @@ public:
 class ldp_options {
 public:
     ldp_command command;
-    profile set_profile = profile::none;
+    profile set_profile = profile::folio;
     bool no_update = false;
     bool cli_mode = false;
     string datadir;

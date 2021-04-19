@@ -37,16 +37,6 @@ static const char* option_help =
 "  --okapi-timeout     - Timeout in seconds for Okapi requests (default: 60)\n"
 "  --trace             - Enable detailed logging\n"
 "  --quiet             - Reduce console output\n"
-"Options for init-database:\n"
-"  --profile <prof>    - Initialize the LDP database with profile <prof>\n"
-"                        (required)\n"
-/*
-"  --no-update         - Set update_all_tables and enable_full_updates in\n"
-"                        table dbconfig.general to FALSE, so that tables\n"
-"                        will not be updated by default; this option nearly\n"
-"                        always should be used for consortial deployments\n"
-"                        to prevent overly broad requests for data\n"
-*/
 "Development/testing options:\n"
 "  --direct-extraction-no-ssl\n"
 "                      - Disable SSL for direct extraction\n"
@@ -297,8 +287,8 @@ static void no_update_by_default(etymon::odbc_env* odbc, const string& db)
 
 void cmd_init_database(const ldp_options& opt)
 {
-    if (opt.set_profile == profile::none)
-        throw runtime_error("Profile not specified");
+    if (opt.set_profile != profile::folio)
+        throw runtime_error("Unknown profile");
 
     etymon::odbc_env odbc;
     server_lock svrlock(&odbc, opt.db, opt.lg_level, opt.err, opt.prog);

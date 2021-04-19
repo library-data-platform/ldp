@@ -337,7 +337,7 @@ __ldpconf.json__
 If this is a new database, it should first be initialized:
 
 ```shell
-$ ldp init-database -D /var/lib/ldp --profile folio
+$ ldp init-database -D /var/lib/ldp
 ```
 
 To start LDP:
