@@ -404,9 +404,11 @@ for the following tables:
 * `inventory_instances`
 * `inventory_items`
 * `srs_marc`
+* `srs_records`
 
-The last of these, `srs_marc`, is made available in LDP only by direct 
-extraction.  No historical data are retained for `srs_marc`.
+The last of these, `srs_marc` and `srs_records`, are made available in
+LDP only by direct extraction.  No historical data are retained for
+`srs_marc` and `srs_records`.
 
 Direct extraction can be enabled by adding the list of tables and
 database connection parameters to a source configuration, as in this

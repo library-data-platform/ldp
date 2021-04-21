@@ -1455,3 +1455,19 @@ void database_upgrade_25(database_upgrade_options* opt)
     ulog_commit(opt);
 }
 
+void database_upgrade_26(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    etymon::odbc_tx tx(opt->conn);
+
+    upgrade_add_new_table_dbsystem("srs_records", opt, dbt, false);
+
+    string sql = "UPDATE dbsystem.main SET database_version = 26;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    tx.commit();
+    ulog_commit(opt);
+}
+

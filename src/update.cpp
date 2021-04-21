@@ -456,22 +456,20 @@ void run_update(const ldp_options& opt)
                                  curlw.headers);
 
                 if (opt.load_from_dir == "") {
-                    lg.write(log_level::trace, "", "",
-                             "Extracting from: " + table.source_spec, -1);
+                    lg.write(log_level::trace, "", "", "Extracting from: " + table.source_spec, -1);
                     bool found_data = false;
                     if (direct_override(state.source, table.name)) {
-                        found_data = retrieve_direct(state.source, &lg, table, load_dir, &ext_files,
-                                                     opt.direct_extraction_no_ssl);
+                        found_data = retrieve_direct(state.source, &lg, table, load_dir, &ext_files, opt.direct_extraction_no_ssl);
                     } else {
-                        if (table.source_type != data_source_type::srs_marc_records) {
-                            found_data = retrieve_pages(curlw, opt, state.source, &lg, state.token, table, load_dir,
-                                                        &ext_files);
+                        if (table.source_type != data_source_type::srs_marc_records && table.source_type != data_source_type::srs_records) {
+                            found_data = retrieve_pages(curlw, opt, state.source, &lg, state.token, table, load_dir, &ext_files);
                         } else {
                             lg.write(log_level::debug, "", "", "Table not updated: " + table.name + ": requires direct extraction", -1);
                         }
                     }
-                    if (!found_data)
+                    if (!found_data) {
                         table.skip = true;
+                    }
                 }
             } // for
 
@@ -502,7 +500,7 @@ void run_update(const ldp_options& opt)
                 if (!ok)
                     continue;
 
-                if (opt.record_history && table.source_type != data_source_type::srs_marc_records) {
+                if (opt.record_history && table.source_type != data_source_type::srs_marc_records && table.source_type != data_source_type::srs_records) {
                     lg.write(log_level::trace, "", "", "Merging table: " + table.name, -1);
                     merge_table(opt, &lg, table, &odbc, &conn, dbt);
                 }

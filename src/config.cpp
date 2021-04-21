@@ -147,7 +147,8 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
             if (table_name != "inventory_holdings" &&
                 table_name != "inventory_instances" &&
                 table_name != "inventory_items" &&
-                table_name != "srs_marc") {
+                table_name != "srs_marc" &&
+                table_name != "srs_records") {
                 throw runtime_error("Direct extraction not supported for table: " + table_name);
             }
             direct.table_names.push_back(table_name);

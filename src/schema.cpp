@@ -527,6 +527,13 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     schema->tables.push_back(table);
     table.source_type = data_source_type::rmb;
 
+    table.source_type = data_source_type::srs_records;
+    table.source_spec = "srs::records_lb";
+    table.direct_source_table = "mod_source_record_storage.records_lb";
+    table.name = "srs_records";
+    schema->tables.push_back(table);
+    table.source_type = data_source_type::rmb;
+
     ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-users";
 

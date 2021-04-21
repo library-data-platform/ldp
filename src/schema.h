@@ -44,7 +44,7 @@ public:
 
 enum class data_source_type {
     rmb,
-    //srs_records,
+    srs_records,
     srs_marc_records
 };
 

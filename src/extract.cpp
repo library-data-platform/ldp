@@ -399,21 +399,118 @@ bool direct_override(const data_source& source, const string& tableName)
     return false;
 }
 
+void pq_get_value_json_string(const PGresult *res, int row_number, int column_number, string* j)
+{
+    if (PQgetisnull(res, row_number, column_number)) {
+        *j = "null";
+    } else {
+        *j = string("\"") + PQgetvalue(res, row_number, column_number) + "\"";
+    }
+}
+
+void pq_get_value_json_number(const PGresult *res, int row_number, int column_number, string* j)
+{
+    if (PQgetisnull(res, row_number, column_number)) {
+        *j = "null";
+    } else {
+        *j = PQgetvalue(res, row_number, column_number);
+    }
+}
+
+void pq_get_value_json_boolean(const PGresult *res, int row_number, int column_number, string* j)
+{
+    if (PQgetisnull(res, row_number, column_number)) {
+        *j = "null";
+    } else {
+        string s = PQgetvalue(res, row_number, column_number);
+        if (s == "t") {
+            *j = "true";
+        } else {
+            *j = "false";
+        }
+    }
+}
+
+void pq_get_value_json_object(const PGresult *res, int row_number, int column_number, string* j)
+{
+    if (PQgetisnull(res, row_number, column_number)) {
+        *j = "null";
+    } else {
+        *j = PQgetvalue(res, row_number, column_number);
+    }
+}
+
+void retrieve_direct_rmb(const PGresult *res, string* j)
+{
+    pq_get_value_json_object(res, 0, 1, j);
+}
+
+void retrieve_direct_srs_marc(const PGresult *res, string source_spec, string* j)
+{
+    string id, jsonb;
+    pq_get_value_json_string(res, 0, 0, &id);
+    pq_get_value_json_object(res, 0, 1, &jsonb);
+    etymon::trim(&jsonb);
+    if (jsonb.size() == 0 || jsonb[0] != '{') {
+        throw runtime_error("expected '{' in JSON data: " + source_spec);
+    }
+    *j = "{\"id\": " + id + "," + jsonb.substr(1, jsonb.size() - 1);
+}
+
+void retrieve_direct_srs_records(const PGresult *res, string* j)
+{
+    string id, snapshot_id, matched_id, generation, record_type, instance_id, state, leader_record_status, order, suppress_discovery, created_by_user_id, created_date, updated_by_user_id, updated_date, instance_hrid;
+    pq_get_value_json_string(res, 0, 0, &id);
+    pq_get_value_json_string(res, 0, 1, &snapshot_id);
+    pq_get_value_json_string(res, 0, 2, &matched_id);
+    pq_get_value_json_number(res, 0, 3, &generation);
+    pq_get_value_json_string(res, 0, 4, &record_type);
+    pq_get_value_json_string(res, 0, 5, &instance_id);
+    pq_get_value_json_string(res, 0, 6, &state);
+    pq_get_value_json_string(res, 0, 7, &leader_record_status);
+    pq_get_value_json_number(res, 0, 8, &order);
+    pq_get_value_json_boolean(res, 0, 9, &suppress_discovery);
+    pq_get_value_json_string(res, 0, 10, &created_by_user_id);
+    pq_get_value_json_string(res, 0, 11, &created_date);
+    pq_get_value_json_string(res, 0, 12, &updated_by_user_id);
+    pq_get_value_json_string(res, 0, 13, &updated_date);
+    pq_get_value_json_string(res, 0, 14, &instance_hrid);
+    *j = string("") +
+        "  {\n" +
+        "    \"id\": " + id + ",\n" +
+        "    \"snapshotId\": " + snapshot_id + ",\n" +
+        "    \"matchedId\": " + matched_id + ",\n" +
+        "    \"generation\": " + generation + ",\n" +
+        "    \"recordType\": " + record_type + ",\n" +
+        "    \"instanceId\": " + instance_id + ",\n" +
+        "    \"state\": " + state + ",\n" +
+        "    \"leaderRecordStatus\": " + leader_record_status + ",\n" +
+        "    \"order\": " + order + ",\n" +
+        "    \"suppressDiscovery\": " + suppress_discovery + ",\n" +
+        "    \"createdByUserId\": " + created_by_user_id + ",\n" +
+        "    \"createdDate\": " + created_date + ",\n" +
+        "    \"updatedByUserId\": " + updated_by_user_id + ",\n" +
+        "    \"updatedDate\": " + updated_date + ",\n" +
+        "    \"instanceHrid\": " + instance_hrid + "\n" +
+        "  }";
+}
+
 bool retrieve_direct(const data_source& source, ldp_log* lg,
                      const table_schema& table, const string& loadDir,
                      extraction_files* ext_files, bool direct_extraction_no_ssl)
 {
-    lg->write(log_level::trace, "", "",
-            "Direct from database: " + table.source_spec, -1);
+    lg->write(log_level::trace, "", "", "Direct from database: " + table.source_spec, -1);
     if (table.direct_source_table == "") {
-        lg->write(log_level::warning, "", "",
-                "Direct source table undefined: " + table.source_spec, -1);
+        lg->write(log_level::warning, "", "", "Direct source table undefined: " + table.source_spec, -1);
         return false;
     }
 
-    string json_attr = "'' AS id, jsonb";
+    string attr = "'' AS id, jsonb";
     if (table.source_type == data_source_type::srs_marc_records) {
-        json_attr = "id, content";
+        attr = "id, content";
+    }
+    if (table.source_type == data_source_type::srs_records) {
+        attr = "id, snapshot_id, matched_id, generation, record_type, instance_id, state, leader_record_status, \"order\", suppress_discovery, created_by_user_id, created_date, updated_by_user_id, updated_date, instance_hrid";
     }
 
     // Select from table.direct_source_table and write to JSON file.
@@ -423,15 +520,16 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
                         source.direct.database_password,
                         source.direct.database_name,
                         direct_extraction_no_ssl ? "disable" : "require");
-    string sql = "SELECT " + json_attr + " FROM " + source.okapi_tenant + "_" + table.direct_source_table + ";";
+    string sql = "SELECT " + attr + " FROM " + source.okapi_tenant + "_" + table.direct_source_table + ";";
     lg->write(log_level::detail, "", "", sql, -1);
 
     if (PQsendQuery(db.conn, sql.c_str()) == 0) {
         string err = PQerrorMessage(db.conn);
         throw runtime_error(err);
     }
-    if (PQsetSingleRowMode(db.conn) == 0)
+    if (PQsetSingleRowMode(db.conn) == 0) {
         throw runtime_error("unable to set single-row mode in database query");
+    }
 
     string output = loadDir;
     etymon::join(&output, table.name);
@@ -445,29 +543,32 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
     int row = 0;
     while (true) {
         etymon::PostgresResultAsync res(&db);
-        if (res.result == nullptr ||
-                PQresultStatus(res.result) != PGRES_SINGLE_TUPLE)
+        if (res.result == nullptr || PQresultStatus(res.result) != PGRES_SINGLE_TUPLE) {
             break;
-        const char* i = PQgetvalue(res.result, 0, 0);
-        const char* j = PQgetvalue(res.result, 0, 1);
-        //if (j == nullptr)
-        //    break;
-        if (row > 0)
-            fprintf(f.fp, ",\n");
-        string is = i;
-        string js = j;
-        if (table.source_type == data_source_type::srs_marc_records) {
-            etymon::trim(&js);
-            if (js.size() == 0 || js[0] != '{') {
-                throw runtime_error("expected '{' in JSON data: " + table.source_spec);
-            }
-            js = "{\"id\": \"" + is + "\"," + js.substr(1, js.size() - 1);
         }
-        fprintf(f.fp, "%s\n", js.data());
+        string j;
+        switch (table.source_type) {
+        case data_source_type::rmb:
+            retrieve_direct_rmb(res.result, &j);
+            break;
+        case data_source_type::srs_marc_records:
+            retrieve_direct_srs_marc(res.result, table.source_spec, &j);
+            break;
+        case data_source_type::srs_records:
+            retrieve_direct_srs_records(res.result, &j);
+            break;
+        default:
+            throw runtime_error("internal error: unknown value for data_source_type");
+        }
+        if (row > 0) {
+            fprintf(f.fp, ",\n");
+        }
+        fprintf(f.fp, "%s\n", j.data());
         row++;
     }
-    if (row == 0)
+    if (row == 0) {
         return false;
+    }
 
     fprintf(f.fp, "\n  ]\n}\n");
 
