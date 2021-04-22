@@ -83,6 +83,7 @@ public:
     string table;
     bool anonymize = true;
     bool record_history = true;
+    bool parallel_vacuum = true;
     bool savetemps = false;
     FILE* err = stderr;
     bool verbose = false;  // Deprecated.

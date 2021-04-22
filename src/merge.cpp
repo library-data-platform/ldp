@@ -1,5 +1,6 @@
 #include "merge.h"
 #include "names.h"
+#include "util.h"
 
 void create_latest_history_table(const ldp_options& opt, ldp_log* lg,
                                  const table_schema& table,
@@ -31,7 +32,9 @@ void create_latest_history_table(const ldp_options& opt, ldp_log* lg,
     lg->write(log_level::detail, "", "", sql, -1);
     conn->exec(sql);
 
-    sql = "VACUUM " + latest_history_table + ";";
+    string v;
+    vacuum_sql(opt, &v);
+    sql = v + latest_history_table + ";";
     lg->detail(sql);
     conn->exec(sql);
     sql = "ANALYZE " + latest_history_table + ";";

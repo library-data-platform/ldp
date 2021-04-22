@@ -215,9 +215,7 @@ void log_foreign_key_warnings(const reference& ref,
     }
 }
 
-void process_foreign_keys(bool enable_foreign_key_warnings,
-                          bool force_foreign_key_constraints,
-                          etymon::odbc_conn* conn, ldp_log* lg)
+void process_foreign_keys(const ldp_options& opt, bool enable_foreign_key_warnings, bool force_foreign_key_constraints, etymon::odbc_conn* conn, ldp_log* lg)
 {
     vector<reference> refs;
     select_enabled_foreign_keys(conn, lg, &refs);
@@ -241,7 +239,9 @@ void process_foreign_keys(bool enable_foreign_key_warnings,
                 "    (referencing_fkey);";
             lg->detail(sql);
             conn->exec(sql);
-            sql = "VACUUM temp_foreign_key_exceptions;";
+            string v;
+            vacuum_sql(opt, &v);
+            sql = v + "temp_foreign_key_exceptions;";
             lg->detail(sql);
             conn->exec(sql);
             sql = "ANALYZE temp_foreign_key_exceptions;";
@@ -359,6 +359,9 @@ void run_update(const ldp_options& opt)
 
     if (!opt.record_history) {
         lg.write(log_level::info, "server", "", "Recording history is disabled", -1);
+    }
+    if (!opt.parallel_vacuum) {
+        lg.write(log_level::info, "server", "", "Parallel vacuum is disabled", -1);
     }
 
     lg.write(log_level::debug, "server", "", "Starting full update", -1);
@@ -597,20 +600,21 @@ void run_update(const ldp_options& opt)
     // Vacuum and analyze all updated tables
     {
         etymon::odbc_conn conn(&odbc, opt.db);
-        lg.write(log_level::debug, "server", "",
-                 "Starting vacuum/analyze", -1);
+        lg.write(log_level::debug, "server", "", "Starting vacuum/analyze", -1);
         timer vacuum_analyze_timer(opt);
+        string v;
+        vacuum_sql(opt, &v);
         for (auto& table : schema.tables) {
             if (table.skip || opt.extract_only)
                 continue;
-            string sql = "VACUUM " + table.name + ";";
+            string sql = v + table.name + ";";
             lg.detail(sql);
             conn.exec(sql);
             sql = "ANALYZE " + table.name + ";";
             lg.detail(sql);
             conn.exec(sql);
             if (opt.record_history) {
-                sql = "VACUUM history." + table.name + ";";
+                sql = v + "history." + table.name + ";";
                 lg.detail(sql);
                 conn.exec(sql);
                 sql = "ANALYZE history." + table.name + ";";
@@ -677,7 +681,6 @@ void run_update(const ldp_options& opt)
             lg.write(log_level::debug, "server", "",
                     "Completed foreign key detection",
                     ref_timer.elapsed_time());
-        } else {
         }
 
         if (enable_foreign_key_warnings || force_foreign_key_constraints) {
@@ -687,9 +690,7 @@ void run_update(const ldp_options& opt)
 
             timer ref_timer(opt);
 
-            process_foreign_keys(enable_foreign_key_warnings,
-                                 force_foreign_key_constraints,
-                                 &conn, &lg);
+            process_foreign_keys(opt, enable_foreign_key_warnings, force_foreign_key_constraints, &conn, &lg);
 
             lg.write(log_level::debug, "server", "",
                     "Completed foreign key constraint processing",

@@ -564,6 +564,13 @@ Reference
   * `odbc_database` (string; required) is the ODBC "data source name"
     of the LDP database.
 
+* `parallel_vacuum` (Boolean; optional) when set to `false`, disables
+  parallel vacuum in PostgreSQL 13 or later, which may slow down
+  vacuuming but may be more friendly to concurrent user queries or
+  other database operations.  The default value is `true`.  This
+  setting should not be set to `false` with Redshift or with
+  PostgreSQL 12 or earlier.
+
 * `record_history` (Boolean; optional) when set to `false`, disables
   recording historical data.  The default value is `true`.  Please
   read the section on "Historical data" above before changing this
