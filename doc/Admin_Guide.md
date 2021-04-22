@@ -428,7 +428,8 @@ example:
 	        "inventory_holdings",
 		"inventory_instances",
 		"inventory_items",
-		"srs_marc"
+		"srs_marc",
+		"srs_records"
             ],
             "direct_database_name": "okapi",
             "direct_database_host": "database.folio.org",
