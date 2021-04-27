@@ -1,3 +1,3 @@
-Pull requests for bug fixes only can be submitted on the `main` branch
-at:  https://github.com/nassibnassar/ldp
+Pull requests for bug fixes only can be submitted for the `main`
+branch.
 
