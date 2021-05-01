@@ -645,10 +645,12 @@ void index_loaded_table(ldp_log* lg, const table_schema& table,
             }
         } else {
             if (dbt->type() == dbsys::postgresql && column.name != "data") {
-                string sql =
-                    "CREATE INDEX ON\n"
-                    "    " + table.name + "\n"
-                    "    (\"" + column.name + "\");";
+                string sql;
+                if (column.type == column_type::varchar && column.length > 500) {
+                    sql = "CREATE INDEX ON " + table.name + " USING HASH (\"" + column.name + "\");";
+                } else {
+                    sql = "CREATE INDEX ON " + table.name + " (\"" + column.name + "\");";
+                }
                 lg->detail(sql);
                 try {
                     conn->exec(sql);
