@@ -522,7 +522,7 @@ void run_update(const ldp_options& opt)
                 tx.commit();
             }
 
-            index_loaded_table(&lg, table, &conn, &dbt);
+            index_loaded_table(&lg, table, &conn, &dbt, opt.index_large_varchar);
 
             if (opt.record_history) {
                 drop_latest_history_table(opt, &lg, table, &conn);

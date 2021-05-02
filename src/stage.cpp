@@ -614,8 +614,7 @@ static void compose_data_file_path(const string& load_dir,
     *path += suffix;
 }
 
-void index_loaded_table(ldp_log* lg, const table_schema& table,
-                        etymon::odbc_conn* conn, dbtype* dbt)
+void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::odbc_conn* conn, dbtype* dbt, bool index_large_varchar)
 {
     lg->trace("Creating indexes on table: " + table.name);
     // If there is no table schema, define a primary key on (id) and return.
@@ -644,18 +643,28 @@ void index_loaded_table(ldp_log* lg, const table_schema& table,
                 lg->write(log_level::warning, "server", "", e.what(), -1);
             }
         } else {
+            // in postgres, index columns except column "data"
             if (dbt->type() == dbsys::postgresql && column.name != "data") {
-                string sql;
+                // create btree index unless column is a large varchar
                 if (column.type == column_type::varchar && column.length > 500) {
-                    sql = "CREATE INDEX ON " + table.name + " USING HASH (\"" + column.name + "\");";
+                    // create hash index if index_large_varchar is enabled
+                    if (index_large_varchar) {
+                        string sql = "CREATE INDEX ON " + table.name + " USING HASH (\"" + column.name + "\");";
+                        lg->detail(sql);
+                        try {
+                            conn->exec(sql);
+                        } catch (runtime_error& e) {
+                            lg->write(log_level::warning, "server", "", "Unable to create hash index: table=" + table.name + " column=" + column.name, -1);
+                        }
+                    }
                 } else {
-                    sql = "CREATE INDEX ON " + table.name + " (\"" + column.name + "\");";
-                }
-                lg->detail(sql);
-                try {
-                    conn->exec(sql);
-                } catch (runtime_error& e) {
-                    lg->write(log_level::info, "server", "", "Index not created: table=" + table.name + " column=" + column.name, -1);
+                    string sql = "CREATE INDEX ON " + table.name + " (\"" + column.name + "\");";
+                    lg->detail(sql);
+                    try {
+                        conn->exec(sql);
+                    } catch (runtime_error& e) {
+                        lg->write(log_level::warning, "server", "", "Unable to create B-tree index: table=" + table.name + " column=" + column.name, -1);
+                    }
                 }
             }
         }

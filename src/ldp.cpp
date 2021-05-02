@@ -355,6 +355,8 @@ void config_options(const ldp_config& conf, ldp_options* opt)
 
     conf.get_bool("/anonymize", &(opt->anonymize));
 
+    conf.get_bool("/index_large_varchar", &(opt->index_large_varchar));
+
     conf.get_bool("/record_history", &(opt->record_history));
 
     conf.get_bool("/parallel_vacuum", &(opt->parallel_vacuum));
