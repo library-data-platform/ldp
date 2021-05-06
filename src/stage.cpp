@@ -447,14 +447,6 @@ bool JSONHandler::EndArray(json::SizeType elementCount)
     return true;
 }
 
-bool JSONHandler::Key(const char* str, json::SizeType length, bool copy)
-{
-    record += '\"';
-    record += str;
-    record += "\":";
-    return true;
-}
-
 static void encode_json(const char* str, string* newstr)
 {
     char buffer[8];
@@ -493,6 +485,16 @@ static void encode_json(const char* str, string* newstr)
         }
         p++;
     }
+}
+
+bool JSONHandler::Key(const char* str, json::SizeType length, bool copy)
+{
+    record += '\"';
+    string enc_str;
+    encode_json(str, &enc_str);
+    record += enc_str;
+    record += "\":";
+    return true;
 }
 
 bool JSONHandler::String(const char* str, json::SizeType length, bool copy)
