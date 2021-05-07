@@ -2,7 +2,6 @@
 pipeline {
 
   environment {
-    bare_version = '1.1'
     name = 'ldp'
   }
 
@@ -24,15 +23,19 @@ pipeline {
           script {
             def foliociLib = new org.folio.foliociCommands()
 
-            // if release 
-            if ( foliociLib.isRelease() ) {
+            // release builds
+            // ldp release tags do not start with 'v'
+            // anything with a tag should be able to build as release
+            def gitTag = foliociLib.gitTag()
+            if ( gitTag ) {
               env.isRelease = true 
               env.dockerRepo = 'folioorg'
-              env.version = env.bare_version
+              env.version = gitTag
             }
             else {
+              def shortSHA = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
               env.dockerRepo = 'folioci'
-              env.version = "${env.bare_version}-${env.BRANCH_NAME}.${env.BUILD_NUMBER}"
+              env.version = "${env.BRANCH_NAME}-${shortSHA}.${env.BUILD_NUMBER}"
             }
           }
         }
