@@ -20,13 +20,12 @@ void create_latest_history_table(const ldp_options& opt, ldp_log* lg,
         "CREATE TEMPORARY TABLE\n"
         "    " + latest_history_table + "\n"
         "    AS\n"
-        "SELECT id, data, tenant_id\n"
+        "SELECT id, data\n"
         "    FROM " + history_table + " AS h1\n"
         "    WHERE NOT EXISTS\n"
         "      ( SELECT 1\n"
         "            FROM " + history_table + " AS h2\n"
-        "            WHERE h1.tenant_id = h2.tenant_id AND\n"
-        "                  h1.id = h2.id AND\n"
+        "            WHERE h1.id = h2.id AND\n"
         "                  h1.updated < h2.updated\n"
         "      );";
     lg->write(log_level::detail, "", "", sql, -1);
@@ -76,16 +75,14 @@ void merge_table(const ldp_options& opt, ldp_log* lg,
 
     string sql =
         "INSERT INTO " + history_table + "\n"
-        "    (id, data, updated, tenant_id)\n"
+        "    (id, data, updated)\n"
         "SELECT s.id,\n"
         "       s.data,\n" +
-        "       " + dbt.current_timestamp() + ",\n"
-        "       s.tenant_id\n"
+        "       " + dbt.current_timestamp() + "\n"
         "    FROM " + loading_table + " AS s\n"
         "        LEFT JOIN " + latest_history_table + "\n"
         "            AS h\n"
-        "            ON s.tenant_id = h.tenant_id AND\n"
-        "               s.id = h.id\n"
+        "            ON s.id = h.id\n"
         "    WHERE s.data IS NOT NULL AND\n"
         "          ( h.id IS NULL OR\n"
         "            (s.data)::VARCHAR <> (h.data)::VARCHAR );";

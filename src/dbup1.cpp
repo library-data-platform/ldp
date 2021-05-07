@@ -1,5 +1,6 @@
 #include "dbup1.h"
 #include "initutil.h"
+#include "schema.h"
 
 void ulog_sql(const string& sql, database_upgrade_options* opt)
 {
@@ -1464,6 +1465,32 @@ void database_upgrade_26(database_upgrade_options* opt)
     upgrade_add_new_table_dbsystem("srs_records", opt, dbt, false);
 
     string sql = "UPDATE dbsystem.main SET database_version = 26;";
+    ulog_sql(sql, opt);
+    opt->conn->exec(sql);
+
+    tx.commit();
+    ulog_commit(opt);
+}
+
+void database_upgrade_27(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    etymon::odbc_tx tx(opt->conn);
+
+    ldp_schema schema;
+    ldp_schema::make_default_schema(&schema);
+
+    for (auto& table : schema.tables) {
+        string sql = "ALTER TABLE " + table.name + " DROP COLUMN tenant_id;";
+        ulog_sql(sql, opt);
+        opt->conn->exec(sql);
+        sql = "ALTER TABLE history." + table.name + " DROP COLUMN tenant_id;";
+        ulog_sql(sql, opt);
+        opt->conn->exec(sql);
+    }
+
+    string sql = "UPDATE dbsystem.main SET database_version = 27;";
     ulog_sql(sql, opt);
     opt->conn->exec(sql);
 

@@ -604,8 +604,6 @@ Reference
     to extract data from.
   * `okapi_user` (string; required) is the Okapi user name.
     specified Okapi user name.
-  * `tenant_id` (integer; optional) uniquely identifies a tenant in a
-    consortial LDP deployment.  The default value is `1`.
 
 
 Further reading

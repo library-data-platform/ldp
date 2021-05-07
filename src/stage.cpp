@@ -195,7 +195,6 @@ public:
     etymon::odbc_conn* conn;
     const dbtype& dbt;
     field_set* drop_fields = nullptr;
-    int16_t tenant_id = 1;
     size_t record_count = 0;
     size_t total_record_count = 0;
     string insert_buffer;
@@ -206,7 +205,6 @@ public:
                 etymon::odbc_conn* conn,
                 const dbtype& dbt,
                 field_set* drop_fields,
-                int16_t tenant_id,
                 map<string,type_counts>* statistics) :
         pass(pass),
         opt(options),
@@ -215,8 +213,7 @@ public:
         stats(statistics),
         conn(conn),
         dbt(dbt),
-        drop_fields(drop_fields),
-        tenant_id(tenant_id) {}
+        drop_fields(drop_fields) {}
     bool StartObject();
     bool EndObject(json::SizeType memberCount);
     bool StartArray();
@@ -264,8 +261,7 @@ static void end_inserts(const ldp_options& opt, ldp_log* lg,
 
 static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
         const table_schema& table, const json::Document& doc,
-        size_t* record_count, size_t* total_record_count, string* insert_buffer,
-        int16_t tenant_id)
+        size_t* record_count, size_t* total_record_count, string* insert_buffer)
 {
     if (*record_count > 0)
         *insert_buffer += ',';
@@ -370,7 +366,7 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
     //print(Print::warning, opt, "storing record as:\n" + data + "\n");
 
     *insert_buffer += data;
-    *insert_buffer += "," + to_string(tenant_id) + ")";
+    *insert_buffer += ")";
     (*record_count)++;
     (*total_record_count)++;
     //if (*total_record_count % 100000 == 0)
@@ -407,7 +403,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
             }
 
             writeTuple(opt, lg, dbt, table, doc, &record_count,
-                       &total_record_count, &insert_buffer, tenant_id);
+                       &total_record_count, &insert_buffer);
         }
 
     } else {
@@ -594,13 +590,12 @@ static void stage_page(const ldp_options& opt, ldp_log* lg, int pass,
                        etymon::odbc_conn* conn, const dbtype &dbt,
                        map<string,type_counts>* stats, const string& filename,
                        char* read_buffer, size_t read_buffer_size,
-                       field_set* drop_fields,
-                       int16_t tenant_id)
+                       field_set* drop_fields)
 {
     json::Reader reader;
     etymon::file f(filename, "r");
     json::FileReadStream is(f.fp, read_buffer, read_buffer_size);
-    JSONHandler handler(pass, opt, lg, table, conn, dbt, drop_fields, tenant_id, stats);
+    JSONHandler handler(pass, opt, lg, table, conn, dbt, drop_fields, stats);
     reader.Parse(is, handler);
 }
 
@@ -705,8 +700,7 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
             sql += ",\n";
         }
     }
-    sql += string("    data ") + dbt.json_type() + ",\n"
-        "    tenant_id SMALLINT NOT NULL\n"
+    sql += string("    data ") + dbt.json_type() + "\n"
         ")" + rskeys + ";";
     lg->write(log_level::detail, "", "", sql, -1);
     conn->exec(sql);
@@ -781,7 +775,7 @@ bool stage_table_1(const ldp_options& opt,
                       (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                       to_string(page), -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
-                       read_buffer, sizeof read_buffer, drop_fields, -1);
+                       read_buffer, sizeof read_buffer, drop_fields);
         }
     }
 
@@ -795,7 +789,7 @@ bool stage_table_1(const ldp_options& opt,
                       ": test file", -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats,
                        path, read_buffer, sizeof read_buffer,
-                       drop_fields, -1);
+                       drop_fields);
         }
     }
 
@@ -895,7 +889,7 @@ bool stage_table_2(const ldp_options& opt,
                       to_string(page), -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
                        read_buffer, sizeof read_buffer,
-                       drop_fields, state.source.tenant_id);
+                       drop_fields);
         }
     }
 
@@ -909,7 +903,7 @@ bool stage_table_2(const ldp_options& opt,
                       ": test file", -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats,
                        path, read_buffer, sizeof read_buffer,
-                       drop_fields, 1);
+                       drop_fields);
         }
     }
 

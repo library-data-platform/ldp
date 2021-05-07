@@ -120,16 +120,6 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
         get_string(prefix + "okapi_user", true, &(source.okapi_user));
         // Okapi password.
         get_string(prefix + "okapi_password", true, &(source.okapi_password));
-        // Tenant ID.
-        int tenant_id = 1;
-        get_int(prefix + "tenant_id", false, &tenant_id);
-        if (1 <= tenant_id && tenant_id <= 32767)
-            source.tenant_id = (int16_t) tenant_id;
-        else
-            throw_value_out_of_range(prefix + "tenant_id",
-                                     to_string(tenant_id), "1 to 32767");
-
-        // TODO Ensure tenant_id is unique.
 
         // Direct extraction.
         direct_extraction direct;

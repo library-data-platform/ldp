@@ -42,7 +42,6 @@ data          | {
               |     },                                                     
               |     "userId": "ab579dc3-219b-4f5b-8068-ab1c7a55c402"       
               | }
-tenant_id     | 1
 ```
 
 [__User Guide__](doc/User_Guide.md)

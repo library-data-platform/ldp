@@ -49,7 +49,6 @@ public:
     string okapi_tenant;
     string okapi_user;
     string okapi_password;
-    int16_t tenant_id = 1;
     direct_extraction direct;
 };
 
@@ -72,7 +71,6 @@ public:
     //string okapi_tenant;
     //string okapi_user;
     //string okapi_password;
-    //int16_t tenant_id = 1;
     //direct_extraction direct;
     ///////////////////////////////////////////////////////////////////////////
     deployment_environment deploy_env;

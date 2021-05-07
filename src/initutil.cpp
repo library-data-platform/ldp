@@ -9,7 +9,6 @@ void create_main_table_sql(const string& table_name, etymon::odbc_conn* conn,
         "CREATE TABLE " + table_name + " (\n"
         "    id VARCHAR(65535) NOT NULL,\n"
         "    data " + dbt.json_type() + ",\n"
-        "    tenant_id SMALLINT NOT NULL,\n"
         "    PRIMARY KEY (id)\n"
         ")" + rskeys + ";";
 }
@@ -26,7 +25,6 @@ void create_history_table_sql(const string& table_name,
         "    id VARCHAR(36) NOT NULL,\n"
         "    data " + dbt.json_type() + " NOT NULL,\n"
         "    updated TIMESTAMP WITH TIME ZONE NOT NULL,\n"
-        "    tenant_id SMALLINT NOT NULL,\n"
         "    CONSTRAINT\n"
         "        history_" + table_name + "_pkey\n"
         "        PRIMARY KEY (id, updated)\n"

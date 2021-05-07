@@ -52,13 +52,10 @@ data          | {
               |     },                                                     
               |     "userId": "ab579dc3-219b-4f5b-8068-ab1c7a55c402"       
               | }
-tenant_id     | 1
 ```
 
 The relational attributes are provided to simplify writing queries,
-and the JSON fields offer access to the complete source data.  One
-additional attribute, `tenant_id`, is reserved for future use in
-consortial environments.
+and the JSON fields offer access to the complete source data.
 
 The LDP software creates these tables, having extracted the data from
 source databases.  It then updates the data from those sources once
@@ -236,7 +233,6 @@ History tables contain these attributes:
 * `id` is the record ID.
 * `data` is the source data, usually a JSON object.
 * `updated` is the date and time when the data were updated.
-* `tenant_id` is reserved for future use in consortial environments.
 
 For example:
 
@@ -265,7 +261,6 @@ data      | {
           |     "userId": "ab579dc3-219b-4f5b-8068-ab1c7a55c402"       
           | }
 updated   | 2020-03-02 03:46:49.362606+00
-tenant_id | 1
 ```
 
 Unlike the main tables in which `id` is unique, the history tables can
