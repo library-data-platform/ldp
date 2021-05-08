@@ -393,8 +393,6 @@ void run_update(const ldp_options& opt)
 
             source_state state(source);
 
-            lg.write(log_level::trace, "", "", "logging in to okapi service", -1);
-
             okapi_login(opt, source, &lg, &state.token);
 
             make_update_tmp_dir(opt, &load_dir);
@@ -429,7 +427,7 @@ void run_update(const ldp_options& opt)
 
             if (table.module_name != current_module) {
                 current_module = table.module_name;
-                lg.write(log_level::debug, "update", "", "reading: " + current_module, -1);
+                lg.write(log_level::debug, "update", "", "module: " + current_module, -1);
             }
 
             lg.write(log_level::detail, "", "", "updating table: " + table.name, -1);
@@ -458,7 +456,7 @@ void run_update(const ldp_options& opt)
                                  curlw.headers);
 
                 if (opt.load_from_dir == "") {
-                    lg.write(log_level::trace, "", "", "extracting from: " + table.source_spec, -1);
+                    lg.write(log_level::trace, "", "", "reading: " + table.source_spec, -1);
                     bool found_data = false;
                     if (direct_override(state.source, table.name)) {
                         found_data = retrieve_direct(state.source, &lg, table, load_dir, &ext_files, opt.direct_extraction_no_ssl);
@@ -489,7 +487,7 @@ void run_update(const ldp_options& opt)
             {
                 etymon::odbc_tx tx(&conn);
 
-                lg.write(log_level::trace, "", "", "staging table: " + table.name, -1);
+                lg.write(log_level::trace, "", "", "staging: " + table.name, -1);
                 bool ok = stage_table_1(opt, source_states, &lg, &table, &odbc,
                                         &conn, &dbt, load_dir, &drop_fields);
                 if (!ok)
@@ -502,12 +500,9 @@ void run_update(const ldp_options& opt)
                     continue;
 
                 if (opt.record_history && table.source_type != data_source_type::srs_marc_records && table.source_type != data_source_type::srs_records) {
-                    lg.write(log_level::trace, "", "", "merging table: " + table.name, -1);
+                    lg.write(log_level::trace, "", "", "merging: " + table.name, -1);
                     merge_table(opt, &lg, table, &odbc, &conn, dbt);
                 }
-
-                lg.write(log_level::trace, "", "",
-                         "replacing table: " + table.name, -1);
 
                 remove_foreign_key_constraints(&conn, &lg);
                 drop_table(opt, &lg, table.name, &conn);
@@ -598,7 +593,7 @@ void run_update(const ldp_options& opt)
     // Vacuum and analyze all updated tables
     {
         etymon::odbc_conn conn(&odbc, opt.db);
-        lg.write(log_level::debug, "server", "", "starting vacuum/analyze", -1);
+        lg.write(log_level::debug, "server", "", "starting vacuum", -1);
         timer vacuum_analyze_timer;
         string v;
         vacuum_sql(opt, &v);
@@ -620,7 +615,7 @@ void run_update(const ldp_options& opt)
                 conn.exec(sql);
             }
         }
-        lg.write(log_level::debug, "server", "", "completed vacuum/analyze",
+        lg.write(log_level::debug, "server", "", "completed vacuum",
                  vacuum_analyze_timer.elapsed_time());
     }
 

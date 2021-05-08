@@ -381,12 +381,12 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
 
         if (pass == 2) {
             string brief = record;
-            if (brief.length() > 60) {
-                brief = brief.substr(0, 60) + "...";
+            if (brief.length() > 71) {
+                brief = brief.substr(0, 71) + "...";
             }
             switch (opt.lg_level) {
             case log_level::trace:
-                lg->trace("record: " + brief);
+                lg->trace(brief);
                 break;
             case log_level::detail:
                 lg->detail("full record:\n" + record);
@@ -627,7 +627,7 @@ static void compose_data_file_path(const string& load_dir,
 
 void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::odbc_conn* conn, dbtype* dbt, bool index_large_varchar)
 {
-    lg->trace("creating indexes on table: " + table.name);
+    lg->detail("creating indexes: " + table.name);
     // If there is no table schema, define a primary key on (id) and return.
     if (table.columns.size() == 0) {
         string sql =
@@ -758,18 +758,8 @@ bool stage_table_1(const ldp_options& opt,
                    const string& load_dir,
                    field_set* drop_fields)
 {
-    // TODO remove this and create the load table from merge.cpp after
-    // pass 1
-    //createStagingTable(opt, table->name, db);
-
     map<string,type_counts> stats;
     char read_buffer[65536];
-
-    int pass = 1;
-
-    //lg->write(log_level::detail, "", "",
-    //          "Staging: " + table->name +
-    //          (pass == 1 ?  ": analyze" : ": load"), -1);
 
     for (auto& state : source_states) {
         size_t page_count = read_page_count(state.source, lg, load_dir,
@@ -782,13 +772,9 @@ bool stage_table_1(const ldp_options& opt,
         for (size_t page = 0; page < page_count; page++) {
             string path;
             compose_data_file_path(load_dir, *table, state.source.source_name,
-                                   // "_" + state.source.source_name +
                                    "_" + to_string(page) + ".json", &path);
-            lg->write(log_level::trace, "", "",
-                      "staging: " + table->name +
-                      (pass == 1 ?  ": analyze" : ": load") + ": page: " +
-                      to_string(page), -1);
-            stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
+            lg->write(log_level::detail, "", "", "staging: " + table->name + ": analyze: page: " + to_string(page), -1);
+            stage_page(opt, lg, 1, *table, odbc, conn, *dbt, &stats, path,
                        read_buffer, sizeof read_buffer, drop_fields);
         }
     }
@@ -797,66 +783,59 @@ bool stage_table_1(const ldp_options& opt,
         string path;
         compose_data_file_path(load_dir, *table, "", "_test.json", &path);
         if (fs::exists(path)) {
-            lg->write(log_level::trace, "", "",
-                      "staging: " + table->name +
-                      (pass == 1 ?  ": analyze" : ": load") +
-                      ": test file", -1);
-            stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats,
+            lg->write(log_level::detail, "", "", "staging: " + table->name + ": analyze: test file", -1);
+            stage_page(opt, lg, 1, *table, odbc, conn, *dbt, &stats,
                        path, read_buffer, sizeof read_buffer,
                        drop_fields);
         }
     }
 
-    if (pass == 1) {
-        for (const auto& [field, counts] : stats) {
-            lg->write(log_level::detail, "", "",
-                      "Stats: in field: " + field, -1);
-            lg->write(log_level::detail, "", "",
-                      "Stats: string: " + to_string(counts.string), -1);
-            lg->write(log_level::detail, "", "",
-                      "Stats: datetime: " + to_string(counts.date_time), -1);
-            lg->write(log_level::detail, "", "",
-                      "Stats: bool: " + to_string(counts.boolean), -1);
-            lg->write(log_level::detail, "", "",
-                      "Stats: number: " + to_string(counts.number), -1);
-            lg->write(log_level::detail, "", "",
-                      "Stats: int: " + to_string(counts.integer), -1);
-            lg->write(log_level::detail, "", "",
-                      "Stats: float: " + to_string(counts.floating), -1);
-            lg->write(log_level::detail, "", "",
-                      "Stats: null: " + to_string(counts.null), -1);
-            lg->write(log_level::detail, "", "",
-                      "Stats: max_length: " + to_string(counts.max_length),
-                      -1);
-        }
+    for (const auto& [field, counts] : stats) {
+        lg->write(log_level::detail, "", "",
+                  "Stats: in field: " + field, -1);
+        lg->write(log_level::detail, "", "",
+                  "Stats: string: " + to_string(counts.string), -1);
+        lg->write(log_level::detail, "", "",
+                  "Stats: datetime: " + to_string(counts.date_time), -1);
+        lg->write(log_level::detail, "", "",
+                  "Stats: bool: " + to_string(counts.boolean), -1);
+        lg->write(log_level::detail, "", "",
+                  "Stats: number: " + to_string(counts.number), -1);
+        lg->write(log_level::detail, "", "",
+                  "Stats: int: " + to_string(counts.integer), -1);
+        lg->write(log_level::detail, "", "",
+                  "Stats: float: " + to_string(counts.floating), -1);
+        lg->write(log_level::detail, "", "",
+                  "Stats: null: " + to_string(counts.null), -1);
+        lg->write(log_level::detail, "", "",
+                  "Stats: max_length: " + to_string(counts.max_length),
+                  -1);
     }
 
-    if (pass == 1) {
-        for (const auto& [field, counts] : stats) {
-            if (table->source_type == data_source_type::srs_marc_records && field != "id") {
-                continue;
-            }
-            column_schema column;
-            bool ok =
-                    column_schema::select_type(lg, table->name,
-                                               table->source_spec, field, counts,
-                                               &column.type);
-            if (!ok)
-                return false;
-            string type_str;
-            column_schema::type_to_string(column.type, &type_str);
-            column.length = max( (unsigned int) 1, counts.max_length);
-            string newattr;
-            decode_camel_case(field.c_str(), &newattr);
-            lg->write(log_level::detail, "", "",
-                      string("Column: ") + newattr + string(" ") + type_str,
-                      -1);
-            column.name = newattr;
-            column.source_name = field;
-            table->columns.push_back(column);
+    for (const auto& [field, counts] : stats) {
+        if (table->source_type == data_source_type::srs_marc_records && field != "id") {
+            continue;
         }
-        create_loading_table(opt, lg, *table, odbc, conn, *dbt);
+        column_schema column;
+        bool ok =
+            column_schema::select_type(lg, table->name,
+                                       table->source_spec, field, counts,
+                                       &column.type);
+        if (!ok)
+            return false;
+        string type_str;
+        column_schema::type_to_string(column.type, &type_str);
+        column.length = max( (unsigned int) 1, counts.max_length);
+        string newattr;
+        decode_camel_case(field.c_str(), &newattr);
+        lg->write(log_level::detail, "", "",
+                  string("Column: ") + newattr + string(" ") + type_str,
+                  -1);
+        column.name = newattr;
+        column.source_name = field;
+        table->columns.push_back(column);
     }
+    create_loading_table(opt, lg, *table, odbc, conn, *dbt);
 
     return true;
 }
@@ -871,18 +850,8 @@ bool stage_table_2(const ldp_options& opt,
                    const string& load_dir,
                    field_set* drop_fields)
 {
-    // TODO remove this and create the load table from merge.cpp after
-    // pass 1
-    //createStagingTable(opt, table->name, db);
-
     map<string,type_counts> stats;
     char read_buffer[65536];
-
-    int pass = 2;
-
-    //lg->write(log_level::detail, "", "",
-    //          "Staging: " + table->name +
-    //          (pass == 1 ?  ": analyze" : ": load"), -1);
 
     for (auto& state : source_states) {
         size_t page_count = read_page_count(state.source, lg, load_dir,
@@ -895,13 +864,9 @@ bool stage_table_2(const ldp_options& opt,
         for (size_t page = 0; page < page_count; page++) {
             string path;
             compose_data_file_path(load_dir, *table, state.source.source_name,
-                                   // "_" + state.source.source_name +
                                    "_" + to_string(page) + ".json", &path);
-            lg->write(log_level::trace, "", "",
-                      "staging: " + table->name +
-                      (pass == 1 ?  ": analyze" : ": load") + ": page: " +
-                      to_string(page), -1);
-            stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
+            lg->write(log_level::detail, "", "", "staging: " + table->name + ": load: page: " + to_string(page), -1);
+            stage_page(opt, lg, 2, *table, odbc, conn, *dbt, &stats, path,
                        read_buffer, sizeof read_buffer,
                        drop_fields);
         }
@@ -911,11 +876,8 @@ bool stage_table_2(const ldp_options& opt,
         string path;
         compose_data_file_path(load_dir, *table, "", "_test.json", &path);
         if (fs::exists(path)) {
-            lg->write(log_level::trace, "", "",
-                      "staging: " + table->name +
-                      (pass == 1 ?  ": analyze" : ": load") +
-                      ": test file", -1);
-            stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats,
+            lg->write(log_level::detail, "", "", "staging: " + table->name + ": load: test file", -1);
+            stage_page(opt, lg, 2, *table, odbc, conn, *dbt, &stats,
                        path, read_buffer, sizeof read_buffer,
                        drop_fields);
         }

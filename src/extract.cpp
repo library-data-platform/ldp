@@ -176,10 +176,11 @@ void okapi_login(const ldp_options& opt, const data_source& source,
     string login;
     encodeLogin(source.okapi_user, source.okapi_password, &login);
 
+    string auth = "/authn/login";
     string path = source.okapi_url;
-    etymon::join(&path, "/authn/login");
+    etymon::join(&path, auth);
 
-    lg->write(log_level::trace, "", "", "retrieving: " + path, -1);
+    lg->write(log_level::trace, "", "", "reading: " + auth, -1);
 
     string tenantHeader = "X-Okapi-Tenant: ";
     tenantHeader += source.okapi_tenant;
@@ -300,7 +301,7 @@ static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
             throw runtime_error(string("Error extracting data: ") +
                                 curl_easy_strerror(cc));
 
-        lg->write(log_level::detail, "", "", "retrieving: " + path, -1);
+        lg->write(log_level::detail, "", "", "reading: " + path, -1);
 
         cc = curl_easy_perform(c.curl);
         if (cc != CURLE_OK)
@@ -364,7 +365,7 @@ bool retrieve_pages(const curl_wrapper& c, const ldp_options& opt,
 
     size_t page = 0;
     while (true) {
-        lg->write(log_level::trace, "", "", "extracting page: " + to_string(page), -1);
+        lg->write(log_level::detail, "", "", "reading: page: " + to_string(page), -1);
         long http_code = 0;
         PageStatus status = retrieve(c, opt, source, lg, token, table, loadDir,
                                      ext_files, page, &http_code);

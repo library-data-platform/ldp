@@ -405,7 +405,7 @@ void ldp_exec(ldp_options* opt)
                 string s = e.what();
                 if ( !(s.empty()) && s.back() == '\n' )
                     s.pop_back();
-                fprintf(stderr, "ldp: Error: %s\n", s.c_str());
+                fprintf(stderr, "ldp: %s\n", s.c_str());
                 double elapsed_time = error_timer.elapsed_time();
                 if (elapsed_time < 300) {
                     fprintf(stderr,
