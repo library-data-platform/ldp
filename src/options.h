@@ -90,7 +90,7 @@ public:
     log_level lg_level = log_level::debug;
     bool console = false;
     bool quiet = false;
-    bool single_process = false;
+    bool single_process = true;
     bool direct_extraction_no_ssl = false;
     int okapi_timeout = 60;
     size_t page_size = 1000;

@@ -66,10 +66,6 @@ static void evaloptlong(char* name, char* arg, ldp_options* opt)
         opt->quiet = true;
         return;
     }
-    if (!strcmp(name, "single-process")) {
-        opt->single_process = true;
-        return;
-    }
     if (!strcmp(name, "direct-extraction-no-ssl")) {
         opt->direct_extraction_no_ssl = true;
         return;
@@ -123,7 +119,6 @@ int evalopt(const etymon::command_args& cargs, ldp_options *opt)
         { "okapi-timeout",            required_argument, NULL, 0   },
         { "profile",                  required_argument, NULL, 0   },
         { "quiet",                    no_argument,       NULL, 0   },
-        { "single-process",           no_argument,       NULL, 0   },
         { "sourcedir",                required_argument, NULL, 0   },
         { "savetemps",                no_argument,       NULL, 0   },
         { "table",                    required_argument, NULL, 0   },

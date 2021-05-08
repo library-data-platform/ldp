@@ -222,8 +222,7 @@ void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
     etymon::odbc_conn log_conn(odbc, opt.db);
     ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet, opt.prog);
 
-    lg.write(log_level::info, "server", "",
-            string("Server started") + (opt.cli_mode ? " (CLI mode)" : ""), -1);
+    lg.write(log_level::info, "server", "", string("Server started"), -1);
     if (opt.direct_extraction_no_ssl) {
         lg.write(log_level::info, "server", "", "SSL disabled for direct extraction", -1);
     }
@@ -271,8 +270,7 @@ void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
             std::this_thread::sleep_for(std::chrono::seconds(60));
     } while (!opt.cli_mode);
 
-    lg.write(log_level::info, "server", "",
-            string("Server stopped") + (opt.cli_mode ? " (CLI mode)" : ""), -1);
+    lg.write(log_level::info, "server", "", string("Server stopped"), -1);
 }
 
 static void no_update_by_default(etymon::odbc_env* odbc, const string& db)

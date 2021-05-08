@@ -17,10 +17,10 @@ LDP Administrator Guide
 1\. Overview
 ------------
 
-An _LDP instance_ is composed of a running LDP server and a database.
-The LDP server updates data in the database from data sources such as
-FOLIO modules, and users connect directly to the database to perform
-reporting and analytics.
+An _LDP instance_ is composed of an LDP server configuration and an
+analytic database.  The LDP server updates data in the database from
+data sources such as FOLIO modules, and users connect directly to the
+database to perform reporting and analytics.
 
 LDP is not multitenant in the usual sense, and normally one LDP
 instance is deployed per library.
@@ -187,9 +187,9 @@ Three database users are required:
 
 * `ldpconfig` is a special user account for changing configuration
   settings in the `dbconfig` schema.  It is intended to enable
-  designated users to make changes to the server's operation, such as
-  scheduling when data updates occur.  This user name can be modified
-  using the `ldpconfig_user` configuration setting in `ldpconf.json`.
+  designated users to make changes to the server's operation.  This
+  user name can be modified using the `ldpconfig_user` configuration
+  setting in `ldpconf.json`.
 
 * `ldp` is a general user of the LDP database.  This user name can be
   modified using the `ldp_user` configuration setting in
