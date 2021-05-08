@@ -93,7 +93,7 @@ void ldp_log::write(log_level lv, const char* type, const string& table,
         if (console && !quiet)
             fprintf(stderr, "%s\n", printmsg.c_str());
         level_str = "trace";
-        break;
+        return;
     case log_level::detail:
         if (this->lv != log_level::detail)
             return;

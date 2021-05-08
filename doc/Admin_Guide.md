@@ -349,9 +349,9 @@ This will run a full update, showing progress on the console, and then
 exit.  It can be scheduled via
 [cron](https://en.wikipedia.org/wiki/Cron) to run once per day.
 
-The server logs details of its activities in the table
-`dbsystem.log`.  For more detailed logging, the `--trace` option can
-be used.
+The server logs details of its activities to standard error and in the
+table `dbsystem.log`.  For more detailed logging to standard error,
+the `--trace` option can be used.
 
 ### Upgrading to a new version
 
