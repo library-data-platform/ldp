@@ -219,9 +219,10 @@ ANALYZE local.loans_status;
 ### History tables
 
 As mentioned earlier, the database contains a snapshot of the source
-data as of the last update.  LDP also provides a schema called
-`history` which stores all data that have been updated in the past,
-including data that may no longer exist in the source.  Each table
+data as of the last update.  For all tables except `srs_marc` and
+`srs_records`, LDP also retains data that have been updated in the
+past, including data that may no longer exist in the source.  These
+"historical data" are stored in a schema called `history`.  Each table
 normally has a corresponding history table, e.g.  the history table
 for `circulation_loans` is `history.circulation_loans`.
 
