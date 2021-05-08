@@ -513,12 +513,14 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
     }
 
     // Select from table.direct_source_table and write to JSON file.
-    etymon::Postgres db(source.direct.database_host,
-                        source.direct.database_port,
-                        source.direct.database_user,
-                        source.direct.database_password,
-                        source.direct.database_name,
-                        direct_extraction_no_ssl ? "disable" : "require");
+    etymon::pgconn_info dbinfo;
+    dbinfo.dbhost = source.direct.database_host;
+    dbinfo.dbport = source.direct.database_port;
+    dbinfo.dbuser = source.direct.database_user;
+    dbinfo.dbpasswd = source.direct.database_password;
+    dbinfo.dbname = source.direct.database_name;
+    dbinfo.dbsslmode = direct_extraction_no_ssl ? "disable" : "require";
+    etymon::pgconn db(dbinfo);
     string sql = "SELECT " + attr + " FROM " + source.okapi_tenant + "_" + table.direct_source_table + ";";
     lg->write(log_level::detail, "", "", sql, -1);
 
@@ -541,7 +543,7 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
 
     int row = 0;
     while (true) {
-        etymon::PostgresResultAsync res(&db);
+        etymon::pgconn_result_async res(&db);
         if (res.result == nullptr || PQresultStatus(res.result) != PGRES_SINGLE_TUPLE) {
             break;
         }

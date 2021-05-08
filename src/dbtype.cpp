@@ -2,11 +2,12 @@
 
 #include "dbtype.h"
 
-dbtype::dbtype(etymon::odbc_conn* conn)
+dbtype::dbtype(etymon::pgconn* conn)
 {
     string dbms_name;
-    conn->get_dbms_name(&dbms_name);
-    set_type(dbms_name);
+    //conn->get_dbms_name(&dbms_name);
+    //set_type(dbms_name);
+    set_type("PostgreSQL");
 }
 
 void dbtype::set_type(const string& dbms)

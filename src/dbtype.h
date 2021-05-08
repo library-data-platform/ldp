@@ -1,7 +1,7 @@
 #ifndef LDP_DBTYPE_H
 #define LDP_DBTYPE_H
 
-#include "../etymoncpp/include/odbc.h"
+#include "../etymoncpp/include/postgres.h"
 
 enum class dbsys {
     postgresql,
@@ -11,7 +11,7 @@ enum class dbsys {
 
 class dbtype {
 public:
-    dbtype(etymon::odbc_conn* conn);
+    dbtype(etymon::pgconn* conn);
     const char* json_type() const;
     const char* current_timestamp() const;
     void rename_sequence(const string& sequence_name,

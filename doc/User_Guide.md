@@ -115,12 +115,8 @@ In this example, `json_extract_path_text(data, 'status', 'name')`
 refers to the `name` field nested within the `status` field.
 
 It is strongly recommended to use the function
-`json_extract_path_text()` in particular because it is mostly
-compatible with both PostgreSQL and Redshift, the two database systems
-that are supported by LDP.  PostgreSQL is versatile, stable, and open
-source, and Redshift offers fast queries on extremely large data.  By
-using only functions that are compatible with both systems, you can
-retain flexibility in the future to run either.
+`json_extract_path_text()` to maintain compatibility with Redshift as
+a future upgrade path.
 
 
 3\. Relational attributes vs. JSON

@@ -24,5 +24,9 @@ private:
     json::Document jsondoc;
 };
 
+void throw_value_out_of_range(const string& key,
+                              const string& value,
+                              const string& range);
+
 #endif
 

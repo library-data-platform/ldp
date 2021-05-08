@@ -5,7 +5,7 @@
 #include "../etymoncpp/include/util.h"
 #include "log.h"
 
-ldp_log::ldp_log(etymon::odbc_conn* conn, log_level lv, bool console, bool quiet)
+ldp_log::ldp_log(etymon::pgconn* conn, log_level lv, bool console, bool quiet)
 {
     this->conn = conn;
     this->lv = lv;
@@ -110,7 +110,7 @@ void ldp_log::write(log_level lv, const char* type, const string& table,
         "    (" + string(dbt->current_timestamp()) + ", " +
         to_string(getpid()) + ", '" + level_str + "', '" + type + "', '" +
         table + "', " + logmsg_encoded + ", " + elapsed_time_str + ");";
-    conn->exec(sql);
+    { etymon::pgconn_result r(conn, sql); }
 }
 
 void ldp_log::warning(const string& message)

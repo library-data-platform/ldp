@@ -192,7 +192,7 @@ public:
     // Collection of statistics
     map<string,type_counts>* stats;
     // Loading to database
-    etymon::odbc_conn* conn;
+    etymon::pgconn* conn;
     const dbtype& dbt;
     field_set* drop_fields = nullptr;
     size_t record_count = 0;
@@ -202,7 +202,7 @@ public:
                 const ldp_options& options,
                 ldp_log* lg,
                 const table_schema& table,
-                etymon::odbc_conn* conn,
+                etymon::pgconn* conn,
                 const dbtype& dbt,
                 field_set* drop_fields,
                 map<string,type_counts>* statistics) :
@@ -250,12 +250,12 @@ static void begin_inserts(const string& table, string* buffer)
 
 static void end_inserts(const ldp_options& opt, ldp_log* lg,
                         const string& table, string* buffer,
-                        etymon::odbc_conn* conn)
+                        etymon::pgconn* conn)
 {
     *buffer += ";\n";
     lg->write(log_level::detail, "", "", "Loading data for table: " + table,
               -1);
-    conn->exec(*buffer);
+    etymon::pgconn_result r(conn, *buffer);
     buffer->clear();
 }
 
@@ -600,8 +600,8 @@ size_t read_page_count(const data_source& source, ldp_log* lg,
 }
 
 static void stage_page(const ldp_options& opt, ldp_log* lg, int pass,
-                       const table_schema& table, etymon::odbc_env* odbc,
-                       etymon::odbc_conn* conn, const dbtype &dbt,
+                       const table_schema& table,
+                       etymon::pgconn* conn, const dbtype &dbt,
                        map<string,type_counts>* stats, const string& filename,
                        char* read_buffer, size_t read_buffer_size,
                        field_set* drop_fields)
@@ -625,7 +625,7 @@ static void compose_data_file_path(const string& load_dir,
     *path += suffix;
 }
 
-void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::odbc_conn* conn, dbtype* dbt, bool index_large_varchar)
+void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::pgconn* conn, dbtype* dbt, bool index_large_varchar)
 {
     lg->detail("creating indexes: " + table.name);
     // If there is no table schema, define a primary key on (id) and return.
@@ -635,7 +635,7 @@ void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::odbc_con
             "    ADD PRIMARY KEY (id);";
         lg->detail(sql);
         try {
-            conn->exec(sql);
+            { etymon::pgconn_result r(conn, sql); }
         } catch (runtime_error& e) {
             lg->write(log_level::warning, "server", "", e.what(), -1);
         }
@@ -649,7 +649,7 @@ void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::odbc_con
                 "    ADD PRIMARY KEY (id);";
             lg->detail(sql);
             try {
-                conn->exec(sql);
+                { etymon::pgconn_result r(conn, sql); }
             } catch (runtime_error& e) {
                 lg->write(log_level::warning, "server", "", e.what(), -1);
             }
@@ -663,7 +663,7 @@ void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::odbc_con
                         string sql = "CREATE INDEX ON " + table.name + " USING HASH (\"" + column.name + "\");";
                         lg->detail(sql);
                         try {
-                            conn->exec(sql);
+                            { etymon::pgconn_result r(conn, sql); }
                         } catch (runtime_error& e) {
                             lg->write(log_level::warning, "server", "", "Unable to create hash index: table=" + table.name + " column=" + column.name, -1);
                         }
@@ -672,7 +672,7 @@ void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::odbc_con
                     string sql = "CREATE INDEX ON " + table.name + " (\"" + column.name + "\");";
                     lg->detail(sql);
                     try {
-                        conn->exec(sql);
+                        { etymon::pgconn_result r(conn, sql); }
                     } catch (runtime_error& e) {
                         lg->write(log_level::warning, "server", "", "Unable to create B-tree index: table=" + table.name + " column=" + column.name, -1);
                     }
@@ -684,15 +684,14 @@ void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::odbc_con
 
 static void create_loading_table(const ldp_options& opt, ldp_log* lg,
                                  const table_schema& table,
-                                 etymon::odbc_env* odbc,
-                                 etymon::odbc_conn* conn, const dbtype& dbt)
+                                 etymon::pgconn* conn, const dbtype& dbt)
 {
     string loading_table;
     loading_table_name(table.name, &loading_table);
 
     string sql = "DROP TABLE IF EXISTS " + loading_table + ";";
     lg->detail(sql);
-    conn->exec(sql);
+    { etymon::pgconn_result r(conn, sql); }
 
     string rskeys;
     dbt.redshift_keys("id", "id", &rskeys);
@@ -717,7 +716,7 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
     sql += string("    data ") + dbt.json_type() + "\n"
         ")" + rskeys + ";";
     lg->write(log_level::detail, "", "", sql, -1);
-    conn->exec(sql);
+    { etymon::pgconn_result r(conn, sql); }
 
     // Add comment on table.
     if (table.module_name != "mod-agreements") {
@@ -732,28 +731,27 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
         sql += "';";
         lg->write(log_level::detail, "", "",
                 "Setting comment on table: " + table.name, -1);
-        conn->exec(sql);
+        { etymon::pgconn_result r(conn, sql); }
     }
 
     sql =
         "GRANT SELECT ON " + loading_table + "\n"
         "    TO " + opt.ldpconfig_user + ";";
     lg->detail(sql);
-    conn->exec(sql);
+    { etymon::pgconn_result r(conn, sql); }
 
     sql =
         "GRANT SELECT ON " + loading_table + "\n"
         "    TO " + opt.ldp_user + ";";
     lg->detail(sql);
-    conn->exec(sql);
+    { etymon::pgconn_result r(conn, sql); }
 }
 
 bool stage_table_1(const ldp_options& opt,
                    const vector<source_state>& source_states,
                    ldp_log* lg,
                    table_schema* table,
-                   etymon::odbc_env* odbc,
-                   etymon::odbc_conn* conn,
+                   etymon::pgconn* conn,
                    dbtype* dbt,
                    const string& load_dir,
                    field_set* drop_fields)
@@ -774,7 +772,7 @@ bool stage_table_1(const ldp_options& opt,
             compose_data_file_path(load_dir, *table, state.source.source_name,
                                    "_" + to_string(page) + ".json", &path);
             lg->write(log_level::detail, "", "", "staging: " + table->name + ": analyze: page: " + to_string(page), -1);
-            stage_page(opt, lg, 1, *table, odbc, conn, *dbt, &stats, path,
+            stage_page(opt, lg, 1, *table, conn, *dbt, &stats, path,
                        read_buffer, sizeof read_buffer, drop_fields);
         }
     }
@@ -784,7 +782,7 @@ bool stage_table_1(const ldp_options& opt,
         compose_data_file_path(load_dir, *table, "", "_test.json", &path);
         if (fs::exists(path)) {
             lg->write(log_level::detail, "", "", "staging: " + table->name + ": analyze: test file", -1);
-            stage_page(opt, lg, 1, *table, odbc, conn, *dbt, &stats,
+            stage_page(opt, lg, 1, *table, conn, *dbt, &stats,
                        path, read_buffer, sizeof read_buffer,
                        drop_fields);
         }
@@ -835,7 +833,7 @@ bool stage_table_1(const ldp_options& opt,
         column.source_name = field;
         table->columns.push_back(column);
     }
-    create_loading_table(opt, lg, *table, odbc, conn, *dbt);
+    create_loading_table(opt, lg, *table, conn, *dbt);
 
     return true;
 }
@@ -844,8 +842,7 @@ bool stage_table_2(const ldp_options& opt,
                    const vector<source_state>& source_states,
                    ldp_log* lg,
                    table_schema* table,
-                   etymon::odbc_env* odbc,
-                   etymon::odbc_conn* conn,
+                   etymon::pgconn* conn,
                    dbtype* dbt,
                    const string& load_dir,
                    field_set* drop_fields)
@@ -866,7 +863,7 @@ bool stage_table_2(const ldp_options& opt,
             compose_data_file_path(load_dir, *table, state.source.source_name,
                                    "_" + to_string(page) + ".json", &path);
             lg->write(log_level::detail, "", "", "staging: " + table->name + ": load: page: " + to_string(page), -1);
-            stage_page(opt, lg, 2, *table, odbc, conn, *dbt, &stats, path,
+            stage_page(opt, lg, 2, *table, conn, *dbt, &stats, path,
                        read_buffer, sizeof read_buffer,
                        drop_fields);
         }
@@ -877,7 +874,7 @@ bool stage_table_2(const ldp_options& opt,
         compose_data_file_path(load_dir, *table, "", "_test.json", &path);
         if (fs::exists(path)) {
             lg->write(log_level::detail, "", "", "staging: " + table->name + ": load: test file", -1);
-            stage_page(opt, lg, 2, *table, odbc, conn, *dbt, &stats,
+            stage_page(opt, lg, 2, *table, conn, *dbt, &stats,
                        path, read_buffer, sizeof read_buffer,
                        drop_fields);
         }

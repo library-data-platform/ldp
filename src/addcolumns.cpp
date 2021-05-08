@@ -62,7 +62,7 @@ bool valid_ident(const string& s, bool allow_paren)
     return true;
 }
 
-void add_columns(const ldp_options& opt, ldp_log* lg, etymon::odbc_conn* conn)
+void add_columns(const ldp_options& opt, ldp_log* lg, etymon::pgconn* conn)
 {
     string filename;
     get_add_column_filename(opt, &filename);
@@ -115,14 +115,14 @@ void add_columns(const ldp_options& opt, ldp_log* lg, etymon::odbc_conn* conn)
         lg->write(log_level::trace, "", "", "adding column: " + table + "." + column + " " + datatype, -1);
         try {
             string sql = "ALTER TABLE public." + table + " ADD COLUMN \"" + column + "\" " + datatype + ";";
-            conn->exec(sql);
+            { etymon::pgconn_result r(conn, sql); }
         } catch (runtime_error& e) {}
     }
 }
 
-void add_optional_columns(const ldp_options& opt, ldp_log* lg, etymon::odbc_env* odbc)
+void add_optional_columns(const ldp_options& opt, ldp_log* lg)
 {
-    etymon::odbc_conn conn(odbc, opt.db);
+    etymon::pgconn conn(opt.dbinfo);
     add_columns(opt, lg, &conn);
 }
 
