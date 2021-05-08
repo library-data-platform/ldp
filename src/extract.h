@@ -11,7 +11,8 @@ public:
     string dir;
     vector<string> files;
     const ldp_options& opt;
-    extraction_files(const ldp_options& options) : opt(options) {};
+    ldp_log* log;
+    extraction_files(const ldp_options& options, ldp_log* log) : opt(options), log(log) {};
     ~extraction_files();
 };
 

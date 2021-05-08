@@ -49,19 +49,17 @@ static const char* option_help =
 
 class server_lock {
 public:
-    server_lock(etymon::odbc_env* odbc, const string& db, log_level lg_level,
-            FILE* err, const string& program);
+    server_lock(etymon::odbc_env* odbc, const string& db, log_level lg_level);
     ~server_lock();
 private:
     etymon::odbc_conn* conn = nullptr;
     etymon::odbc_tx* tx = nullptr;
 };
 
-server_lock::server_lock(etymon::odbc_env* odbc, const string& db,
-        log_level lg_level, FILE* err, const string& program)
+server_lock::server_lock(etymon::odbc_env* odbc, const string& db, log_level lg_level)
 {
     if (lg_level == log_level::trace || lg_level == log_level::detail)
-        fprintf(err, "%s: Acquiring server lock\n", program.data());
+        fprintf(stderr, "ldp: acquiring server lock\n");
 
     {
         etymon::odbc_conn tmp_conn(odbc, db);
@@ -220,9 +218,9 @@ void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
     set_dbsystem_main_anonymize(odbc, opt);
 
     etymon::odbc_conn log_conn(odbc, opt.db);
-    ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet, opt.prog);
+    ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet);
 
-    lg.write(log_level::info, "server", "", string("Server started"), -1);
+    lg.write(log_level::info, "server", "", string("server started"), -1);
     if (opt.direct_extraction_no_ssl) {
         lg.write(log_level::info, "server", "", "SSL disabled for direct extraction", -1);
     }
@@ -260,7 +258,7 @@ void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
                         s.pop_back();
                     etymon::odbc_env odbc;
                     etymon::odbc_conn log_conn(&odbc, opt.db);
-                    ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet, opt.prog);
+                    ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet);
                     lg.write(log_level::error, "server", "", s, -1);
                 }
             }
@@ -270,7 +268,7 @@ void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
             std::this_thread::sleep_for(std::chrono::seconds(60));
     } while (!opt.cli_mode);
 
-    lg.write(log_level::info, "server", "", string("Server stopped"), -1);
+    lg.write(log_level::info, "server", "", string("server stopped"), -1);
 }
 
 static void no_update_by_default(etymon::odbc_env* odbc, const string& db)
@@ -289,10 +287,9 @@ void cmd_init_database(const ldp_options& opt)
         throw runtime_error("Unknown profile");
 
     etymon::odbc_env odbc;
-    server_lock svrlock(&odbc, opt.db, opt.lg_level, opt.err, opt.prog);
+    server_lock svrlock(&odbc, opt.db, opt.lg_level);
     disable_termination_signals();
-    init_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user,
-            opt.err, opt.prog);
+    init_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user);
     set_dbsystem_main_anonymize(&odbc, opt);
 
     if (opt.no_update)
@@ -302,11 +299,9 @@ void cmd_init_database(const ldp_options& opt)
 void cmd_upgrade_database(const ldp_options& opt)
 {
     etymon::odbc_env odbc;
-    server_lock svrlock(&odbc, opt.db, opt.lg_level, opt.err, opt.prog);
+    server_lock svrlock(&odbc, opt.db, opt.lg_level);
     disable_termination_signals();
-    upgrade_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user,
-            opt.datadir,
-            opt.err, opt.prog, opt.quiet);
+    upgrade_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user, opt.datadir, opt.quiet);
     set_dbsystem_main_anonymize(&odbc, opt);
 }
 
@@ -322,9 +317,9 @@ void cmd_list_tables(const ldp_options& opt)
 void cmd_server(const ldp_options& opt)
 {
     etymon::odbc_env odbc;
-    server_lock svrlock(&odbc, opt.db, opt.lg_level, opt.err, opt.prog);
+    server_lock svrlock(&odbc, opt.db, opt.lg_level);
     if (opt.lg_level == log_level::trace || opt.lg_level == log_level::detail)
-        fprintf(opt.err, "%s: Starting server\n", opt.prog);
+        fprintf(stderr, "ldp: starting server\n");
     server_loop(opt, &odbc);
 }
 
@@ -403,7 +398,7 @@ void ldp_exec(ldp_options* opt)
 
     if (opt->command == ldp_command::server) {
         do {
-            timer error_timer(*opt);
+            timer error_timer;
             try {
                 cmd_server(*opt);
             } catch (runtime_error& e) {
@@ -473,7 +468,7 @@ int main_ldp(int argc, char* const argv[])
         string s = e.what();
         if ( !(s.empty()) && s.back() == '\n' )
             s.pop_back();
-        fprintf(stderr, "ldp: Error: %s\n", s.c_str());
+        fprintf(stderr, "ldp: %s\n", s.c_str());
         return 1;
     }
     return 0;

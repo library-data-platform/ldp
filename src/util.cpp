@@ -69,31 +69,3 @@ source_state::~source_state()
 {
 }
 
-////////////////////////////////////////////////////////////////////////////
-// Old error printing functions
-
-void print(Print level, const ldp_options& opt, const string& str)
-{
-    string s = str;
-    etymon::trim(&s);
-    switch (level) {
-    case Print::error:
-        fprintf(opt.err, "%s: error: %s\n", opt.prog, s.c_str());
-        break;
-    case Print::warning:
-        fprintf(opt.err, "%s: warning: %s\n", opt.prog, s.c_str());
-        break;
-    //case Print::info:
-    //    fprintf(opt.err, "%s: %s\n", opt.prog, s.c_str());
-    //    break;
-    case Print::verbose:
-        if (opt.lg_level == log_level::trace)
-            fprintf(opt.err, "%s: %s\n", opt.prog, s.c_str());
-        break;
-    case Print::debug:
-        if (opt.lg_level == log_level::trace)
-            fprintf(opt.err, "%s: %s\n", opt.prog, s.c_str());
-        break;
-    }
-}
-

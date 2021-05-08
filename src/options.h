@@ -84,7 +84,7 @@ public:
     bool parallel_vacuum = true;
     bool index_large_varchar = false;
     bool savetemps = false;
-    FILE* err = stderr;
+    //FILE* err = stderr;
     bool verbose = false;  // Deprecated.
     bool debug = false;  // Deprecated.
     log_level lg_level = log_level::debug;
@@ -96,7 +96,6 @@ public:
     size_t page_size = 1000;
     int nargc = 0;
     char **nargv = nullptr;
-    const char* prog = "ldp";
     bool allow_destructive_tests = false;
 };
 

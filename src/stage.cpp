@@ -379,8 +379,22 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
 
         record += '}';
 
-        lg->detail("New record parsed for table: " + table.name +
-                ":\n" + record);
+        if (pass == 2) {
+            string brief = record;
+            if (brief.length() > 60) {
+                brief = brief.substr(0, 60) + "...";
+            }
+            switch (opt.lg_level) {
+            case log_level::trace:
+                lg->trace("record: " + brief);
+                break;
+            case log_level::detail:
+                lg->detail("full record:\n" + record);
+                break;
+            default:
+                break;
+            }
+        }
 
         char* buffer = strdup(record.c_str());
         etymon::malloc_ptr bufferptr(buffer);
@@ -613,7 +627,7 @@ static void compose_data_file_path(const string& load_dir,
 
 void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::odbc_conn* conn, dbtype* dbt, bool index_large_varchar)
 {
-    lg->trace("Creating indexes on table: " + table.name);
+    lg->trace("creating indexes on table: " + table.name);
     // If there is no table schema, define a primary key on (id) and return.
     if (table.columns.size() == 0) {
         string sql =
@@ -762,7 +776,7 @@ bool stage_table_1(const ldp_options& opt,
                                             table->name);
 
         lg->write(log_level::detail, "", "",
-                  "Staging: " + table->name + ": page count: " +
+                  "staging: " + table->name + ": page count: " +
                   to_string(page_count), -1);
 
         for (size_t page = 0; page < page_count; page++) {
@@ -770,8 +784,8 @@ bool stage_table_1(const ldp_options& opt,
             compose_data_file_path(load_dir, *table, state.source.source_name,
                                    // "_" + state.source.source_name +
                                    "_" + to_string(page) + ".json", &path);
-            lg->write(log_level::detail, "", "",
-                      "Staging: " + table->name +
+            lg->write(log_level::trace, "", "",
+                      "staging: " + table->name +
                       (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                       to_string(page), -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
@@ -783,8 +797,8 @@ bool stage_table_1(const ldp_options& opt,
         string path;
         compose_data_file_path(load_dir, *table, "", "_test.json", &path);
         if (fs::exists(path)) {
-            lg->write(log_level::detail, "", "",
-                      "Staging: " + table->name +
+            lg->write(log_level::trace, "", "",
+                      "staging: " + table->name +
                       (pass == 1 ?  ": analyze" : ": load") +
                       ": test file", -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats,
@@ -875,7 +889,7 @@ bool stage_table_2(const ldp_options& opt,
                                             table->name);
 
         lg->write(log_level::detail, "", "",
-                  "Staging: " + table->name + ": page count: " +
+                  "staging: " + table->name + ": page count: " +
                   to_string(page_count), -1);
 
         for (size_t page = 0; page < page_count; page++) {
@@ -883,8 +897,8 @@ bool stage_table_2(const ldp_options& opt,
             compose_data_file_path(load_dir, *table, state.source.source_name,
                                    // "_" + state.source.source_name +
                                    "_" + to_string(page) + ".json", &path);
-            lg->write(log_level::detail, "", "",
-                      "Staging: " + table->name +
+            lg->write(log_level::trace, "", "",
+                      "staging: " + table->name +
                       (pass == 1 ?  ": analyze" : ": load") + ": page: " +
                       to_string(page), -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats, path,
@@ -897,8 +911,8 @@ bool stage_table_2(const ldp_options& opt,
         string path;
         compose_data_file_path(load_dir, *table, "", "_test.json", &path);
         if (fs::exists(path)) {
-            lg->write(log_level::detail, "", "",
-                      "Staging: " + table->name +
+            lg->write(log_level::trace, "", "",
+                      "staging: " + table->name +
                       (pass == 1 ?  ": analyze" : ": load") +
                       ": test file", -1);
             stage_page(opt, lg, pass, *table, odbc, conn, *dbt, &stats,

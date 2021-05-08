@@ -67,10 +67,9 @@ void add_columns(const ldp_options& opt, ldp_log* lg, etymon::odbc_conn* conn)
     string filename;
     get_add_column_filename(opt, &filename);
     if ( !(fs::exists(filename)) ) {
-        lg->write(log_level::detail, "", "", "Skip add column list: file not found: " + filename, -1);
         return;
     }
-    lg->write(log_level::trace, "", "", "Adding optional columns", -1);
+    lg->write(log_level::trace, "", "", "adding optional columns", -1);
     ifstream infile(filename);
     string line;
     while (getline(infile, line)) {
@@ -113,7 +112,7 @@ void add_columns(const ldp_options& opt, ldp_log* lg, etymon::odbc_conn* conn)
             throw runtime_error(string("adding column: invalid character in \"") + column + "\"");
         transform(column.begin(), column.end(), column.begin(), [](unsigned char c){ return tolower(c); });
         // Add column
-        lg->write(log_level::detail, "", "", "Adding column: " + table + "." + column + " " + datatype, -1);
+        lg->write(log_level::trace, "", "", "adding column: " + table + "." + column + " " + datatype, -1);
         try {
             string sql = "ALTER TABLE public." + table + " ADD COLUMN \"" + column + "\" " + datatype + ";";
             conn->exec(sql);

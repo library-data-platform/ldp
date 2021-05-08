@@ -3,22 +3,6 @@
 timer::timer()
 {
     restart();
-    err = stderr;
-    prog = "ldp";
-}
-
-//timer::timer(FILE* err, const char* prog)
-//{
-//    restart();
-//    this->err = err;
-//    this->prog = prog;
-//}
-
-timer::timer(const ldp_options& options)
-{
-    restart();
-    err = options.err;
-    prog = options.prog;
 }
 
 void timer::restart()
@@ -36,7 +20,7 @@ void timer::print(const char* str) const
 {
     chrono::duration<double> elapsed =
         chrono::steady_clock::now() - start_time;
-    fprintf(err, "%s: %s: %.4f s\n", prog, str, elapsed.count());
+    fprintf(stderr, "ldp: %s: %.4f s\n", str, elapsed.count());
 }
 
 void get_current_time(string* str)

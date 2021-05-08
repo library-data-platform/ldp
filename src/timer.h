@@ -11,11 +11,7 @@ using namespace std;
 class timer {
 public:
     chrono::steady_clock::time_point start_time;
-    FILE* err;
-    const char* prog;
     timer();
-    //Timer(FILE* err, const char* prog);
-    timer(const ldp_options& options);
     void restart();
     double elapsed_time() const;
     void print(const char* str) const;

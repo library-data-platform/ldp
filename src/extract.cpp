@@ -22,14 +22,13 @@ extraction_files::~extraction_files()
             unlink(f.c_str());
         if (dir != "") {
             int r = rmdir(dir.c_str());
-            if (r == -1)
-                print(Print::warning, opt,
-                        string("unable to remove temporary directory: ") +
-                        dir + string(": ") + string(strerror(errno)) );
+            if (r == -1) {
+                log->write(log_level::warning, "", "", string("unable to remove temporary directory: ") + dir + string(": ") + string(strerror(errno)), -1);
+            }
         }
     } else {
         if (dir != "") {
-            print(Print::verbose, opt, string("directory not removed: ") + dir);
+            log->write(log_level::warning, "", "", string("directory not removed: ") + dir, -1);
         }
     }
 }
@@ -180,7 +179,7 @@ void okapi_login(const ldp_options& opt, const data_source& source,
     string path = source.okapi_url;
     etymon::join(&path, "/authn/login");
 
-    lg->write(log_level::detail, "", "", "Retrieving: " + path, -1);
+    lg->write(log_level::trace, "", "", "retrieving: " + path, -1);
 
     string tenantHeader = "X-Okapi-Tenant: ";
     tenantHeader += source.okapi_tenant;
@@ -301,7 +300,7 @@ static PageStatus retrieve(const curl_wrapper& c, const ldp_options& opt,
             throw runtime_error(string("Error extracting data: ") +
                                 curl_easy_strerror(cc));
 
-        lg->write(log_level::detail, "", "", "Retrieving: " + path, -1);
+        lg->write(log_level::detail, "", "", "retrieving: " + path, -1);
 
         cc = curl_easy_perform(c.curl);
         if (cc != CURLE_OK)
@@ -365,8 +364,7 @@ bool retrieve_pages(const curl_wrapper& c, const ldp_options& opt,
 
     size_t page = 0;
     while (true) {
-        lg->write(log_level::detail, "", "",
-                "Extracting page: " + to_string(page), -1);
+        lg->write(log_level::trace, "", "", "extracting page: " + to_string(page), -1);
         long http_code = 0;
         PageStatus status = retrieve(c, opt, source, lg, token, table, loadDir,
                                      ext_files, page, &http_code);
@@ -499,9 +497,9 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
                      const table_schema& table, const string& loadDir,
                      extraction_files* ext_files, bool direct_extraction_no_ssl)
 {
-    lg->write(log_level::trace, "", "", "Direct from database: " + table.source_spec, -1);
+    lg->write(log_level::trace, "", "", "direct from database: " + table.source_spec, -1);
     if (table.direct_source_table == "") {
-        lg->write(log_level::warning, "", "", "Direct source table undefined: " + table.source_spec, -1);
+        lg->write(log_level::warning, "", "", "direct source table undefined: " + table.source_spec, -1);
         return false;
     }
 

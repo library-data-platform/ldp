@@ -153,10 +153,10 @@ void validate_database_version(int64_t database_version)
  * \param[in] db Database context.
  */
 static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
-        const string& ldpconfig_user, int64_t this_schema_version, FILE* err,
-        const char* prog)
+        const string& ldpconfig_user, int64_t this_schema_version)
 {
-    fprintf(err, "%s: Initializing database\n", prog);
+    const char* prog = "ldp";
+    fprintf(stderr, "%s: Initializing database\n", prog);
 
     dbtype dbt(conn);
 
@@ -370,14 +370,15 @@ static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
 
     tx.commit();
 
-    fprintf(err, "%s: Database initialization completed\n", prog);
+    fprintf(stderr, "%s: Database initialization completed\n", prog);
 }
 
 static void upgrade_database_all(etymon::odbc_conn* conn, const string& ldp_user,
         const string& ldpconfig_user, int64_t version,
-        int64_t latest_version, const string& datadir, FILE* err,
-        const char* prog, bool quiet)
+        int64_t latest_version, const string& datadir,
+        bool quiet)
 {
+    const char* prog = "ldp";
     fs::path ulog_dir = fs::path(datadir) / "database_upgrade";
     fs::create_directories(ulog_dir);
 
@@ -387,16 +388,16 @@ static void upgrade_database_all(etymon::odbc_conn* conn, const string& ldp_user
         fs::path ulog_path = ulog_dir / ulog_filename;
         etymon::file ulog_file(ulog_path, "a");
         if (!upgraded) {
-            fprintf(err, "%s: ", prog);
-            print_banner_line(err, '=', 74);
-            fprintf(err,
+            fprintf(stderr, "%s: ", prog);
+            print_banner_line(stderr, '=', 74);
+            fprintf(stderr,
                     "%s: Upgrading database: "
                     "Do not interrupt the upgrade process\n",
                     prog);
-            fprintf(err, "%s: ", prog);
-            print_banner_line(err, '=', 74);
+            fprintf(stderr, "%s: ", prog);
+            print_banner_line(stderr, '=', 74);
         }
-        fprintf(err, "%s: Upgrading: %s\n", prog, to_string(v).c_str());
+        fprintf(stderr, "%s: Upgrading: %s\n", prog, to_string(v).c_str());
         print_banner_line(ulog_file.fp, '-', 79);
         fprintf(ulog_file.fp, "-- Upgrading: %s\n", to_string(v).c_str());
         print_banner_line(ulog_file.fp, '-', 79);
@@ -416,23 +417,22 @@ static void upgrade_database_all(etymon::odbc_conn* conn, const string& ldp_user
     }
 
     if (upgraded) {
-        fprintf(err, "%s: ", prog);
-        print_banner_line(err, '=', 74);
-        fprintf(err, "%s: Database upgrade completed\n", prog);
-        fprintf(err, "%s: ", prog);
-        print_banner_line(err, '=', 74);
-        ldp_log lg(conn, log_level::info, false, quiet, prog);
+        fprintf(stderr, "%s: ", prog);
+        print_banner_line(stderr, '=', 74);
+        fprintf(stderr, "%s: Database upgrade completed\n", prog);
+        fprintf(stderr, "%s: ", prog);
+        print_banner_line(stderr, '=', 74);
+        ldp_log lg(conn, log_level::info, false, quiet);
         lg.write(log_level::info, "server", "", "Upgraded to database version: " +
                 to_string(latest_version), -1);
     } else {
         if (!quiet)
-            fprintf(err, "%s: Database version is up to date\n", prog);
+            fprintf(stderr, "%s: Database version is up to date\n", prog);
     }
 }
 
 void init_database(etymon::odbc_env* odbc, const string& dbname,
-        const string& ldp_user, const string& ldpconfig_user, FILE* err,
-        const char* prog)
+        const string& ldp_user, const string& ldpconfig_user)
 {
     int64_t latest_version = latest_database_version();
 
@@ -444,15 +444,15 @@ void init_database(etymon::odbc_env* odbc, const string& dbname,
         validate_database_version(database_version);
         throw runtime_error("Database may have been previously initialized");
     } else {
-        init_database_all(&conn, ldp_user, ldpconfig_user, latest_version, err,
-                prog);
+        init_database_all(&conn, ldp_user, ldpconfig_user, latest_version);
     }
 }
 
 void upgrade_database(etymon::odbc_env* odbc, const string& dbname,
         const string& ldp_user, const string& ldpconfig_user,
-        const string& datadir, FILE* err, const char* prog, bool quiet)
+        const string& datadir, bool quiet)
 {
+    const char* prog = "ldp";
     int64_t latest_version = latest_database_version();
 
     etymon::odbc_conn conn(odbc, dbname);
@@ -464,11 +464,10 @@ void upgrade_database(etymon::odbc_env* odbc, const string& dbname,
         validate_database_version(database_version);
         if (database_version < latest_version) {
             upgrade_database_all(&conn, ldp_user, ldpconfig_user,
-                    database_version, latest_version, datadir, err, prog,
-                    quiet);
+                    database_version, latest_version, datadir, quiet);
         } else {
             if (!quiet)
-                fprintf(err, "%s: Database version is up to date\n", prog);
+                fprintf(stderr, "%s: Database version is up to date\n", prog);
         }
     } else {
         throw runtime_error("Database has not been initialized");

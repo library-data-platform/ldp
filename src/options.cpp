@@ -159,7 +159,7 @@ int evalopt(const etymon::command_args& cargs, ldp_options *opt)
         opt->nargc = cargs.argc - optind;
     }
     if (opt->nargc > 0) {
-        printf("%s: unrecognized extra arguments `", opt->prog);
+        printf("err: unrecognized extra arguments `");
         for (x = 0; x < opt->nargc; x++) {
             if (x > 0)
                 printf(" ");

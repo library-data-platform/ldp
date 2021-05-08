@@ -5,14 +5,12 @@
 #include "../etymoncpp/include/util.h"
 #include "log.h"
 
-ldp_log::ldp_log(etymon::odbc_conn* conn, log_level lv, bool console, bool quiet,
-        const char* program)
+ldp_log::ldp_log(etymon::odbc_conn* conn, log_level lv, bool console, bool quiet)
 {
     this->conn = conn;
     this->lv = lv;
     this->console = console;
     this->quiet = quiet;
-    this->program = program;
     dbt = new dbtype(conn);
 }
 
@@ -61,22 +59,22 @@ void ldp_log::write(log_level lv, const char* type, const string& table,
     switch (lv) {
     case log_level::fatal:
         if (!quiet)
-            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
+            fprintf(stderr, "ldp: %s\n", printmsg.c_str());
         level_str = "fatal";
         break;
     case log_level::error:
         if (!quiet)
-            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
+            fprintf(stderr, "ldp: %s\n", printmsg.c_str());
         level_str = "error";
         break;
     case log_level::warning:
         if (!quiet)
-            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
+            fprintf(stderr, "ldp: %s\n", printmsg.c_str());
         level_str = "warning";
         break;
     case log_level::info:
         if (!quiet)
-            fprintf(stderr, "%s: %s\n", program.c_str(), printmsg.c_str());
+            fprintf(stderr, "ldp: %s\n", printmsg.c_str());
         level_str = "info";
         break;
     case log_level::debug:
@@ -84,14 +82,14 @@ void ldp_log::write(log_level lv, const char* type, const string& table,
                 this->lv != log_level::detail)
             return;
         if (console && !quiet)
-            fprintf(stderr, "%s\n", printmsg.c_str());
+            fprintf(stderr, "ldp: %s\n", printmsg.c_str());
         level_str = "debug";
         break;
     case log_level::trace:
         if (this->lv != log_level::trace && this->lv != log_level::detail)
             return;
         if (console && !quiet)
-            fprintf(stderr, "%s\n", printmsg.c_str());
+            fprintf(stderr, "ldp: %s\n", printmsg.c_str());
         level_str = "trace";
         return;
     case log_level::detail:

@@ -348,31 +348,31 @@ void run_update(const ldp_options& opt)
     CURLcode cc;
     etymon::curl_global curl_env(CURL_GLOBAL_ALL, &cc);
     if (cc) {
-        throw runtime_error(string("Error initializing curl: ") +
+        throw runtime_error(string("error initializing curl: ") +
                             curl_easy_strerror(cc));
     }
 
     etymon::odbc_env odbc;
 
     etymon::odbc_conn log_conn(&odbc, opt.db);
-    ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet, opt.prog);
+    ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet);
 
     if (!opt.record_history) {
-        lg.write(log_level::info, "server", "", "Recording history is disabled", -1);
+        lg.write(log_level::info, "server", "", "recording history is disabled", -1);
     }
     if (!opt.parallel_vacuum) {
-        lg.write(log_level::info, "server", "", "Parallel vacuum is disabled", -1);
+        lg.write(log_level::info, "server", "", "parallel vacuum is disabled", -1);
     }
 
-    lg.write(log_level::debug, "server", "", "Starting full update", -1);
-    timer full_update_timer(opt);
+    lg.write(log_level::debug, "server", "", "starting full update", -1);
+    timer full_update_timer;
 
-    lg.write(log_level::detail, "", "", "Okapi timeout: " + to_string(opt.okapi_timeout), -1);
+    lg.write(log_level::detail, "", "", "okapi timeout: " + to_string(opt.okapi_timeout), -1);
 
     ldp_schema schema;
     ldp_schema::make_default_schema(&schema);
 
-    extraction_files ext_dir(opt);
+    extraction_files ext_dir(opt, &lg);
 
     string load_dir;
 
@@ -393,8 +393,7 @@ void run_update(const ldp_options& opt)
 
             source_state state(source);
 
-            lg.write(log_level::trace, "", "", "Logging in to Okapi service",
-                     -1);
+            lg.write(log_level::trace, "", "", "logging in to okapi service", -1);
 
             okapi_login(opt, source, &lg, &state.token);
 
@@ -430,14 +429,14 @@ void run_update(const ldp_options& opt)
 
             if (table.module_name != current_module) {
                 current_module = table.module_name;
-                lg.write(log_level::debug, "update", "", "Reading: " + current_module, -1);
+                lg.write(log_level::debug, "update", "", "reading: " + current_module, -1);
             }
 
-            lg.write(log_level::trace, "", "", "Updating table: " + table.name, -1);
+            lg.write(log_level::detail, "", "", "updating table: " + table.name, -1);
 
-            timer update_timer(opt);
+            timer update_timer;
 
-            extraction_files ext_files(opt);
+            extraction_files ext_files(opt, &lg);
 
             for (auto& state : source_states) {
 
@@ -459,7 +458,7 @@ void run_update(const ldp_options& opt)
                                  curlw.headers);
 
                 if (opt.load_from_dir == "") {
-                    lg.write(log_level::trace, "", "", "Extracting from: " + table.source_spec, -1);
+                    lg.write(log_level::trace, "", "", "extracting from: " + table.source_spec, -1);
                     bool found_data = false;
                     if (direct_override(state.source, table.name)) {
                         found_data = retrieve_direct(state.source, &lg, table, load_dir, &ext_files, opt.direct_extraction_no_ssl);
@@ -467,7 +466,7 @@ void run_update(const ldp_options& opt)
                         if (table.source_type != data_source_type::srs_marc_records && table.source_type != data_source_type::srs_records) {
                             found_data = retrieve_pages(curlw, opt, state.source, &lg, state.token, table, load_dir, &ext_files);
                         } else {
-                            lg.write(log_level::debug, "", "", "Table not updated: " + table.name + ": requires direct extraction", -1);
+                            lg.write(log_level::debug, "", "", "table not updated: " + table.name + ": requires direct extraction", -1);
                         }
                     }
                     if (!found_data) {
@@ -490,8 +489,7 @@ void run_update(const ldp_options& opt)
             {
                 etymon::odbc_tx tx(&conn);
 
-                lg.write(log_level::trace, "", "",
-                         "Staging table: " + table.name, -1);
+                lg.write(log_level::trace, "", "", "staging table: " + table.name, -1);
                 bool ok = stage_table_1(opt, source_states, &lg, &table, &odbc,
                                         &conn, &dbt, load_dir, &drop_fields);
                 if (!ok)
@@ -504,12 +502,12 @@ void run_update(const ldp_options& opt)
                     continue;
 
                 if (opt.record_history && table.source_type != data_source_type::srs_marc_records && table.source_type != data_source_type::srs_records) {
-                    lg.write(log_level::trace, "", "", "Merging table: " + table.name, -1);
+                    lg.write(log_level::trace, "", "", "merging table: " + table.name, -1);
                     merge_table(opt, &lg, table, &odbc, &conn, dbt);
                 }
 
                 lg.write(log_level::trace, "", "",
-                         "Replacing table: " + table.name, -1);
+                         "replacing table: " + table.name, -1);
 
                 remove_foreign_key_constraints(&conn, &lg);
                 drop_table(opt, &lg, table.name, &conn);
@@ -565,7 +563,7 @@ void run_update(const ldp_options& opt)
             lg.detail(sql);
             conn.exec(sql);
 
-            lg.write(log_level::debug, "update", table.name, "Updated table: " + table.name, update_timer.elapsed_time());
+            lg.write(log_level::debug, "update", table.name, "updated table: " + table.name, update_timer.elapsed_time());
 
             //if (opt.logLevel == log_level::trace)
             //    loadTimer.print("load time");
@@ -576,7 +574,7 @@ void run_update(const ldp_options& opt)
                 s.pop_back();
             etymon::odbc_env odbc;
             etymon::odbc_conn log_conn(&odbc, opt.db);
-            ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet, opt.prog);
+            ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet);
             lg.write(log_level::error, "server", "", s, -1);
         }
         
@@ -591,7 +589,7 @@ void run_update(const ldp_options& opt)
     //    }
     //}
 
-    lg.write(log_level::debug, "server", "", "Completed full update",
+    lg.write(log_level::debug, "server", "", "completed full update",
             full_update_timer.elapsed_time());
 
     // Add optional columns
@@ -600,8 +598,8 @@ void run_update(const ldp_options& opt)
     // Vacuum and analyze all updated tables
     {
         etymon::odbc_conn conn(&odbc, opt.db);
-        lg.write(log_level::debug, "server", "", "Starting vacuum/analyze", -1);
-        timer vacuum_analyze_timer(opt);
+        lg.write(log_level::debug, "server", "", "starting vacuum/analyze", -1);
+        timer vacuum_analyze_timer;
         string v;
         vacuum_sql(opt, &v);
         for (auto& table : schema.tables) {
@@ -622,7 +620,7 @@ void run_update(const ldp_options& opt)
                 conn.exec(sql);
             }
         }
-        lg.write(log_level::debug, "server", "", "Completed vacuum/analyze",
+        lg.write(log_level::debug, "server", "", "completed vacuum/analyze",
                  vacuum_analyze_timer.elapsed_time());
     }
 
@@ -646,9 +644,9 @@ void run_update(const ldp_options& opt)
         if (detect_foreign_keys) {
 
             lg.write(log_level::debug, "server", "",
-                    "Starting foreign key detection", -1);
+                    "starting foreign key detection", -1);
 
-            timer ref_timer(opt);
+            timer ref_timer;
 
             etymon::odbc_tx tx(&conn);
 
@@ -679,21 +677,21 @@ void run_update(const ldp_options& opt)
             tx.commit();
 
             lg.write(log_level::debug, "server", "",
-                    "Completed foreign key detection",
+                    "completed foreign key detection",
                     ref_timer.elapsed_time());
         }
 
         if (enable_foreign_key_warnings || force_foreign_key_constraints) {
 
             lg.write(log_level::debug, "server", "",
-                    "Starting foreign key constraint processing", -1);
+                    "starting foreign key constraint processing", -1);
 
-            timer ref_timer(opt);
+            timer ref_timer;
 
             process_foreign_keys(opt, enable_foreign_key_warnings, force_foreign_key_constraints, &conn, &lg);
 
             lg.write(log_level::debug, "server", "",
-                    "Completed foreign key constraint processing",
+                    "completed foreign key constraint processing",
                     ref_timer.elapsed_time());
         }
 
@@ -724,7 +722,7 @@ void run_update_process(const ldp_options& opt)
             s.pop_back();
         etymon::odbc_env odbc;
         etymon::odbc_conn log_conn(&odbc, opt.db);
-        ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet, opt.prog);
+        ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet);
         lg.write(log_level::error, "server", "", s, -1);
         exit(1);
     }

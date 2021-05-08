@@ -23,7 +23,6 @@ void read_drop_fields(const ldp_options& opt, ldp_log* lg, field_set* drop_field
     string filename;
     get_drop_field_filename(opt, &filename);
     if ( !(fs::exists(filename)) ) {
-        lg->write(log_level::detail, "", "", "Skip drop field list: file not found: " + filename, -1);
         return;
     }
     ifstream infile(filename);
