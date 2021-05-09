@@ -53,7 +53,7 @@ cost hardware, and in most cases they should run well with the
 following minimum requirements:
 
 * LDP software:
-  * Memory: 1 GB
+  * Memory: 500 MB
   * Storage: 500 GB HDD
 * Database:
   * Memory: 8 GB

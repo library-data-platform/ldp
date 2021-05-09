@@ -617,7 +617,7 @@ static void stage_page(const ldp_options& opt, ldp_log* lg, int pass,
 
     {
         string copy_buffer;
-        copy_buffer.reserve(500000000);
+        copy_buffer.reserve(125000000);
         JSONHandler handler(pass, opt, lg, table, conn, dbt, drop_fields, stats, &copy_buffer);
         reader.Parse(is, handler);
     }
