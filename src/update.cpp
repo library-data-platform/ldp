@@ -465,8 +465,7 @@ void run_update(const ldp_options& opt)
                             curl_easy_strerror(cc));
     }
 
-    etymon::pgconn log_conn(opt.dbinfo);
-    ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet);
+    ldp_log lg(opt.lg_level, opt.console, opt.quiet, &(opt.dbinfo));
 
     if (!opt.record_history) {
         lg.write(log_level::info, "server", "", "recording history is disabled", -1);

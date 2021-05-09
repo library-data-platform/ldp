@@ -449,7 +449,7 @@ void upgrade_database(const ldp_options& opt,
                 fprintf(stderr, "%s: Database version is up to date\n", prog);
         }
     } else {
-        throw runtime_error("Database has not been initialized");
+        throw runtime_error("database has not been initialized");
     }
 }
 
@@ -470,7 +470,7 @@ void validate_database_latest_version(const ldp_options& opt)
                     "upgrade-database command");
         }
     } else {
-        throw runtime_error("Database has not been initialized");
+        throw runtime_error("database has not been initialized");
     }
 }
 
