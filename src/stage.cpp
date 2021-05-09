@@ -25,6 +25,8 @@
 namespace fs = std::experimental::filesystem;
 namespace json = rapidjson;
 
+const int copy_buffer_size = 125000000;
+
 constexpr json::ParseFlag pflags = json::kParseTrailingCommasFlag;
 
 struct name_comparator {
@@ -409,7 +411,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
 
         if (pass == 2) {
 
-            if (copy_buffer->length() > 490000000) {
+            if (copy_buffer->length() > (copy_buffer_size - 2000000)) {
                 end_copy_batch(opt, lg, table.name, copy_buffer, conn);
                 begin_copy_batch();
                 record_count = 0;
@@ -617,7 +619,7 @@ static void stage_page(const ldp_options& opt, ldp_log* lg, int pass,
 
     {
         string copy_buffer;
-        copy_buffer.reserve(125000000);
+        copy_buffer.reserve(copy_buffer_size);
         JSONHandler handler(pass, opt, lg, table, conn, dbt, drop_fields, stats, &copy_buffer);
         reader.Parse(is, handler);
     }
