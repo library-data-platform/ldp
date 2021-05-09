@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <vector>
 
-#include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/postgres.h"
 #include "dbtype.h"
 #include "init.h"
@@ -206,7 +205,7 @@ static void set_dbsystem_main_anonymize(const ldp_options& opt)
     { etymon::pgconn_result r(&conn, sql); }
 }
 
-void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
+void server_loop(const ldp_options& opt)
 {
     // Check that database version is up to date.
     validate_database_latest_version(opt);
@@ -252,7 +251,6 @@ void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
                     string s = e.what();
                     if ( !(s.empty()) && s.back() == '\n' )
                         s.pop_back();
-                    etymon::odbc_env odbc;
                     etymon::pgconn log_conn(opt.dbinfo);
                     ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet);
                     lg.write(log_level::error, "server", "", s, -1);
@@ -284,7 +282,6 @@ void cmd_init_database(const ldp_options& opt)
     if (opt.set_profile != profile::folio)
         throw runtime_error("Unknown profile");
 
-    etymon::odbc_env odbc;
     //server_lock svrlock(&odbc, opt.db, opt.lg_level);
     disable_termination_signals();
     init_database(opt, opt.ldp_user, opt.ldpconfig_user);
@@ -296,7 +293,6 @@ void cmd_init_database(const ldp_options& opt)
 
 void cmd_upgrade_database(const ldp_options& opt)
 {
-    etymon::odbc_env odbc;
     //server_lock svrlock(&odbc, opt.db, opt.lg_level);
     disable_termination_signals();
     upgrade_database(opt, opt.ldp_user, opt.ldpconfig_user, opt.datadir, opt.quiet);
@@ -314,11 +310,10 @@ void cmd_list_tables(const ldp_options& opt)
 
 void cmd_server(const ldp_options& opt)
 {
-    etymon::odbc_env odbc;
     //server_lock svrlock(&odbc, opt.db, opt.lg_level);
     if (opt.lg_level == log_level::trace || opt.lg_level == log_level::detail)
         fprintf(stderr, "ldp: starting server\n");
-    server_loop(opt, &odbc);
+    server_loop(opt);
 }
 
 void config_options(const ldp_config& conf, ldp_options* opt)
