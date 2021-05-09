@@ -501,6 +501,11 @@ Reference
   * `database_user` (string; required) is the LDP database
     administrator user name.
 
+* `parallel_update` (Boolean; optional) when set to `false`, disables
+  parallel updates.  The default value is `true`.  Disabling parallel
+  updates can be useful to make debugging easier, but it will also
+  slow down the update process.
+
 * `parallel_vacuum` (Boolean; optional) when set to `false`, disables
   parallel vacuum in PostgreSQL 13 or later, which may slow down
   vacuuming but may be more friendly to concurrent user queries or
