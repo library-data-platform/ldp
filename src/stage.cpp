@@ -359,7 +359,7 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
                     "    Table: " + table.name + "\n"
                     "    ID: " + id + "\n"
                     "    Action: Value for column \"data\" set to NULL", -1);
-            data = "NULL";
+            data = "\\N";
         }
     }
 
