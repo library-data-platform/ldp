@@ -84,6 +84,7 @@ public:
     bool anonymize = true;
     bool record_history = true;
     bool parallel_vacuum = true;
+    bool parallel_update = false;
     bool index_large_varchar = false;
     bool savetemps = false;
     //FILE* err = stderr;

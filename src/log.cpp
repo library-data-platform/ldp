@@ -43,16 +43,19 @@ void ldp_log::write(log_level lv, const char* type, const string& table,
     if (elapsed_time < 0)
         strcpy(elapsed_time_str, "NULL");
     else
-        sprintf(elapsed_time_str, "%.4f", elapsed_time);
+        sprintf(elapsed_time_str, "%.0f", elapsed_time);
 
     // For printing, prefix with '\n' if the message has multiple lines.
     string printmsg;
-    if (lv != log_level::detail && message.find('\n') != string::npos)
+    if (lv != log_level::detail && message.find('\n') != string::npos) {
         printmsg = "\n" + message;
-    else
+    } else {
         printmsg = message;
-    if (elapsed_time >= 0)
-        printmsg += " [" + string(elapsed_time_str) + "]";
+    }
+    if (elapsed_time >= 0) {
+        // Time: 41.490 ms
+        printmsg += " (time: " + string(elapsed_time_str) + " s)";
+    }
 
     // Print error states and filter messages below selected log level.
     const char* level_str;

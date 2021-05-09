@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include "../etymoncpp/include/curl.h"
 #include "addcolumns.h"
@@ -339,6 +341,121 @@ void select_config_general(etymon::pgconn* conn, ldp_log* lg,
     *enable_foreign_key_warnings = (s3 == "t");
 }
 
+bool stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const vector<source_state>& source_states, const string& load_dir,
+                 field_set* drop_fields)
+{
+    etymon::pgconn conn(opt.dbinfo);
+    dbtype dbt(&conn);
+
+    if (opt.record_history) {
+        create_latest_history_table(opt, lg, *table, &conn);
+    }
+
+    {
+        { etymon::pgconn_result r(&conn, "BEGIN;"); }
+
+        lg->write(log_level::trace, "", "", table->name + ": staging", -1);
+        bool ok = stage_table_1(opt, source_states, lg, table,
+                                &conn, &dbt, load_dir, drop_fields);
+        if (!ok) {
+            return false;
+        }
+
+        ok = stage_table_2(opt, source_states, lg, table,
+                           &conn, &dbt, load_dir,
+                           drop_fields);
+        if (!ok) {
+            return false;
+        }
+
+        if (opt.record_history && table->source_type != data_source_type::srs_marc_records && table->source_type != data_source_type::srs_records) {
+            lg->write(log_level::trace, "", "", table->name + ": merging", -1);
+            merge_table(opt, lg, *table, &conn, dbt);
+        }
+
+        remove_foreign_key_constraints(&conn, lg);
+        drop_table(opt, lg, table->name, &conn);
+
+        place_table(opt, lg, *table, &conn);
+
+        { etymon::pgconn_result r(&conn, "COMMIT;"); }
+    }
+
+    index_loaded_table(lg, *table, &conn, &dbt, opt.index_large_varchar);
+
+    if (opt.record_history) {
+        drop_latest_history_table(opt, lg, *table, &conn);
+    }
+
+    string sql =
+        "SELECT COUNT(*) FROM\n"
+        "    " + table->name + ";";
+    lg->detail(sql);
+    string row_count;
+    {
+        etymon::pgconn_result r(&conn, sql);
+        row_count = PQgetvalue(r.result, 0, 0);
+    }
+    sql =
+        "SELECT COUNT(*) FROM\n"
+        "    history." + table->name + ";";
+    lg->detail(sql);
+    string history_row_count;
+    {
+        etymon::pgconn_result r(&conn, sql);
+        history_row_count = PQgetvalue(r.result, 0, 0);
+    }
+    sql =
+        "UPDATE dbsystem.tables\n"
+        "    SET updated = " + string(dbt.current_timestamp()) + ",\n"
+        "        row_count = " + row_count + ",\n"
+        "        history_row_count = " + history_row_count + ",\n"
+        "        documentation = '" + table->source_spec + " in "
+        + table->module_name + "',\n"
+        "        documentation_url = 'https://dev.folio.org/reference/api/#"
+        + table->module_name + "'\n"
+        "    WHERE table_name = '" + table->name + "';";
+    lg->detail(sql);
+    { etymon::pgconn_result r(&conn, sql); }
+
+    return true;
+}
+
+void run_stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const vector<source_state>& source_states, const string& load_dir,
+                     field_set* drop_fields)
+{
+    try {
+        stage_merge(opt, lg, table, source_states, load_dir, drop_fields);
+        exit(0);
+    } catch (runtime_error& e) {
+        string s = e.what();
+        if ( !(s.empty()) && s.back() == '\n' ) {
+            s.pop_back();
+        }
+        etymon::pgconn log_conn(opt.dbinfo);
+        ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet);
+        lg.write(log_level::error, "server", "", s, -1);
+        exit(1);
+    }
+}
+
+bool wait_stage_merge(pid_t pid, const string& table_name, ldp_log* log)
+{
+    if (pid > 0) {
+        int stat;
+        waitpid(pid, &stat, 0);
+        if (WIFEXITED(stat)) {
+            //log->write(log_level::trace, "", "", table_name + ": exit status: " + to_string(WEXITSTATUS(stat)), -1);
+            //log->write(log_level::trace, "", "", table_name + ": normal exit", -1);
+            return true;
+        } else {
+            log->write(log_level::trace, "", "", table_name + ": exit status: " + to_string(WEXITSTATUS(stat)), -1);
+            return false;
+        }
+    }
+    return true;
+}
+
 void run_update(const ldp_options& opt)
 {
     CURLcode cc;
@@ -354,11 +471,11 @@ void run_update(const ldp_options& opt)
     if (!opt.record_history) {
         lg.write(log_level::info, "server", "", "recording history is disabled", -1);
     }
-    if (!opt.parallel_vacuum) {
-        lg.write(log_level::info, "server", "", "parallel vacuum is disabled", -1);
-    }
+    //if (!opt.parallel_vacuum) {
+    //    lg.write(log_level::info, "server", "", "parallel vacuum is disabled", -1);
+    //}
 
-    lg.write(log_level::debug, "server", "", "starting full update", -1);
+    lg.write(log_level::debug, "server", "", "starting update", -1);
     timer full_update_timer;
 
     lg.write(log_level::detail, "", "", "okapi timeout: " + to_string(opt.okapi_timeout), -1);
@@ -396,7 +513,11 @@ void run_update(const ldp_options& opt)
         }
     }
 
-    string current_module = "";
+    //string current_module = "";
+
+    pid_t worker_pid = 0;
+    string worker_table_name;
+    extraction_files* worker_ext_files = nullptr;
 
     for (auto& table : schema.tables) {
 
@@ -419,16 +540,16 @@ void run_update(const ldp_options& opt)
             if (anonymize_table)
                 continue;
 
-            if (table.module_name != current_module) {
-                current_module = table.module_name;
-                lg.write(log_level::debug, "update", "", "module: " + current_module, -1);
-            }
+            //if (table.module_name != current_module) {
+            //    current_module = table.module_name;
+            //    lg.write(log_level::debug, "update", "", "module: " + current_module, -1);
+            //}
 
             lg.write(log_level::detail, "", "", "updating table: " + table.name, -1);
 
             timer update_timer;
 
-            extraction_files ext_files(opt, &lg);
+            extraction_files* ext_files = new extraction_files(opt, &lg);
 
             for (auto& state : source_states) {
 
@@ -450,15 +571,16 @@ void run_update(const ldp_options& opt)
                                  curlw.headers);
 
                 if (opt.load_from_dir == "") {
-                    lg.write(log_level::trace, "", "", "reading: " + table.source_spec, -1);
+                    lg.write(log_level::debug, "update", table.name, "updating " + table.name, -1);
+                    lg.write(log_level::trace, "", "", table.name + ": reading", -1);
                     bool found_data = false;
                     if (direct_override(state.source, table.name)) {
-                        found_data = retrieve_direct(state.source, &lg, table, load_dir, &ext_files, opt.direct_extraction_no_ssl);
+                        found_data = retrieve_direct(state.source, &lg, table, load_dir, ext_files, opt.direct_extraction_no_ssl);
                     } else {
                         if (table.source_type != data_source_type::srs_marc_records && table.source_type != data_source_type::srs_records) {
-                            found_data = retrieve_pages(curlw, opt, state.source, &lg, state.token, table, load_dir, &ext_files);
+                            found_data = retrieve_pages(curlw, opt, state.source, &lg, state.token, table, load_dir, ext_files);
                         } else {
-                            lg.write(log_level::debug, "", "", "table not updated: " + table.name + ": requires direct extraction", -1);
+                            lg.write(log_level::debug, "", "", table.name + ": requires direct extraction", -1);
                         }
                     }
                     if (!found_data) {
@@ -470,87 +592,46 @@ void run_update(const ldp_options& opt)
             if (table.skip || opt.extract_only)
                 continue;
 
-            etymon::pgconn conn(opt.dbinfo);
-            dbtype dbt(&conn);
-
-            if (opt.record_history) {
-                create_latest_history_table(opt, &lg, table, &conn);
-            }
-
-            {
-                { etymon::pgconn_result r(&conn, "BEGIN;"); }
-
-                lg.write(log_level::trace, "", "", "staging: " + table.name, -1);
-                bool ok = stage_table_1(opt, source_states, &lg, &table,
-                                        &conn, &dbt, load_dir, &drop_fields);
-                if (!ok)
-                    continue;
-
-                ok = stage_table_2(opt, source_states, &lg, &table,
-                                   &conn, &dbt, load_dir,
-                                   &drop_fields);
-                if (!ok)
-                    continue;
-
-                if (opt.record_history && table.source_type != data_source_type::srs_marc_records && table.source_type != data_source_type::srs_records) {
-                    lg.write(log_level::trace, "", "", "merging: " + table.name, -1);
-                    merge_table(opt, &lg, table, &conn, dbt);
+            if (opt.parallel_update) {  // forked process
+                if (wait_stage_merge(worker_pid, worker_table_name, &lg) && worker_pid != 0) {
+                    lg.write(log_level::trace, "", worker_table_name, worker_table_name + ": updated", -1);
+                    if (worker_ext_files) {
+                        delete worker_ext_files;
+                        worker_ext_files = nullptr;
+                    }
+                    worker_pid = 0;
+                    worker_table_name = "";
                 }
-
-                remove_foreign_key_constraints(&conn, &lg);
-                drop_table(opt, &lg, table.name, &conn);
-
-                place_table(opt, &lg, table, &conn);
-                //updateStatus(opt, table, &conn);
-
-                //updateDBPermissions(opt, &lg, &conn);
-
-                { etymon::pgconn_result r(&conn, "COMMIT;"); }
+                pid_t pid = fork();
+                if (pid == 0) {
+                    run_stage_merge(opt, &lg, &table, source_states, load_dir, &drop_fields);
+                }
+                if (pid < 0) {
+                    throw runtime_error("error starting child process");
+                }
+                worker_pid = pid;
+                worker_table_name = table.name;
+                worker_ext_files = ext_files;
+            } else {  // single process
+                try {
+                    if (stage_merge(opt, &lg, &table, source_states, load_dir, &drop_fields)) {
+                        lg.write(log_level::trace, "", table.name, table.name + ": updated", -1);
+                        delete ext_files;
+                    } else {
+                        delete ext_files;
+                        continue;
+                    }
+                } catch (runtime_error& e) {
+                    string s = e.what();
+                    if ( !(s.empty()) && s.back() == '\n' )
+                        s.pop_back();
+                    etymon::pgconn log_conn(opt.dbinfo);
+                    ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet);
+                    lg.write(log_level::error, "update", "", s, -1);
+                }
             }
-
-            index_loaded_table(&lg, table, &conn, &dbt, opt.index_large_varchar);
-
-            if (opt.record_history) {
-                drop_latest_history_table(opt, &lg, table, &conn);
-            }
-
-            //vacuumAnalyzeTable(opt, table, &conn);
-
-            string sql =
-                "SELECT COUNT(*) FROM\n"
-                "    " + table.name + ";";
-            lg.detail(sql);
-            string row_count;
-            {
-                etymon::pgconn_result r(&conn, sql);
-                row_count = PQgetvalue(r.result, 0, 0);
-            }
-            sql =
-                "SELECT COUNT(*) FROM\n"
-                "    history." + table.name + ";";
-            lg.detail(sql);
-            string history_row_count;
-            {
-                etymon::pgconn_result r(&conn, sql);
-                history_row_count = PQgetvalue(r.result, 0, 0);
-            }
-            sql =
-                "UPDATE dbsystem.tables\n"
-                "    SET updated = " + string(dbt.current_timestamp()) + ",\n"
-                "        row_count = " + row_count + ",\n"
-                "        history_row_count = " + history_row_count + ",\n"
-                "        documentation = '" + table.source_spec + " in "
-                + table.module_name + "',\n"
-                "        documentation_url = 'https://dev.folio.org/reference/api/#"
-                + table.module_name + "'\n"
-                "    WHERE table_name = '" + table.name + "';";
-            lg.detail(sql);
-            { etymon::pgconn_result r(&conn, sql); }
-
-            lg.write(log_level::debug, "update", table.name, "updated table: " + table.name, update_timer.elapsed_time());
-
-            //if (opt.logLevel == log_level::trace)
-            //    loadTimer.print("load time");
+        
+            //lg.write(log_level::debug, "update", table.name, table.name + ": updated", update_timer.elapsed_time());
 
         } catch (runtime_error& e) {
             string s = table.name + ": " + e.what();
@@ -560,20 +641,17 @@ void run_update(const ldp_options& opt)
             ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet);
             lg.write(log_level::error, "server", "", s, -1);
         }
-        
+
     } // for
+    if (opt.parallel_update) {
+        wait_stage_merge(worker_pid, worker_table_name, &lg);
+        if (worker_ext_files) {
+            delete worker_ext_files;
+            worker_ext_files = nullptr;
+        }
+    }
 
-    //{
-    //    etymon::odbc_conn conn(&odbc, opt.db);
-    //    {
-    //        etymon::odbc_tx tx(&conn);
-    //        dropOldTables(opt, &lg, &conn);
-    //        tx.commit();
-    //    }
-    //}
-
-    lg.write(log_level::debug, "server", "", "completed full update",
-            full_update_timer.elapsed_time());
+    lg.write(log_level::debug, "server", "", "completed update", full_update_timer.elapsed_time());
 
     // Add optional columns
     add_optional_columns(opt, &lg);
@@ -581,7 +659,7 @@ void run_update(const ldp_options& opt)
     // Vacuum and analyze all updated tables
     {
         etymon::pgconn conn(opt.dbinfo);
-        lg.write(log_level::debug, "server", "", "starting vacuum", -1);
+        lg.write(log_level::debug, "server", "", "vacuuming", -1);
         timer vacuum_analyze_timer;
         string v;
         vacuum_sql(opt, &v);
@@ -603,8 +681,7 @@ void run_update(const ldp_options& opt)
                 { etymon::pgconn_result r(&conn, sql); }
             }
         }
-        lg.write(log_level::debug, "server", "", "completed vacuum",
-                 vacuum_analyze_timer.elapsed_time());
+        //lg.write(log_level::debug, "server", "", "completed vacuum", vacuum_analyze_timer.elapsed_time());
     }
 
     // TODO Move analysis and constraints out of update process.

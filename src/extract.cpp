@@ -18,8 +18,9 @@
 extraction_files::~extraction_files()
 {
     if (!opt.savetemps) {
-        for (const auto& f : files)
+        for (const auto& f : files) {
             unlink(f.c_str());
+        }
         if (dir != "") {
             int r = rmdir(dir.c_str());
             if (r == -1) {
@@ -180,7 +181,7 @@ void okapi_login(const ldp_options& opt, const data_source& source,
     string path = source.okapi_url;
     etymon::join(&path, auth);
 
-    lg->write(log_level::trace, "", "", "reading: " + auth, -1);
+    lg->write(log_level::trace, "", "", "authenticating with okapi", -1);
 
     string tenantHeader = "X-Okapi-Tenant: ";
     tenantHeader += source.okapi_tenant;

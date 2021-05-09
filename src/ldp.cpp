@@ -215,7 +215,7 @@ void server_loop(const ldp_options& opt)
     etymon::pgconn log_conn(opt.dbinfo);
     ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet);
 
-    lg.write(log_level::info, "server", "", string("server started"), -1);
+    //lg.write(log_level::info, "server", "", string("server started"), -1);
     if (opt.direct_extraction_no_ssl) {
         lg.write(log_level::info, "server", "", "SSL disabled for direct extraction", -1);
     }
@@ -262,7 +262,7 @@ void server_loop(const ldp_options& opt)
             std::this_thread::sleep_for(std::chrono::seconds(60));
     } while (!opt.cli_mode);
 
-    lg.write(log_level::info, "server", "", string("server stopped"), -1);
+    //lg.write(log_level::info, "server", "", string("server stopped"), -1);
 }
 
 /*
@@ -364,6 +364,8 @@ void config_options(const ldp_config& conf, ldp_options* opt)
     conf.get_bool("/record_history", &(opt->record_history));
 
     conf.get_bool("/parallel_vacuum", &(opt->parallel_vacuum));
+
+    conf.get_bool("/parallel_update", &(opt->parallel_update));
 
     conf.get_bool("/allow_destructive_tests", &(opt->allow_destructive_tests));
 }

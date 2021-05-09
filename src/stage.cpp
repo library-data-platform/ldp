@@ -381,15 +381,15 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
 
         if (pass == 2) {
             string brief = record;
-            if (brief.length() > 71) {
-                brief = brief.substr(0, 71) + "...";
+            if (brief.length() > 80) {
+                brief = brief.substr(0, 80) + "...";
             }
             switch (opt.lg_level) {
             case log_level::trace:
-                lg->trace(brief);
+                lg->trace(table.name + ": " + brief);
                 break;
             case log_level::detail:
-                lg->detail("full record:\n" + record);
+                lg->detail(table.name + ": " + record);
                 break;
             default:
                 break;
