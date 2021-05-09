@@ -529,8 +529,8 @@ Reference
     user name.
   * `direct_tables` (array; optional) is a list of tables that should
     be updated using direct extraction.  Only these tables may be
-    included: `inventory_holdings`, `inventory_instances`, and
-    `inventory_items`.
+    included: `inventory_holdings`, `inventory_instances`,
+    `inventory_items`, `srs_marc`, and `srs_records`.
   * `okapi_password` (string; required) is the password for the
   * `okapi_tenant` (string; required) is the Okapi tenant.
   * `okapi_url` (string; required) is the URL for the Okapi instance
