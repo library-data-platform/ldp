@@ -52,16 +52,16 @@ The LDP software and database are designed to be performant on low
 cost hardware, and in most cases they should run well with the
 following minimum requirements:
 
-* Database:
+* LDP software:
   * Memory: 1 GB
   * Storage: 500 GB HDD
-* LDP software:
-  * Memory: 300 MB
-  * Storage: 160 GB HDD
+* Database:
+  * Memory: 8 GB
+  * Storage: 1 TB HDD
 
-For large libraries, or if very high performance is desired, the
-database CPU and memory can be increased as needed.  The database
-storage capacity also can be increased as needed.
+For higher performance, SSD drives are recommended for storage, and
+the database CPU and memory should be increased.  The database storage
+capacity also can be increased as needed.
 
 
 3\. Installation

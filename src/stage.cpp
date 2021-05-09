@@ -197,7 +197,7 @@ public:
     field_set* drop_fields = nullptr;
     size_t record_count = 0;
     size_t total_record_count = 0;
-    string insert_buffer;
+    string* copy_buffer;
     JSONHandler(int pass,
                 const ldp_options& options,
                 ldp_log* lg,
@@ -205,7 +205,8 @@ public:
                 etymon::pgconn* conn,
                 const dbtype& dbt,
                 field_set* drop_fields,
-                map<string,type_counts>* statistics) :
+                map<string,type_counts>* statistics,
+                string* copy_buffer) :
         pass(pass),
         opt(options),
         lg(lg),
@@ -213,7 +214,8 @@ public:
         stats(statistics),
         conn(conn),
         dbt(dbt),
-        drop_fields(drop_fields) {}
+        drop_fields(drop_fields),
+        copy_buffer(copy_buffer) {}
     bool StartObject();
     bool EndObject(json::SizeType memberCount);
     bool StartArray();
@@ -241,31 +243,29 @@ bool JSONHandler::StartObject()
     return true;
 }
 
-static void begin_inserts(const string& table, string* buffer)
+static void begin_copy_batch()
 {
-    string loading_table;
-    loading_table_name(table, &loading_table);
-    *buffer = "INSERT INTO " + loading_table + " VALUES ";
+    // NOP
 }
 
-static void end_inserts(const ldp_options& opt, ldp_log* lg,
+static void end_copy_batch(const ldp_options& opt, ldp_log* lg,
                         const string& table, string* buffer,
                         etymon::pgconn* conn)
 {
-    *buffer += ";\n";
-    lg->write(log_level::detail, "", "", "Loading data for table: " + table,
-              -1);
-    etymon::pgconn_result r(conn, *buffer);
+    int r = PQputCopyData(conn->conn, buffer->data(), buffer->length());
+    if (r == -1) {
+        throw runtime_error(PQerrorMessage(conn->conn));
+    }
     buffer->clear();
 }
 
 static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
         const table_schema& table, const json::Document& doc,
-        size_t* record_count, size_t* total_record_count, string* insert_buffer)
+        size_t* record_count, size_t* total_record_count, string* copy_buffer)
 {
-    if (*record_count > 0)
-        *insert_buffer += ',';
-    *insert_buffer += '(';
+    //if (*record_count > 0)
+    //    *insert_buffer += ',';
+    //*insert_buffer += '(';
 
     const char* id = nullptr;
     if (doc.HasMember("id") && doc["id"].IsString()) {
@@ -279,9 +279,9 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
 
     // id
     string idenc;
-    dbt.encode_string_const(id, &idenc);
-    *insert_buffer += idenc;
-    *insert_buffer += ',';
+    dbt.encode_copy(id, &idenc);
+    *copy_buffer += idenc;
+    *copy_buffer += '\t';
 
     string s;
     double d;
@@ -290,20 +290,20 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
             continue;
         const char* sourceColumnName = column.source_name.c_str();
         if (doc.HasMember(sourceColumnName) == false) {
-            *insert_buffer += "NULL,";
+            *copy_buffer += "\\N\t";
             continue;
         }
         const json::Value& jsonValue = doc[sourceColumnName];
         if (jsonValue.IsNull()) {
-            *insert_buffer += "NULL,";
+            *copy_buffer += "\\N\t";
             continue;
         }
         switch (column.type) {
         case column_type::bigint:
-            *insert_buffer += to_string(jsonValue.GetInt());
+            *copy_buffer += to_string(jsonValue.GetInt());
             break;
         case column_type::boolean:
-            *insert_buffer += ( jsonValue.GetBool() ?  "TRUE" : "FALSE" );
+            *copy_buffer += ( jsonValue.GetBool() ?  "1" : "0" );
             break;
         case column_type::numeric:
             d = jsonValue.GetDouble();
@@ -318,12 +318,12 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
                           "    Action: Value set to 0", -1);
                 s = "0";
             }
-            *insert_buffer += s;
+            *copy_buffer += s;
             break;
         case column_type::id:
         case column_type::timestamptz:
         case column_type::varchar:
-            dbt.encode_string_const(jsonValue.GetString(), &s);
+            dbt.encode_copy(jsonValue.GetString(), &s);
             // Check if varchar exceeds maximum string length (65535).
             if (s.length() >= 65535) {
                 lg->write(log_level::warning, "", "",
@@ -332,19 +332,19 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
                         "    Column: " + column.name + "\n"
                         "    ID: " + id + "\n"
                         "    Action: Value set to NULL", -1);
-                s = "NULL";
+                s = "\\N";
             }
-            *insert_buffer += s;
+            *copy_buffer += s;
             break;
         }
-        *insert_buffer += ",";
+        *copy_buffer += '\t';
     }
 
     string data;
     json::StringBuffer json_text;
     json::PrettyWriter<json::StringBuffer> writer(json_text);
     doc.Accept(writer);
-    dbt.encode_string_const(json_text.GetString(), &data);
+    dbt.encode_copy(json_text.GetString(), &data);
     // Check if pretty-printed JSON exceeds maximum string length (65535).
     if (data.length() > 65535) {
         // Formatted JSON object size exceeds database limit.  Try
@@ -352,7 +352,7 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
         json::StringBuffer json_text;
         json::Writer<json::StringBuffer> writer(json_text);
         doc.Accept(writer);
-        dbt.encode_string_const(json_text.GetString(), &data);
+        dbt.encode_copy(json_text.GetString(), &data);
         if (data.length() > 65535) {
             lg->write(log_level::warning, "", "",
                     "JSON object size exceeds database limit:\n"
@@ -365,8 +365,8 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
 
     //print(Print::warning, opt, "storing record as:\n" + data + "\n");
 
-    *insert_buffer += data;
-    *insert_buffer += ")";
+    *copy_buffer += data;
+    *copy_buffer += "\n";
     (*record_count)++;
     (*total_record_count)++;
     //if (*total_record_count % 100000 == 0)
@@ -409,15 +409,13 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
 
         if (pass == 2) {
 
-            if (insert_buffer.length() > 16500000) {
-                end_inserts(opt, lg, table.name, &insert_buffer,
-                            conn);
-                begin_inserts(table.name, &insert_buffer);
+            if (copy_buffer->length() > 490000000) {
+                end_copy_batch(opt, lg, table.name, copy_buffer, conn);
+                begin_copy_batch();
                 record_count = 0;
             }
 
-            writeTuple(opt, lg, dbt, table, doc, &record_count,
-                       &total_record_count, &insert_buffer);
+            writeTuple(opt, lg, dbt, table, doc, &record_count, &total_record_count, copy_buffer);
         }
 
     } else {
@@ -433,7 +431,7 @@ bool JSONHandler::StartArray()
     if (level == 1) {
         active = true;
         if (pass == 2)
-            begin_inserts(table.name, &insert_buffer);
+            begin_copy_batch();
     } else {
         if (level > 1)
             record += '[';
@@ -448,7 +446,7 @@ bool JSONHandler::EndArray(json::SizeType elementCount)
         active = false;
         if (record_count > 0)
             if (pass == 2)
-                end_inserts(opt, lg, table.name, &insert_buffer, conn);
+                end_copy_batch(opt, lg, table.name, copy_buffer, conn);
     } else {
         if (level > 2)
             record += "],";
@@ -609,8 +607,36 @@ static void stage_page(const ldp_options& opt, ldp_log* lg, int pass,
     json::Reader reader;
     etymon::file f(filename, "r");
     json::FileReadStream is(f.fp, read_buffer, read_buffer_size);
-    JSONHandler handler(pass, opt, lg, table, conn, dbt, drop_fields, stats);
-    reader.Parse(is, handler);
+
+    if (pass == 2) {
+        string loading_table;
+        loading_table_name(table.name, &loading_table);
+        string sql = "COPY " + loading_table + " FROM STDIN;";
+        { etymon::pgconn_result r(conn, sql); }
+    }
+
+    {
+        string copy_buffer;
+        copy_buffer.reserve(500000000);
+        JSONHandler handler(pass, opt, lg, table, conn, dbt, drop_fields, stats, &copy_buffer);
+        reader.Parse(is, handler);
+    }
+
+    if (pass == 2) {
+        int r = PQputCopyEnd(conn->conn, nullptr);
+        if (r == -1) {
+            throw runtime_error(PQerrorMessage(conn->conn));
+        }
+        PGresult* res = PQgetResult(conn->conn);
+        if (res == nullptr || PQresultStatus(res) == PGRES_FATAL_ERROR) {
+            string err = PQresultErrorMessage(res);
+            if (res != nullptr) {
+                PQclear(res);
+            }
+            throw runtime_error(err);
+        }
+        PQclear(res);
+    }
 }
 
 static void compose_data_file_path(const string& load_dir,

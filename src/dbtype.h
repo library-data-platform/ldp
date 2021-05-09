@@ -22,6 +22,7 @@ public:
             const string& sequence_name, string* sql) const;
     void alter_sequence_owned_by(const string& sequence_name,
         const string& table_column_name, string* sql) const;
+    void encode_copy(const char* str, string* newstr) const;
     void encode_string_const(const char* str, string* newstr) const;
     const char* type_string() const;
     dbsys type() const;
