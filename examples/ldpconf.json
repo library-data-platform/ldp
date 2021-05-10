@@ -1,12 +1,7 @@
 {
     "deployment_environment": "production",
     "ldp_database": {
-        "database_name": "ldp",
-        "database_host": "ldp.folio.org",
-        "database_port": 5432,
-        "database_user": "ldpadmin",
-        "database_password": "(ldpadmin password here)",
-	"database_sslmode": "require"
+        "odbc_database": "ldp"
     },
     "enable_sources": ["my_library"],
     "sources": {

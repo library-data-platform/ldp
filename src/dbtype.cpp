@@ -2,12 +2,11 @@
 
 #include "dbtype.h"
 
-dbtype::dbtype(etymon::pgconn* conn)
+dbtype::dbtype(etymon::odbc_conn* conn)
 {
     string dbms_name;
-    //conn->get_dbms_name(&dbms_name);
-    //set_type(dbms_name);
-    set_type("PostgreSQL");
+    conn->get_dbms_name(&dbms_name);
+    set_type(dbms_name);
 }
 
 void dbtype::set_type(const string& dbms)
@@ -144,41 +143,6 @@ const char* dbtype::type_string() const
 dbsys dbtype::type() const
 {
     return dbt;
-}
-
-void dbtype::encode_copy(const char* str, string* newstr) const
-{
-    newstr->clear();
-    const char *p = str;
-    char c;
-    while ( (c=*p) != '\0') {
-        switch (c) {
-            case '\\':
-                *newstr += "\\\\";
-                break;
-            case '\b':
-                *newstr += "\\b";
-                break;
-            case '\f':
-                *newstr += "\\f";
-                break;
-            case '\n':
-                *newstr += "\\n";
-                break;
-            case '\r':
-                *newstr += "\\r";
-                break;
-            case '\t':
-                *newstr += "\\t";
-                break;
-            case '\v':
-                *newstr += "\\v";
-                break;
-            default:
-                *newstr += c;
-        }
-        p++;
-    }
 }
 
 static void encode_str(const char* str, string* newstr, bool e)

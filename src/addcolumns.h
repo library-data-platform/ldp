@@ -3,7 +3,7 @@
 
 #include "options.h"
 
-void add_optional_columns(const ldp_options& opt, ldp_log* lg);
+void add_optional_columns(const ldp_options& opt, ldp_log* lg, etymon::odbc_env* odbc);
 
 #endif
 

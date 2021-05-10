@@ -18,9 +18,8 @@
 extraction_files::~extraction_files()
 {
     if (!opt.savetemps) {
-        for (const auto& f : files) {
+        for (const auto& f : files)
             unlink(f.c_str());
-        }
         if (dir != "") {
             int r = rmdir(dir.c_str());
             if (r == -1) {
@@ -181,7 +180,7 @@ void okapi_login(const ldp_options& opt, const data_source& source,
     string path = source.okapi_url;
     etymon::join(&path, auth);
 
-    lg->write(log_level::trace, "", "", "authenticating with okapi", -1);
+    lg->write(log_level::trace, "", "", "reading: " + auth, -1);
 
     string tenantHeader = "X-Okapi-Tenant: ";
     tenantHeader += source.okapi_tenant;
@@ -514,14 +513,12 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
     }
 
     // Select from table.direct_source_table and write to JSON file.
-    etymon::pgconn_info dbinfo;
-    dbinfo.dbhost = source.direct.database_host;
-    dbinfo.dbport = source.direct.database_port;
-    dbinfo.dbuser = source.direct.database_user;
-    dbinfo.dbpasswd = source.direct.database_password;
-    dbinfo.dbname = source.direct.database_name;
-    dbinfo.dbsslmode = direct_extraction_no_ssl ? "disable" : "require";
-    etymon::pgconn db(dbinfo);
+    etymon::Postgres db(source.direct.database_host,
+                        source.direct.database_port,
+                        source.direct.database_user,
+                        source.direct.database_password,
+                        source.direct.database_name,
+                        direct_extraction_no_ssl ? "disable" : "require");
     string sql = "SELECT " + attr + " FROM " + source.okapi_tenant + "_" + table.direct_source_table + ";";
     lg->write(log_level::detail, "", "", sql, -1);
 
@@ -544,7 +541,7 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
 
     int row = 0;
     while (true) {
-        etymon::pgconn_result_async res(&db);
+        etymon::PostgresResultAsync res(&db);
         if (res.result == nullptr || PQresultStatus(res.result) != PGRES_SINGLE_TUPLE) {
             break;
         }

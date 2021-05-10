@@ -36,9 +36,9 @@ static void throw_invalid_data_type(const string& key,
             "    Expected type: " + expected_type);
 }
 
-void throw_value_out_of_range(const string& key,
-                              const string& value,
-                              const string& range)
+static void throw_value_out_of_range(const string& key,
+                                     const string& value,
+                                     const string& range)
 {
     throw runtime_error(
             "Value for configuration setting is out of range:\n"
@@ -155,14 +155,11 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
         int port = 0;
         bool found = get_int(prefix + "direct_database_port", false, &port);
         if (found) {
-            if (1 <= port && port <= 65535) {
-                direct.database_port = port;
-            } else {
+            if (1 <= port && port <= 65535)
+                direct.database_port = to_string(port);
+            else
                 throw_value_out_of_range(prefix + "direct_database_port",
                                          to_string(port), "1 to 65535");
-            }
-        } else {
-            direct.database_port = 5432;
         }
         // Direct database user.
         get_string(prefix + "direct_database_user", false,

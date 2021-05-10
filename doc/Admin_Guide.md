@@ -35,11 +35,14 @@ LDP instance.
 ### Software
 
 * Operating systems supported:
-  * Linux
+  * Linux 4.18.0 or later
 * Database systems supported:
-  * [PostgreSQL](https://www.postgresql.org/) 12.6 or later
+  * [PostgreSQL](https://www.postgresql.org/) 11 or later
+  * [Amazon Redshift](https://aws.amazon.com/redshift/) 1.0.12094 or later
 * Other software dependencies:
-  * [libpq](https://www.postgresql.org/) 12.6 or later
+  * ODBC driver for [PostgreSQL](https://odbc.postgresql.org/) or [Redshift](https://docs.aws.amazon.com/redshift/latest/mgmt/configure-odbc-connection.html#install-odbc-driver-linux)
+  * [unixODBC](http://www.unixodbc.org/) 2.3.4 or later
+  * [libpq](https://www.postgresql.org/) 11.5 or later
   * [libcurl](https://curl.haxx.se/) 7.64.0 or later
   * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
 * Required to build from source code:
@@ -52,16 +55,18 @@ The LDP software and database are designed to be performant on low
 cost hardware, and in most cases they should run well with the
 following minimum requirements:
 
-* LDP software:
-  * Memory: 500 MB
-  * Storage: 500 GB HDD
 * Database:
-  * Memory: 8 GB
-  * Storage: 1 TB HDD
+  * Memory: 1 GB
+  * Storage: 500 GB HDD
+* LDP software:
+  * Memory: 300 MB
+  * Storage: 160 GB HDD
 
-For higher performance, SSD drives are recommended for storage, and
-the database CPU and memory should be increased.  The database storage
-capacity also can be increased as needed.
+For large libraries, or if very high performance is desired, the
+database CPU and memory can be increased as needed.  Alternatively,
+Amazon Redshift can be used instead of PostgreSQL for significantly
+higher performance and scalability.  The database storage capacity
+also can be increased as needed.
 
 
 3\. Installation
@@ -90,14 +95,26 @@ a package manager on some platforms.
 ```shell
 $ sudo apt update
 $ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
-      postgresql-server-dev-all rapidjson-dev
+      postgresql-server-dev-all rapidjson-dev unixodbc unixodbc-dev
+```
+
+For PostgreSQL, the ODBC driver can be installed with:
+
+```shell
+$ sudo apt install odbc-postgresql
 ```
 
 #### RHEL/CentOS Linux
 
 ```shell
 $ sudo dnf install cmake gcc-c++ libcurl-devel libpq-devel make \
-      postgresql-server-devel
+      postgresql-server-devel unixODBC-devel
+```
+
+For PostgreSQL, the ODBC driver can be installed with:
+
+```shell
+$ sudo dnf install postgresql-odbc
 ```
 
 RapidJSON can be [installed from
@@ -128,7 +145,7 @@ $ ./build/ldp help
 
 Before using the LDP software, we have to create a database that will
 store the data.  This can be a local or cloud-based PostgreSQL
-database.
+database or a cloud-based Redshift database.
 
 A robust backup process should be used to ensure that historical data
 and local tables are safe.
@@ -150,6 +167,16 @@ Amazon/AWS Relational Database Service (RDS), we recommend setting:
 * Number of instances:  `1`
 * Storage:  `General Purpose SSD`
 * Snapshots:  Automated snapshots enabled
+
+#### Redshift
+
+For libraries that deploy LDP with Redshift, we recommend setting:
+
+* Node type:  `dc2.large`
+* Cluster type:  `Multiple Node`
+* Number of compute nodes:  `2`
+* Snapshots:  Automated snapshots enabled
+* Maintenance Track:  `Trailing`
 
 ### Configuring the database
 
@@ -194,7 +221,11 @@ $ psql ldp --username=<admin_user> \
       --command="GRANT USAGE ON SCHEMA public TO ldp;"
 ```
 
-Or once the database has been created:
+Additional command line options may be required to specify the
+database host, port, etc.
+
+In Redshift, this can be done in the database once it has been
+created, for example:
 
 ```sql
 CREATE USER ldpadmin PASSWORD '(ldpadmin password here)';
@@ -206,6 +237,55 @@ REVOKE ALL ON SCHEMA public FROM public;
 GRANT ALL ON SCHEMA public TO ldpadmin;
 GRANT USAGE ON SCHEMA public TO ldpconfig;
 GRANT USAGE ON SCHEMA public TO ldp;
+```
+
+### Configuring ODBC
+
+The LDP software uses unixODBC to connect to the LDP database.  To
+configure the connection, install the ODBC driver for the database
+system being used (PostgreSQL or Redshift), and create the files
+`$HOME/.odbcinst.ini` and `$HOME/.odbc.ini`.  The provided example
+files
+[odbcinst.ini](https://raw.githubusercontent.com/library-data-platform/ldp/master/examples/odbcinst.ini)
+and
+[odbc.ini](https://raw.githubusercontent.com/library-data-platform/ldp/master/examples/odbc.ini)
+can be used as templates.
+
+__odbcinst.ini__
+```
+[PostgreSQL]
+Description = PostgreSQL
+Driver = /usr/lib/x86_64-linux-gnu/odbc/psqlodbcw.so
+FileUsage = 1
+```
+
+__odbc.ini__
+```
+[ldp]
+Description = ldp
+Driver = PostgreSQL
+Database = ldp
+Servername = ldp.folio.org
+UserName = ldpadmin
+Password = (ldpadmin password here)
+Port = 5432
+SSLMode = require
+```
+
+The command-line tool `isql` is included with unixODBC and can be used
+to test the connection:
+
+```
+$ isql ldp
++---------------------------------------+
+| Connected!                            |
+|                                       |
+| sql-statement                         |
+| help [tablename]                      |
+| quit                                  |
+|                                       |
++---------------------------------------+
+SQL>
 ```
 
 
@@ -237,12 +317,7 @@ __ldpconf.json__
 {
     "deployment_environment": "production",
     "ldp_database": {
-        "database_name": "ldp",
-        "database_host": "ldp.folio.org",
-        "database_port": 5432,
-        "database_user": "ldpadmin",
-        "database_password": "(ldpadmin password here)",
-	"database_sslmode": "require"
+        "odbc_database": "ldp"
     },
     "enable_sources": ["my_library"],
     "sources": {
@@ -491,27 +566,15 @@ Reference
     defined by default as `ldpconfig`.
   * `ldp_user` (string; optional) is the database user that is defined
     by default as `ldp`.
-  * `database_host` (string; required) is the LDP database host name.
-  * `database_name` (string; required) is the LDP database name.
-  * `database_password` (string; required) is the password for the
-    specified LDP database administrator user name.
-  * `database_port` (integer; required) is the LDP database port.
-  * `database_sslmode` (string; required) is the LDP database
-    connection SSL mode.
-  * `database_user` (string; required) is the LDP database
-    administrator user name.
-
-* `parallel_update` (Boolean; optional) when set to `false`, disables
-  parallel updates.  The default value is `true`.  Disabling parallel
-  updates can be useful to make debugging easier, but it will also
-  slow down the update process.
+  * `odbc_database` (string; required) is the ODBC "data source name"
+    of the LDP database.
 
 * `parallel_vacuum` (Boolean; optional) when set to `false`, disables
   parallel vacuum in PostgreSQL 13 or later, which may slow down
   vacuuming but may be more friendly to concurrent user queries or
   other database operations.  The default value is `true`.  This
-  setting should not be set to `false` with PostgreSQL 12.x or
-  earlier.
+  setting should not be set to `false` with Redshift or with
+  PostgreSQL 12 or earlier.
 
 * `record_history` (Boolean; optional) when set to `false`, disables
   recording historical data.  The default value is `true`.  Please
@@ -534,8 +597,8 @@ Reference
     user name.
   * `direct_tables` (array; optional) is a list of tables that should
     be updated using direct extraction.  Only these tables may be
-    included: `inventory_holdings`, `inventory_instances`,
-    `inventory_items`, `srs_marc`, and `srs_records`.
+    included: `inventory_holdings`, `inventory_instances`, and
+    `inventory_items`.
   * `okapi_password` (string; required) is the password for the
   * `okapi_tenant` (string; required) is the Okapi tenant.
   * `okapi_url` (string; required) is the URL for the Okapi instance

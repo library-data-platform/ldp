@@ -5,26 +5,13 @@
 #include "../etymoncpp/include/util.h"
 #include "log.h"
 
-void ldp_log::init(log_level lv, bool console, bool quiet)
+ldp_log::ldp_log(etymon::odbc_conn* conn, log_level lv, bool console, bool quiet)
 {
+    this->conn = conn;
     this->lv = lv;
     this->console = console;
     this->quiet = quiet;
     dbt = new dbtype(conn);
-}
-
-ldp_log::ldp_log(etymon::pgconn* conn, log_level lv, bool console, bool quiet)
-{
-    this->dbinfo = nullptr;
-    this->conn = conn;
-    this->init(lv, console, quiet);
-}
-
-ldp_log::ldp_log(log_level lv, bool console, bool quiet, const etymon::pgconn_info* dbinfo)
-{
-    this->dbinfo = dbinfo;
-    this->conn = nullptr;
-    this->init(lv, console, quiet);
 }
 
 ldp_log::~ldp_log()
@@ -56,19 +43,16 @@ void ldp_log::write(log_level lv, const char* type, const string& table,
     if (elapsed_time < 0)
         strcpy(elapsed_time_str, "NULL");
     else
-        sprintf(elapsed_time_str, "%.0f", elapsed_time);
+        sprintf(elapsed_time_str, "%.4f", elapsed_time);
 
     // For printing, prefix with '\n' if the message has multiple lines.
     string printmsg;
-    if (lv != log_level::detail && message.find('\n') != string::npos) {
+    if (lv != log_level::detail && message.find('\n') != string::npos)
         printmsg = "\n" + message;
-    } else {
+    else
         printmsg = message;
-    }
-    if (elapsed_time >= 0) {
-        // Time: 41.490 ms
-        printmsg += " (time: " + string(elapsed_time_str) + " s)";
-    }
+    if (elapsed_time >= 0)
+        printmsg += " [" + string(elapsed_time_str) + "]";
 
     // Print error states and filter messages below selected log level.
     const char* level_str;
@@ -126,13 +110,7 @@ void ldp_log::write(log_level lv, const char* type, const string& table,
         "    (" + string(dbt->current_timestamp()) + ", " +
         to_string(getpid()) + ", '" + level_str + "', '" + type + "', '" +
         table + "', " + logmsg_encoded + ", " + elapsed_time_str + ");";
-
-    if (conn == nullptr) {
-        etymon::pgconn c(*dbinfo);
-        { etymon::pgconn_result r(&c, sql); }
-    } else {
-        { etymon::pgconn_result r(conn, sql); }
-    }
+    conn->exec(sql);
 }
 
 void ldp_log::warning(const string& message)

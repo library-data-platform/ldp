@@ -4,15 +4,12 @@
 
 namespace etymon {
 
-static void debug_notice_processor(void *arg, const char *message)
+Postgres::Postgres(const string& host, const string& port, const string& user,
+        const string& password, const string& dbname,
+        const string& sslmode)
 {
-    // NOP
-}
-
-pgconn::pgconn(const pgconn_info& info)
-{
-    string conninfo = "host=" + info.dbhost + " port=" + to_string(info.dbport) + " user=" + info.dbuser +
-        " password=" + info.dbpasswd + " dbname=" + info.dbname + " sslmode=" + info.dbsslmode;
+    string conninfo = "host=" + host + " port=" + port + " user=" + user +
+        " password=" + password + " dbname=" + dbname + " sslmode=" + sslmode;
     conn = PQconnectdb(conninfo.c_str());
     if (conn == nullptr || PQstatus(conn) == CONNECTION_BAD) {
         string err = PQerrorMessage(conn);
@@ -20,15 +17,14 @@ pgconn::pgconn(const pgconn_info& info)
             PQfinish(conn);
         throw runtime_error(err);
     }
-    PQsetNoticeProcessor(conn, debug_notice_processor, (void*) nullptr);
 }
 
-pgconn::~pgconn()
+Postgres::~Postgres()
 {
     PQfinish(conn);
 }
 
-pgconn_result::pgconn_result(pgconn* postgres, const string& command)
+PostgresResult::PostgresResult(Postgres* postgres, const string& command)
 {
     result = PQexec(postgres->conn, command.c_str());
     if (result == nullptr || PQresultStatus(result) == PGRES_FATAL_ERROR) {
@@ -39,12 +35,12 @@ pgconn_result::pgconn_result(pgconn* postgres, const string& command)
     }
 }
 
-pgconn_result::~pgconn_result()
+PostgresResult::~PostgresResult()
 {
     PQclear(result);
 }
 
-pgconn_result_async::pgconn_result_async(pgconn* postgres)
+PostgresResultAsync::PostgresResultAsync(Postgres* postgres)
 {
     result = PQgetResult(postgres->conn);
     if (result != nullptr && PQresultStatus(result) == PGRES_FATAL_ERROR) {
@@ -62,11 +58,12 @@ pgconn_result_async::pgconn_result_async(pgconn* postgres)
     }
 }
 
-pgconn_result_async::~pgconn_result_async()
+PostgresResultAsync::~PostgresResultAsync()
 {
     if (result != nullptr)
         PQclear(result);
 }
 
 }
+
 

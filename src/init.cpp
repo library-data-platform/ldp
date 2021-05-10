@@ -60,22 +60,32 @@ int64_t latest_database_version()
  * \retval true The version number was retrieved.
  * \retval false The version number was not present in the database.
  */
-bool select_database_version_ldpsystem(etymon::pgconn* conn,
+bool select_database_version_ldpsystem(etymon::odbc_conn* conn,
                                        int64_t* version)
 {
     string sql = "SELECT ldp_schema_version FROM ldpsystem.main;";
+    etymon::odbc_stmt stmt(conn);
     try {
-        etymon::pgconn_result r(conn, sql);
+        conn->exec_direct(&stmt, sql);
     } catch (runtime_error& e) {
         // This could happen if the table does not exist.
         return false;
     }
-    etymon::pgconn_result r(conn, sql);
-    if (PQntuples(r.result) != 1) {
-        string e = "wrong number of rows in table: ldpsystem.main";
+    if (conn->fetch(&stmt) == false) {
+        // This means there are no rows.  Do not try to recover
+        // automatically from this problem.
+        string e = "No rows could be read from table: ldpsystem.main";
         throw runtime_error(e);
     }
-    string ldp_schema_version = PQgetvalue(r.result, 0, 0);
+    string ldp_schema_version;
+    conn->get_data(&stmt, 1, &ldp_schema_version);
+    if (conn->fetch(&stmt)) {
+        // This means there is more than one row.  Do not try to
+        // recover automatically from this problem.
+        string e = "Too many rows in table: ldpsystem.main";
+        throw runtime_error(e);
+    }
+    //*version = stol(ldp_schema_version);
     {
         stringstream stream(ldp_schema_version);
         stream >> *version;
@@ -91,21 +101,31 @@ bool select_database_version_ldpsystem(etymon::pgconn* conn,
  * \retval true The version number was retrieved.
  * \retval false The version number was not present in the database.
  */
-bool select_database_version(etymon::pgconn* conn, int64_t* version)
+bool select_database_version(etymon::odbc_conn* conn, int64_t* version)
 {
     string sql = "SELECT database_version FROM dbsystem.main;";
+    etymon::odbc_stmt stmt(conn);
     try {
-        etymon::pgconn_result r(conn, sql);
+        conn->exec_direct(&stmt, sql);
     } catch (runtime_error& e) {
         // This could happen if the table does not exist.
         return select_database_version_ldpsystem(conn, version);
     }
-    etymon::pgconn_result r(conn, sql);
-    if (PQntuples(r.result) != 1) {
-        string e = "wrong number of rows in table: dbsystem.main";
+    if (conn->fetch(&stmt) == false) {
+        // This means there are no rows.  Do not try to recover
+        // automatically from this problem.
+        string e = "No rows could be read from table: dbsystem.main";
         throw runtime_error(e);
     }
-    string database_version = PQgetvalue(r.result, 0, 0);
+    string database_version;
+    conn->get_data(&stmt, 1, &database_version);
+    if (conn->fetch(&stmt)) {
+        // This means there is more than one row.  Do not try to
+        // recover automatically from this problem.
+        string e = "Too many rows in table: dbsystem.main";
+        throw runtime_error(e);
+    }
+    //*version = stol(database_version);
     {
         stringstream stream(database_version);
         stream >> *version;
@@ -132,11 +152,11 @@ void validate_database_version(int64_t database_version)
  *
  * \param[in] db Database context.
  */
-static void init_database_all(etymon::pgconn* conn, const string& ldp_user,
+static void init_database_all(etymon::odbc_conn* conn, const string& ldp_user,
         const string& ldpconfig_user, int64_t this_schema_version)
 {
     const char* prog = "ldp";
-    fprintf(stderr, "%s: initializing database\n", prog);
+    fprintf(stderr, "%s: Initializing database\n", prog);
 
     dbtype dbt(conn);
 
@@ -144,27 +164,27 @@ static void init_database_all(etymon::pgconn* conn, const string& ldp_user,
     ldp_schema schema;
     ldp_schema::make_default_schema(&schema);
 
-    { etymon::pgconn_result r(conn, "BEGIN;"); }
+    etymon::odbc_tx tx(conn);
 
     // Schema: dbsystem
 
     string sql = "CREATE SCHEMA dbsystem;";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     
     sql = "GRANT USAGE ON SCHEMA dbsystem TO " + ldp_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     sql = "GRANT USAGE ON SCHEMA dbsystem TO " + ldpconfig_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     sql =
         "CREATE TABLE dbsystem.main (\n"
         "    database_version BIGINT NOT NULL,\n"
         "    anonymize BOOLEAN NOT NULL DEFAULT TRUE\n"
         ");";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     sql = "INSERT INTO dbsystem.main (database_version) VALUES (" +
         to_string(this_schema_version) + ");";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     sql =
         "CREATE TABLE dbsystem.log (\n"
@@ -176,7 +196,7 @@ static void init_database_all(etymon::pgconn* conn, const string& ldp_user,
         "    message VARCHAR(65535) NOT NULL,\n"
         "    elapsed_time REAL\n"
         ");";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     // Table: dbsystem.tables
 
@@ -189,11 +209,11 @@ static void init_database_all(etymon::pgconn* conn, const string& ldp_user,
         "    documentation VARCHAR(65535),\n"
         "    documentation_url VARCHAR(65535)\n"
         ");";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     // Add tables to the catalog.
     for (auto& table : schema.tables) {
         add_table_to_catalog_sql(conn, table.name, &sql);
-        { etymon::pgconn_result r(conn, sql); }
+        conn->exec(sql);
     }
 
     string rskeys;
@@ -207,7 +227,7 @@ static void init_database_all(etymon::pgconn* conn, const string& ldp_user,
         "    referenced_table VARCHAR(63) NOT NULL,\n"
         "    referenced_column VARCHAR(63) NOT NULL\n"
         ")" + rskeys + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     dbt.redshift_keys("referencing_table",
             "referencing_table, referencing_column", &rskeys);
@@ -220,47 +240,47 @@ static void init_database_all(etymon::pgconn* conn, const string& ldp_user,
         "    constraint_name VARCHAR(63) NOT NULL,\n"
         "        PRIMARY KEY (referencing_table, referencing_column)\n"
         ")" + rskeys + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA dbsystem TO " + ldp_user + ";";
-    //{ etymon::pgconn_result r(conn, sql); }
+    //conn->exec(sql);
     //sql = "GRANT SELECT ON ALL TABLES IN SCHEMA dbsystem TO " +
     //ldpconfig_user +
     //    ";";
-    //{ etymon::pgconn_result r(conn, sql); }
+    //conn->exec(sql);
 
 
     sql = "GRANT SELECT ON dbsystem.log TO " + ldp_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     sql = "GRANT SELECT ON dbsystem.log TO " + ldpconfig_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     sql = "GRANT SELECT ON dbsystem.main TO " + ldp_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     sql = "GRANT SELECT ON dbsystem.main TO " + ldpconfig_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     sql = "GRANT SELECT ON dbsystem.foreign_key_constraints TO " + ldp_user +
         ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     sql = "GRANT SELECT ON dbsystem.foreign_key_constraints TO " +
         ldpconfig_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     sql = "GRANT SELECT ON dbsystem.tables TO " + ldp_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     sql = "GRANT SELECT ON dbsystem.tables TO " + ldpconfig_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     // Schema: dbconfig
 
     sql = "CREATE SCHEMA dbconfig;";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     sql = "GRANT USAGE ON SCHEMA dbconfig TO " + ldp_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     sql = "GRANT USAGE ON SCHEMA dbconfig TO " + ldpconfig_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     sql =
         "CREATE TABLE dbconfig.general (\n"
@@ -271,13 +291,13 @@ static void init_database_all(etymon::pgconn* conn, const string& ldp_user,
         "    enable_foreign_key_warnings BOOLEAN NOT NULL DEFAULT FALSE,\n"
         "    force_foreign_key_constraints BOOLEAN NOT NULL DEFAULT FALSE\n"
         ");";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     sql =
         "INSERT INTO dbconfig.general\n"
         "    (enable_full_updates, next_full_update)\n"
         "    VALUES\n"
         "    (TRUE, " + string(dbt.current_timestamp()) + ");";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     // dbconfig.update_tables
     sql =
@@ -286,7 +306,7 @@ static void init_database_all(etymon::pgconn* conn, const string& ldp_user,
         "    table_name VARCHAR(63) NOT NULL,\n"
         "    tenant_id SMALLINT NOT NULL\n"
         ");";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     sql =
         "CREATE TABLE dbconfig.foreign_keys (\n"
@@ -296,64 +316,64 @@ static void init_database_all(etymon::pgconn* conn, const string& ldp_user,
         "    referenced_table VARCHAR(63) NOT NULL,\n"
         "    referenced_column VARCHAR(63) NOT NULL\n"
         ");";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA dbconfig TO " + ldp_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     sql = "GRANT SELECT ON ALL TABLES IN SCHEMA dbconfig TO " + ldpconfig_user +
         ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     sql = "GRANT UPDATE ON dbconfig.general TO " + ldpconfig_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     // Schema: history
 
     sql = "CREATE SCHEMA history;";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     sql = "GRANT USAGE ON SCHEMA history TO " + ldp_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     sql = "GRANT USAGE ON SCHEMA history TO " + ldpconfig_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     for (auto& table : schema.tables) {
         create_history_table_sql(table.name, conn, dbt, &sql);
-        { etymon::pgconn_result r(conn, sql); }
+        conn->exec(sql);
         grant_select_on_table_sql("history." + table.name, ldp_user,
                                   conn, &sql);
-        { etymon::pgconn_result r(conn, sql); }
+        conn->exec(sql);
         grant_select_on_table_sql("history." + table.name, ldpconfig_user,
                                   conn, &sql);
-        { etymon::pgconn_result r(conn, sql); }
+        conn->exec(sql);
     }
 
     // Schema: public
 
     for (auto& table : schema.tables) {
         create_main_table_sql(table.name, conn, dbt, &sql);
-        { etymon::pgconn_result r(conn, sql); }
+        conn->exec(sql);
         grant_select_on_table_sql(table.name, ldp_user, conn, &sql);
-        { etymon::pgconn_result r(conn, sql); }
+        conn->exec(sql);
         grant_select_on_table_sql(table.name, ldpconfig_user, conn, &sql);
-        { etymon::pgconn_result r(conn, sql); }
+        conn->exec(sql);
     }
 
     // Schema: local
 
     sql = "CREATE SCHEMA local;";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
     sql = "GRANT CREATE, USAGE ON SCHEMA local TO " + ldp_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
     sql = "GRANT USAGE ON SCHEMA local TO " + ldpconfig_user + ";";
-    { etymon::pgconn_result r(conn, sql); }
+    conn->exec(sql);
 
-    { etymon::pgconn_result r(conn, "COMMIT;"); }
+    tx.commit();
 
-    fprintf(stderr, "%s: database initialization completed\n", prog);
+    fprintf(stderr, "%s: Database initialization completed\n", prog);
 }
 
-static void upgrade_database_all(etymon::pgconn* conn, const string& ldp_user,
+static void upgrade_database_all(etymon::odbc_conn* conn, const string& ldp_user,
         const string& ldpconfig_user, int64_t version,
         int64_t latest_version, const string& datadir,
         bool quiet)
@@ -411,11 +431,12 @@ static void upgrade_database_all(etymon::pgconn* conn, const string& ldp_user,
     }
 }
 
-void init_database(const ldp_options& opt, const string& ldp_user, const string& ldpconfig_user)
+void init_database(etymon::odbc_env* odbc, const string& dbname,
+        const string& ldp_user, const string& ldpconfig_user)
 {
     int64_t latest_version = latest_database_version();
 
-    etymon::pgconn conn(opt.dbinfo);
+    etymon::odbc_conn conn(odbc, dbname);
 
     int64_t database_version;
     bool version_found = select_database_version(&conn, &database_version);
@@ -427,14 +448,14 @@ void init_database(const ldp_options& opt, const string& ldp_user, const string&
     }
 }
 
-void upgrade_database(const ldp_options& opt,
+void upgrade_database(etymon::odbc_env* odbc, const string& dbname,
         const string& ldp_user, const string& ldpconfig_user,
         const string& datadir, bool quiet)
 {
     const char* prog = "ldp";
     int64_t latest_version = latest_database_version();
 
-    etymon::pgconn conn(opt.dbinfo);
+    etymon::odbc_conn conn(odbc, dbname);
 
     int64_t database_version;
     bool version_found = select_database_version(&conn, &database_version);
@@ -449,15 +470,16 @@ void upgrade_database(const ldp_options& opt,
                 fprintf(stderr, "%s: Database version is up to date\n", prog);
         }
     } else {
-        throw runtime_error("database has not been initialized");
+        throw runtime_error("Database has not been initialized");
     }
 }
 
-void validate_database_latest_version(const ldp_options& opt)
+void validate_database_latest_version(etymon::odbc_env* odbc,
+        const string& dbname)
 {
     int64_t latest_version = latest_database_version();
 
-    etymon::pgconn conn(opt.dbinfo);
+    etymon::odbc_conn conn(odbc, dbname);
 
     int64_t database_version;
     bool version_found = select_database_version(&conn, &database_version);
@@ -470,7 +492,7 @@ void validate_database_latest_version(const ldp_options& opt)
                     "upgrade-database command");
         }
     } else {
-        throw runtime_error("database has not been initialized");
+        throw runtime_error("Database has not been initialized");
     }
 }
 
