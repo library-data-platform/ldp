@@ -588,8 +588,10 @@ void run_update(const ldp_options& opt)
                 }
             } // for
 
-            if (table.skip || opt.extract_only)
+            if (table.skip || opt.extract_only) {
+                delete ext_files;
                 continue;
+            }
 
             if (opt.parallel_update) {  // forked process
                 if (wait_stage_merge(worker_pid, worker_table_name, &lg) && worker_pid != 0) {
