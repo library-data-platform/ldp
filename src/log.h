@@ -4,7 +4,7 @@
 #include <chrono>
 #include <string>
 
-#include "../etymoncpp/include/odbc.h"
+#include "../etymoncpp/include/postgres.h"
 #include "dbtype.h"
 
 using namespace std;
@@ -21,7 +21,8 @@ enum class log_level {
 
 class ldp_log {
 public:
-    ldp_log(etymon::odbc_conn* conn, log_level lv, bool console, bool quiet);
+    ldp_log(etymon::pgconn* conn, log_level lv, bool console, bool quiet);
+    ldp_log(log_level lv, bool console, bool quiet, const etymon::pgconn_info* dbinfo);
     ~ldp_log();
     void write(log_level lv, const char* type, const string& table,
             const string& message, double elapsed_time);
@@ -30,10 +31,12 @@ public:
     void detail(const string& message);
     void perf(const string& message, double elapsed_time);
 private:
+    void init(log_level lv, bool console, bool quiet);
     log_level lv;
     bool console = false;
     bool quiet = false;
-    etymon::odbc_conn* conn;
+    const etymon::pgconn_info* dbinfo;
+    etymon::pgconn* conn;
     dbtype* dbt;
 };
 

@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "../etymoncpp/include/postgres.h"
 #include "../etymoncpp/include/util.h"
 #include "dbtype.h"
 #include "log.h"
@@ -37,7 +38,7 @@ public:
     vector<string> table_names;
     string database_name;
     string database_host;
-    string database_port;
+    int database_port;
     string database_user;
     string database_password;
 };
@@ -56,7 +57,7 @@ class ldp_options {
 public:
     ldp_command command;
     profile set_profile = profile::folio;
-    bool no_update = false;
+    //bool no_update = false;
     bool cli_mode = false;
     string datadir;
     bool extract_only = false;
@@ -74,7 +75,8 @@ public:
     //direct_extraction direct;
     ///////////////////////////////////////////////////////////////////////////
     deployment_environment deploy_env;
-    string db;
+    //string db;
+    etymon::pgconn_info dbinfo;
     string ldp_user = "ldp";
     string ldpconfig_user = "ldpconfig";
     //bool unsafe = false;
@@ -82,6 +84,7 @@ public:
     bool anonymize = true;
     bool record_history = true;
     bool parallel_vacuum = true;
+    bool parallel_update = true;
     bool index_large_varchar = false;
     bool savetemps = false;
     //FILE* err = stderr;

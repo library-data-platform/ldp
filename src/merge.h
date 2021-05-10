@@ -11,17 +11,16 @@ using namespace std;
 
 void create_latest_history_table(const ldp_options& opt, ldp_log* lg,
                                  const table_schema& table,
-                                 etymon::odbc_conn* conn);
+                                 etymon::pgconn* conn);
 void drop_latest_history_table(const ldp_options& opt, ldp_log* lg,
                                  const table_schema& table,
-                                 etymon::odbc_conn* conn);
+                                 etymon::pgconn* conn);
 
 void merge_table(const ldp_options& opt, ldp_log* lg, const table_schema& table,
-                 etymon::odbc_env* odbc, etymon::odbc_conn* conn,
-                 const dbtype& dbt);
+                 etymon::pgconn* conn, const dbtype& dbt);
 void drop_table(const ldp_options& opt, ldp_log* lg, const string& tableName,
-                etymon::odbc_conn* conn);
+                etymon::pgconn* conn);
 void place_table(const ldp_options& opt, ldp_log* lg, const table_schema& table,
-                 etymon::odbc_conn* conn);
+                 etymon::pgconn* conn);
 
 #endif

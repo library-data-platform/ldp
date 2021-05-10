@@ -8,27 +8,35 @@ using namespace std;
 
 namespace etymon {
 
-class Postgres {
+class pgconn_info {
+public:
+    string dbname;
+    string dbhost;
+    int dbport;
+    string dbuser;
+    string dbpasswd;
+    string dbsslmode;
+};
+
+class pgconn {
 public:
     PGconn* conn;
-    Postgres(const string& host, const string& port, const string& user,
-            const string& password, const string& dbname,
-            const string& sslmode);
-    ~Postgres();
+    pgconn(const pgconn_info& info);
+    ~pgconn();
 };
 
-class PostgresResult {
+class pgconn_result {
 public:
     PGresult* result;
-    PostgresResult(Postgres* postgres, const string& command);
-    ~PostgresResult();
+    pgconn_result(pgconn* postgres, const string& command);
+    ~pgconn_result();
 };
 
-class PostgresResultAsync {
+class pgconn_result_async {
 public:
     PGresult* result;
-    PostgresResultAsync(Postgres* postgres);
-    ~PostgresResultAsync();
+    pgconn_result_async(pgconn* postgres);
+    ~pgconn_result_async();
 };
 
 }

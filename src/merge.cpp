@@ -4,7 +4,7 @@
 
 void create_latest_history_table(const ldp_options& opt, ldp_log* lg,
                                  const table_schema& table,
-                                 etymon::odbc_conn* conn)
+                                 etymon::pgconn* conn)
 {
     if (table.source_type == data_source_type::srs_marc_records) {
         return;
@@ -17,7 +17,7 @@ void create_latest_history_table(const ldp_options& opt, ldp_log* lg,
     latest_history_table_name(table.name, &latest_history_table);
 
     string sql =
-        "CREATE TEMPORARY TABLE\n"
+        "CREATE TEMP TABLE\n"
         "    " + latest_history_table + "\n"
         "    AS\n"
         "SELECT id, data\n"
@@ -29,21 +29,21 @@ void create_latest_history_table(const ldp_options& opt, ldp_log* lg,
         "                  h1.updated < h2.updated\n"
         "      );";
     lg->write(log_level::detail, "", "", sql, -1);
-    conn->exec(sql);
+    { etymon::pgconn_result r(conn, sql); }
 
     string v;
     vacuum_sql(opt, &v);
     sql = v + latest_history_table + ";";
     lg->detail(sql);
-    conn->exec(sql);
+    { etymon::pgconn_result r(conn, sql); }
     sql = "ANALYZE " + latest_history_table + ";";
     lg->detail(sql);
-    conn->exec(sql);
+    { etymon::pgconn_result r(conn, sql); }
 }
 
 void drop_latest_history_table(const ldp_options& opt, ldp_log* lg,
                                const table_schema& table,
-                               etymon::odbc_conn* conn)
+                               etymon::pgconn* conn)
 {
     if (table.source_type == data_source_type::srs_marc_records) {
         return;
@@ -54,13 +54,10 @@ void drop_latest_history_table(const ldp_options& opt, ldp_log* lg,
 
     string sql = "DROP TABLE IF EXISTS " + latest_history_table + ";";
     lg->detail(sql);
-    conn->exec(sql);
+    { etymon::pgconn_result r(conn, sql); }
 }
 
-void merge_table(const ldp_options& opt, ldp_log* lg,
-                 const table_schema& table,
-                 etymon::odbc_env* odbc, etymon::odbc_conn* conn,
-                 const dbtype& dbt)
+void merge_table(const ldp_options& opt, ldp_log* lg, const table_schema& table, etymon::pgconn* conn, const dbtype& dbt)
 {
     // Update history tables.
 
@@ -85,21 +82,21 @@ void merge_table(const ldp_options& opt, ldp_log* lg,
         "            ON s.id = h.id\n"
         "    WHERE s.data IS NOT NULL AND\n"
         "          ( h.id IS NULL OR\n"
-        "            (s.data)::VARCHAR <> (h.data)::VARCHAR );";
+        "            (s.data)::varchar <> (h.data)::varchar );";
     lg->write(log_level::detail, "", "", sql, -1);
-    conn->exec(sql);
+    { etymon::pgconn_result r(conn, sql); }
 }
 
 void drop_table(const ldp_options& opt, ldp_log* lg, const string& tableName,
-        etymon::odbc_conn* conn)
+        etymon::pgconn* conn)
 {
     string sql = "DROP TABLE IF EXISTS " + tableName + ";";
     lg->detail(sql);
-    conn->exec(sql);
+    { etymon::pgconn_result r(conn, sql); }
 }
 
 void place_table(const ldp_options& opt, ldp_log* lg, const table_schema& table,
-        etymon::odbc_conn* conn)
+        etymon::pgconn* conn)
 {
     string loading_table;
     loading_table_name(table.name, &loading_table);
@@ -107,6 +104,6 @@ void place_table(const ldp_options& opt, ldp_log* lg, const table_schema& table,
         "ALTER TABLE " + loading_table + "\n"
         "    RENAME TO " + table.name + ";";
     lg->write(log_level::detail, "", "", sql, -1);
-    conn->exec(sql);
+    { etymon::pgconn_result r(conn, sql); }
 }
 

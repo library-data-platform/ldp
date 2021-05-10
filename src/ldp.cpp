@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <vector>
 
-#include "../etymoncpp/include/odbc.h"
 #include "../etymoncpp/include/postgres.h"
 #include "dbtype.h"
 #include "init.h"
@@ -47,6 +46,7 @@ static const char* option_help =
 "  --sourcedir <path>  - Update data from directory <path> instead of\n"
 "                        from source\n";
 
+/*
 class server_lock {
 public:
     server_lock(etymon::odbc_env* odbc, const string& db, log_level lg_level);
@@ -90,6 +90,7 @@ server_lock::~server_lock()
     delete tx;
     delete conn;
 }
+*/
 
 static void sigint_handler(int signum)
 {
@@ -132,7 +133,7 @@ static void disable_termination_signals()
  * retval true The full update should be run as soon as possible.
  * retval false The full update should not be run at this time.
  */
-bool time_for_full_update(const ldp_options& opt, etymon::odbc_conn* conn,
+bool time_for_full_update(const ldp_options& opt, etymon::pgconn* conn,
         dbtype* dbt, ldp_log* lg)
 {
     string sql =
@@ -141,22 +142,15 @@ bool time_for_full_update(const ldp_options& opt, etymon::odbc_conn* conn,
         string(dbt->current_timestamp()) + ") AS update_now\n"
         "    FROM dbconfig.general;";
     lg->write(log_level::detail, "", "", sql, -1);
-    etymon::odbc_stmt stmt(conn);
-    conn->exec_direct(&stmt, sql);
-    if (conn->fetch(&stmt) == false) {
-        string e = "No rows could be read from table: dbconfig.general";
+    etymon::pgconn_result r(conn, sql);
+    if (PQntuples(r.result) != 1) {
+        string e = "wrong number of rows in table: dbconfig.general";
         lg->write(log_level::error, "", "", e, -1);
         throw runtime_error(e);
     }
-    string full_update_enabled, update_now;
-    conn->get_data(&stmt, 1, &full_update_enabled);
-    conn->get_data(&stmt, 2, &update_now);
-    if (conn->fetch(&stmt)) {
-        string e = "Too many rows in table: dbconfig.general";
-        lg->write(log_level::error, "", "", e, -1);
-        throw runtime_error(e);
-    }
-    return full_update_enabled == "1" && update_now == "1";
+    string full_update_enabled = PQgetvalue(r.result, 0, 0);
+    string update_now = PQgetvalue(r.result, 0, 1);
+    return full_update_enabled == "t" && update_now == "t";
 }
 
 /**
@@ -167,6 +161,7 @@ bool time_for_full_update(const ldp_options& opt, etymon::odbc_conn* conn,
  * param[in] conn
  * param[in] dbt
  */
+/*
 void reschedule_next_daily_load(const ldp_options& opt, etymon::odbc_conn* conn,
                                 dbtype* dbt, ldp_log* lg)
 {
@@ -199,39 +194,39 @@ void reschedule_next_daily_load(const ldp_options& opt, etymon::odbc_conn* conn,
         }
     } while (update_in_future == "0");
 }
+*/
 
-static void set_dbsystem_main_anonymize(etymon::odbc_env* odbc,
-                                        const ldp_options& opt)
+static void set_dbsystem_main_anonymize(const ldp_options& opt)
 {
-    etymon::odbc_conn conn(odbc, opt.db);
+    etymon::pgconn conn(opt.dbinfo);
     string sql = string() +
         "UPDATE dbsystem.main\n"
         "    SET anonymize = " + (opt.anonymize ? "TRUE" : "FALSE") + ";";
-    conn.exec(sql);
+    { etymon::pgconn_result r(&conn, sql); }
 }
 
-void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
+void server_loop(const ldp_options& opt)
 {
     // Check that database version is up to date.
-    validate_database_latest_version(odbc, opt.db);
+    validate_database_latest_version(opt);
 
-    set_dbsystem_main_anonymize(odbc, opt);
+    set_dbsystem_main_anonymize(opt);
 
-    etymon::odbc_conn log_conn(odbc, opt.db);
+    etymon::pgconn log_conn(opt.dbinfo);
     ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet);
 
-    lg.write(log_level::info, "server", "", string("server started"), -1);
+    //lg.write(log_level::info, "server", "", string("server started"), -1);
     if (opt.direct_extraction_no_ssl) {
         lg.write(log_level::info, "server", "", "SSL disabled for direct extraction", -1);
     }
 
-    etymon::odbc_conn conn(odbc, opt.db);
+    etymon::pgconn conn(opt.dbinfo);
     dbtype dbt(&conn);
 
     do {
         if (opt.cli_mode || time_for_full_update(opt, &conn, &dbt, &lg) ) {
-            if (!opt.cli_mode)
-                reschedule_next_daily_load(opt, &conn, &dbt, &lg);
+            //if (!opt.cli_mode)
+            //    reschedule_next_daily_load(opt, &conn, &dbt, &lg);
             if (!opt.single_process) {  // forked process
                 pid_t pid = fork();
                 if (pid == 0)
@@ -256,8 +251,7 @@ void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
                     string s = e.what();
                     if ( !(s.empty()) && s.back() == '\n' )
                         s.pop_back();
-                    etymon::odbc_env odbc;
-                    etymon::odbc_conn log_conn(&odbc, opt.db);
+                    etymon::pgconn log_conn(opt.dbinfo);
                     ldp_log lg(&log_conn, opt.lg_level, opt.console, opt.quiet);
                     lg.write(log_level::error, "server", "", s, -1);
                 }
@@ -268,9 +262,10 @@ void server_loop(const ldp_options& opt, etymon::odbc_env* odbc)
             std::this_thread::sleep_for(std::chrono::seconds(60));
     } while (!opt.cli_mode);
 
-    lg.write(log_level::info, "server", "", string("server stopped"), -1);
+    //lg.write(log_level::info, "server", "", string("server stopped"), -1);
 }
 
+/*
 static void no_update_by_default(etymon::odbc_env* odbc, const string& db)
 {
     etymon::odbc_conn conn(odbc, db);
@@ -280,29 +275,28 @@ static void no_update_by_default(etymon::odbc_env* odbc, const string& db)
         "        enable_full_updates = FALSE;";
     conn.exec(sql);
 }
+*/
 
 void cmd_init_database(const ldp_options& opt)
 {
     if (opt.set_profile != profile::folio)
         throw runtime_error("Unknown profile");
 
-    etymon::odbc_env odbc;
-    server_lock svrlock(&odbc, opt.db, opt.lg_level);
+    //server_lock svrlock(&odbc, opt.db, opt.lg_level);
     disable_termination_signals();
-    init_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user);
-    set_dbsystem_main_anonymize(&odbc, opt);
+    init_database(opt, opt.ldp_user, opt.ldpconfig_user);
+    set_dbsystem_main_anonymize(opt);
 
-    if (opt.no_update)
-        no_update_by_default(&odbc, opt.db);
+    //if (opt.no_update)
+    //    no_update_by_default(&odbc, opt.db);
 }
 
 void cmd_upgrade_database(const ldp_options& opt)
 {
-    etymon::odbc_env odbc;
-    server_lock svrlock(&odbc, opt.db, opt.lg_level);
+    //server_lock svrlock(&odbc, opt.db, opt.lg_level);
     disable_termination_signals();
-    upgrade_database(&odbc, opt.db, opt.ldp_user, opt.ldpconfig_user, opt.datadir, opt.quiet);
-    set_dbsystem_main_anonymize(&odbc, opt);
+    upgrade_database(opt, opt.ldp_user, opt.ldpconfig_user, opt.datadir, opt.quiet);
+    set_dbsystem_main_anonymize(opt);
 }
 
 void cmd_list_tables(const ldp_options& opt)
@@ -316,11 +310,10 @@ void cmd_list_tables(const ldp_options& opt)
 
 void cmd_server(const ldp_options& opt)
 {
-    etymon::odbc_env odbc;
-    server_lock svrlock(&odbc, opt.db, opt.lg_level);
+    //server_lock svrlock(&odbc, opt.db, opt.lg_level);
     if (opt.lg_level == log_level::trace || opt.lg_level == log_level::detail)
         fprintf(stderr, "ldp: starting server\n");
-    server_loop(opt, &odbc);
+    server_loop(opt);
 }
 
 void config_options(const ldp_config& conf, ldp_options* opt)
@@ -330,7 +323,25 @@ void config_options(const ldp_config& conf, ldp_options* opt)
     config_set_environment(deploy_env, &(opt->deploy_env));
 
     string target = "/ldp_database/";
-    conf.get_required(target + "odbc_database", &(opt->db));
+    conf.get_required(target + "database_name", &(opt->dbinfo.dbname));
+    conf.get_required(target + "database_host", &(opt->dbinfo.dbhost));
+    int port = 0;
+    bool found = conf.get_int(target + "database_port", true, &port);
+    if (found) {
+        if (1 <= port && port <= 65535) {
+            opt->dbinfo.dbport = port;
+        } else {
+            throw_value_out_of_range(target + "database_port",
+                                     to_string(port), "1 to 65535");
+        }
+    } else {
+        opt->dbinfo.dbport = 5432;
+    }
+
+    conf.get_int(target + "database_port", true, &(opt->dbinfo.dbport));
+    conf.get_required(target + "database_user", &(opt->dbinfo.dbuser));
+    conf.get_required(target + "database_password", &(opt->dbinfo.dbpasswd));
+    conf.get_required(target + "database_sslmode", &(opt->dbinfo.dbsslmode));
     conf.get(target + "ldpconfig_user", &(opt->ldpconfig_user));
     conf.get(target + "ldp_user", &(opt->ldp_user));
 
@@ -353,6 +364,8 @@ void config_options(const ldp_config& conf, ldp_options* opt)
     conf.get_bool("/record_history", &(opt->record_history));
 
     conf.get_bool("/parallel_vacuum", &(opt->parallel_vacuum));
+
+    conf.get_bool("/parallel_update", &(opt->parallel_update));
 
     conf.get_bool("/allow_destructive_tests", &(opt->allow_destructive_tests));
 }

@@ -57,8 +57,6 @@ ENDIF(GPROF)
 find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIR})
 
-find_package(ODBC REQUIRED)
-
 find_package(PostgreSQL REQUIRED)
 include_directories(${PostgreSQL_INCLUDE_DIR})
 #set(LIBS ${LIBS} ${PostgreSQL_LIBRARY})
@@ -73,7 +71,6 @@ add_library(ldp_obj OBJECT
 
 	etymoncpp/src/curl.cpp
 	etymoncpp/src/mallocptr.cpp
-	etymoncpp/src/odbc.cpp
 	etymoncpp/src/postgres.cpp
 	etymoncpp/src/util.cpp
 	src/addcolumns.cpp
@@ -107,7 +104,6 @@ add_executable(ldp
 target_link_libraries(ldp
 	${GPROFFLAG}
 	${CURL_LIBRARIES}
-	${ODBC_LIBRARY}
 	${PostgreSQL_LIBRARY}
 	#${SQLite3_LIBRARY}
 	${FSLIB}

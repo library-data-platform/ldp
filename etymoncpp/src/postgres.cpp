@@ -4,12 +4,15 @@
 
 namespace etymon {
 
-Postgres::Postgres(const string& host, const string& port, const string& user,
-        const string& password, const string& dbname,
-        const string& sslmode)
+static void debug_notice_processor(void *arg, const char *message)
 {
-    string conninfo = "host=" + host + " port=" + port + " user=" + user +
-        " password=" + password + " dbname=" + dbname + " sslmode=" + sslmode;
+    // NOP
+}
+
+pgconn::pgconn(const pgconn_info& info)
+{
+    string conninfo = "host=" + info.dbhost + " port=" + to_string(info.dbport) + " user=" + info.dbuser +
+        " password=" + info.dbpasswd + " dbname=" + info.dbname + " sslmode=" + info.dbsslmode;
     conn = PQconnectdb(conninfo.c_str());
     if (conn == nullptr || PQstatus(conn) == CONNECTION_BAD) {
         string err = PQerrorMessage(conn);
@@ -17,14 +20,15 @@ Postgres::Postgres(const string& host, const string& port, const string& user,
             PQfinish(conn);
         throw runtime_error(err);
     }
+    PQsetNoticeProcessor(conn, debug_notice_processor, (void*) nullptr);
 }
 
-Postgres::~Postgres()
+pgconn::~pgconn()
 {
     PQfinish(conn);
 }
 
-PostgresResult::PostgresResult(Postgres* postgres, const string& command)
+pgconn_result::pgconn_result(pgconn* postgres, const string& command)
 {
     result = PQexec(postgres->conn, command.c_str());
     if (result == nullptr || PQresultStatus(result) == PGRES_FATAL_ERROR) {
@@ -35,12 +39,12 @@ PostgresResult::PostgresResult(Postgres* postgres, const string& command)
     }
 }
 
-PostgresResult::~PostgresResult()
+pgconn_result::~pgconn_result()
 {
     PQclear(result);
 }
 
-PostgresResultAsync::PostgresResultAsync(Postgres* postgres)
+pgconn_result_async::pgconn_result_async(pgconn* postgres)
 {
     result = PQgetResult(postgres->conn);
     if (result != nullptr && PQresultStatus(result) == PGRES_FATAL_ERROR) {
@@ -58,12 +62,11 @@ PostgresResultAsync::PostgresResultAsync(Postgres* postgres)
     }
 }
 
-PostgresResultAsync::~PostgresResultAsync()
+pgconn_result_async::~pgconn_result_async()
 {
     if (result != nullptr)
         PQclear(result);
 }
 
 }
-
 

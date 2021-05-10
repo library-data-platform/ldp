@@ -1,6 +1,6 @@
 #include "initutil.h"
 
-void create_main_table_sql(const string& table_name, etymon::odbc_conn* conn,
+void create_main_table_sql(const string& table_name, etymon::pgconn* conn,
                            const dbtype& dbt, string* sql)
 {
     string rskeys;
@@ -14,7 +14,7 @@ void create_main_table_sql(const string& table_name, etymon::odbc_conn* conn,
 }
 
 void create_history_table_sql(const string& table_name,
-                              etymon::odbc_conn* conn, const dbtype& dbt,
+                              etymon::pgconn* conn, const dbtype& dbt,
                               string* sql)
 {
     string rskeys;
@@ -32,14 +32,14 @@ void create_history_table_sql(const string& table_name,
 }
 
 void grant_select_on_table_sql(const string& table, const string& user,
-                               etymon::odbc_conn* conn, string* sql)
+                               etymon::pgconn* conn, string* sql)
 {
     *sql =
         "GRANT SELECT ON " + table + "\n"
         "    TO " + user + ";";
 }
 
-void add_table_to_catalog_sql(etymon::odbc_conn* conn, const string& table,
+void add_table_to_catalog_sql(etymon::pgconn* conn, const string& table,
                               string* sql)
 {
     *sql =
