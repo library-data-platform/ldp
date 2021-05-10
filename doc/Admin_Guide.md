@@ -242,7 +242,7 @@ __ldpconf.json__
         "database_port": 5432,
         "database_user": "ldpadmin",
         "database_password": "(ldpadmin password here)",
-	"database_sslmode": "require"
+        "database_sslmode": "require"
     },
     "enable_sources": ["my_library"],
     "sources": {
