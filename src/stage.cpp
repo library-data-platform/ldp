@@ -326,8 +326,8 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
         case column_type::timestamptz:
         case column_type::varchar:
             dbt.encode_copy(jsonValue.GetString(), &s);
-            // Check if varchar exceeds maximum string length (65535).
-            if (s.length() >= 65535) {
+            // Check if varchar exceeds maximum string length.
+            if (s.length() >= varchar_size - 1) {
                 lg->write(log_level::warning, "", "",
                         "String length exceeds database limit:\n"
                         "    Table: " + table.name + "\n"
@@ -347,15 +347,15 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
     json::PrettyWriter<json::StringBuffer> writer(json_text);
     doc.Accept(writer);
     dbt.encode_copy(json_text.GetString(), &data);
-    // Check if pretty-printed JSON exceeds maximum string length (65535).
-    if (data.length() > 65535) {
+    // Check if pretty-printed JSON exceeds maximum string length.
+    if (data.length() > varchar_size - 1) {
         // Formatted JSON object size exceeds database limit.  Try
         // compact-printed JSON.
         json::StringBuffer json_text;
         json::Writer<json::StringBuffer> writer(json_text);
         doc.Accept(writer);
         dbt.encode_copy(json_text.GetString(), &data);
-        if (data.length() > 65535) {
+        if (data.length() > varchar_size - 1) {
             lg->write(log_level::warning, "", "",
                     "JSON object size exceeds database limit:\n"
                     "    Table: " + table.name + "\n"
@@ -785,7 +785,7 @@ bool stage_table_1(const ldp_options& opt,
                    field_set* drop_fields)
 {
     map<string,type_counts> stats;
-    char read_buffer[65536];
+    char read_buffer[varchar_size];
 
     for (auto& state : source_states) {
         size_t page_count = read_page_count(state.source, lg, load_dir,
@@ -876,7 +876,7 @@ bool stage_table_2(const ldp_options& opt,
                    field_set* drop_fields)
 {
     map<string,type_counts> stats;
-    char read_buffer[65536];
+    char read_buffer[varchar_size];
 
     for (auto& state : source_states) {
         size_t page_count = read_page_count(state.source, lg, load_dir,

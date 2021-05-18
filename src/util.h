@@ -3,6 +3,8 @@
 
 #include "options.h"
 
+constexpr long unsigned int varchar_size = 1048576;
+
 bool is_uuid(const char* str);
 
 void vacuum_sql(const ldp_options& opt, string* sql);

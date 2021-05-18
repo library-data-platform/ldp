@@ -7,7 +7,7 @@ void create_main_table_sql(const string& table_name, etymon::pgconn* conn,
     dbt.redshift_keys("id", "id", &rskeys);
     *sql =
         "CREATE TABLE " + table_name + " (\n"
-        "    id VARCHAR(65535) NOT NULL,\n"
+        "    id VARCHAR(36) NOT NULL,\n"
         "    data " + dbt.json_type() + ",\n"
         "    PRIMARY KEY (id)\n"
         ")" + rskeys + ";";
