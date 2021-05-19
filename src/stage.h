@@ -9,13 +9,15 @@ bool stage_table_1(const ldp_options& opt,
                    const vector<source_state>& source_states,
                    ldp_log* lg, table_schema* table,
                    etymon::pgconn* conn, dbtype* dbt, const string& loadDir,
-                   field_set* drop_fields);
+                   field_set* drop_fields,
+                   char* read_buffer);
 
 bool stage_table_2(const ldp_options& opt,
                    const vector<source_state>& source_states,
                    ldp_log* lg, table_schema* table,
                    etymon::pgconn* conn, dbtype* dbt, const string& loadDir,
-                   field_set* drop_fields);
+                   field_set* drop_fields,
+                   char* read_buffer);
 
 void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::pgconn* conn, dbtype* dbt, bool index_large_varchar);
 

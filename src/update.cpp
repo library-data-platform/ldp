@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include "../etymoncpp/include/curl.h"
+#include "../etymoncpp/include/mallocptr.h"
 #include "addcolumns.h"
 #include "dropfields.h"
 #include "extract.h"
@@ -352,18 +353,18 @@ bool stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const
     }
 
     {
+        char* read_buffer = (char*) malloc(varchar_size);
+        etymon::malloc_ptr read_buffer_ptr(read_buffer);
+
         { etymon::pgconn_result r(&conn, "BEGIN;"); }
 
         lg->write(log_level::trace, "", "", table->name + ": staging", -1);
-        bool ok = stage_table_1(opt, source_states, lg, table,
-                                &conn, &dbt, load_dir, drop_fields);
+        bool ok = stage_table_1(opt, source_states, lg, table, &conn, &dbt, load_dir, drop_fields, read_buffer);
         if (!ok) {
             return false;
         }
 
-        ok = stage_table_2(opt, source_states, lg, table,
-                           &conn, &dbt, load_dir,
-                           drop_fields);
+        ok = stage_table_2(opt, source_states, lg, table, &conn, &dbt, load_dir, drop_fields, read_buffer);
         if (!ok) {
             return false;
         }

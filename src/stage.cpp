@@ -782,10 +782,10 @@ bool stage_table_1(const ldp_options& opt,
                    etymon::pgconn* conn,
                    dbtype* dbt,
                    const string& load_dir,
-                   field_set* drop_fields)
+                   field_set* drop_fields,
+                   char* read_buffer)
 {
     map<string,type_counts> stats;
-    char read_buffer[varchar_size];
 
     for (auto& state : source_states) {
         size_t page_count = read_page_count(state.source, lg, load_dir,
@@ -873,10 +873,10 @@ bool stage_table_2(const ldp_options& opt,
                    etymon::pgconn* conn,
                    dbtype* dbt,
                    const string& load_dir,
-                   field_set* drop_fields)
+                   field_set* drop_fields,
+                   char* read_buffer)
 {
     map<string,type_counts> stats;
-    char read_buffer[varchar_size];
 
     for (auto& state : source_states) {
         size_t page_count = read_page_count(state.source, lg, load_dir,

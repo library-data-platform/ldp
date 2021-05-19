@@ -1,3 +1,4 @@
+#include "../etymoncpp/include/mallocptr.h"
 #include "../etymoncpp/include/util.h"
 #include "config.h"
 #include "rapidjson/filereadstream.h"
@@ -22,7 +23,8 @@ ldp_config::ldp_config(const string& conf)
     }
     // Load and parse JSON file.
     etymon::file f(config_file, "r");
-    char read_buffer[65536];
+    char* read_buffer = (char*) malloc(67108864);
+    etymon::malloc_ptr read_buffer_ptr(read_buffer);
     json::FileReadStream is(f.fp, read_buffer, sizeof(read_buffer));
     jsondoc.ParseStream<pflags>(is);
 }

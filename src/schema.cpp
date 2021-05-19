@@ -614,7 +614,7 @@ void column_schema::type_to_string(column_type type, string* str)
         *str = "VARCHAR(36)";
         break;
     case column_type::varchar:
-        *str = "VARCHAR(1048575)";
+        *str = "VARCHAR";
         break;
     default:
         *str = "(unknown_column_type)";

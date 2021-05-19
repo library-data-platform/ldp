@@ -3,7 +3,7 @@
 
 #include "options.h"
 
-constexpr long unsigned int varchar_size = 1048576;
+constexpr long unsigned int varchar_size = 67108864;
 
 bool is_uuid(const char* str);
 
