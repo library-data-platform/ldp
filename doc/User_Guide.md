@@ -18,7 +18,7 @@ LDP User Guide
 The primary LDP data model is a hybrid of relational and JSON schemas.
 Each table contains JSON data in a relational attribute called `data`,
 and a subset of the JSON fields is also stored in individual
-relational attributes:
+relational attributes.  It is typically queried via SQL:
 
 ```sql
 SELECT
@@ -61,6 +61,9 @@ The LDP software creates these tables, having extracted the data from
 source databases.  It then updates the data from those sources once
 per day, so that the LDP database reflects the state of the source
 data as of sometime within the past 24 hours or so.
+
+(Note that uppercase is not required in SQL, but it is a common
+convention used in published SQL queries and in documentation.)
 
 
 2\. JSON queries
@@ -181,10 +184,11 @@ GROUP BY
 This is also a good place to store tables containing intermediate
 results, as a step-by-step way of building up complex queries.
 
-After creating a local table that has many rows, it is a good idea to
-create an index on each column that may be used either for filtering
-in a `JOIN ... ON` or `WHERE` clause, or for sorting in an `ORDER BY`
-clause:
+Sometimes a local table can be very large, e.g. if it has many rows.
+If it appears that querying the table is slow, it may help to create
+an "index" on every column that will be used either for filtering in a
+`JOIN ... ON` or `WHERE` clause, or for sorting in an `ORDER BY`
+clause.  For example:
 
 ```sql
 CREATE TABLE local.loans_status AS
@@ -199,14 +203,16 @@ CREATE INDEX ON local.loans_status (id);
 CREATE INDEX ON local.loans_status (status);
 ```
 
-Also "vacuum" and "analyze" the table, which will help queries on the
-table run faster:
+It also can help to "vacuum" and "analyze" the table:
 
 ```sql
 VACUUM local.loans_status;
 
 ANALYZE local.loans_status;
 ```
+
+Creating indexes and vacuuming/analyzing are not necessary if queries
+on the table are running fast enough for normal use.
 
 
 5\. Historical data
