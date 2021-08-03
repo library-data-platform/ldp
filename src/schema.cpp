@@ -593,6 +593,9 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
 
     // user_users
 
+    table.source_spec = "/holdings-sources";
+    table.name = "inventory_holdings_sources";
+    schema->tables.push_back(table);
 }
 
 void column_schema::type_to_string(column_type type, string* str)
