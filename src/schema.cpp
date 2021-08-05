@@ -53,6 +53,7 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.anonymize = false;
 
     table.source_spec = "/orders-storage/receiving-history";
+    table.direct_source_table = "mod_orders_storage.receiving_history_view";
     table.name = "po_receiving_history";
     schema->tables.push_back(table);
 
