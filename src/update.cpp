@@ -457,6 +457,21 @@ bool wait_stage_merge(pid_t pid, const string& table_name, ldp_log* log)
     return true;
 }
 
+void check_for_views(const ldp_options& opt, ldp_log* lg)
+{
+    etymon::pgconn conn(opt.dbinfo);
+    string sql = "SELECT 1 FROM information_schema.views WHERE table_schema NOT IN ('pg_catalog','information_schema') LIMIT 1;";
+    lg->detail(sql);
+    try {
+        etymon::pgconn_result r(&conn, sql);
+        if (PQntuples(r.result) > 0) {
+            lg->write(log_level::warning, "server", "", "database contains views, which may cause updates to fail", -1);
+        }
+    } catch (runtime_error& e) {
+        lg->write(log_level::warning, "server", "", "error checking for views", -1);
+    }
+}
+
 void run_update(const ldp_options& opt)
 {
     CURLcode cc;
@@ -479,6 +494,8 @@ void run_update(const ldp_options& opt)
     timer full_update_timer;
 
     lg.write(log_level::detail, "", "", "okapi timeout: " + to_string(opt.okapi_timeout), -1);
+
+    check_for_views(opt, &lg);
 
     ldp_schema schema;
     ldp_schema::make_default_schema(&schema);
