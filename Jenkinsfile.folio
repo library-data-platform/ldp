@@ -51,17 +51,6 @@ pipeline {
       }
     } 
 
-    stage('Build Docker') {
-      steps {
-        script {
-          buildDocker {
-            publishMaster = 'yes'
-            healthChk = 'no'
-          }
-        }
-      } 
-    }
-
   } // end stages
 
   post {
