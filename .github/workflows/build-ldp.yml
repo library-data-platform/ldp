@@ -9,5 +9,5 @@ jobs:
     - name: Build LDP
       run: docker build -t ldp:${GITHUB_SHA}-${GITHUB_RUN_NUMBER} --file Dockerfile . 
     - name: Run LDP
-      run: docker run ldp:${GITHUB_SHA}-${GITHUB_RUN_ID} help
+      run: docker run ldp:${GITHUB_SHA}-${GITHUB_RUN_NUMBER} help
       
