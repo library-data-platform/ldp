@@ -124,9 +124,12 @@ $ ./build/ldp help
 
 ### Building the software via Docker
 
-Pre-built container images are available in the [Github Container Registry]
-(https://github.com/library-data-platform/ldp/pkgs/container/ldp)
-or can be built by cloning this repo locally and running: 
+Pre-built container images are available in the Github Container Registry:
+
+```shell
+$ docker pull ghcr.io/library-data-platform/ldp:1.3.0
+```
+Or can be built by cloning this repo locally and running: 
 
 ```shell
 $ docker build -t ldp:latest . 
