@@ -45,6 +45,9 @@ LDP instance.
 * Required to build from source code:
   * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
   * [CMake](https://cmake.org/) 3.16.2 or later
+* Required to build and run via Docker
+  * [Docker] (https://docker.com) 17.05 or later
+
 
 ### Hardware
 
@@ -112,13 +115,23 @@ Then:
 ```shell
 $ ./all.sh
 ```
-
 The `all.sh` script creates a `build/` subdirectory and builds the
 `ldp` executable there:
 
 ```shell
 $ ./build/ldp help
 ```
+
+### Building the software via Docker
+
+Pre-built container images are available in the [Github Container Registry]
+(https://github.com/library-data-platform/ldp/pkgs/container/ldp)
+or can be built by cloning this repo locally and running: 
+
+```shell
+$ docker build -t ldp:latest . 
+```
+
 
 
 4\. Database configuration
@@ -312,6 +325,22 @@ $ ldp upgrade-database -D /var/lib/ldp ; echo $?
 ```shell
 ldp: Database version is up to date
 0
+```
+
+### Running LDP via Docker
+
+LDP can be run as a Docker container similar to the instructions
+above except that the LDP data directory path ('-D') should be ommitted.
+Instead,  mount your local LDP data directory to /var/lib/ldp.  Examples:
+
+```shell
+$ docker run --rm -v /my/local/datadir:/var/lib/ldp ghcr.io/library-data-platform/ldp init-database
+```
+```shell
+$ docker run --rm -v /my/local/datadir:/var/lib/ldp ghcr.io/library-data-platform/ldp update
+```
+```shell
+$ docker run --rm -v /my/local/datadir:/var/lib/ldp ghcr.io/library-data-platform/ldp upgrade-database
 ```
 
 
