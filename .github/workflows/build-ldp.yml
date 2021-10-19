@@ -1,0 +1,13 @@
+name: LDP Build Workflow
+on: [push, pull_request]
+
+jobs:
+  build-ldp:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build LDP
+      run: docker build -t ldp:${GITHUB_SHA}-${GITHUB_RUN_NUMBER} --file Dockerfile . 
+    - name: Run LDP
+      run: docker run ldp:${GITHUB_SHA}-${GITHUB_RUN_NUMBER} help
+      
