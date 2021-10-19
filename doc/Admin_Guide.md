@@ -45,8 +45,8 @@ LDP instance.
 * Required to build from source code:
   * [GCC C++ compiler](https://gcc.gnu.org/) 8.3.0 or later
   * [CMake](https://cmake.org/) 3.16.2 or later
-* Required to build and run via Docker
-  * [Docker] (https://docker.com) 17.05 or later
+* Required to build and run via Docker:
+  * [Docker](https://docker.com) 17.05 or later
 
 
 ### Hardware
@@ -124,17 +124,18 @@ $ ./build/ldp help
 
 ### Building the software via Docker
 
-Pre-built container images are available in the Github Container Registry:
+Pre-built container images are available in the Github Container
+Registry, for example:
 
 ```shell
 $ docker pull ghcr.io/library-data-platform/ldp:1.3.0
 ```
-Or can be built by cloning this repo locally and running: 
+
+Or they can be built by cloning this repository locally and running:
 
 ```shell
 $ docker build -t ldp:latest . 
 ```
-
 
 
 4\. Database configuration
@@ -332,9 +333,10 @@ ldp: Database version is up to date
 
 ### Running LDP via Docker
 
-LDP can be run as a Docker container similar to the instructions
-above except that the LDP data directory path ('-D') should be ommitted.
-Instead,  mount your local LDP data directory to /var/lib/ldp.  Examples:
+LDP can be run as a Docker container similar to the process above,
+except that the LDP data directory path (`-D`) should be omitted.
+Instead, mount your local LDP data directory at `/var/lib/ldp`.
+Examples:
 
 ```shell
 $ docker run --rm -v /my/local/datadir:/var/lib/ldp ghcr.io/library-data-platform/ldp init-database
