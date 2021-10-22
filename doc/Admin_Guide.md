@@ -517,12 +517,15 @@ bofur
 bombur
 ```
 
-Then use the `update-users` command to set the permissions, for
+Then run the `update-users` command to set the permissions, for
 example:
 
 ```shell
 $ ldp update-users -D /var/lib/ldp
 ```
+
+The `update-users` command should be run whenever a new user name is
+added to `ldp_users.conf`.
 
 
 Reference
