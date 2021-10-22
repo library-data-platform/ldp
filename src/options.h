@@ -18,6 +18,7 @@ enum class ldp_command {
     list_tables,
     init_database,
     update,
+    update_users,
     help
 };
 
@@ -77,6 +78,8 @@ public:
     deployment_environment deploy_env;
     //string db;
     etymon::pgconn_info dbinfo;
+    string superuser;
+    string superpassword;
     string ldp_user = "ldp";
     string ldpconfig_user = "ldpconfig";
     //bool unsafe = false;

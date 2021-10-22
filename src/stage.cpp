@@ -712,7 +712,7 @@ void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::pgconn* 
 
 static void create_loading_table(const ldp_options& opt, ldp_log* lg,
                                  const table_schema& table,
-                                 etymon::pgconn* conn, const dbtype& dbt)
+                                 etymon::pgconn* conn, const dbtype& dbt, vector<string>* users)
 {
     string loading_table;
     loading_table_name(table.name, &loading_table);
@@ -762,17 +762,20 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
         { etymon::pgconn_result r(conn, sql); }
     }
 
-    sql =
-        "GRANT SELECT ON " + loading_table + "\n"
-        "    TO " + opt.ldpconfig_user + ";";
+    sql = "GRANT SELECT ON " + loading_table + " TO " + opt.ldpconfig_user + ";";
     lg->detail(sql);
     { etymon::pgconn_result r(conn, sql); }
-
-    sql =
-        "GRANT SELECT ON " + loading_table + "\n"
-        "    TO " + opt.ldp_user + ";";
+    sql = "GRANT SELECT ON " + loading_table + " TO " + opt.ldp_user + ";";
     lg->detail(sql);
     { etymon::pgconn_result r(conn, sql); }
+    for (auto& u : *users) {
+        sql = "GRANT SELECT ON " + loading_table + " TO " + u + ";";
+        lg->detail(sql);
+        { etymon::pgconn_result r(conn, sql); }
+        sql = "GRANT SELECT ON " + loading_table + " TO " + u + ";";
+        lg->detail(sql);
+        { etymon::pgconn_result r(conn, sql); }
+    }
 }
 
 bool stage_table_1(const ldp_options& opt,
@@ -783,7 +786,8 @@ bool stage_table_1(const ldp_options& opt,
                    dbtype* dbt,
                    const string& load_dir,
                    field_set* drop_fields,
-                   char* read_buffer)
+                   char* read_buffer,
+                   vector<string>* users)
 {
     map<string,type_counts> stats;
 
@@ -861,7 +865,7 @@ bool stage_table_1(const ldp_options& opt,
         column.source_name = field;
         table->columns.push_back(column);
     }
-    create_loading_table(opt, lg, *table, conn, *dbt);
+    create_loading_table(opt, lg, *table, conn, *dbt, users);
 
     return true;
 }

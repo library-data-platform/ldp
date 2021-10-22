@@ -93,6 +93,7 @@ add_library(ldp_obj OBJECT
 	src/stage.cpp
 	src/timer.cpp
 	src/update.cpp
+	src/users.cpp
 	src/util.cpp
 
 	)

@@ -29,6 +29,7 @@ static const char* option_help =
 "  update              - Run a full update\n"
 "  init-database       - Initialize a new LDP database\n"
 "  upgrade-database    - Upgrade an LDP database to the current version\n"
+"  update-users        - Set permissions for configured user accounts\n"
 "  list-tables         - Print a list of LDP tables in schema public\n"
 "  help                - Display help information\n"
 "Options:\n"
@@ -205,7 +206,7 @@ static void set_dbsystem_main_anonymize(const ldp_options& opt)
     { etymon::pgconn_result r(&conn, sql); }
 }
 
-void server_loop(const ldp_options& opt)
+void server_loop(const ldp_options& opt, bool update_users)
 {
     // Check that database version is up to date.
     validate_database_latest_version(opt);
@@ -227,7 +228,7 @@ void server_loop(const ldp_options& opt)
         if (opt.cli_mode || time_for_full_update(opt, &conn, &dbt, &lg) ) {
             //if (!opt.cli_mode)
             //    reschedule_next_daily_load(opt, &conn, &dbt, &lg);
-            if (!opt.single_process) {  // forked process
+            if (!opt.single_process && !update_users) {  // forked process
                 pid_t pid = fork();
                 if (pid == 0)
                     run_update_process(opt);
@@ -246,7 +247,7 @@ void server_loop(const ldp_options& opt)
                     throw runtime_error("Error starting child process");
             } else {  // single process
                 try {
-                    run_update(opt);
+                    run_update(opt, update_users);
                 } catch (runtime_error& e) {
                     string s = e.what();
                     if ( !(s.empty()) && s.back() == '\n' )
@@ -313,7 +314,13 @@ void cmd_server(const ldp_options& opt)
     //server_lock svrlock(&odbc, opt.db, opt.lg_level);
     if (opt.lg_level == log_level::trace || opt.lg_level == log_level::detail)
         fprintf(stderr, "ldp: starting server\n");
-    server_loop(opt);
+    server_loop(opt, false);
+}
+
+void cmd_update_users(const ldp_options& opt)
+{
+    //server_lock svrlock(&odbc, opt.db, opt.lg_level);
+    server_loop(opt, true);
 }
 
 void config_options(const ldp_config& conf, ldp_options* opt)
@@ -342,6 +349,8 @@ void config_options(const ldp_config& conf, ldp_options* opt)
     conf.get_required(target + "database_user", &(opt->dbinfo.dbuser));
     conf.get_required(target + "database_password", &(opt->dbinfo.dbpasswd));
     conf.get_required(target + "database_sslmode", &(opt->dbinfo.dbsslmode));
+    conf.get(target + "database_super_user", &(opt->superuser));
+    conf.get(target + "database_super_password", &(opt->superpassword));
     conf.get(target + "ldpconfig_user", &(opt->ldpconfig_user));
     conf.get(target + "ldp_user", &(opt->ldp_user));
 
@@ -438,6 +447,11 @@ void ldp_exec(ldp_options* opt)
 
     if (opt->command == ldp_command::update) {
         cmd_server(*opt);
+        return;
+    }
+
+    if (opt->command == ldp_command::update_users) {
+        cmd_update_users(*opt);
         return;
     }
 

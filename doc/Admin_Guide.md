@@ -11,6 +11,7 @@ LDP Administrator Guide
 7\. [Data privacy](#7-data-privacy)  
 8\. [Optional columns](#8-optional-columns)  
 9\. [Historical data](#9-historical-data)  
+10\. [User accounts](#10-user-accounts)  
 [Reference](#reference)
 
 
@@ -259,6 +260,8 @@ __ldpconf.json__
         "database_port": 5432,
         "database_user": "ldpadmin",
         "database_password": "(ldpadmin password here)",
+        "database_super_user": "postgres",
+        "database_super_password": "(postgres password here)",
         "database_sslmode": "require"
     },
     "enable_sources": ["my_library"],
@@ -496,6 +499,32 @@ will not be needed, this can have the benefit of reducing the running
 time of updates.
 
 
+10\. User accounts
+------------------
+
+Individual user accounts can be created in PostgreSQL and used to
+access LDP.  To enable LDP to set permissions for these users, the
+`database_super_user` and `database_super_password` settings must be
+defined in `ldpconf.json`.
+
+The user names are configured by creating a configuration file
+`ldp_users.conf` in the data directory.  Each line should contain one
+user name, for example:
+
+```
+bifur
+bofur
+bombur
+```
+
+Then use the `update-users` command to set the permissions, for
+example:
+
+```shell
+$ ldp update-users -D /var/lib/ldp
+```
+
+
 Reference
 ---------
 
@@ -534,6 +563,11 @@ Reference
   * `database_port` (integer; required) is the LDP database port.
   * `database_sslmode` (string; required) is the LDP database
     connection SSL mode.
+  * `database_super_user` (string; optional) is a superuser for the
+    LDP database.  This is required to enable individual user accounts.
+  * `database_super_password` (string; optional) is the password for
+    the specified superuser (`database_super_user`).  This is required
+    to enable individual user accounts.
   * `database_user` (string; required) is the LDP database
     administrator user name.
 

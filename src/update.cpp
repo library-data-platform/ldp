@@ -22,6 +22,7 @@
 #include "stage.h"
 #include "timer.h"
 #include "update.h"
+#include "users.h"
 
 namespace fs = std::experimental::filesystem;
 
@@ -343,7 +344,7 @@ void select_config_general(etymon::pgconn* conn, ldp_log* lg,
 }
 
 bool stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const vector<source_state>& source_states, const string& load_dir,
-                 field_set* drop_fields)
+                 field_set* drop_fields, vector<string>* users)
 {
     etymon::pgconn conn(opt.dbinfo);
     dbtype dbt(&conn);
@@ -359,7 +360,7 @@ bool stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const
         { etymon::pgconn_result r(&conn, "BEGIN;"); }
 
         lg->write(log_level::trace, "", "", table->name + ": staging", -1);
-        bool ok = stage_table_1(opt, source_states, lg, table, &conn, &dbt, load_dir, drop_fields, read_buffer);
+        bool ok = stage_table_1(opt, source_states, lg, table, &conn, &dbt, load_dir, drop_fields, read_buffer, users);
         if (!ok) {
             return false;
         }
@@ -423,10 +424,10 @@ bool stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const
 }
 
 void run_stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const vector<source_state>& source_states, const string& load_dir,
-                     field_set* drop_fields)
+                     field_set* drop_fields, vector<string>* users)
 {
     try {
-        stage_merge(opt, lg, table, source_states, load_dir, drop_fields);
+        stage_merge(opt, lg, table, source_states, load_dir, drop_fields, users);
         exit(0);
     } catch (runtime_error& e) {
         string s = e.what();
@@ -472,7 +473,7 @@ void check_for_views(const ldp_options& opt, ldp_log* lg)
     }
 }
 
-void run_update(const ldp_options& opt)
+void run_update(const ldp_options& opt, bool update_users)
 {
     CURLcode cc;
     etymon::curl_global curl_env(CURL_GLOBAL_ALL, &cc);
@@ -482,6 +483,14 @@ void run_update(const ldp_options& opt)
     }
 
     ldp_log lg(opt.lg_level, opt.console, opt.quiet, &(opt.dbinfo));
+
+    vector<string> users;
+    bool ok = read_users(opt, &lg, &users, update_users);
+    if (update_users) {
+        if (ok)
+            fprintf(stderr, "ldp: updated user permissions\n");
+        return;
+    }
 
     if (!opt.record_history) {
         lg.write(log_level::info, "server", "", "recording history is disabled", -1);
@@ -623,7 +632,7 @@ void run_update(const ldp_options& opt)
                 }
                 pid_t pid = fork();
                 if (pid == 0) {
-                    run_stage_merge(opt, &lg, &table, source_states, load_dir, &drop_fields);
+                    run_stage_merge(opt, &lg, &table, source_states, load_dir, &drop_fields, &users);
                 }
                 if (pid < 0) {
                     throw runtime_error("error starting child process");
@@ -633,7 +642,7 @@ void run_update(const ldp_options& opt)
                 worker_ext_files = ext_files;
             } else {  // single process
                 try {
-                    if (stage_merge(opt, &lg, &table, source_states, load_dir, &drop_fields)) {
+                    if (stage_merge(opt, &lg, &table, source_states, load_dir, &drop_fields, &users)) {
                         lg.write(log_level::trace, "", table.name, table.name + ": updated", -1);
                         delete ext_files;
                     } else {
@@ -793,7 +802,7 @@ void run_update_process(const ldp_options& opt)
     chdir(update_dir.c_str());
 #endif
     try {
-        run_update(opt);
+        run_update(opt, false);
         exit(0);
     } catch (runtime_error& e) {
         string s = e.what();

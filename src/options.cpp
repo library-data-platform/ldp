@@ -100,6 +100,10 @@ void config_set_command(const string& command_str, ldp_command* command)
         *command = ldp_command::update;
         return;
     }
+    if (command_str == "update-users") {
+        *command = ldp_command::update_users;
+        return;
+    }
     if (command_str == "help" || command_str == "") {
         *command = ldp_command::help;
         return;

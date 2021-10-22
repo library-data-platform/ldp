@@ -6,6 +6,8 @@
         "database_port": 5432,
         "database_user": "ldpadmin",
         "database_password": "(ldpadmin password here)",
+        "database_super_user": "postgres",
+        "database_super_password": "(postgres password here)",
         "database_sslmode": "require"
     },
     "enable_sources": ["my_library"],

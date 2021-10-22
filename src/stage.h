@@ -10,7 +10,8 @@ bool stage_table_1(const ldp_options& opt,
                    ldp_log* lg, table_schema* table,
                    etymon::pgconn* conn, dbtype* dbt, const string& loadDir,
                    field_set* drop_fields,
-                   char* read_buffer);
+                   char* read_buffer,
+                   vector<string>* users);
 
 bool stage_table_2(const ldp_options& opt,
                    const vector<source_state>& source_states,
