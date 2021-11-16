@@ -2,7 +2,7 @@ LDP Configuration Guide
 =======================
 
 ##### Contents  
-1\. [Foreign keys](#2-foreign-keys)  
+1\. [Foreign keys](#1-foreign-keys)  
 [Reference](#reference)
 
 
