@@ -1,4 +1,5 @@
 build/
+data/
 cmake-build-debug/
 doc/source_code/
 .idea/
