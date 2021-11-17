@@ -61,9 +61,9 @@ void ldp_log::write(log_level lv, const char* type, const string& table,
     // For printing, prefix with '\n' if the message has multiple lines.
     string printmsg;
     if (lv != log_level::detail && message.find('\n') != string::npos) {
-        printmsg = "\n" + message;
+        printmsg = "\n" + logmsg;
     } else {
-        printmsg = message;
+        printmsg = logmsg;
     }
     if (elapsed_time >= 0) {
         // Time: 41.490 ms
