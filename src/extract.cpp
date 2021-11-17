@@ -459,13 +459,13 @@ void retrieve_direct_srs_marc(const PGresult *res, string source_spec, string* j
 
 void retrieve_direct_srs_records(const PGresult *res, string* j)
 {
-    string id, snapshot_id, matched_id, generation, record_type, instance_id, state, leader_record_status, order, suppress_discovery, created_by_user_id, created_date, updated_by_user_id, updated_date, instance_hrid;
+    string id, snapshot_id, matched_id, generation, record_type, external_id, state, leader_record_status, order, suppress_discovery, created_by_user_id, created_date, updated_by_user_id, updated_date, external_hrid;
     pq_get_value_json_string(res, 0, 0, &id);
     pq_get_value_json_string(res, 0, 1, &snapshot_id);
     pq_get_value_json_string(res, 0, 2, &matched_id);
     pq_get_value_json_number(res, 0, 3, &generation);
     pq_get_value_json_string(res, 0, 4, &record_type);
-    pq_get_value_json_string(res, 0, 5, &instance_id);
+    pq_get_value_json_string(res, 0, 5, &external_id);
     pq_get_value_json_string(res, 0, 6, &state);
     pq_get_value_json_string(res, 0, 7, &leader_record_status);
     pq_get_value_json_number(res, 0, 8, &order);
@@ -474,7 +474,7 @@ void retrieve_direct_srs_records(const PGresult *res, string* j)
     pq_get_value_json_string(res, 0, 11, &created_date);
     pq_get_value_json_string(res, 0, 12, &updated_by_user_id);
     pq_get_value_json_string(res, 0, 13, &updated_date);
-    pq_get_value_json_string(res, 0, 14, &instance_hrid);
+    pq_get_value_json_string(res, 0, 14, &external_hrid);
     *j = string("") +
         "  {\n" +
         "    \"id\": " + id + ",\n" +
@@ -482,7 +482,7 @@ void retrieve_direct_srs_records(const PGresult *res, string* j)
         "    \"matchedId\": " + matched_id + ",\n" +
         "    \"generation\": " + generation + ",\n" +
         "    \"recordType\": " + record_type + ",\n" +
-        "    \"instanceId\": " + instance_id + ",\n" +
+        "    \"externalId\": " + external_id + ",\n" +
         "    \"state\": " + state + ",\n" +
         "    \"leaderRecordStatus\": " + leader_record_status + ",\n" +
         "    \"order\": " + order + ",\n" +
@@ -491,15 +491,14 @@ void retrieve_direct_srs_records(const PGresult *res, string* j)
         "    \"createdDate\": " + created_date + ",\n" +
         "    \"updatedByUserId\": " + updated_by_user_id + ",\n" +
         "    \"updatedDate\": " + updated_date + ",\n" +
-        "    \"instanceHrid\": " + instance_hrid + "\n" +
+        "    \"externalHrid\": " + external_hrid + "\n" +
         "  }";
 }
 
-bool retrieve_direct(const data_source& source, ldp_log* lg,
+bool try_retrieve_direct(const data_source& source, ldp_log* lg,
                      const table_schema& table, const string& loadDir,
-                     extraction_files* ext_files, bool direct_extraction_no_ssl)
+                     extraction_files* ext_files, bool direct_extraction_no_ssl, const char* instance)
 {
-    lg->write(log_level::trace, "", "", "direct from database: " + table.source_spec, -1);
     if (table.direct_source_table == "") {
         lg->write(log_level::warning, "", "", "direct source table undefined: " + table.source_spec, -1);
         return false;
@@ -510,7 +509,7 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
         attr = "id, content";
     }
     if (table.source_type == data_source_type::srs_records) {
-        attr = "id, snapshot_id, matched_id, generation, record_type, instance_id, state, leader_record_status, \"order\", suppress_discovery, created_by_user_id, created_date, updated_by_user_id, updated_date, instance_hrid";
+        attr = string("id, snapshot_id, matched_id, generation, record_type, ") + instance + "_id, state, leader_record_status, \"order\", suppress_discovery, created_by_user_id, created_date, updated_by_user_id, updated_date, " + instance + "_hrid";
     }
 
     // Select from table.direct_source_table and write to JSON file.
@@ -580,3 +579,12 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
     return true;
 }
 
+bool retrieve_direct(const data_source& source, ldp_log* lg,
+                     const table_schema& table, const string& loadDir,
+                     extraction_files* ext_files, bool direct_extraction_no_ssl) {
+    lg->write(log_level::trace, "", "", "direct from database: " + table.source_spec, -1);
+    try {
+        return try_retrieve_direct(source, lg, table, loadDir, ext_files, direct_extraction_no_ssl, "external");
+    } catch (runtime_error& e) {}
+    return try_retrieve_direct(source, lg, table, loadDir, ext_files, direct_extraction_no_ssl, "instance");
+}
