@@ -14,7 +14,7 @@ RUN mkdir -p build && \
 
 FROM debian:bullseye-slim
 
-LABEL org.opencontainers.image.source https://github.com/library-data-platform/ldp
+LABEL org.opencontainers.image.source="https://github.com/library-data-platform/ldp"
 ENV DATADIR=/var/lib/ldp
 
 COPY --from=builder /usr/src/ldp/build/ldp /usr/local/bin/ldp
