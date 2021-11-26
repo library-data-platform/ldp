@@ -102,6 +102,7 @@ add_executable(ldp
 	$<TARGET_OBJECTS:ldp_obj>
 	src/main.cpp
 	)
+set_target_properties(ldp PROPERTIES COMPILE_FLAGS "-DLDPVERSION=`cat ldp_version`")
 target_link_libraries(ldp
 	${GPROFFLAG}
 	${CURL_LIBRARIES}

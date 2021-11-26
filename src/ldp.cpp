@@ -25,6 +25,7 @@
 static const char* option_help =
 "Usage:  ldp <command> <options>\n"
 "  e.g.  ldp update -D /usr/local/ldp/data\n"
+"\n"
 "Commands:\n"
 "  update              - Run a full update\n"
 "  init-database       - Initialize a new LDP database\n"
@@ -32,11 +33,13 @@ static const char* option_help =
 "  update-users        - Set permissions for configured user accounts\n"
 "  list-tables         - Print a list of LDP tables in schema public\n"
 "  help                - Display help information\n"
+"\n"
 "Options:\n"
 "  -D <path>           - Use <path> as the data directory\n"
 "  --okapi-timeout     - Timeout in seconds for Okapi requests (default: 60)\n"
 "  --trace             - Enable detailed logging\n"
 "  --quiet             - Reduce console output\n"
+"\n"
 "Development/testing options:\n"
 "  --direct-extraction-no-ssl\n"
 "                      - Disable SSL for direct extraction\n"
@@ -457,7 +460,7 @@ void ldp_exec(ldp_options* opt)
     }
 }
 
-static void setup_ldp_exec(const etymon::command_args& cargs)
+static void setup_ldp_exec(const etymon::command_args& cargs, const char* ldp_version)
 {
     ldp_options opt;
 
@@ -470,18 +473,20 @@ static void setup_ldp_exec(const etymon::command_args& cargs)
     }
 
     if (cargs.argc < 2 || opt.command == ldp_command::help) {
+        printf("LDP %s\n\n", ldp_version);
         printf("%s", option_help);
         return;
     }
 
+    fprintf(stderr, "ldp: version %s\n", ldp_version);
     ldp_exec(&opt);
 }
 
-int main_ldp(int argc, char* const argv[])
+int main_ldp(int argc, char* const argv[], const char* ldp_version)
 {
     etymon::command_args cargs(argc, argv);
     try {
-        setup_ldp_exec(cargs);
+        setup_ldp_exec(cargs, ldp_version);
     } catch (runtime_error& e) {
         string s = e.what();
         if ( !(s.empty()) && s.back() == '\n' )
