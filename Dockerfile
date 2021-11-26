@@ -7,6 +7,7 @@ WORKDIR /usr/src/ldp
 COPY . /usr/src/ldp
 
 RUN mkdir -p build && \ 
+    echo \"`git describe --tags --always`\" > build/ldp_version && \
     cd build && \
     cmake -DCMAKE_RULE_MESSAGES=OFF -DPostgreSQL_TYPE_INCLUDE_DIR=/usr/include/postgresql .. && \
     make
