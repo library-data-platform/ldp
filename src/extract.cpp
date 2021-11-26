@@ -583,8 +583,14 @@ bool retrieve_direct(const data_source& source, ldp_log* lg,
                      const table_schema& table, const string& loadDir,
                      extraction_files* ext_files, bool direct_extraction_no_ssl) {
     lg->write(log_level::trace, "", "", "direct from database: " + table.source_spec, -1);
-    try {
-        return try_retrieve_direct(source, lg, table, loadDir, ext_files, direct_extraction_no_ssl, "external");
-    } catch (runtime_error& e) {}
-    return try_retrieve_direct(source, lg, table, loadDir, ext_files, direct_extraction_no_ssl, "instance");
+
+    if (table.source_type == data_source_type::srs_records) {
+        try {
+            return try_retrieve_direct(source, lg, table, loadDir, ext_files, direct_extraction_no_ssl, "external");
+        } catch (runtime_error& e) {}
+        lg->write(log_level::info, "", "", "srs_records: falling back to instance_id for compatibility", -1);
+        return try_retrieve_direct(source, lg, table, loadDir, ext_files, direct_extraction_no_ssl, "instance");
+    }
+
+    return try_retrieve_direct(source, lg, table, loadDir, ext_files, direct_extraction_no_ssl, "");
 }

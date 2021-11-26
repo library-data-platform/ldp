@@ -5,7 +5,7 @@
 #include "config.h"
 #include "options.h"
 
-int main_ldp(int argc, char* const argv[]);
+int main_ldp(int argc, char* const argv[], const char* ldp_version);
 
 void ldp_exec(ldp_options* opt);
 void config_options(const ldp_config& conf, ldp_options* opt);
