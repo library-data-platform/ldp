@@ -89,7 +89,7 @@ The LDP repository has two types of branches:
 Dependencies required for building the LDP software can be installed via
 a package manager on some platforms.
 
-#### Debian Linux
+#### Debian/Ubuntu Linux
 
 ```shell
 $ sudo apt update
@@ -151,23 +151,14 @@ database.
 A robust backup process should be used to ensure that historical data
 and local tables are safe.
 
-#### PostgreSQL
+#### PostgreSQL configuration
 
-For libraries that deploy LDP with PostgreSQL, whether local or
-hosted, we recommend setting:
+These are recommended configuration settings for the PostgreSQL server
+that runs the LDP database:
 
-* `checkpoint_timeout`: `3000` (seconds)
+* `checkpoint_timeout`: `3000` (s)
 * `max_wal_size`: `10240` (MB)
-
-#### PostgreSQL hosted in RDS
-
-For libraries that deploy LDP with cloud-based PostgreSQL using
-Amazon/AWS Relational Database Service (RDS), we recommend setting:
-
-* Instance type:  `db.m5.large`
-* Number of instances:  `1`
-* Storage:  `General Purpose SSD`
-* Snapshots:  Automated snapshots enabled
+* `idle_in_transaction_session_timeout`: `3600000` (ms)
 
 ### Configuring the database
 
