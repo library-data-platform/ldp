@@ -197,7 +197,7 @@ $ createuser ldp --username=<admin_user> --pwprompt
 $ createdb ldp --username=<admin_user> --owner=ldpadmin
 $ psql ldp --username=<admin_user> \
       --command="ALTER DATABASE ldp SET search_path TO public;" \
-      --command="REVOKE ALL ON SCHEMA public FROM public;" \
+      --command="REVOKE CREATE ON SCHEMA public FROM public;" \
       --command="GRANT ALL ON SCHEMA public TO ldpadmin;" \
       --command="GRANT USAGE ON SCHEMA public TO ldpconfig;" \
       --command="GRANT USAGE ON SCHEMA public TO ldp;"
