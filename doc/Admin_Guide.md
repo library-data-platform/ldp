@@ -211,7 +211,7 @@ CREATE USER ldpconfig PASSWORD '(ldpconfig password here)';
 CREATE USER ldp PASSWORD '(ldp password here)';
 ALTER DATABASE ldp OWNER TO ldpadmin;
 ALTER DATABASE ldp SET search_path TO public;
-REVOKE ALL ON SCHEMA public FROM public;
+REVOKE CREATE ON SCHEMA public FROM public;
 GRANT ALL ON SCHEMA public TO ldpadmin;
 GRANT USAGE ON SCHEMA public TO ldpconfig;
 GRANT USAGE ON SCHEMA public TO ldp;
