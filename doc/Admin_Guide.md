@@ -158,7 +158,7 @@ that runs the LDP database:
 
 * `checkpoint_timeout`: `3000` (s)
 * `max_wal_size`: `10240` (MB)
-* `idle_in_transaction_session_timeout`: `300000` (ms)
+* `idle_in_transaction_session_timeout`: `60000` (ms)
 
 ### Configuring the database
 
