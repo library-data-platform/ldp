@@ -117,10 +117,6 @@ GROUP BY
 In this example, `json_extract_path_text(data, 'status', 'name')`
 refers to the `name` field nested within the `status` field.
 
-It is strongly recommended to use the function
-`json_extract_path_text()` to maintain compatibility with Redshift as
-a future upgrade path.
-
 
 3\. Relational attributes vs. JSON
 ----------------------------------
