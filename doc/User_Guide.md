@@ -202,9 +202,7 @@ CREATE INDEX ON local.loans_status (status);
 It also can help to "vacuum" and "analyze" the table:
 
 ```sql
-VACUUM local.loans_status;
-
-ANALYZE local.loans_status;
+VACUUM ANALYZE local.loans_status;
 ```
 
 Creating indexes and vacuuming/analyzing are not necessary if queries
