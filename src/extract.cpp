@@ -447,14 +447,17 @@ void retrieve_direct_rmb(const PGresult *res, string* j)
 
 void retrieve_direct_srs_marc(const PGresult *res, string source_spec, string* j)
 {
-    string id, jsonb;
+    string id, jsonb, description;
     pq_get_value_json_string(res, 0, 0, &id);
     pq_get_value_json_object(res, 0, 1, &jsonb);
+    pq_get_value_json_string(res, 0, 2, &description);
     etymon::trim(&jsonb);
     if (jsonb.size() == 0 || jsonb[0] != '{') {
         throw runtime_error("expected '{' in JSON data: " + source_spec);
     }
-    *j = "{\"id\": " + id + "," + jsonb.substr(1, jsonb.size() - 1);
+    *j = "{\"id\": " + id + "," +
+        "\"description\": " + description + "," +
+        jsonb.substr(1, jsonb.size() - 1);
 }
 
 void retrieve_direct_srs_error(const PGresult *res, string source_spec, string* j)
@@ -521,7 +524,7 @@ bool try_retrieve_direct(const data_source& source, ldp_log* lg,
         attr = "id, content";
     }
     if (table.source_type == data_source_type::srs_error_records) {
-        attr = "id, content";
+        attr = "id, content, description";
     }
     if (table.source_type == data_source_type::srs_records) {
         attr = string("id, snapshot_id, matched_id, generation, record_type, ") + instance + "_id, state, leader_record_status, \"order\", suppress_discovery, created_by_user_id, created_date, updated_by_user_id, updated_date, " + instance + "_hrid";
