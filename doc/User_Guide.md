@@ -215,12 +215,13 @@ on the table are running fast enough for normal use.
 ### History tables
 
 As mentioned earlier, the database contains a snapshot of the source
-data as of the last update.  For all tables except `srs_marc` and
-`srs_records`, LDP also retains data that have been updated in the
-past, including data that may no longer exist in the source.  These
-"historical data" are stored in a schema called `history`.  Each table
-normally has a corresponding history table, e.g.  the history table
-for `circulation_loans` is `history.circulation_loans`.
+data as of the last update.  For all tables except `srs_error`,
+`srs_marc`, and `srs_records`, LDP also retains data that have been
+updated in the past, including data that may no longer exist in the
+source.  These "historical data" are stored in a schema called
+`history`.  Each table normally has a corresponding history table,
+e.g.  the history table for `circulation_loans` is
+`history.circulation_loans`.
 
 This historical data capability can be used for gaining insights about
 the library by analyzing trends over time.

@@ -496,10 +496,10 @@ types include `bigint`, `boolean`, `numeric(12,2)`, and `timestamptz`.
 9\. Historical data
 -------------------
 
-For all tables except `srs_marc` and `srs_records`, when LDP detects
-that a record has changed since the last update, it retains the old
-version of the record.  These historical data are stored in the
-`history` schema.  This feature is enabled by default.
+For all tables except `srs_error`, `srs_marc`, and `srs_records`, when
+LDP detects that a record has changed since the last update, it
+retains the old version of the record.  These historical data are
+stored in the `history` schema.  This feature is enabled by default.
 
 LDP can be configured not to record history, by setting
 `record_history` to `false` in `ldpconf.json`.  If historical data
