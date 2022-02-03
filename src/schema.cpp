@@ -43,10 +43,12 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.source_type = data_source_type::rmb;
 
     table.source_spec = "/loan-storage/loan-history";
+    table.direct_source_table = "mod_circulation_storage.audit_loan"; //
     table.name = "circulation_loan_history";
     schema->tables.push_back(table);
 
     table.source_spec = "/audit-data/circulation/logs";
+    table.direct_source_table = "mod_audit.circulation_logs"; //
     table.name = "audit_circulation_logs";
     table.anonymize = true;
     schema->tables.push_back(table);
@@ -58,16 +60,19 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     schema->tables.push_back(table);
 
     table.source_spec = "/accounts";
+    table.direct_source_table = "mod_feesfines.accounts"; //
     table.name = "feesfines_accounts";
     schema->tables.push_back(table);
 
     table.source_spec = "/users";
+    table.direct_source_table = "mod_users.users"; //
     table.name = "user_users";
     table.anonymize = true;
     schema->tables.push_back(table);
     table.anonymize = false;
 
     table.source_spec = "/loan-storage/loans";
+    table.direct_source_table = "mod_circulation_storage.loan"; //
     table.name = "circulation_loans";
     schema->tables.push_back(table);
 
