@@ -371,8 +371,7 @@ bool stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const
         }
 
         if (opt.record_history && table->source_type != data_source_type::srs_marc_records && table->source_type != data_source_type::srs_records &&
-            table->source_type != data_source_type::srs_error_records &&
-            table->source_type != data_source_type::permissions && table->source_type != data_source_type::permissions_users) {
+            table->source_type != data_source_type::srs_error_records) {
             lg->write(log_level::trace, "", "", table->name + ": merging", -1);
             merge_table(opt, lg, *table, &conn, dbt);
         }
