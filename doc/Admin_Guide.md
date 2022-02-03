@@ -355,7 +355,10 @@ for the following tables:
 * `inventory_holdings`
 * `inventory_instances`
 * `inventory_items`
+* `perm_permissions`
+* `perm_users`
 * `po_receiving_history`
+* `srs_error`
 * `srs_marc`
 * `srs_records`
 
@@ -378,10 +381,13 @@ example:
             ( . . . )
 
 	    "direct_tables": [
-	        "inventory_holdings",
+		"inventory_holdings",
 		"inventory_instances",
 		"inventory_items",
+		"perm_permissions",
+		"perm_users",
 		"po_receiving_history",
+		"srs_error",
 		"srs_marc",
 		"srs_records"
             ],
