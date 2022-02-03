@@ -352,6 +352,10 @@ such as when the data are too large for the API to process.  In LDP
 this is referred to as _direct extraction_ and is currently supported
 for the following tables:
 
+* `audit_circulation_logs`
+* `circulation_loan_history`
+* `circulation_loans`
+* `feesfines_accounts`
 * `inventory_holdings`
 * `inventory_instances`
 * `inventory_items`
@@ -361,6 +365,7 @@ for the following tables:
 * `srs_error`
 * `srs_marc`
 * `srs_records`
+* `user_users`
 
 Several of these tables, `perm_permissions`, `perm_users`,
 `srs_error`, `srs_marc` and `srs_records`, are made available in LDP
@@ -382,6 +387,10 @@ example:
             ( . . . )
 
 	    "direct_tables": [
+		"audit_circulation_logs",
+		"circulation_loan_history",
+		"circulation_loans",
+		"feesfines_accounts",
 		"inventory_holdings",
 		"inventory_instances",
 		"inventory_items",
@@ -390,7 +399,8 @@ example:
 		"po_receiving_history",
 		"srs_error",
 		"srs_marc",
-		"srs_records"
+		"srs_records",
+		"user_users"
             ],
             "direct_database_name": "okapi",
             "direct_database_host": "database.folio.org",
