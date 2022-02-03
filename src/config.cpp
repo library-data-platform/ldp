@@ -140,7 +140,10 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
                 table_name != "inventory_instances" &&
                 table_name != "inventory_items" &&
                 table_name != "po_receiving_history" &&
+                table_name != "perm_permissions" &&
+                table_name != "perm_users" &&
                 table_name != "srs_marc" &&
+                table_name != "srs_error" &&
                 table_name != "srs_records") {
                 throw runtime_error("Direct extraction not supported for table: " + table_name);
             }

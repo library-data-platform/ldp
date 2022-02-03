@@ -1514,4 +1514,22 @@ void database_upgrade_28(database_upgrade_options* opt)
     ulog_commit(opt);
 }
 
+void database_upgrade_29(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    { etymon::pgconn_result r(opt->conn, "BEGIN;"); }
+
+    upgrade_add_new_table_dbsystem("perm_permissions", opt, dbt, false);
+    upgrade_add_new_table_dbsystem("perm_users", opt, dbt, false);
+    upgrade_add_new_table_dbsystem("srs_error", opt, dbt, false);
+
+    string sql = "UPDATE dbsystem.main SET database_version = 29;";
+    ulog_sql(sql, opt);
+    { etymon::pgconn_result r(opt->conn, sql); }
+
+    { etymon::pgconn_result r(opt->conn, "COMMIT;"); }
+    ulog_commit(opt);
+}
+
 

@@ -846,6 +846,9 @@ bool stage_table_1(const ldp_options& opt,
         if (table->source_type == data_source_type::srs_marc_records && field != "id") {
             continue;
         }
+        if (table->source_type == data_source_type::srs_error_records && field != "id") {
+            continue;
+        }
         column_schema column;
         bool ok =
             column_schema::select_type(lg, table->name,

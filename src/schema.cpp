@@ -8,6 +8,24 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
 
     table_schema table;
 
+    ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-auth";
+    
+    table.source_type = data_source_type::permissions;
+    table.source_spec = "perm::permissions";
+    table.direct_source_table = "mod_permissions.permissions";
+    table.name = "perm_permissions";
+    schema->tables.push_back(table);
+
+    table.source_type = data_source_type::permissions_users;
+    table.source_spec = "perm::permissions_users";
+    table.direct_source_table = "mod_permissions.permissions_users";
+    table.name = "perm_users";
+    schema->tables.push_back(table);
+
+    table.source_type = data_source_type::rmb;
+    ///////////////////////////////////////////////////////////////////////////
+
     table.source_type = data_source_type::rmb;
     table.anonymize = false;
 
@@ -90,6 +108,14 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.source_spec = "/orders-storage/pieces";
     table.name = "po_pieces";
     schema->tables.push_back(table);
+
+    table.source_type = data_source_type::srs_error_records;
+    table.source_spec = "srs::error_records_lb";
+    table.direct_source_table = "mod_source_record_storage.error_records_lb";
+    table.name = "srs_error";
+    schema->tables.push_back(table);
+    table.source_type = data_source_type::rmb;
+
 
     ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-audit";
@@ -597,6 +623,8 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.source_spec = "/holdings-sources";
     table.name = "inventory_holdings_sources";
     schema->tables.push_back(table);
+
+    
 }
 
 void column_schema::type_to_string(column_type type, string* str)

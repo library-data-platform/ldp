@@ -9,6 +9,9 @@ void create_latest_history_table(const ldp_options& opt, ldp_log* lg,
     if (table.source_type == data_source_type::srs_marc_records) {
         return;
     }
+    if (table.source_type == data_source_type::srs_error_records) {
+        return;
+    }
 
     string history_table;
     history_table_name(table.name, &history_table);
@@ -46,6 +49,9 @@ void drop_latest_history_table(const ldp_options& opt, ldp_log* lg,
                                etymon::pgconn* conn)
 {
     if (table.source_type == data_source_type::srs_marc_records) {
+        return;
+    }
+    if (table.source_type == data_source_type::srs_error_records) {
         return;
     }
 

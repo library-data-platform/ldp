@@ -457,6 +457,18 @@ void retrieve_direct_srs_marc(const PGresult *res, string source_spec, string* j
     *j = "{\"id\": " + id + "," + jsonb.substr(1, jsonb.size() - 1);
 }
 
+void retrieve_direct_srs_error(const PGresult *res, string source_spec, string* j)
+{
+    string id, jsonb;
+    pq_get_value_json_string(res, 0, 0, &id);
+    pq_get_value_json_object(res, 0, 1, &jsonb);
+    etymon::trim(&jsonb);
+    if (jsonb.size() == 0 || jsonb[0] != '{') {
+        throw runtime_error("expected '{' in JSON data: " + source_spec);
+    }
+    *j = "{\"id\": " + id + "," + jsonb.substr(1, jsonb.size() - 1);
+}
+
 void retrieve_direct_srs_records(const PGresult *res, string* j)
 {
     string id, snapshot_id, matched_id, generation, record_type, external_id, state, leader_record_status, order, suppress_discovery, created_by_user_id, created_date, updated_by_user_id, updated_date, external_hrid;
@@ -508,6 +520,9 @@ bool try_retrieve_direct(const data_source& source, ldp_log* lg,
     if (table.source_type == data_source_type::srs_marc_records) {
         attr = "id, content";
     }
+    if (table.source_type == data_source_type::srs_error_records) {
+        attr = "id, content";
+    }
     if (table.source_type == data_source_type::srs_records) {
         attr = string("id, snapshot_id, matched_id, generation, record_type, ") + instance + "_id, state, leader_record_status, \"order\", suppress_discovery, created_by_user_id, created_date, updated_by_user_id, updated_date, " + instance + "_hrid";
     }
@@ -550,9 +565,14 @@ bool try_retrieve_direct(const data_source& source, ldp_log* lg,
         string j;
         switch (table.source_type) {
         case data_source_type::rmb:
+        case data_source_type::permissions:
+        case data_source_type::permissions_users:
             retrieve_direct_rmb(res.result, &j);
             break;
         case data_source_type::srs_marc_records:
+            retrieve_direct_srs_marc(res.result, table.source_spec, &j);
+            break;
+        case data_source_type::srs_error_records:
             retrieve_direct_srs_marc(res.result, table.source_spec, &j);
             break;
         case data_source_type::srs_records:
