@@ -8,24 +8,6 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
 
     table_schema table;
 
-    ///////////////////////////////////////////////////////////////////////////
-    table.module_name = "mod-auth";
-    
-    table.source_type = data_source_type::permissions;
-    table.source_spec = "perm::permissions";
-    table.direct_source_table = "mod_permissions.permissions";
-    table.name = "perm_permissions";
-    schema->tables.push_back(table);
-
-    table.source_type = data_source_type::permissions_users;
-    table.source_spec = "perm::permissions_users";
-    table.direct_source_table = "mod_permissions.permissions_users";
-    table.name = "perm_users";
-    schema->tables.push_back(table);
-
-    table.source_type = data_source_type::rmb;
-    ///////////////////////////////////////////////////////////////////////////
-
     table.source_type = data_source_type::rmb;
     table.anonymize = false;
 
@@ -116,6 +98,23 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     schema->tables.push_back(table);
     table.source_type = data_source_type::rmb;
 
+    ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-auth";
+    
+    table.source_type = data_source_type::permissions;
+    table.source_spec = "perm::permissions";
+    table.direct_source_table = "mod_permissions.permissions";
+    table.name = "perm_permissions";
+    schema->tables.push_back(table);
+
+    table.source_type = data_source_type::permissions_users;
+    table.source_spec = "perm::permissions_users";
+    table.direct_source_table = "mod_permissions.permissions_users";
+    table.name = "perm_users";
+    schema->tables.push_back(table);
+
+    table.source_type = data_source_type::rmb;
+    ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-audit";
