@@ -144,7 +144,12 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
                 table_name != "perm_users" &&
                 table_name != "srs_marc" &&
                 table_name != "srs_error" &&
-                table_name != "srs_records") {
+                table_name != "srs_records" &&
+                table_name != "circulation_loan_history" &&
+                table_name != "audit_circulation_logs" &&
+                table_name != "feesfines_accounts" &&
+                table_name != "user_users" &&
+                table_name != "circulation_loans") {
                 throw runtime_error("Direct extraction not supported for table: " + table_name);
             }
             direct.table_names.push_back(table_name);
