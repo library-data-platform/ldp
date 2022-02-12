@@ -1476,25 +1476,24 @@ void database_upgrade_27(database_upgrade_options* opt)
 {
     dbtype dbt(opt->conn);
 
-    { etymon::pgconn_result r(opt->conn, "BEGIN;"); }
-
     ldp_schema schema;
     ldp_schema::make_default_schema(&schema);
 
     for (auto& table : schema.tables) {
         string sql = "ALTER TABLE " + table.name + " DROP COLUMN tenant_id;";
         ulog_sql(sql, opt);
-        { etymon::pgconn_result r(opt->conn, sql); }
+        try {
+            etymon::pgconn_result r(opt->conn, sql);
+        } catch (runtime_error& e) {}
         sql = "ALTER TABLE history." + table.name + " DROP COLUMN tenant_id;";
         ulog_sql(sql, opt);
-        { etymon::pgconn_result r(opt->conn, sql); }
+        try {
+            etymon::pgconn_result r(opt->conn, sql);
+        } catch (runtime_error& e) {}
     }
 
     string sql = "UPDATE dbsystem.main SET database_version = 27;";
     ulog_sql(sql, opt);
     { etymon::pgconn_result r(opt->conn, sql); }
-
-    { etymon::pgconn_result r(opt->conn, "COMMIT;"); }
-    ulog_commit(opt);
 }
 
