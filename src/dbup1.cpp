@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include "dbup1.h"
 #include "initutil.h"
 #include "schema.h"
