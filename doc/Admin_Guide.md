@@ -107,6 +107,12 @@ $ sudo dnf install cmake gcc-c++ libcurl-devel libpq-devel make \
 RapidJSON can be [installed from
 source](https://rapidjson.org/index.html#autotoc_md5).
 
+#### macOS
+
+```shell
+brew install cmake postgresql rapidjson
+```
+
 ### Building the software
 
 If the LDP software was built previously in the same directory, first
