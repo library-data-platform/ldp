@@ -65,6 +65,8 @@ static set<pair<string,string>> anonymize_field_list = {
     {"organization_phone_numbers", "/phoneNumber"},
     {"organization_phone_numbers", "/language"},
 
+    {"patron_blocks_user_summary", "/userId"},
+
     {"po_lines", "/requester"},
     {"po_lines", "/selector"},
 

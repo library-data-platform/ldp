@@ -43,12 +43,11 @@ public:
 };
 
 enum class data_source_type {
+    direct_only,
     rmb,
     srs_records,
     srs_marc_records,
-    srs_error_records,
-    permissions,
-    permissions_users
+    srs_error_records
 };
 
 class table_schema {

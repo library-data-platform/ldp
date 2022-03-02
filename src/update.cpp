@@ -605,8 +605,7 @@ void run_update(const ldp_options& opt, bool update_users)
                         found_data = retrieve_direct(state.source, &lg, table, load_dir, ext_files, opt.direct_extraction_no_ssl);
                     } else {
                         if (table.source_type != data_source_type::srs_marc_records && table.source_type != data_source_type::srs_records &&
-                            table.source_type != data_source_type::srs_error_records &&
-                            table.source_type != data_source_type::permissions && table.source_type != data_source_type::permissions_users) {
+                            table.source_type != data_source_type::srs_error_records && table.source_type != data_source_type::direct_only) {
                             found_data = retrieve_pages(curlw, opt, state.source, &lg, state.token, table, load_dir, ext_files);
                         } else {
                             lg.write(log_level::debug, "", "", table.name + ": requires direct extraction", -1);

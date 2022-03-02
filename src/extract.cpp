@@ -567,9 +567,8 @@ bool try_retrieve_direct(const data_source& source, ldp_log* lg,
         }
         string j;
         switch (table.source_type) {
+        case data_source_type::direct_only:
         case data_source_type::rmb:
-        case data_source_type::permissions:
-        case data_source_type::permissions_users:
             retrieve_direct_rmb(res.result, &j);
             break;
         case data_source_type::srs_marc_records:

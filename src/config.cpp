@@ -139,6 +139,7 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
             if (table_name != "inventory_holdings" &&
                 table_name != "inventory_instances" &&
                 table_name != "inventory_items" &&
+                table_name != "patron_blocks_user_summary" &&
                 table_name != "po_receiving_history" &&
                 table_name != "perm_permissions" &&
                 table_name != "perm_users" &&

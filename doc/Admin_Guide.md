@@ -365,6 +365,7 @@ for the following tables:
 * `inventory_holdings`
 * `inventory_instances`
 * `inventory_items`
+* `patron_blocks_user_summary`
 * `perm_permissions`
 * `perm_users`
 * `po_receiving_history`
@@ -373,10 +374,11 @@ for the following tables:
 * `srs_records`
 * `user_users`
 
-Several of these tables, `perm_permissions`, `perm_users`,
-`srs_error`, `srs_marc` and `srs_records`, are made available in LDP
-only by direct extraction.  No historical data are retained for
-`srs_error`, `srs_marc`, and `srs_records`.
+Several of these tables, `patron_blocks_user_summary`,
+`perm_permissions`, `perm_users`, `srs_error`, `srs_marc` and
+`srs_records`, are made available in LDP only by direct extraction.
+No historical data are retained for `srs_error`, `srs_marc`, and
+`srs_records`.
 
 Direct extraction can be enabled by adding the list of tables and
 database connection parameters to a source configuration, as in this
@@ -400,6 +402,7 @@ example:
 		"inventory_holdings",
 		"inventory_instances",
 		"inventory_items",
+		"patron_blocks_user_summary",
 		"perm_permissions",
 		"perm_users",
 		"po_receiving_history",

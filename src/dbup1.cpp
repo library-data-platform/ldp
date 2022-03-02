@@ -1533,4 +1533,19 @@ void database_upgrade_29(database_upgrade_options* opt)
     ulog_commit(opt);
 }
 
+void database_upgrade_30(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    { etymon::pgconn_result r(opt->conn, "BEGIN;"); }
+
+    upgrade_add_new_table_dbsystem("patron_blocks_user_summary", opt, dbt, false);
+
+    string sql = "UPDATE dbsystem.main SET database_version = 30;";
+    ulog_sql(sql, opt);
+    { etymon::pgconn_result r(opt->conn, sql); }
+
+    { etymon::pgconn_result r(opt->conn, "COMMIT;"); }
+    ulog_commit(opt);
+}
 
