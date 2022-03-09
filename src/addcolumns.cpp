@@ -116,6 +116,8 @@ void add_columns(const ldp_options& opt, ldp_log* lg, etymon::pgconn* conn)
         try {
             string sql = "ALTER TABLE public." + table + " ADD COLUMN \"" + column + "\" " + datatype + ";";
             { etymon::pgconn_result r(conn, sql); }
+            sql = "CREATE INDEX ON public." + table + " (\"" + column + "\");";
+            { etymon::pgconn_result r(conn, sql); }
         } catch (runtime_error& e) {}
     }
 }
