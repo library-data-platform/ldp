@@ -38,9 +38,9 @@ LDP instance.
 * Operating systems supported:
   * Linux
 * Database systems supported:
-  * [PostgreSQL](https://www.postgresql.org/) 12.6 or later
+  * [PostgreSQL](https://www.postgresql.org/) 13.6 or later
 * Other software dependencies:
-  * [libpq](https://www.postgresql.org/) 12.6 or later
+  * [libpq](https://www.postgresql.org/) 13.6 or later
   * [libcurl](https://curl.haxx.se/) 7.64.0 or later
   * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
 * Required to build from source code:
@@ -52,20 +52,13 @@ LDP instance.
 
 ### Hardware
 
-The LDP software and database are designed to be performant on low
-cost hardware, and in most cases they should run well with the
-following minimum requirements:
-
 * LDP software:
-  * Memory: 500 MB
-  * Storage: 500 GB HDD
+  * Memory: 1 GB
+  * Storage: 500 GB HDD or SSD
 * Database:
-  * Memory: 8 GB
-  * Storage: 1 TB HDD
-
-For higher performance, SSD drives are recommended for storage, and
-the database CPU and memory should be increased.  The database storage
-capacity also can be increased as needed.
+  * CPU: 4 cores
+  * Memory: 32 GB
+  * Storage: 1 TB SSD
 
 
 3\. Installation
@@ -162,9 +155,15 @@ and local tables are safe.
 These are recommended configuration settings for the PostgreSQL server
 that runs the LDP database:
 
-* `checkpoint_timeout`: `3000` (s)
-* `max_wal_size`: `10240` (MB)
-* `idle_in_transaction_session_timeout`: `60000` (ms)
+* `checkpoint_timeout`: `3600`
+* `cpu_tuple_cost`: `0.03`
+* `effective_io_concurrency`: `200`
+* `idle_in_transaction_session_timeout`: `3600000`
+* `max_connections`: `100`
+* `max_wal_size`: `10240`
+* `shared_buffers`: `1250000`
+* `work_mem`: `350000`
+* `maintenance_work_mem`: `1000000`
 
 ### Configuring the database
 
