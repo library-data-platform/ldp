@@ -159,11 +159,11 @@ that runs the LDP database:
 * `cpu_tuple_cost`: `0.03`
 * `effective_io_concurrency`: `200`
 * `idle_in_transaction_session_timeout`: `3600000`
+* `maintenance_work_mem`: `1000000`
 * `max_connections`: `100`
 * `max_wal_size`: `10240`
 * `shared_buffers`: `1250000`
 * `work_mem`: `350000`
-* `maintenance_work_mem`: `1000000`
 
 ### Configuring the database
 
