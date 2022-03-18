@@ -153,7 +153,7 @@ and local tables are safe.
 #### PostgreSQL configuration
 
 These are recommended configuration settings for the PostgreSQL server
-that runs the LDP database, assuming 4 cores and 32 GB:
+that runs the LDP database, assuming 4 CPU cores and 32 GB memory:
 
 * `checkpoint_timeout`: `3600`
 * `cpu_tuple_cost`: `0.03`
