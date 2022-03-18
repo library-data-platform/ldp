@@ -46,11 +46,12 @@ bool is_uuid(const char* str)
 
 void vacuum_sql(const ldp_options& opt, string* sql)
 {
-    if (opt.parallel_vacuum) {
-        *sql = "VACUUM ";
-    } else {
-        *sql = "VACUUM (PARALLEL 0) ";
-    }
+    // if (opt.parallel_vacuum) {
+    //     *sql = "VACUUM ";
+    // } else {
+    //     *sql = "VACUUM (PARALLEL 0) ";
+    // }
+    *sql = "VACUUM ANALYZE ";
 }
 
 void print_banner_line(FILE* stream, char ch, int width)

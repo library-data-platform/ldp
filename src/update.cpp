@@ -247,9 +247,9 @@ void process_foreign_keys(const ldp_options& opt, bool enable_foreign_key_warnin
             sql = v + "temp_foreign_key_exceptions;";
             lg->detail(sql);
             { etymon::pgconn_result r(conn, sql); }
-            sql = "ANALYZE temp_foreign_key_exceptions;";
-            lg->detail(sql);
-            { etymon::pgconn_result r(conn, sql); }
+            // sql = "ANALYZE temp_foreign_key_exceptions;";
+            // lg->detail(sql);
+            // { etymon::pgconn_result r(conn, sql); }
         } catch (runtime_error& e) {
             string s = e.what();
             if ( !(s.empty()) && s.back() == '\n' )
@@ -705,16 +705,16 @@ void run_update(const ldp_options& opt, bool update_users)
             string sql = v + table.name + ";";
             lg.detail(sql);
             { etymon::pgconn_result r(&conn, sql); }
-            sql = "ANALYZE " + table.name + ";";
-            lg.detail(sql);
-            { etymon::pgconn_result r(&conn, sql); }
+            // sql = "ANALYZE " + table.name + ";";
+            // lg.detail(sql);
+            // { etymon::pgconn_result r(&conn, sql); }
             if (opt.record_history) {
                 sql = v + "history." + table.name + ";";
                 lg.detail(sql);
                 { etymon::pgconn_result r(&conn, sql); }
-                sql = "ANALYZE history." + table.name + ";";
-                lg.detail(sql);
-                { etymon::pgconn_result r(&conn, sql); }
+                // sql = "ANALYZE history." + table.name + ";";
+                // lg.detail(sql);
+                // { etymon::pgconn_result r(&conn, sql); }
             }
         }
         //lg.write(log_level::debug, "server", "", "completed vacuum", vacuum_analyze_timer.elapsed_time());
