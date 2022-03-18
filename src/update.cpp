@@ -696,6 +696,12 @@ void run_update(const ldp_options& opt, bool update_users)
         for (auto& table : schema.tables) {
             if (table.skip || opt.extract_only)
                 continue;
+
+            // Skip this table if the --table option is specified and does not
+            // match this table.
+            if (opt.table != "" && opt.table != table.name)
+                continue;
+
             string sql = v + table.name + ";";
             lg.detail(sql);
             { etymon::pgconn_result r(&conn, sql); }
