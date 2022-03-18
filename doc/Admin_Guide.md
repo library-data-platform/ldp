@@ -595,13 +595,6 @@ Reference
   updates can be useful to make debugging easier, but it will also
   slow down the update process.
 
-* `parallel_vacuum` (Boolean; optional) when set to `false`, disables
-  parallel vacuum in PostgreSQL 13 or later, which may slow down
-  vacuuming but may be more friendly to concurrent user queries or
-  other database operations.  The default value is `true`.  This
-  setting should not be set to `false` with PostgreSQL 12.x or
-  earlier.
-
 * `record_history` (Boolean; optional) when set to `false`, disables
   recording historical data.  The default value is `true`.  Please
   read the section on "Historical data" above before changing this
