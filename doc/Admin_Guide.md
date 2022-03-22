@@ -7,11 +7,10 @@ LDP Administrator Guide
 3\. [Installation](#3-installation)  
 4\. [Database configuration](#4-database-configuration)  
 5\. [LDP configuration](#5-ldp-configuration)  
-6\. [Direct extraction](#6-direct-extraction)  
-7\. [Data privacy](#7-data-privacy)  
-8\. [Optional columns](#8-optional-columns)  
-9\. [Historical data](#9-historical-data)  
-10\. [User accounts](#10-user-accounts)  
+6\. [Data privacy](#7-data-privacy)  
+7\. [Optional columns](#8-optional-columns)  
+8\. [Historical data](#9-historical-data)  
+9\. [User accounts](#10-user-accounts)  
 [Reference](#reference)
 
 
@@ -264,10 +263,12 @@ __ldpconf.json__
     "enable_sources": ["my_library"],
     "sources": {
         "my_library": {
-            "okapi_url": "https://folio-snapshot-okapi.dev.folio.org",
             "okapi_tenant": "diku",
-            "okapi_user": "diku_admin",
-            "okapi_password": "(okapi password here)"
+            "direct_database_name": "diku_prod",
+            "direct_database_host": "database.folio.org",
+            "direct_database_port": 5432,
+            "direct_database_user": "ldp",
+            "direct_database_password": "(database password here)"
         }
     }
 }
@@ -349,83 +350,7 @@ $ docker run --rm -v /my/local/datadir:/var/lib/ldp ghcr.io/library-data-platfor
 ```
 
 
-6\. Direct extraction
----------------------
-
-LDP currently extracts most data via module APIs; but in some cases it
-is necessary to extract directly from a module's internal database,
-such as when the data are too large for the API to process.  In LDP
-this is referred to as _direct extraction_ and is currently supported
-for the following tables:
-
-* `audit_circulation_logs`
-* `circulation_loan_history`
-* `circulation_loans`
-* `feesfines_accounts`
-* `inventory_holdings`
-* `inventory_instances`
-* `inventory_items`
-* `patron_blocks_user_summary`
-* `perm_permissions`
-* `perm_users`
-* `po_receiving_history`
-* `srs_error`
-* `srs_marc`
-* `srs_records`
-* `user_users`
-
-Several of these tables, `patron_blocks_user_summary`,
-`perm_permissions`, `perm_users`, `srs_error`, `srs_marc` and
-`srs_records`, are made available in LDP only by direct extraction.
-No historical data are retained for `srs_error`, `srs_marc`, and
-`srs_records`.
-
-Direct extraction can be enabled by adding the list of tables and
-database connection parameters to a source configuration, as in this
-example:
-
-```
-{
-
-    ( . . . )
-
-    "sources": {
-        "my_library": {
-
-            ( . . . )
-
-	    "direct_tables": [
-		"audit_circulation_logs",
-		"circulation_loan_history",
-		"circulation_loans",
-		"feesfines_accounts",
-		"inventory_holdings",
-		"inventory_instances",
-		"inventory_items",
-		"patron_blocks_user_summary",
-		"perm_permissions",
-		"perm_users",
-		"po_receiving_history",
-		"srs_error",
-		"srs_marc",
-		"srs_records",
-		"user_users"
-            ],
-            "direct_database_name": "okapi",
-            "direct_database_host": "database.folio.org",
-            "direct_database_port": 5432,
-            "direct_database_user": "folio_admin",
-            "direct_database_password": "(database password here)"
-        }
-    }
-}
-```
-
-Note that direct extraction requires network access to the database,
-which may be protected by a firewall.
-
-
-7\. Data privacy
+6\. Data privacy
 ----------------
 
 ### Anonymization
@@ -471,7 +396,7 @@ circulation_requests /requester/patronGroup
 ```
 
 
-8\. Optional columns
+7\. Optional columns
 --------------------
 
 LDP creates table columns based on the presence of data in JSON
@@ -502,7 +427,7 @@ written as `varchar` in the configuration file.  Other supported data
 types include `bigint`, `boolean`, `numeric(12,2)`, and `timestamptz`.
 
 
-9\. Historical data
+8\. Historical data
 -------------------
 
 For all tables except `srs_error`, `srs_marc`, and `srs_records`, when
@@ -516,7 +441,7 @@ will not be needed, this can have the benefit of reducing the running
 time of updates.
 
 
-10\. User accounts
+9\. User accounts
 ------------------
 
 Individual user accounts can be created in PostgreSQL and used to

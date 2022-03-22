@@ -13,10 +13,12 @@
     "enable_sources": ["my_library"],
     "sources": {
         "my_library": {
-            "okapi_url": "https://folio-snapshot-okapi.dev.folio.org",
             "okapi_tenant": "diku",
-            "okapi_user": "diku_admin",
-            "okapi_password": "(okapi password here)"
+            "direct_database_name": "diku_prod",
+            "direct_database_host": "database.folio.org",
+            "direct_database_port": 5432,
+            "direct_database_user": "ldp",
+            "direct_database_password": "(database password here)"
         }
     }
 }

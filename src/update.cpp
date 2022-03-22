@@ -531,7 +531,7 @@ void run_update(const ldp_options& opt, bool update_users)
 
             source_state state(source);
 
-            okapi_login(opt, source, &lg, &state.token);
+            // okapi_login(opt, source, &lg, &state.token);
 
             make_update_tmp_dir(opt, &load_dir);
             ext_dir.dir = load_dir;
@@ -601,16 +601,18 @@ void run_update(const ldp_options& opt, bool update_users)
                     lg.write(log_level::debug, "update", table.name, "updating " + table.name, -1);
                     lg.write(log_level::trace, "", "", table.name + ": reading", -1);
                     bool found_data = false;
-                    if (direct_override(state.source, table.name)) {
-                        found_data = retrieve_direct(state.source, &lg, table, load_dir, ext_files, opt.direct_extraction_no_ssl);
-                    } else {
-                        if (table.source_type != data_source_type::srs_marc_records && table.source_type != data_source_type::srs_records &&
-                            table.source_type != data_source_type::srs_error_records && table.source_type != data_source_type::direct_only) {
-                            found_data = retrieve_pages(curlw, opt, state.source, &lg, state.token, table, load_dir, ext_files);
-                        } else {
-                            lg.write(log_level::debug, "", "", table.name + ": requires direct extraction", -1);
-                        }
-                    }
+                    // if (direct_override(state.source, table.name)) {
+                    //     found_data = retrieve_direct(state.source, &lg, table, load_dir, ext_files, opt.direct_extraction_no_ssl);
+                    // } else {
+                    //     if (table.source_type != data_source_type::srs_marc_records && table.source_type != data_source_type::srs_records &&
+                    //         table.source_type != data_source_type::srs_error_records && table.source_type != data_source_type::direct_only) {
+                    //         found_data = retrieve_pages(curlw, opt, state.source, &lg, state.token, table, load_dir, ext_files);
+                    //     } else {
+                    //         lg.write(log_level::debug, "", "", table.name + ": requires direct extraction", -1);
+                    //     }
+                    // }
+                    found_data = retrieve_direct(state.source, &lg, table, load_dir, ext_files, opt.direct_extraction_no_ssl);
+
                     if (!found_data) {
                         table.skip = true;
                     }

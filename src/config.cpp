@@ -115,16 +115,17 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
         source.source_name = source_name;
         string prefix = "/sources/" + source_name + "/";
         // Okapi URL.
-        get_string(prefix + "okapi_url", true, &(source.okapi_url));
+        // get_string(prefix + "okapi_url", true, &(source.okapi_url));
         // Okapi tenant.
         get_string(prefix + "okapi_tenant", true, &(source.okapi_tenant));
         // Okapi user.
-        get_string(prefix + "okapi_user", true, &(source.okapi_user));
+        // get_string(prefix + "okapi_user", true, &(source.okapi_user));
         // Okapi password.
-        get_string(prefix + "okapi_password", true, &(source.okapi_password));
+        // get_string(prefix + "okapi_password", true, &(source.okapi_password));
 
         // Direct extraction.
         direct_extraction direct;
+        /*
         // Loop through direct_tables JSON array.
         int direct_index = 0;
         while (true) {
@@ -156,6 +157,7 @@ void ldp_config::get_enable_sources(vector<data_source>* enable_sources) const
             direct.table_names.push_back(table_name);
             direct_index++;
         }
+        */
         // Additional direct extraction settings.
         // Direct database name.
         get_string(prefix + "direct_database_name", false,
