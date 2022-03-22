@@ -540,17 +540,7 @@ Reference
     port.
   * `direct_database_user` (string; optional) is the FOLIO database
     user name.
-  * `direct_tables` (array; optional) is a list of tables that should
-    be updated using direct extraction.  Only these tables may be
-    included: `inventory_holdings`, `inventory_instances`,
-    `inventory_items`, `po_receiving_history`, `srs_marc`, and
-    `srs_records`.
-  * `okapi_password` (string; required) is the password for the
   * `okapi_tenant` (string; required) is the Okapi tenant.
-  * `okapi_url` (string; required) is the URL for the Okapi instance
-    to extract data from.
-  * `okapi_user` (string; required) is the Okapi user name.
-    specified Okapi user name.
 
 
 Further reading
