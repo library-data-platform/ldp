@@ -489,7 +489,7 @@ Reference
 * `enable_sources` (array; required) is a list of sources that are
   enabled for LDP to extract data from.  The source names refer to a
   subset of those defined under `sources` (see below).  Only one
-  source should be provided in the case of non-consortial deployments.
+  source should be provided.
 
 * `index_large_varchar` (Boolean; optional) when set to `true`,
   enables indexing of `varchar` text columns that have a length
@@ -527,9 +527,9 @@ Reference
   setting.
 
 * `sources` (object; required) is a collection of sources that LDP can
-  extract data from.  Only one source should be provided in the case
-  of non-consortial deployments.  A source is defined by a source name
-  and an associated object containing several settings:
+  extract data from.  Only one source should be provided.  A source is
+  defined by a source name and an associated object containing several
+  settings:
   * `direct_database_host` (string; optional) is the FOLIO database
     host name.
   * `direct_database_name` (string; optional) is the FOLIO database
