@@ -614,6 +614,14 @@ void run_update(const ldp_options& opt, bool update_users)
                     found_data = retrieve_direct(state.source, &lg, table, load_dir, ext_files, opt.direct_extraction_no_ssl);
 
                     if (!found_data) {
+                        // Clear old data from the table.
+                        {
+                            etymon::pgconn conn(opt.dbinfo);
+                            string sql = "DELETE FROM " + table.name + ";";
+                            lg.detail(sql);
+                            { etymon::pgconn_result r(&conn, sql); }
+                        }
+                        // No more processing is needed for this table.
                         table.skip = true;
                     }
                 }
@@ -696,7 +704,7 @@ void run_update(const ldp_options& opt, bool update_users)
         string v;
         vacuum_sql(opt, &v);
         for (auto& table : schema.tables) {
-            if (table.skip || opt.extract_only)
+            if (opt.extract_only)
                 continue;
 
             // Skip this table if the --table option is specified and does not

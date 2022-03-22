@@ -747,15 +747,7 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
     { etymon::pgconn_result r(conn, sql); }
 
     // Add comment on table.
-    sql = "COMMENT ON TABLE " + loading_table + "\n"
-        "    IS '";
-    sql += table.source_spec;
-    sql += " in ";
-    sql += table.module_name;
-    sql += ": ";
-    sql += "https://dev.folio.org/reference/api/#";
-    sql += table.module_name;
-    sql += "';";
+    comment_sql(loading_table, table.module_name, &sql);
     lg->write(log_level::detail, "", "", "Setting comment on table: " + table.name, -1);
     { etymon::pgconn_result r(conn, sql); }
 

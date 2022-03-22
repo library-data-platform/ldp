@@ -106,7 +106,7 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.source_type = data_source_type::rmb;
 
     ///////////////////////////////////////////////////////////////////////////
-    table.module_name = "mod-auth";
+    table.module_name = "mod-permissions";
     
     table.source_type = data_source_type::direct_only;
     table.source_spec = "perm::permissions";
@@ -828,4 +828,3 @@ bool column_schema::select_type(ldp_log* lg, const string& table,
     *ctype = column_type::varchar;
     return true;
 }
-

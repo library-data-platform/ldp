@@ -9,6 +9,8 @@ bool is_uuid(const char* str);
 
 void vacuum_sql(const ldp_options& opt, string* sql);
 
+void comment_sql(const string& table_name, const string& module_name, string* sql);
+
 void print_banner_line(FILE* stream, char ch, int width);
 
 class source_state {

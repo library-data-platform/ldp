@@ -335,6 +335,8 @@ static void init_database_all(etymon::pgconn* conn, const string& ldp_user,
     for (auto& table : schema.tables) {
         create_main_table_sql(table.name, conn, dbt, &sql);
         { etymon::pgconn_result r(conn, sql); }
+        comment_sql(table.name, table.module_name, &sql);
+        { etymon::pgconn_result r(conn, sql); }
         grant_select_on_table_sql(table.name, ldp_user, conn, &sql);
         { etymon::pgconn_result r(conn, sql); }
         grant_select_on_table_sql(table.name, ldpconfig_user, conn, &sql);
