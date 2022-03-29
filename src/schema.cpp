@@ -623,12 +623,14 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-notes";
 
+    table.source_type = data_source_type::notes;
     table.anonymize = true;
-    table.direct_source_table = "mod_notes.note_data";
+    table.direct_source_table = "mod_notes.note";
     table.name = "notes";
     table.source_spec = "/notes";
     schema->tables.push_back(table);
     table.anonymize = false;
+    table.source_type = data_source_type::rmb;
 
     ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-orders-storage";

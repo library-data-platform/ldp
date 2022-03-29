@@ -611,7 +611,7 @@ void run_update(const ldp_options& opt, bool update_users)
                     //         lg.write(log_level::debug, "", "", table.name + ": requires direct extraction", -1);
                     //     }
                     // }
-                    found_data = retrieve_direct(state.source, &lg, table, load_dir, ext_files, opt.direct_extraction_no_ssl);
+                    found_data = retrieve_direct(state.source, &lg, &table, load_dir, ext_files, opt.direct_extraction_no_ssl);
 
                     if (!found_data) {
                         // Clear old data from the table.

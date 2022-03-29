@@ -510,6 +510,38 @@ void retrieve_direct_srs_records(const PGresult *res, string* j)
         "  }";
 }
 
+void retrieve_direct_notes(const PGresult *res, string* j)
+{
+    string id, title, content, indexed_content, domain, type_id, pop_up_on_user, pop_up_on_check_out, created_by, created_date, updated_by, updated_date;
+    pq_get_value_json_string(res, 0, 0, &id);
+    pq_get_value_json_string(res, 0, 1, &title);
+    pq_get_value_json_string(res, 0, 2, &content);
+    pq_get_value_json_string(res, 0, 3, &indexed_content);
+    pq_get_value_json_string(res, 0, 4, &domain);
+    pq_get_value_json_string(res, 0, 5, &type_id);
+    pq_get_value_json_boolean(res, 0, 6, &pop_up_on_user);
+    pq_get_value_json_boolean(res, 0, 7, &pop_up_on_check_out);
+    pq_get_value_json_string(res, 0, 8, &created_by);
+    pq_get_value_json_string(res, 0, 9, &created_date);
+    pq_get_value_json_string(res, 0, 10, &updated_by);
+    pq_get_value_json_string(res, 0, 11, &updated_date);
+    *j = string("") +
+        "  {\n" +
+        "    \"id\": " + id + ",\n" +
+        "    \"title\": " + title + ",\n" +
+        "    \"content\": " + content + ",\n" +
+        "    \"indexedContent\": " + indexed_content + ",\n" +
+        "    \"domain\": " + domain + ",\n" +
+        "    \"typeId\": " + type_id + ",\n" +
+        "    \"popUpOnUser\": " + pop_up_on_user + ",\n" +
+        "    \"popUpOnCheckOut\": " + pop_up_on_check_out + ",\n" +
+        "    \"createdBy\": " + created_by + ",\n" +
+        "    \"createdDate\": " + created_date + ",\n" +
+        "    \"updatedBy\": " + updated_by + ",\n" +
+        "    \"updatedDate\": " + updated_date + "\n" +
+        "  }";
+}
+
 bool try_retrieve_direct(const data_source& source, ldp_log* lg,
                      const table_schema& table, const string& loadDir,
                      extraction_files* ext_files, bool direct_extraction_no_ssl, const char* instance)
@@ -528,6 +560,9 @@ bool try_retrieve_direct(const data_source& source, ldp_log* lg,
     }
     if (table.source_type == data_source_type::srs_records) {
         attr = string("id, snapshot_id, matched_id, generation, record_type, ") + instance + "_id, state, leader_record_status, \"order\", suppress_discovery, created_by_user_id, created_date, updated_by_user_id, updated_date, " + instance + "_hrid";
+    }
+    if (table.source_type == data_source_type::notes) {
+        attr = "id,title,content,indexed_content,domain,type_id,pop_up_on_user,pop_up_on_user,created_by,created_date,updated_by,updated_date";
     }
 
     // Select from table.direct_source_table and write to JSON file.
@@ -580,6 +615,9 @@ bool try_retrieve_direct(const data_source& source, ldp_log* lg,
         case data_source_type::srs_records:
             retrieve_direct_srs_records(res.result, &j);
             break;
+        case data_source_type::notes:
+            retrieve_direct_notes(res.result, &j);
+            break;
         default:
             throw runtime_error("internal error: unknown value for data_source_type");
         }
@@ -602,17 +640,27 @@ bool try_retrieve_direct(const data_source& source, ldp_log* lg,
 }
 
 bool retrieve_direct(const data_source& source, ldp_log* lg,
-                     const table_schema& table, const string& loadDir,
+                     table_schema* table, const string& loadDir,
                      extraction_files* ext_files, bool direct_extraction_no_ssl) {
-    lg->write(log_level::trace, "", "", "direct from database: " + table.source_spec, -1);
+    lg->write(log_level::trace, "", "", "direct from database: " + table->source_spec, -1);
 
-    if (table.source_type == data_source_type::srs_records) {
+    if (table->source_type == data_source_type::notes) {
         try {
-            return try_retrieve_direct(source, lg, table, loadDir, ext_files, direct_extraction_no_ssl, "external");
+            return try_retrieve_direct(source, lg, *table, loadDir, ext_files, direct_extraction_no_ssl, "");
         } catch (runtime_error& e) {}
-        lg->write(log_level::info, "", "", "srs_records: falling back to instance_id for compatibility", -1);
-        return try_retrieve_direct(source, lg, table, loadDir, ext_files, direct_extraction_no_ssl, "instance");
+        lg->write(log_level::info, "", "", "notes: falling back to note_data for compatibility", -1);
+        table->source_type = data_source_type::rmb;
+        table->direct_source_table = "mod_notes.note_data";
+        return try_retrieve_direct(source, lg, *table, loadDir, ext_files, direct_extraction_no_ssl, "");
     }
 
-    return try_retrieve_direct(source, lg, table, loadDir, ext_files, direct_extraction_no_ssl, "");
+    if (table->source_type == data_source_type::srs_records) {
+        try {
+            return try_retrieve_direct(source, lg, *table, loadDir, ext_files, direct_extraction_no_ssl, "external");
+        } catch (runtime_error& e) {}
+        lg->write(log_level::info, "", "", "srs_records: falling back to instance_id for compatibility", -1);
+        return try_retrieve_direct(source, lg, *table, loadDir, ext_files, direct_extraction_no_ssl, "instance");
+    }
+
+    return try_retrieve_direct(source, lg, *table, loadDir, ext_files, direct_extraction_no_ssl, "");
 }

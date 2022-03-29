@@ -44,6 +44,7 @@ public:
 
 enum class data_source_type {
     direct_only,
+    notes,
     rmb,
     srs_records,
     srs_marc_records,
