@@ -414,11 +414,15 @@ The [issue
 tracker](https://github.com/library-data-platform/ldp/issues) can be
 used to report a bug.
 
+### Reporting queries
+
+The FOLIO community maintain a [repository of reporting
+queries](https://github.com/folio-org/folio-analytics) that run on LDP
+databases.
+
 
 Further reading
 ---------------
-
-[__Configuration Guide__](Config_Guide.md)
 
 [__Administrator Guide__](Admin_Guide.md)
 

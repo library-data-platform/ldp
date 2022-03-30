@@ -83,25 +83,15 @@ a package manager on some platforms.
 
 #### Debian/Ubuntu Linux
 
-```shell
-$ sudo apt update
-$ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev \
-      postgresql-server-dev-all rapidjson-dev
 ```
+sudo apt update
 
-#### RHEL/CentOS Linux
-
-```shell
-$ sudo dnf install cmake gcc-c++ libcurl-devel libpq-devel make \
-      postgresql-server-devel
+sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev postgresql-server-dev-all rapidjson-dev
 ```
-
-RapidJSON can be [installed from
-source](https://rapidjson.org/index.html#autotoc_md5).
 
 #### macOS
 
-```shell
+```
 brew install cmake postgresql rapidjson
 ```
 
@@ -111,14 +101,14 @@ If the LDP software was built previously in the same directory, first
 remove the leftover `build/` subdirectory to ensure a clean compile.
 Then:
 
-```shell
-$ ./all.sh
+```
+./all.sh
 ```
 The `all.sh` script creates a `build/` subdirectory and builds the
 `ldp` executable there:
 
-```shell
-$ ./build/ldp help
+```
+./build/ldp help
 ```
 
 ### Building the software via Docker
@@ -126,14 +116,14 @@ $ ./build/ldp help
 Pre-built container images are available in the Github Container
 Registry, for example:
 
-```shell
-$ docker pull ghcr.io/library-data-platform/ldp:1.3.0
+```
+docker pull ghcr.io/library-data-platform/ldp:1.3.0
 ```
 
 Or they can be built by cloning this repository locally and running:
 
-```shell
-$ docker build -t ldp:latest . 
+```
+docker build -t ldp:latest . 
 ```
 
 
@@ -196,12 +186,16 @@ In addition to creating these users, a few access permissions should
 be set.  In PostgreSQL, this can be done on the command line, for
 example:
 
-```shell
-$ createuser ldpadmin --username=<admin_user> --pwprompt
-$ createuser ldpconfig --username=<admin_user> --pwprompt
-$ createuser ldp --username=<admin_user> --pwprompt
-$ createdb ldp --username=<admin_user> --owner=ldpadmin
-$ psql ldp --username=<admin_user> \
+```
+createuser ldpadmin --username=<admin_user> --pwprompt
+
+createuser ldpconfig --username=<admin_user> --pwprompt
+
+createuser ldp --username=<admin_user> --pwprompt
+
+createdb ldp --username=<admin_user> --owner=ldpadmin
+
+psql ldp --username=<admin_user> \
       --command="ALTER DATABASE ldp SET search_path TO public;" \
       --command="REVOKE CREATE ON SCHEMA public FROM public;" \
       --command="GRANT ALL ON SCHEMA public TO ldpadmin;" \
@@ -211,7 +205,7 @@ $ psql ldp --username=<admin_user> \
 
 Or once the database has been created:
 
-```sql
+```
 CREATE USER ldpadmin PASSWORD '(ldpadmin password here)';
 CREATE USER ldpconfig PASSWORD '(ldpconfig password here)';
 CREATE USER ldp PASSWORD '(ldp password here)';
@@ -234,9 +228,10 @@ as server configuration files, are stored.  In these examples, we will
 suppose that the data directory is `/var/lib/ldp` and that the server
 will be run as an `ldp` user:
 
-```shell
-$ sudo mkdir -p /var/lib/ldp
-$ sudo chown ldp /var/lib/ldp
+```
+sudo mkdir -p /var/lib/ldp
+
+sudo chown ldp /var/lib/ldp
 ```
 
 ### Configuration file
@@ -279,14 +274,14 @@ __ldpconf.json__
 
 If this is a new database, it should first be initialized:
 
-```shell
-$ ldp init-database -D /var/lib/ldp
+```
+ldp init-database -D /var/lib/ldp
 ```
 
 To start LDP:
 
-```shell
-$ ldp update -D /var/lib/ldp
+```
+ldp update -D /var/lib/ldp
 ```
 
 This will run a full update, showing progress on the console, and then
@@ -310,8 +305,8 @@ When installing a new version of LDP, the database should be
 3. Use the `upgrade-database` command in the new version of LDP to
    perform the upgrade, e.g.:
 
-```shell
-$ ldp upgrade-database -D /var/lib/ldp
+```
+ldp upgrade-database -D /var/lib/ldp
 ```
 
 Do not interrupt the database upgrade process in step 4.  Some schema
@@ -325,10 +320,10 @@ In automated deployments, the `upgrade-database` command can be run
 after `git pull`, whether or not any new changes were pulled.  If no
 upgrade is needed, it will exit normally:
 
-```shell
-$ ldp upgrade-database -D /var/lib/ldp ; echo $?
 ```
-```shell
+ldp upgrade-database -D /var/lib/ldp ; echo $?
+```
+```
 ldp: Database version is up to date
 0
 ```
@@ -340,14 +335,12 @@ except that the LDP data directory path (`-D`) should be omitted.
 Instead, mount your local LDP data directory at `/var/lib/ldp`.
 Examples:
 
-```shell
-$ docker run --rm -v /my/local/datadir:/var/lib/ldp ghcr.io/library-data-platform/ldp init-database
 ```
-```shell
-$ docker run --rm -v /my/local/datadir:/var/lib/ldp ghcr.io/library-data-platform/ldp update
-```
-```shell
-$ docker run --rm -v /my/local/datadir:/var/lib/ldp ghcr.io/library-data-platform/ldp upgrade-database
+docker run --rm -v /my/local/datadir:/var/lib/ldp ghcr.io/library-data-platform/ldp init-database
+
+docker run --rm -v /my/local/datadir:/var/lib/ldp ghcr.io/library-data-platform/ldp update
+
+docker run --rm -v /my/local/datadir:/var/lib/ldp ghcr.io/library-data-platform/ldp upgrade-database
 ```
 
 
@@ -455,16 +448,17 @@ The user names are configured by creating a configuration file
 user name, for example:
 
 ```
-bifur
-bofur
-bombur
+flopsy
+mopsy
+ctail
+peter
 ```
 
 Then run the `update-users` command to set the permissions, for
 example:
 
-```shell
-$ ldp update-users -D /var/lib/ldp
+```
+ldp update-users -D /var/lib/ldp
 ```
 
 The `update-users` command should be run whenever a new user name is
@@ -546,8 +540,6 @@ Reference
 
 Further reading
 ---------------
-
-[__Configuration Guide__](Config_Guide.md)
 
 [__User Guide__](User_Guide.md)
 
