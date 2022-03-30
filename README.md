@@ -46,7 +46,5 @@ data          | {
 
 [__User Guide__](doc/User_Guide.md)
 
-[__Configuration Guide__](doc/Config_Guide.md)
-
 [__Administrator Guide__](doc/Admin_Guide.md)
 

@@ -15,10 +15,10 @@ LDP User Guide
 1\. Data model
 --------------
 
-The primary LDP data model is a hybrid of relational and JSON schemas.
-Each table contains JSON data in a relational attribute called `data`,
-and a subset of the JSON fields is also stored in individual
-relational attributes.  It is typically queried via SQL:
+The LDP data model is a hybrid of relational and JSON schemas.  Each
+table contains JSON data in a relational attribute called `data`, and
+a subset of the JSON fields is also stored in individual relational
+attributes.  It is typically queried via SQL:
 
 ```sql
 SELECT
@@ -70,8 +70,7 @@ convention used in published SQL queries and in documentation.)
 ----------------
 
 To access the JSON fields, the function `json_extract_path_text()` can
-be used to retrieve data from a path of up to five nested fields, for
-example:
+be used to retrieve data from a path of nested fields, for example:
 
 ```sql
 SELECT
