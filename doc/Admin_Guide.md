@@ -151,7 +151,6 @@ that runs the LDP database, assuming 4 CPU cores and 32 GB memory:
 * `idle_in_transaction_session_timeout`: `3600000`
 * `idle_session_timeout`: `604800000` (PostgreSQL 14 or later)
 * `maintenance_work_mem`: `1000000`
-* `max_connections`: `100`
 * `max_wal_size`: `10240`
 * `shared_buffers`: `1250000`
 * `work_mem`: `350000`
