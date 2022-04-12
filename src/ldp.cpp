@@ -4,7 +4,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <set>
 #include <signal.h>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <sys/wait.h>
@@ -32,6 +34,7 @@ static const char* option_help =
 "  upgrade-database    - Upgrade an LDP database to the current version\n"
 "  update-users        - Set permissions for configured user accounts\n"
 "  list-tables         - Print a list of LDP tables in schema public\n"
+"  list-privileges     - Print SQL to grant privileges in the FOLIO database\n"
 "  help                - Display help information\n"
 "\n"
 "Options:\n"
@@ -303,12 +306,51 @@ void cmd_upgrade_database(const ldp_options& opt)
     set_dbsystem_main_anonymize(opt);
 }
 
+bool compare_table(table_schema& t1, table_schema& t2)
+{
+    return (t1.direct_source_table < t2.direct_source_table);
+}
+
 void cmd_list_tables(const ldp_options& opt)
 {
     ldp_schema schema;
     ldp_schema::make_default_schema(&schema);
+    sort(schema.tables.begin(), schema.tables.end(), compare_table);
     for (auto& table : schema.tables) {
         printf("public.%s\n", table.name.data());
+    }
+}
+
+void cmd_list_privileges(const ldp_options& opt)
+{
+    set<string> schema_name_set;
+    ldp_schema schema;
+    ldp_schema::make_default_schema(&schema);
+    sort(schema.tables.begin(), schema.tables.end(), compare_table);
+    for (auto& table : schema.tables) {
+        // Parse schema and table
+        vector<string> split_dot;
+        stringstream ss_dot(table.direct_source_table);
+        string split_dot_token;
+        while (getline(ss_dot, split_dot_token, '.')) {
+            split_dot.push_back(split_dot_token);
+        }
+        if (split_dot.size() != 2)
+            throw runtime_error(string("listing privileges: parsing error: ") + table.direct_source_table);
+        string schema_name = split_dot[0];
+        string table_name = split_dot[1];
+        if (schema_name_set.find(schema_name) == schema_name_set.end()) {
+            // Grant schema privilege
+            printf("-- %s\n", table.module_name.data());
+            printf("GRANT USAGE ON SCHEMA %s_%s TO %s;\n",
+                   opt.enable_sources[0].okapi_tenant.data(), schema_name.data(),
+                   opt.enable_sources[0].direct.database_user.data());
+            schema_name_set.insert(schema_name);
+        }
+        // Grant table privilege
+        printf("GRANT SELECT ON TABLE %s_%s.%s TO %s;\n",
+               opt.enable_sources[0].okapi_tenant.data(), schema_name.data(), table_name.data(),
+               opt.enable_sources[0].direct.database_user.data());
     }
 }
 
@@ -409,6 +451,11 @@ void ldp_exec(ldp_options* opt)
 
     validate_options_in_deployment(*opt);
 
+    if (opt->command == ldp_command::list_privileges) {
+        cmd_list_privileges(*opt);
+        return;
+    }
+
     if (opt->command == ldp_command::update)
         opt->console = true;
 
@@ -478,7 +525,10 @@ static void setup_ldp_exec(const etymon::command_args& cargs, const char* ldp_ve
         return;
     }
 
-    fprintf(stderr, "ldp: version %s\n", ldp_version);
+    if (opt.command != ldp_command::list_privileges) {
+        fprintf(stderr, "ldp: version %s\n", ldp_version);
+    }
+    
     ldp_exec(&opt);
 }
 

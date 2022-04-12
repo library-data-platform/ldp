@@ -92,6 +92,10 @@ void config_set_command(const string& command_str, ldp_command* command)
         *command = ldp_command::list_tables;
         return;
     }
+    if (command_str == "list-privileges") {
+        *command = ldp_command::list_privileges;
+        return;
+    }
     if (command_str == "init-database") {
         *command = ldp_command::init_database;
         return;

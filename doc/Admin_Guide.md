@@ -269,6 +269,14 @@ __ldpconf.json__
 }
 ```
 
+The `direct_database_user` must have privileges to read data in the
+source database.  The `list-privileges` command can be used to
+generate SQL statements that will grant these privileges, for example:
+
+```
+ldp list-privileges -D /var/lib/ldp
+```
+
 ### Running LDP
 
 If this is a new database, it should first be initialized:

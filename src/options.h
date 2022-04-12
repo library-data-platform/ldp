@@ -16,6 +16,7 @@ enum class ldp_command {
     server,
     upgrade_database,
     list_tables,
+    list_privileges,
     init_database,
     update,
     update_users,
