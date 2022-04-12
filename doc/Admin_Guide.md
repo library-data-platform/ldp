@@ -274,7 +274,7 @@ source database.  The `list-privileges` command can be used to
 generate SQL statements that will grant these privileges, for example:
 
 ```
-ldp list-privileges -D /var/lib/ldp
+ldp list-privileges -D /var/lib/ldp > grantldp.sql
 ```
 
 ### Running LDP
@@ -316,24 +316,10 @@ When installing a new version of LDP, the database should be
 ldp upgrade-database -D /var/lib/ldp
 ```
 
-Do not interrupt the database upgrade process in step 4.  Some schema
-changes use DDL statements that cannot be run within a transaction,
-and interrupting them may leave the database in an intermediate state.
-For diagnostic purposes, database statements used to perform the
-upgrade are logged to files located in the data directory under
-`database_upgrade/`.
-
-In automated deployments, the `upgrade-database` command can be run
-after `git pull`, whether or not any new changes were pulled.  If no
-upgrade is needed, it will exit normally:
-
-```
-ldp upgrade-database -D /var/lib/ldp ; echo $?
-```
-```
-ldp: Database version is up to date
-0
-```
+4. If upgrading to a new major version of LDP, access to additional
+   tables in the source database might be required.  Use the
+   `list-privileges` command in the new version of LDP to generate SQL
+   for granting database privileges.
 
 ### Running LDP via Docker
 
