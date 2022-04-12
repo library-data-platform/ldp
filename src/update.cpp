@@ -696,7 +696,7 @@ void run_update(const ldp_options& opt, bool update_users)
     // Add optional columns
     add_optional_columns(opt, &lg);
 
-    // Vacuum and analyze all updated tables
+    // Add table comments and vacuum analyze all updated tables
     {
         etymon::pgconn conn(opt.dbinfo);
         lg.write(log_level::debug, "server", "", "vacuuming", -1);
@@ -707,12 +707,16 @@ void run_update(const ldp_options& opt, bool update_users)
             if (opt.extract_only)
                 continue;
 
+            string sql;
+            comment_sql(table.name, table.module_name, &sql);
+            { etymon::pgconn_result r(&conn, sql); }
+
             // Skip this table if the --table option is specified and does not
             // match this table.
             if (opt.table != "" && opt.table != table.name)
                 continue;
 
-            string sql = v + table.name + ";";
+            sql = v + table.name + ";";
             lg.detail(sql);
             { etymon::pgconn_result r(&conn, sql); }
             // sql = "ANALYZE " + table.name + ";";
