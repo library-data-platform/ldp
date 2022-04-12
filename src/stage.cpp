@@ -746,10 +746,10 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
     lg->write(log_level::detail, "", "", sql, -1);
     { etymon::pgconn_result r(conn, sql); }
 
-    // Add comment on table.
-    comment_sql(loading_table, table.module_name, &sql);
-    lg->write(log_level::detail, "", "", "Setting comment on table: " + table.name, -1);
-    { etymon::pgconn_result r(conn, sql); }
+    // // Add comment on table.
+    // comment_sql(loading_table, table.module_name, &sql);
+    // lg->write(log_level::detail, "", "", "Setting comment on table: " + table.name, -1);
+    // { etymon::pgconn_result r(conn, sql); }
 
     sql = "GRANT SELECT ON " + loading_table + " TO " + opt.ldpconfig_user + ";";
     lg->detail(sql);
