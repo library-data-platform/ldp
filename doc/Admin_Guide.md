@@ -38,6 +38,7 @@ LDP instance.
   * Linux
 * Database systems supported:
   * [PostgreSQL](https://www.postgresql.org/) 13.6 or later
+    (AWS RDS PostgreSQL is supported; Aurora is not supported)
 * Other software dependencies:
   * [libpq](https://www.postgresql.org/) 13.6 or later
   * [libcurl](https://curl.haxx.se/) 7.64.0 or later
