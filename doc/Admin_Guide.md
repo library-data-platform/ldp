@@ -7,10 +7,10 @@ LDP Administrator Guide
 3\. [Installation](#3-installation)  
 4\. [Database configuration](#4-database-configuration)  
 5\. [LDP configuration](#5-ldp-configuration)  
-6\. [Data privacy](#7-data-privacy)  
-7\. [Optional columns](#8-optional-columns)  
-8\. [Historical data](#9-historical-data)  
-9\. [User accounts](#10-user-accounts)  
+6\. [Data privacy](#6-data-privacy)  
+7\. [Optional columns](#7-optional-columns)  
+8\. [Historical data](#8-historical-data)  
+9\. [User accounts](#9-user-accounts)  
 [Reference](#reference)
 
 
