@@ -24,7 +24,7 @@ set(RapidJSON_DIR "${CMAKE_SOURCE_DIR}/cmake")
 
 #add_subdirectory (src)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall -Wno-deprecated-declarations")
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
 	#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall")
