@@ -91,12 +91,6 @@ sudo apt update
 sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev postgresql-server-dev-all rapidjson-dev
 ```
 
-#### macOS
-
-```
-brew install cmake postgresql rapidjson
-```
-
 ### Building the software
 
 If the LDP software was built previously in the same directory, first
