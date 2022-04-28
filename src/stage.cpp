@@ -29,6 +29,16 @@ const int copy_buffer_size = 125000000;
 
 constexpr json::ParseFlag pflags = json::kParseTrailingCommasFlag;
 
+static void expand_column_name(const string& name, string* expanded)
+{
+    string s = name;
+    size_t p = s.find("/");
+    if (p != string::npos) {
+        s.replace(p, 1, "__");
+    }
+    *expanded = s;
+}
+
 struct name_comparator {
     bool operator()(const json::Value::Member &lhs,
             const json::Value::Member &rhs) const {
@@ -87,20 +97,20 @@ void process_json_record(const table_schema& table,
 {
     switch (node->GetType()) {
         case json::kNullType:
-            if (collect_stats && depth == 1)
+            if (collect_stats && (depth == 1 || depth == 2))
                 (*stats)[field.c_str() + 1].null++;
             break;
         case json::kTrueType:
         case json::kFalseType:
             if (drop_fields->find(table.name, field))
                 json::Pointer(field.c_str()).Set(*root, false);
-            if (collect_stats && depth == 1)
+            if (collect_stats && (depth == 1 || depth == 2))
                 (*stats)[field.c_str() + 1].boolean++;
             break;
         case json::kNumberType:
             if (drop_fields->find(table.name, field))
                 json::Pointer(field.c_str()).Set(*root, 0);
-            if (collect_stats && depth == 1) {
+            if (collect_stats && (depth == 1 || depth == 2)) {
                 (*stats)[field.c_str() + 1].number++;
                 if (node->IsInt() || node->IsUint() || node->IsInt64() ||
                         node->IsUint64())
@@ -112,7 +122,7 @@ void process_json_record(const table_schema& table,
         case json::kStringType:
             if (drop_fields->find(table.name, field))
                 json::Pointer(field.c_str()).Set(*root, "");
-            if (collect_stats && depth == 1) {
+            if (collect_stats && (depth == 1 || depth == 2)) {
                 (*stats)[field.c_str() + 1].string++;
                 if (is_uuid(node->GetString()))
                     (*stats)[field.c_str() + 1].uuid++;
@@ -291,11 +301,23 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
         if (column.name == "id")
             continue;
         const char* sourceColumnName = column.source_name.c_str();
-        if (doc.HasMember(sourceColumnName) == false) {
-            *copy_buffer += "\\N\t";
-            continue;
+        const json::Value* val;
+        size_t p = column.source_name.find("/");
+        if (p != string::npos) {
+            string path = string("/") + sourceColumnName;
+            val = json::Pointer(path.data()).Get(doc);
+            if (val == nullptr) {
+                *copy_buffer += "\\N\t";
+                continue;
+            }
+        } else {
+            if (doc.HasMember(sourceColumnName) == false) {
+                *copy_buffer += "\\N\t";
+                continue;
+            }
+            val = &(doc[sourceColumnName]);
         }
-        const json::Value& jsonValue = doc[sourceColumnName];
+        const json::Value& jsonValue = *val;
         if (jsonValue.IsNull()) {
             *copy_buffer += "\\N\t";
             continue;
@@ -684,25 +706,27 @@ void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::pgconn* 
         } else {
             // in postgres, index columns except column "data"
             if (dbt->type() == dbsys::postgresql && column.name != "data") {
+                string colname;
+                expand_column_name(column.name, &colname);
                 // create btree index unless column is a large varchar
                 if (column.type == column_type::varchar && column.length > 500) {
                     // create hash index if index_large_varchar is enabled
                     if (index_large_varchar) {
-                        string sql = "CREATE INDEX ON " + table.name + " USING HASH (\"" + column.name + "\");";
+                        string sql = "CREATE INDEX ON " + table.name + " USING HASH (\"" + colname + "\");";
                         lg->detail(sql);
                         try {
                             { etymon::pgconn_result r(conn, sql); }
                         } catch (runtime_error& e) {
-                            lg->write(log_level::warning, "server", "", "Unable to create hash index: table=" + table.name + " column=" + column.name, -1);
+                            lg->write(log_level::warning, "server", "", "Unable to create hash index: table=" + table.name + " column=" + colname, -1);
                         }
                     }
                 } else {
-                    string sql = "CREATE INDEX ON " + table.name + " (\"" + column.name + "\");";
+                    string sql = "CREATE INDEX ON " + table.name + " (\"" + colname + "\");";
                     lg->detail(sql);
                     try {
                         { etymon::pgconn_result r(conn, sql); }
                     } catch (runtime_error& e) {
-                        lg->write(log_level::warning, "server", "", "Unable to create B-tree index: table=" + table.name + " column=" + column.name, -1);
+                        lg->write(log_level::warning, "server", "", "Unable to create B-tree index: table=" + table.name + " column=" + colname, -1);
                     }
                 }
             }
@@ -730,8 +754,10 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
     string column_type;
     for (const auto& column : table.columns) {
         if (column.name != "id") {
+            string colname;
+            expand_column_name(column.name, &colname);
             sql += "    \"";
-            sql += column.name;
+            sql += colname;
             sql += "\" ";
             if (column.type == column_type::varchar)
                 column_type = "VARCHAR(" + to_string(column.length) + ")";
