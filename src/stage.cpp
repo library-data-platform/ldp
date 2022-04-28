@@ -93,24 +93,25 @@ void process_json_record(const table_schema& table,
                          field_set* drop_fields,
                          const string& field,
                          unsigned int depth,
-                         map<string,type_counts>* stats)
+                         map<string,type_counts>* stats,
+                         bool obj)
 {
     switch (node->GetType()) {
         case json::kNullType:
-            if (collect_stats && (depth == 1 || depth == 2))
+            if (collect_stats && (depth == 1 || (depth == 2 && obj)))
                 (*stats)[field.c_str() + 1].null++;
             break;
         case json::kTrueType:
         case json::kFalseType:
             if (drop_fields->find(table.name, field))
                 json::Pointer(field.c_str()).Set(*root, false);
-            if (collect_stats && (depth == 1 || depth == 2))
+            if (collect_stats && (depth == 1 || (depth == 2 && obj)))
                 (*stats)[field.c_str() + 1].boolean++;
             break;
         case json::kNumberType:
             if (drop_fields->find(table.name, field))
                 json::Pointer(field.c_str()).Set(*root, 0);
-            if (collect_stats && (depth == 1 || depth == 2)) {
+            if (collect_stats && (depth == 1 || (depth == 2 && obj))) {
                 (*stats)[field.c_str() + 1].number++;
                 if (node->IsInt() || node->IsUint() || node->IsInt64() ||
                         node->IsUint64())
@@ -122,7 +123,7 @@ void process_json_record(const table_schema& table,
         case json::kStringType:
             if (drop_fields->find(table.name, field))
                 json::Pointer(field.c_str()).Set(*root, "");
-            if (collect_stats && (depth == 1 || depth == 2)) {
+            if (collect_stats && (depth == 1 || (depth == 2 && obj))) {
                 (*stats)[field.c_str() + 1].string++;
                 if (is_uuid(node->GetString()))
                     (*stats)[field.c_str() + 1].uuid++;
@@ -149,7 +150,7 @@ void process_json_record(const table_schema& table,
                     string new_field = field;
                     new_field += '/';
                     new_field += to_string(x);
-                    process_json_record(table, root, i, collect_stats, drop_fields, new_field, depth + 1, stats);
+                    process_json_record(table, root, i, collect_stats, drop_fields, new_field, depth + 1, stats, false);
                     x++;
                 }
             }
@@ -169,7 +170,7 @@ void process_json_record(const table_schema& table,
                 string new_field = field;
                 new_field += '/';
                 new_field += i->name.GetString();
-                process_json_record(table, root, &(i->value), collect_stats, drop_fields, new_field, depth + 1, stats);
+                process_json_record(table, root, &(i->value), collect_stats, drop_fields, new_field, depth + 1, stats, true);
             }
             break;
         default:
@@ -429,7 +430,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
         bool collect_stats = (pass == 1);
         string path;
         // Collect statistics and anonymize data.
-        process_json_record(table, &doc, &doc, collect_stats, drop_fields, path, 0, stats);
+        process_json_record(table, &doc, &doc, collect_stats, drop_fields, path, 0, stats, true);
 
         if (pass == 2) {
 
