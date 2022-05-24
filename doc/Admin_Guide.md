@@ -37,7 +37,7 @@ LDP instance.
 * Operating systems supported:
   * Linux
 * Database systems supported:
-  * [PostgreSQL](https://www.postgresql.org/) 13.6 or later
+  * [PostgreSQL](https://www.postgresql.org/) 13.7 or later
     * PostgreSQL 14.3 or later is recommended
     * AWS RDS PostgreSQL is supported; Aurora is not supported
 * Other software dependencies:
