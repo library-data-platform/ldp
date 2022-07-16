@@ -514,15 +514,15 @@ Reference
   extract data from.  Only one source should be provided.  A source is
   defined by a source name and an associated object containing several
   settings:
-  * `direct_database_host` (string; optional) is the FOLIO database
+  * `direct_database_host` (string; required) is the FOLIO database
     host name.
-  * `direct_database_name` (string; optional) is the FOLIO database
+  * `direct_database_name` (string; required) is the FOLIO database
     name.
-  * `direct_database_password` (string; optional) is the password for
+  * `direct_database_password` (string; required) is the password for
     the specified FOLIO database user name.
-  * `direct_database_port` (integer; optional) is the FOLIO database
+  * `direct_database_port` (integer; required) is the FOLIO database
     port.
-  * `direct_database_user` (string; optional) is the FOLIO database
+  * `direct_database_user` (string; required) is the FOLIO database
     user name.
   * `okapi_tenant` (string; required) is the Okapi tenant.
 
