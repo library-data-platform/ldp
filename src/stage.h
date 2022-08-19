@@ -5,6 +5,8 @@
 #include "options.h"
 #include "util.h"
 
+void encode_json(const char* str, string* newstr);
+
 bool stage_table_1(const ldp_options& opt,
                    const vector<source_state>& source_states,
                    ldp_log* lg, table_schema* table,
