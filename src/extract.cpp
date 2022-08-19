@@ -12,6 +12,7 @@
 #include "../etymoncpp/include/util.h"
 #include "extract.h"
 #include "paging.h"
+#include "stage.h"
 #include "timer.h"
 #include "util.h"
 
@@ -404,7 +405,9 @@ void pq_get_value_json_string(const PGresult *res, int row_number, int column_nu
     if (PQgetisnull(res, row_number, column_number)) {
         *j = "null";
     } else {
-        *j = string("\"") + PQgetvalue(res, row_number, column_number) + "\"";
+        string s;
+        encode_json(PQgetvalue(res, row_number, column_number), &s);
+        *j = string("\"") + s + "\"";
     }
 }
 

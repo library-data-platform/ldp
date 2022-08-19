@@ -457,7 +457,7 @@ bool JSONHandler::EndArray(json::SizeType elementCount)
     return true;
 }
 
-static void encode_json(const char* str, string* newstr)
+void encode_json(const char* str, string* newstr)
 {
     char buffer[8];
     const char *p = str;
