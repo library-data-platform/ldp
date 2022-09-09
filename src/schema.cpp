@@ -751,7 +751,13 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.source_spec = "/proxiesfor";
     schema->tables.push_back(table);
 
-    // user_users
+    ///////////////////////////////////////////////////////////////////////////
+    table.module_name = "mod-template-engine";
+
+    table.direct_source_table = "mod_template_engine.template";
+    table.name = "template_engine_template";
+    table.source_spec = "/templates";
+    schema->tables.push_back(table);
 
 }
 
