@@ -403,9 +403,11 @@ FROM
 
 ### Getting help
 
-For questions or to share your work, please use the
-[discussions](https://github.com/library-data-platform/ldp/discussions)
-area.
+The LDP project runs a Slack workspace which is a good place to ask
+questions or to share your work.  It also serves as a community space
+for working together on library data problems.  To request an
+invitation, use the [Contact
+page](https://librarydataplatform.org/contact/) on the LDP website.
 
 ### Bug reports
 
