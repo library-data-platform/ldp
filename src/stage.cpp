@@ -229,6 +229,7 @@ public:
         dbt(dbt),
         drop_fields(drop_fields),
         copy_buffer(copy_buffer) {}
+    bool Default();
     bool StartObject();
     bool EndObject(json::SizeType memberCount);
     bool StartArray();
@@ -243,6 +244,12 @@ public:
     bool Uint64(uint64_t u);
     bool Double(double d);
 };
+
+bool JSONHandler::Default()
+{
+    lg->warning("json parser: default method invoked");
+    return true;
+}
 
 bool JSONHandler::StartObject()
 {
@@ -268,6 +275,9 @@ static void end_copy_batch(const ldp_options& opt, ldp_log* lg,
     int r = PQputCopyData(conn->conn, buffer->data(), buffer->length());
     if (r == -1) {
         throw runtime_error(PQerrorMessage(conn->conn));
+    }
+    if (r != 1) {
+        lg->warning("copy data result code: " + to_string(r));
     }
     buffer->clear();
 }
@@ -436,6 +446,7 @@ bool JSONHandler::EndObject(json::SizeType memberCount)
 
             if (copy_buffer->length() > (copy_buffer_size - 2000000)) {
                 end_copy_batch(opt, lg, table.name, copy_buffer, conn);
+                lg->trace(table.name + ": staged group: " + to_string(record_count) + " records");
                 begin_copy_batch();
                 record_count = 0;
             }
@@ -470,8 +481,11 @@ bool JSONHandler::EndArray(json::SizeType elementCount)
     if (level == 2) {
         active = false;
         if (record_count > 0)
-            if (pass == 2)
+            if (pass == 2) {
                 end_copy_batch(opt, lg, table.name, copy_buffer, conn);
+                lg->trace(table.name + ": staged group: " + to_string(record_count) + " records");
+                lg->trace(table.name + ": end of staging");
+            }
     } else {
         if (level > 2)
             record += "],";
@@ -651,6 +665,9 @@ static void stage_page(const ldp_options& opt, ldp_log* lg, int pass,
         int r = PQputCopyEnd(conn->conn, nullptr);
         if (r == -1) {
             throw runtime_error(PQerrorMessage(conn->conn));
+        }
+        if (r != 1) {
+            lg->warning("copy end result code: " + to_string(r));
         }
         PGresult* res = PQgetResult(conn->conn);
         if (res == nullptr || PQresultStatus(res) == PGRES_FATAL_ERROR) {

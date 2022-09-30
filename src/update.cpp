@@ -350,6 +350,7 @@ bool stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const
     dbtype dbt(&conn);
 
     if (opt.record_history) {
+        lg->trace(table->name + ": writing latest history");
         create_latest_history_table(opt, lg, *table, &conn);
     }
 
@@ -359,12 +360,13 @@ bool stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const
 
         { etymon::pgconn_result r(&conn, "BEGIN;"); }
 
-        lg->write(log_level::trace, "", "", table->name + ": staging", -1);
+        lg->trace(table->name + ": staging pass 1");
         bool ok = stage_table_1(opt, source_states, lg, table, &conn, &dbt, load_dir, drop_fields, read_buffer, users);
         if (!ok) {
             return false;
         }
 
+        lg->trace(table->name + ": staging pass 2");
         ok = stage_table_2(opt, source_states, lg, table, &conn, &dbt, load_dir, drop_fields, read_buffer);
         if (!ok) {
             return false;
@@ -381,6 +383,7 @@ bool stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const
 
         place_table(opt, lg, *table, &conn);
 
+        lg->trace(table->name + ": committing changes");
         { etymon::pgconn_result r(&conn, "COMMIT;"); }
     }
 
@@ -614,6 +617,7 @@ void run_update(const ldp_options& opt, bool update_users)
                     found_data = retrieve_direct(state.source, &lg, &table, load_dir, ext_files, opt.direct_extraction_no_ssl);
 
                     if (!found_data) {
+                        lg.trace("no rows extracted, clearing table");
                         // Clear old data from the table.
                         {
                             etymon::pgconn conn(opt.dbinfo);
@@ -624,6 +628,7 @@ void run_update(const ldp_options& opt, bool update_users)
                         // No more processing is needed for this table.
                         table.skip = true;
                     }
+                    lg.trace(table.name + ": completed extraction");
                 }
             } // for
 
@@ -632,9 +637,9 @@ void run_update(const ldp_options& opt, bool update_users)
                 continue;
             }
 
-            if (opt.parallel_update) {  // forked process
+            if (opt.parallel_update && opt.table == "") {  // forked process
                 if (wait_stage_merge(worker_pid, worker_table_name, &lg) && worker_pid != 0) {
-                    lg.write(log_level::trace, "", worker_table_name, worker_table_name + ": updated", -1);
+                    lg.write(log_level::trace, "", worker_table_name, worker_table_name + ": completed update", -1);
                     if (worker_ext_files) {
                         delete worker_ext_files;
                         worker_ext_files = nullptr;
@@ -655,7 +660,7 @@ void run_update(const ldp_options& opt, bool update_users)
             } else {  // single process
                 try {
                     if (stage_merge(opt, &lg, &table, source_states, load_dir, &drop_fields, &users)) {
-                        lg.write(log_level::trace, "", table.name, table.name + ": updated", -1);
+                        lg.write(log_level::trace, "", table.name, table.name + ": completed update", -1);
                         delete ext_files;
                     } else {
                         delete ext_files;

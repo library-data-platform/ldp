@@ -630,6 +630,7 @@ bool try_retrieve_direct(const data_source& source, ldp_log* lg,
         fprintf(f.fp, "%s\n", j.data());
         row++;
     }
+    lg->trace(to_string(row) + " rows written to temp file " + output);
     if (row == 0) {
         return false;
     }
