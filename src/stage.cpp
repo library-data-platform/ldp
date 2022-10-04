@@ -282,6 +282,27 @@ static void end_copy_batch(const ldp_options& opt, ldp_log* lg,
     buffer->clear();
 }
 
+static void json_value_to_string(const json::Value& val, string* strval)
+{
+    if (val.IsNull()) {
+        *strval = "";
+        return;
+    }
+    if (val.IsBool()) {
+        if (val.GetBool()) {
+            *strval = "true";
+        } else {
+            *strval = "false";
+        }
+        return;
+    }
+    if (val.IsString()) {
+        *strval = val.GetString();
+        return;
+    }
+    *strval = "INVALID";
+}
+
 static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
         const table_schema& table, const json::Document& doc,
         size_t* record_count, size_t* total_record_count, string* copy_buffer)
@@ -358,7 +379,10 @@ static void writeTuple(const ldp_options& opt, ldp_log* lg, const dbtype& dbt,
         case column_type::id:
         case column_type::timestamptz:
         case column_type::varchar:
-            dbt.encode_copy(jsonValue.GetString(), &s);
+	    string strval;
+	    json_value_to_string(jsonValue, &strval);
+            dbt.encode_copy(strval.data(), &s);
+
             // Check if varchar exceeds maximum string length.
             if (s.length() >= varchar_size - 1) {
                 lg->write(log_level::warning, "", "",
@@ -752,6 +776,16 @@ void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::pgconn* 
     }
 }
 
+const unsigned int minimum_varchar_size = 8;
+
+static unsigned int min_varchar_size(unsigned int varchar_size)
+{
+    if (varchar_size < minimum_varchar_size) {
+        return minimum_varchar_size;
+    }
+    return varchar_size;
+}
+
 static void create_loading_table(const ldp_options& opt, ldp_log* lg,
                                  const table_schema& table,
                                  etymon::pgconn* conn, const dbtype& dbt, vector<string>* users)
@@ -778,7 +812,7 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
             sql += colname;
             sql += "\" ";
             if (column.type == column_type::varchar)
-                column_type = "VARCHAR(" + to_string(column.length) + ")";
+                column_type = "VARCHAR(" + to_string(min_varchar_size(column.length)) + ")";
             else
                 column_schema::type_to_string(column.type, &column_type);
             sql += column_type;
