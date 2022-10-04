@@ -592,6 +592,11 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.source_spec = "/holdings-sources";
     schema->tables.push_back(table);
 
+    table.direct_source_table = "mod_inventory_storage.bound_with_part";
+    table.name = "inventory_bound_with_part";
+    table.source_spec = "/inventory-storage/bound-with-parts";
+    schema->tables.push_back(table);
+
     ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-invoice-storage";
 

@@ -1564,3 +1564,19 @@ void database_upgrade_31(database_upgrade_options* opt)
     { etymon::pgconn_result r(opt->conn, "COMMIT;"); }
     ulog_commit(opt);
 }
+
+void database_upgrade_32(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    { etymon::pgconn_result r(opt->conn, "BEGIN;"); }
+
+    upgrade_add_new_table_dbsystem("inventory_bound_with_part", opt, dbt, false);
+
+    string sql = "UPDATE dbsystem.main SET database_version = 32;";
+    ulog_sql(sql, opt);
+    { etymon::pgconn_result r(opt->conn, sql); }
+
+    { etymon::pgconn_result r(opt->conn, "COMMIT;"); }
+    ulog_commit(opt);
+}
