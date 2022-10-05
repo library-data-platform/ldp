@@ -799,15 +799,15 @@ bool column_schema::select_type(ldp_log* lg, const string& table,
                                 column_type* ctype)
 {
     // Check for incompatible types.
+    if (counts.string > 0 && counts.boolean > 0) {
+        // A warning is sufficient here, because Boolean values can be
+        // converted later in json_value_to_string().  The same could be done
+        // for numbers, but all number types would need to be handled and
+        // tested.
+        lg->write(log_level::warning, "", "", "inconsistent data types: table="+table+" field="+field+" types=boolean,string", -1);
+    }
     if (counts.string > 0 && counts.number > 0) {
-        lg->write(log_level::error, "", "",
-                "Inconsistent data types in source data:\n"
-                "    Table: " + table + "\n"
-                "    Source path: " + source_path + "\n"
-                "    Field: " + field + "\n"
-                "    Data types found: number, string\n"
-                "    Action: Table update canceled",
-                -1);
+        lg->write(log_level::error, "", "", "inconsistent data types: table="+table+" field="+field+" types=number,string", -1);
         return false;
     }
     // Select a type.
