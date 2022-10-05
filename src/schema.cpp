@@ -804,10 +804,10 @@ bool column_schema::select_type(ldp_log* lg, const string& table,
         // converted later in json_value_to_string().  The same could be done
         // for numbers, but all number types would need to be handled and
         // tested.
-        lg->write(log_level::warning, "", "", "inconsistent data types: table="+table+" field="+field+" types=boolean,string", -1);
+        lg->write(log_level::warning, "", "", "inconsistent types in source data for table "+table+": field="+field+" types=boolean,string", -1);
     }
     if (counts.string > 0 && counts.number > 0) {
-        lg->write(log_level::error, "", "", "inconsistent data types: table="+table+" field="+field+" types=number,string", -1);
+        lg->write(log_level::error, "", "", "inconsistent types in source data for table "+table+": field="+field+" types=number,string", -1);
         return false;
     }
     // Select a type.
