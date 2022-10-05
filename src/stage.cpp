@@ -296,6 +296,10 @@ static void json_value_to_string(const json::Value& val, string* strval)
         }
         return;
     }
+    if (val.IsNumber()) {
+        *strval = to_string(val.GetDouble());
+        return;
+    }
     if (val.IsString()) {
         *strval = val.GetString();
         return;
