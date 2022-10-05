@@ -780,7 +780,7 @@ void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::pgconn* 
     }
 }
 
-const unsigned int minimum_varchar_size = 8;
+const unsigned int minimum_varchar_size = 16;
 
 static unsigned int min_varchar_size(unsigned int varchar_size)
 {
