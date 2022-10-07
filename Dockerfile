@@ -6,7 +6,7 @@ RUN apt update && apt install -y cmake libcurl4-openssl-dev postgresql-server-de
 WORKDIR /usr/src/ldp
 COPY . /usr/src/ldp
 
-RUN ./version.sh \
+RUN ./version.sh && \
     mkdir -p build && \
     cd build && \
     cmake -DPostgreSQL_TYPE_INCLUDE_DIR=/usr/include/postgresql .. && \
