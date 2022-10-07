@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 set -x
+./version.sh
 mkdir -p build
-echo \"`git describe --tags --always`\" > build/ldp_version
 cd build
 cmake -DPostgreSQL_TYPE_INCLUDE_DIR=/usr/include/postgresql ..
 make

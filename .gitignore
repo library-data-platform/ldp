@@ -1,3 +1,4 @@
+src/version.h
 build/
 data/
 cmake-build-debug/
