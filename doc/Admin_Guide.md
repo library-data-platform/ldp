@@ -295,6 +295,13 @@ The server logs details of its activities to standard error and in the
 table `dbsystem.log`.  For more detailed logging to standard error,
 the `--trace` option can be used.
 
+The `list-tables` command lists each LDP table and its corresponding
+table in the source database:
+
+```
+ldp list-tables
+```
+
 ### Upgrading to a new version
 
 When installing a new version of LDP, the database should be

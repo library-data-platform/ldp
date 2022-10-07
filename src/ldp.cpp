@@ -318,7 +318,7 @@ void cmd_list_tables(const ldp_options& opt)
     ldp_schema::make_default_schema(&schema);
     sort(schema.tables.begin(), schema.tables.end(), compare_table);
     for (auto& table : schema.tables) {
-        printf("public.%s\t%s\n", table.name.data(), table.direct_source_table.data());
+        printf("%s\t%s\n", table.name.data(), table.direct_source_table.data());
     }
 }
 
