@@ -1,12 +1,12 @@
-LDP Administrator Guide
-=======================
+LDP1 Administrator Guide
+========================
 
 ##### Contents  
 1\. [Overview](#1-overview)  
 2\. [System requirements](#2-system-requirements)  
 3\. [Installation](#3-installation)  
 4\. [Database configuration](#4-database-configuration)  
-5\. [LDP configuration](#5-ldp-configuration)  
+5\. [LDP1 configuration](#5-ldp1-configuration)  
 6\. [Data privacy](#6-data-privacy)  
 7\. [Optional columns](#7-optional-columns)  
 8\. [Historical data](#8-historical-data)  
@@ -17,16 +17,16 @@ LDP Administrator Guide
 1\. Overview
 ------------
 
-An _LDP instance_ is composed of an LDP server configuration and an
-analytic database.  The LDP server updates data in the database from
-data sources such as FOLIO modules, and users connect directly to the
-database to perform reporting and analytics.
+An _LDP1 instance_ is composed of an LDP1 software configuration and
+an analytic database.  The LDP1 software updates data in the database
+from data sources such as FOLIO modules, and users connect directly to
+the database to perform reporting and analytics.
 
-LDP is not multitenant in the usual sense, and normally one LDP
+LDP1 is not multitenant in the usual sense, and normally one LDP1
 instance is deployed per library.
 
 This administrator guide covers installation and configuration of an
-LDP instance.
+LDP1 instance.
 
 
 2\. System requirements
@@ -53,7 +53,7 @@ LDP instance.
 
 ### Hardware
 
-* LDP software:
+* LDP1 software:
   * Memory: 1 GB
   * Storage: 500 GB HDD or SSD
 * Database:
@@ -67,7 +67,7 @@ LDP instance.
 
 ### Branches
 
-The LDP repository has two types of branches:
+The LDP1 repository has two types of branches:
 
 * The main branch (`main`).  This is a development branch where new
   features are first merged.  This branch is relatively unstable.  It
@@ -80,8 +80,8 @@ The LDP repository has two types of branches:
 
 ### Installing software dependencies
 
-Dependencies required for building the LDP software can be installed via
-a package manager on some platforms.
+Dependencies required for building the LDP1 software can be installed
+via a package manager on some platforms.
 
 #### Debian/Ubuntu Linux
 
@@ -93,7 +93,7 @@ sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev postgresql-server-dev-
 
 ### Building the software
 
-If the LDP software was built previously in the same directory, first
+If the LDP1 software was built previously in the same directory, first
 remove the leftover `build/` subdirectory to ensure a clean compile.
 Then:
 
@@ -128,7 +128,7 @@ docker build -t ldp:latest .
 
 ### Creating a database
 
-Before using the LDP software, we have to create a database that will
+Before using the LDP1 software, we have to create a database that will
 store the data.  This can be a local or cloud-based PostgreSQL
 database.
 
@@ -138,7 +138,7 @@ and local tables are safe.
 #### PostgreSQL configuration
 
 These are recommended configuration settings for the PostgreSQL server
-that runs the LDP database, assuming 4 CPU cores and 32 GB memory:
+that runs the LDP1 database, assuming 4 CPU cores and 32 GB memory:
 
 * `checkpoint_timeout`: `3600`
 * `cpu_tuple_cost`: `0.03`
@@ -155,7 +155,7 @@ that runs the LDP database, assuming 4 CPU cores and 32 GB memory:
 
 Three database users are required:
 
-* `ldpadmin` owns all database objects created by the LDP software.
+* `ldpadmin` owns all database objects created by the LDP1 software.
   This account should be used very sparingly and carefully.
 
 * `ldpconfig` is a special user account for changing configuration
@@ -164,13 +164,13 @@ Three database users are required:
   user name can be modified using the `ldpconfig_user` configuration
   setting in `ldpconf.json`.
 
-* `ldp` is a general user of the LDP database.  This user name can be
+* `ldp` is a general user of the LDP1 database.  This user name can be
   modified using the `ldp_user` configuration setting in
   `ldpconf.json`.
 
-If more than one LDP instance will be hosted with a single database
+If more than one LDP1 instance will be hosted with a single database
 server, the `ldpconfig` and `ldp` user names should for security
-reasons be configured to be different for each LDP instance.  This is
+reasons be configured to be different for each LDP1 instance.  This is
 done by including within `ldpconf.json` the `ldpconfig_user` and
 `ldp_user` settings described below in the "Reference" section of this
 guide.  In the following examples we will assume that the default user
@@ -213,12 +213,12 @@ GRANT USAGE ON SCHEMA public TO ldp;
 ```
 
 
-5\. LDP configuration
----------------------
+5\. LDP1 configuration
+----------------------
 
 ### Creating a data directory
 
-LDP uses a "data directory" where cached and temporary data, as well
+LDP1 uses a "data directory" where cached and temporary data, as well
 as server configuration files, are stored.  In these examples, we will
 suppose that the data directory is `/var/lib/ldp` and that the server
 will be run as an `ldp` user:
@@ -273,7 +273,7 @@ generate SQL statements that will grant these privileges, for example:
 ldp list-privileges -D /var/lib/ldp > grantldp.sql
 ```
 
-### Running LDP
+### Running LDP1
 
 If this is a new database, it should first be initialized:
 
@@ -281,7 +281,7 @@ If this is a new database, it should first be initialized:
 ldp init-database -D /var/lib/ldp
 ```
 
-To start LDP:
+To start LDP1:
 
 ```
 ldp update -D /var/lib/ldp
@@ -295,7 +295,7 @@ The server logs details of its activities to standard error and in the
 table `dbsystem.log`.  For more detailed logging to standard error,
 the `--trace` option can be used.
 
-The `list-tables` command lists each LDP table and its corresponding
+The `list-tables` command lists each LDP1 table and its corresponding
 table in the source database:
 
 ```
@@ -304,31 +304,31 @@ ldp list-tables
 
 ### Upgrading to a new version
 
-When installing a new version of LDP, the database should be
+When installing a new version of LDP1, the database should be
 "upgraded" before starting the new server:
 
-1. First, confirm that the new version of LDP builds without errors in
-   the installation environment.
+1. First, confirm that the new version of LDP1 builds without errors
+   in the installation environment.
 
 2. Make a backup of the database.
 
-3. Use the `upgrade-database` command in the new version of LDP to
+3. Use the `upgrade-database` command in the new version of LDP1 to
    perform the upgrade, e.g.:
 
 ```
 ldp upgrade-database -D /var/lib/ldp
 ```
 
-4. If upgrading to a new major version of LDP, access to additional
+4. If upgrading to a new major version of LDP1, access to additional
    tables in the source database might be required.  Use the
-   `list-privileges` command in the new version of LDP to generate SQL
-   for granting database privileges.
+   `list-privileges` command in the new version of LDP1 to generate
+   SQL for granting database privileges.
 
-### Running LDP via Docker
+### Running LDP1 via Docker
 
-LDP can be run as a Docker container similar to the process above,
-except that the LDP data directory path (`-D`) should be omitted.
-Instead, mount your local LDP data directory at `/var/lib/ldp`.
+LDP1 can be run as a Docker container similar to the process above,
+except that the LDP1 data directory path (`-D`) should be omitted.
+Instead, mount your local LDP1 data directory at `/var/lib/ldp`.
 Examples:
 
 ```
@@ -345,7 +345,7 @@ docker run --rm -v /my/local/datadir:/var/lib/ldp ghcr.io/library-data-platform/
 
 ### Anonymization
 
-LDP attempts to "anonymize" tables or columns that contain personal
+LDP1 attempts to "anonymize" tables or columns that contain personal
 data.  This anonymization feature is enabled unless otherwise
 configured.  Some tables are redacted entirely when anonymization is
 enabled, including `audit_circulation_logs`, `configuration_entries`,
@@ -354,10 +354,11 @@ enabled, including `audit_circulation_logs`, `configuration_entries`,
 Anonymization can be disabled by setting `anonymize` to `false` in
 `ldpconf.json`.
 
-__WARNING: LDP does not provide a way to anonymize the database after
-personal data have been loaded into it.  For this reason,
-anonymization should never be disabled unless you are absolutely sure
-that you want to store personal data in the LDP database.__
+__WARNING: LDP1 does not provide an automated way to anonymize the
+database after personal data have been loaded into it.  For this
+reason, anonymization should never be disabled unless you are
+absolutely sure that you want to store personal data in the LDP1
+database.__
 
 ### Filtering data fields
 
@@ -365,7 +366,7 @@ In addition or as an alternative to the pre-defined anonymization
 described above, a filter can be used to drop specific JSON fields.
 The filter is defined by creating a configuration file
 `ldp_drop_field.conf` in the data directory.  If this file is present,
-LDP will try to parse the JSON objects and remove the specified field
+LDP1 will try to parse the JSON objects and remove the specified field
 data during the update process.  Each line should provide the table
 name and field path in the form:
 
@@ -389,14 +390,14 @@ circulation_requests /requester/patronGroup
 7\. Optional columns
 --------------------
 
-LDP creates table columns based on the presence of data in JSON
+LDP1 creates table columns based on the presence of data in JSON
 fields.  Sometimes a JSON field is optional or missing, and the
-corresponding column in LDP is not created.  This can cause errors in
+corresponding column in LDP1 is not created.  This can cause errors in
 queries that otherwise may be valid and useful.
 
-Optional or missing columns can be added in LDP by creating a
+Optional or missing columns can be added in LDP1 by creating a
 configuration file `ldp_add_column.conf` in the data directory.  If
-this file is present, LDP will add the specified columns during the
+this file is present, LDP1 will add the specified columns during the
 update process.  Each line of the file should provide the table name,
 column name, and data type in the form:
 
@@ -421,11 +422,11 @@ types include `bigint`, `boolean`, `numeric(12,2)`, and `timestamptz`.
 -------------------
 
 For all tables except `srs_error`, `srs_marc`, and `srs_records`, when
-LDP detects that a record has changed since the last update, it
+LDP1 detects that a record has changed since the last update, it
 retains the old version of the record.  These historical data are
 stored in the `history` schema.  This feature is enabled by default.
 
-LDP can be configured not to record history, by setting
+LDP1 can be configured not to record history, by setting
 `record_history` to `false` in `ldpconf.json`.  If historical data
 will not be needed, this can have the benefit of reducing the running
 time of updates.
@@ -435,7 +436,7 @@ time of updates.
 ------------------
 
 Individual user accounts can be created in PostgreSQL and used to
-access LDP.  To enable LDP to set permissions for these users, the
+access LDP1.  To enable LDP1 to set permissions for these users, the
 `database_super_user` and `database_super_password` settings must be
 defined in `ldpconf.json`.
 
@@ -472,13 +473,13 @@ Reference
   setting.
 
 * `deployment_environment` (string; required) is the deployment
-  environment of the LDP instance.  Supported values are `production`,
-  `staging`, `testing`, and `development`.  This setting is used to
-  determine whether certain operations should be allowed to run on the
-  instance.
+  environment of the LDP1 instance.  Supported values are
+  `production`, `staging`, `testing`, and `development`.  This setting
+  is used to determine whether certain operations should be allowed to
+  run on the instance.
 
 * `enable_sources` (array; required) is a list of sources that are
-  enabled for LDP to extract data from.  The source names refer to a
+  enabled for LDP1 to extract data from.  The source names refer to a
   subset of those defined under `sources` (see below).  Only one
   source should be provided.
 
@@ -492,19 +493,20 @@ Reference
     defined by default as `ldpconfig`.
   * `ldp_user` (string; optional) is the database user that is defined
     by default as `ldp`.
-  * `database_host` (string; required) is the LDP database host name.
-  * `database_name` (string; required) is the LDP database name.
+  * `database_host` (string; required) is the LDP1 database host name.
+  * `database_name` (string; required) is the LDP1 database name.
   * `database_password` (string; required) is the password for the
-    specified LDP database administrator user name.
-  * `database_port` (integer; required) is the LDP database port.
-  * `database_sslmode` (string; required) is the LDP database
+    specified LDP1 database administrator user name.
+  * `database_port` (integer; required) is the LDP1 database port.
+  * `database_sslmode` (string; required) is the LDP1 database
     connection SSL mode.
   * `database_super_user` (string; optional) is a superuser for the
-    LDP database.  This is required to enable individual user accounts.
+    LDP1 database.  This is required to enable individual user
+    accounts.
   * `database_super_password` (string; optional) is the password for
     the specified superuser (`database_super_user`).  This is required
     to enable individual user accounts.
-  * `database_user` (string; required) is the LDP database
+  * `database_user` (string; required) is the LDP1 database
     administrator user name.
 
 * `parallel_update` (Boolean; optional) when set to `false`, disables
@@ -517,10 +519,10 @@ Reference
   read the section on "Historical data" above before changing this
   setting.
 
-* `sources` (object; required) is a collection of sources that LDP can
-  extract data from.  Only one source should be provided.  A source is
-  defined by a source name and an associated object containing several
-  settings:
+* `sources` (object; required) is a collection of sources that LDP1
+  can extract data from.  Only one source should be provided.  A
+  source is defined by a source name and an associated object
+  containing several settings:
   * `direct_database_host` (string; required) is the FOLIO database
     host name.
   * `direct_database_name` (string; required) is the FOLIO database

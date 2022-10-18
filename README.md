@@ -1,5 +1,5 @@
-Library Data Platform
-=====================
+LDP1
+====
 
 Copyright (C) 2019-2022 The Open Library Foundation  
 Copyright (C) 2019-2020 Index Data  
@@ -14,8 +14,8 @@ See
 [CURL_LICENSE](https://github.com/folio-org/ldp/blob/master/CURL_LICENSE)
 for copyright and license information for Curl/libcurl.
 
-__The Library Data Platform (LDP) is an open source platform for
-analytics in libraries.__
+__LDP1 is an open source platform for analytics in libraries,
+developed by the Library Data Platform (LDP) project.__
 
 ```
 id            | 0bab56e5-1ab6-4ac2-afdf-8b2df0434378
