@@ -742,7 +742,7 @@ void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::pgconn* 
         if (column.name == "id") {
             string sql =
                 "ALTER TABLE " + table.name + "\n"
-                "    ADD PRIMARY KEY (id);";
+                "    ADD PRIMARY KEY (id) WITH (fillfactor=100);";
             lg->detail(sql);
             try {
                 { etymon::pgconn_result r(conn, sql); }
@@ -767,7 +767,7 @@ void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::pgconn* 
                         }
                     }
                 } else {
-                    string sql = "CREATE INDEX ON " + table.name + " (\"" + colname + "\");";
+                    string sql = "CREATE INDEX ON " + table.name + " (\"" + colname + "\") WITH (fillfactor=100);";
                     lg->detail(sql);
                     try {
                         { etymon::pgconn_result r(conn, sql); }
