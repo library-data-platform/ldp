@@ -54,12 +54,12 @@ LDP1 instance.
 ### Hardware
 
 * LDP1 software:
-  * Memory: 1 GB
-  * Storage: 500 GB HDD or SSD
+  * Memory: 2 GB
+  * Storage: 500 GB SSD
 * Database:
   * CPU: 4 cores
   * Memory: 32 GB
-  * Storage: 1 TB SSD
+  * Storage: 2 TB SSD
 
 
 3\. Installation
