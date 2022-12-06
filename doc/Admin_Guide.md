@@ -39,7 +39,8 @@ LDP1 instance.
 * Database systems supported:
   * [PostgreSQL](https://www.postgresql.org/) 13.9 or later
     * PostgreSQL 14.6 or later is recommended
-    * AWS RDS PostgreSQL optionally may be used; Aurora is not supported
+    * AWS RDS PostgreSQL optionally may be used (with servers in the
+      same zone/subnet); Aurora is not supported
 * Other software dependencies:
   * [libpq](https://www.postgresql.org/) 13.6 or later
   * [libcurl](https://curl.haxx.se/) 7.64.0 or later
