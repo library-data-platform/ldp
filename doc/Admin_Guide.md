@@ -150,6 +150,7 @@ that runs the LDP1 database, assuming 4 CPU cores and 32 GB memory:
 * `maintenance_work_mem`: `1000000`
 * `max_wal_size`: `10240`
 * `shared_buffers`: `1250000`
+* `statement_timeout`: `3600000`
 * `work_mem`: `350000`
 
 ### Configuring the database
