@@ -488,6 +488,15 @@ void run_update(const ldp_options& opt, bool update_users)
 
     ldp_log lg(opt.lg_level, opt.console, opt.quiet, &(opt.dbinfo));
 
+    try {
+        etymon::pgconn conn(opt.dbinfo);
+        etymon::pgconn_result(&conn, "\dt");
+    } catch (runtime_error e) {
+        string s = e.what();
+        lg.write(log_level::fatal, "server", "", "Could not establish connection to the database. Error: \"" + s + "\"", -1);
+        exit(1);
+    }
+
     vector<string> users;
     bool ok = read_users(opt, &lg, &users, update_users);
     if (update_users) {
