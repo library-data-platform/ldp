@@ -150,6 +150,11 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.source_spec = "/orders-storage/pieces";
     schema->tables.push_back(table);
 
+    table.direct_source_table = "mod_orders_storage.acquisition_method";
+    table.name = "acquisition_method";
+    table.source_spec = "/orders-storage/acquisition-methods";
+    schema->tables.push_back(table);
+
     ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-audit";
 
