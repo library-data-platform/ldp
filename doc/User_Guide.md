@@ -226,11 +226,11 @@ SELECT * FROM local.lisa_count_loans('2022-01-01', '2023-01-01');
 By default, all LDP1 users share the same user account, and all users
 will be able to call this function.  However if LDP1 has been
 configured with individual user accounts, the user that created the
-function would have to grant other users privileges before they can
+function would have to grant other users privileges before they could
 call it, for example:
 
 ```sql
-GRANT EXECUTE ON FUNCTION local.lisa_count_loans TO rosalind;
+GRANT EXECUTE ON FUNCTION local.lisa_count_loans TO celia, rosalind;
 ```
 
 Defining shared functions can be used together with a web-based
