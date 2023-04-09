@@ -6,10 +6,11 @@ LDP1 User Guide
 2\. [JSON queries](#2-json-queries)  
 3\. [Relational attributes vs. JSON](#3-relational-attributes-vs-json)  
 4\. [Local tables](#4-local-tables)  
-5\. [Historical data](#5-historical-data)  
-6\. [Database views](#6-database-views)  
-7\. [JSON arrays](#7-json-arrays)  
-8\. [Community](#8-community)
+5\. [Parameterized reports](#5-parameterized-reports)  
+6\. [Historical data](#6-historical-data)  
+7\. [Database views](#7-database-views)  
+8\. [JSON arrays](#8-json-arrays)  
+9\. [Community](#9-community)
 
 
 1\. Data model
@@ -161,9 +162,9 @@ LIMIT 5;
 4\. Local tables
 ----------------
 
-The `local` schema is created by LDP1 as a common area in the database
-where users can create or import their own data sets, including
-storing the results of queries, e.g.:
+The `local` schema is created by LDP1 as a shared, common area in the
+database where users can create or import their own data sets,
+including storing the results of queries, e.g.:
 
 ```sql
 CREATE TABLE local.loan_status AS
@@ -176,39 +177,58 @@ GROUP BY
     status;
 ```
 
-This is also a good place to store tables containing intermediate
-results, as a step-by-step way of building up complex queries.
 
-Sometimes a local table can be very large, e.g. if it has many rows.
-If it appears that querying the table is slow, it may help to create
-an "index" on every column that will be used either for filtering in a
-`JOIN ... ON` or `WHERE` clause, or for sorting in an `ORDER BY`
-clause.  For example:
+5\. Parameterized reports
+-------------------------
 
-```sql
-CREATE TABLE local.loans_status AS
-SELECT
-    id,
-    json_extract_path_text(data, 'status', 'name') AS status
-FROM
-    circulation_loans;
+An effective way to create a report is to package it as a database
+function.  A database function can define a query and associated
+parameters.  Users can then call the function, specifying a value for
+each parameter.
 
-CREATE INDEX ON local.loans_status (id);
-
-CREATE INDEX ON local.loans_status (status);
-```
-
-It also can help to "vacuum" and "analyze" the table:
+For example, suppose that the following query counts the number of
+loans for each circulated item within a range of dates.
 
 ```sql
-VACUUM ANALYZE local.loans_status;
+SELECT item_id,
+       count(*) AS loan_count
+    FROM circulation_loans
+    WHERE loan_date >= '2023-01-01' AND loan_date < '2024-01-01'
+    GROUP BY item_id;
 ```
 
-Creating indexes and vacuuming/analyzing are not necessary if queries
-on the table are running fast enough for normal use.
+We can create a function to generalize this query.  Instead of
+including the dates directly within the query, we will define them as
+parameters: `start_date` and `end_date`.
+
+```sql
+CREATE FUNCTION local.lisa_count_loans(start_date date, end_date date)
+    RETURNS TABLE(item_id text, loan_count integer) AS
+$$
+SELECT item_id,
+       count(*) AS loan_count
+    FROM circulation_loans
+    WHERE loan_date >= start_date AND loan_date < end_date
+    GROUP BY item_id
+$$
+LANGUAGE SQL;
+```
+
+Now the function can be run with different arguments to generate
+reports:
+
+```sql
+SELECT * FROM local.lisa_count_loans('2023-01-01', '2024-01-01');
+
+SELECT * FROM local.lisa_count_loans('2022-01-01', '2023-01-01');
+```
+
+Defining shared functions in this way can be used together with a
+web-based database tool such as CloudBeaver to make reports available
+to a wider group of users.
 
 
-5\. Historical data
+6\. Historical data
 -------------------
 
 ### History tables
@@ -343,7 +363,7 @@ or missing values, update them, etc.  Note that in SQL, `''` and
 distinct values.
 
 
-6\. Database views
+7\. Database views
 ------------------
 
 The schema of source data can change over time, and LDP1 reflects
@@ -354,7 +374,7 @@ TABLE ... AS SELECT ...` to store a result set, as in the local schema
 example above.
 
 
-7\. JSON arrays
+8\. JSON arrays
 ---------------
 
 LDP1 does not yet support extracting arrays from JSON data.  However,
@@ -398,7 +418,7 @@ FROM
 ```
 
 
-8\. Community
+9\. Community
 -------------
 
 ### Getting help
