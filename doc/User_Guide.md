@@ -214,7 +214,7 @@ $$
 LANGUAGE SQL;
 ```
 
-Now the function can be run with different arguments to generate
+Now the function can be called with different arguments to generate
 reports:
 
 ```sql
@@ -223,9 +223,19 @@ SELECT * FROM local.lisa_count_loans('2023-01-01', '2024-01-01');
 SELECT * FROM local.lisa_count_loans('2022-01-01', '2023-01-01');
 ```
 
-Defining shared functions in this way can be used together with a
-web-based database tool such as CloudBeaver to make reports available
-to a wider group of users.
+By default, all LDP1 users share the same user account, and all users
+will be able to call this function.  However if LDP1 has been
+configured with individual user accounts, the user that created the
+function would have to grant other users privileges before they can
+call it, for example:
+
+```sql
+GRANT EXECUTE ON FUNCTION local.lisa_count_loans TO rosalind;
+```
+
+Defining shared functions can be used together with a web-based
+database tool such as CloudBeaver to make reports available to a wider
+group of users.
 
 
 6\. Historical data
