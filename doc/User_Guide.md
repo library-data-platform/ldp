@@ -6,7 +6,7 @@ LDP1 User Guide
 2\. [JSON queries](#2-json-queries)  
 3\. [Relational attributes vs. JSON](#3-relational-attributes-vs-json)  
 4\. [Local tables](#4-local-tables)  
-5\. [Parameterized reports](#5-parameterized-reports)  
+5\. [Creating reports](#5-creating-reports)  
 6\. [Historical data](#6-historical-data)  
 7\. [Database views](#7-database-views)  
 8\. [JSON arrays](#8-json-arrays)  
@@ -178,8 +178,8 @@ GROUP BY
 ```
 
 
-5\. Parameterized reports
--------------------------
+5\. Creating reports
+--------------------
 
 An effective way to create a report is to package it as a database
 function.  A database function can define a query and associated
@@ -193,7 +193,7 @@ loans for each circulated item within a range of dates.
 SELECT item_id,
        count(*) AS loan_count
     FROM circulation_loans
-    WHERE loan_date >= '2023-01-01' AND loan_date < '2024-01-01'
+    WHERE '2023-01-01' <= loan_date AND loan_date < '2024-01-01'
     GROUP BY item_id;
 ```
 
@@ -208,7 +208,7 @@ $$
 SELECT item_id,
        count(*) AS loan_count
     FROM circulation_loans
-    WHERE loan_date >= start_date AND loan_date < end_date
+    WHERE start_date <= loan_date AND loan_date < end_date
     GROUP BY item_id
 $$
 LANGUAGE SQL;
