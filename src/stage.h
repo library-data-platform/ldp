@@ -22,7 +22,7 @@ bool stage_table_2(const ldp_options& opt,
                    field_set* drop_fields,
                    char* read_buffer);
 
-void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::pgconn* conn, dbtype* dbt, bool index_large_varchar);
+void add_primary_keys(ldp_log* lg, const table_schema& table, etymon::pgconn* conn, dbtype* dbt);
 
 #endif
 

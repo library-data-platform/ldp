@@ -721,9 +721,9 @@ static void compose_data_file_path(const string& load_dir,
     *path += suffix;
 }
 
-void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::pgconn* conn, dbtype* dbt, bool index_large_varchar)
+void add_primary_keys(ldp_log* lg, const table_schema& table, etymon::pgconn* conn, dbtype* dbt)
 {
-    lg->detail("creating indexes: " + table.name);
+    lg->detail("creating primary key indexes: " + table.name);
     // If there is no table schema, define a primary key on (id) and return.
     if (table.columns.size() == 0) {
         string sql =
@@ -737,7 +737,7 @@ void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::pgconn* 
         }
         return;
     }
-    // If there is a table schema, define the primary key or indexes.
+    // If there is a table schema, define the primary key.
     for (const auto& column : table.columns) {
         if (column.name == "id") {
             string sql =
@@ -748,33 +748,6 @@ void index_loaded_table(ldp_log* lg, const table_schema& table, etymon::pgconn* 
                 { etymon::pgconn_result r(conn, sql); }
             } catch (runtime_error& e) {
                 lg->write(log_level::warning, "server", "", e.what(), -1);
-            }
-        } else {
-            // in postgres, index columns except column "data"
-            if (dbt->type() == dbsys::postgresql && column.name != "data") {
-                string colname;
-                expand_column_name(column.name, &colname);
-                // create btree index unless column is a large varchar
-                if (column.type == column_type::varchar && column.length > 500) {
-                    // create hash index if index_large_varchar is enabled
-                    if (index_large_varchar) {
-                        string sql = "CREATE INDEX ON " + table.name + " USING HASH (\"" + colname + "\");";
-                        lg->detail(sql);
-                        try {
-                            { etymon::pgconn_result r(conn, sql); }
-                        } catch (runtime_error& e) {
-                            lg->write(log_level::warning, "server", "", "Unable to create hash index: table=" + table.name + " column=" + colname, -1);
-                        }
-                    }
-                } else {
-                    string sql = "CREATE INDEX ON " + table.name + " (\"" + colname + "\") WITH (fillfactor=100);";
-                    lg->detail(sql);
-                    try {
-                        { etymon::pgconn_result r(conn, sql); }
-                    } catch (runtime_error& e) {
-                        lg->write(log_level::warning, "server", "", "Unable to create B-tree index: table=" + table.name + " column=" + colname, -1);
-                    }
-                }
             }
         }
     }

@@ -485,10 +485,6 @@ Reference
   subset of those defined under `sources` (see below).  Only one
   source should be provided.
 
-* `index_large_varchar` (Boolean; optional) when set to `true`,
-  enables indexing of `varchar` text columns that have a length
-  greater than 500.  The default is `false`.
-
 * `ldp_database` (object; required) is a group of database-related
   settings.
   * `ldpconfig_user` (string; optional) is the database user that is
