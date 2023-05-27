@@ -25,7 +25,7 @@
 namespace fs = std::experimental::filesystem;
 namespace json = rapidjson;
 
-const int copy_buffer_size = 125000000;
+const long unsigned int copy_buffer_size = 12500000;
 
 constexpr json::ParseFlag pflags = json::kParseTrailingCommasFlag;
 
