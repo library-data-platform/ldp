@@ -13,6 +13,14 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
 
     ///////////////////////////////////////////////////////////////////////////
 
+    table.source_type = data_source_type::srs_records;
+    table.direct_source_table = "mod_source_record_storage.records_lb";
+    table.module_name = "mod-source-record-storage";
+    table.name = "srs_records";
+    table.source_spec = "srs::records_lb";
+    schema->tables.push_back(table);
+    table.source_type = data_source_type::rmb;
+
     table.direct_source_table = "mod_inventory_storage.instance";
     table.module_name = "mod-inventory-storage";
     table.name = "inventory_instances";
@@ -38,14 +46,6 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.name = "inventory_holdings";
     table.source_spec = "/holdings-storage/holdings";
     schema->tables.push_back(table);
-
-    table.source_type = data_source_type::srs_records;
-    table.direct_source_table = "mod_source_record_storage.records_lb";
-    table.module_name = "mod-source-record-storage";
-    table.name = "srs_records";
-    table.source_spec = "srs::records_lb";
-    schema->tables.push_back(table);
-    table.source_type = data_source_type::rmb;
 
     table.direct_source_table = "mod_circulation_storage.audit_loan";
     table.module_name = "mod-circulation-storage";
