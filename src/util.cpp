@@ -44,16 +44,6 @@ bool is_uuid(const char* str)
     return true;
 }
 
-void vacuum_sql(const ldp_options& opt, string* sql)
-{
-    // if (opt.parallel_vacuum) {
-    //     *sql = "VACUUM ";
-    // } else {
-    //     *sql = "VACUUM (PARALLEL 0) ";
-    // }
-    *sql = "VACUUM ANALYZE ";
-}
-
 void comment_sql(const string& table_name, const string& module_name, string* sql)
 {
     *sql = "COMMENT ON TABLE " + table_name + " IS 'https://dev.folio.org/reference/api/#" + module_name + "';";

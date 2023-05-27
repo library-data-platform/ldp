@@ -34,14 +34,9 @@ void create_latest_history_table(const ldp_options& opt, ldp_log* lg,
     lg->write(log_level::detail, "", "", sql, -1);
     { etymon::pgconn_result r(conn, sql); }
 
-    string v;
-    vacuum_sql(opt, &v);
-    sql = v + latest_history_table + ";";
+    sql = "VACUUM ANALYZE " + latest_history_table + ";";
     lg->detail(sql);
     { etymon::pgconn_result r(conn, sql); }
-    // sql = "ANALYZE " + latest_history_table + ";";
-    // lg->detail(sql);
-    // { etymon::pgconn_result r(conn, sql); }
 }
 
 void drop_latest_history_table(const ldp_options& opt, ldp_log* lg,

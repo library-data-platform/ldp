@@ -242,9 +242,7 @@ void process_foreign_keys(const ldp_options& opt, bool enable_foreign_key_warnin
                 "    (referencing_fkey);";
             lg->detail(sql);
             { etymon::pgconn_result r(conn, sql); }
-            string v;
-            vacuum_sql(opt, &v);
-            sql = v + "temp_foreign_key_exceptions;";
+            sql = "VACUUM ANALYZE temp_foreign_key_exceptions;";
             lg->detail(sql);
             { etymon::pgconn_result r(conn, sql); }
             // sql = "ANALYZE temp_foreign_key_exceptions;";
@@ -701,42 +699,14 @@ void run_update(const ldp_options& opt, bool update_users)
     // Add optional columns
     add_optional_columns(opt, &lg);
 
-    // Add table comments and vacuum analyze all updated tables
-    {
+    // Add comments on tables.
+    if (!opt.extract_only) {
         etymon::pgconn conn(opt.dbinfo);
-        lg.write(log_level::debug, "server", "", "vacuuming", -1);
-        timer vacuum_analyze_timer;
-        string v;
-        vacuum_sql(opt, &v);
         for (auto& table : schema.tables) {
-            if (opt.extract_only)
-                continue;
-
             string sql;
             comment_sql(table.name, table.module_name, &sql);
             { etymon::pgconn_result r(&conn, sql); }
-
-            // Skip this table if the --table option is specified and does not
-            // match this table.
-            if (opt.table != "" && opt.table != table.name)
-                continue;
-
-            sql = v + table.name + ";";
-            lg.detail(sql);
-            { etymon::pgconn_result r(&conn, sql); }
-            // sql = "ANALYZE " + table.name + ";";
-            // lg.detail(sql);
-            // { etymon::pgconn_result r(&conn, sql); }
-            if (opt.record_history) {
-                sql = v + "history." + table.name + ";";
-                lg.detail(sql);
-                { etymon::pgconn_result r(&conn, sql); }
-                // sql = "ANALYZE history." + table.name + ";";
-                // lg.detail(sql);
-                // { etymon::pgconn_result r(&conn, sql); }
-            }
         }
-        //lg.write(log_level::debug, "server", "", "completed vacuum", vacuum_analyze_timer.elapsed_time());
     }
 
     // TODO Move analysis and constraints out of update process.
