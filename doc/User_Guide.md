@@ -1,5 +1,5 @@
-LDP1 User Guide
-===============
+LDP User Guide
+==============
 
 ##### Contents  
 1\. [Data model](#1-data-model)  
@@ -16,7 +16,7 @@ LDP1 User Guide
 1\. Data model
 --------------
 
-The LDP1 data model is a hybrid of relational and JSON schemas.  Each
+The LDP data model is a hybrid of relational and JSON schemas.  Each
 table contains JSON data in a relational attribute called `data`, and
 a subset of the JSON fields is also stored in individual relational
 attributes.  It is typically queried via SQL:
@@ -55,9 +55,9 @@ data          | {
 The relational attributes are provided to simplify writing queries,
 and the JSON fields offer access to the complete source data.
 
-The LDP1 software creates these tables, having extracted the data from
+The LDP software creates these tables, having extracted the data from
 source databases.  It then updates the data from those sources once
-per day, so that the LDP1 database reflects the state of the source
+per day, so that the LDP database reflects the state of the source
 data as of sometime within the past 24 hours or so.
 
 (Note that uppercase is not required in SQL, but it is a common
@@ -147,7 +147,7 @@ SELECT u.id AS user_id,
 4\. Local tables
 ----------------
 
-The `local` schema is created by LDP1 as a shared, common area in the
+The `local` schema is created by LDP as a shared, common area in the
 database where users can create or import their own data sets,
 including storing the results of queries, e.g.:
 
@@ -205,8 +205,8 @@ SELECT * FROM local.lisa_count_loans('2023-01-01', '2024-01-01');
 SELECT * FROM local.lisa_count_loans('2022-01-01', '2023-01-01');
 ```
 
-By default, all LDP1 users share the same user account, and all users
-will be able to call this function.  However if LDP1 has been
+By default, all LDP users share the same user account, and all users
+will be able to call this function.  However if LDP has been
 configured with individual user accounts, the user that created the
 function would have to grant other users privileges before they could
 call it, for example:
@@ -227,7 +227,7 @@ group of users.
 
 As mentioned earlier, the database contains a snapshot of the source
 data as of the last update.  For all tables except `srs_error`,
-`srs_marc`, and `srs_records`, LDP1 also retains data that have been
+`srs_marc`, and `srs_records`, LDP also retains data that have been
 updated in the past, including data that may no longer exist in the
 source.  These "historical data" are stored in a schema called
 `history`.  Each table normally has a corresponding history table,
@@ -272,7 +272,7 @@ updated   | 2020-03-02 03:46:49.362606+00
 Unlike the main tables in which `id` is unique, the history tables can
 accumulate many records with the same value for `id`.  Note also that
 if a value in the source changes more than once during the interval
-between two LDP1 updates, the history will only reflect the last of
+between two LDP updates, the history will only reflect the last of
 those changes.
 
 ### Querying historical data
@@ -339,9 +339,9 @@ distinct values.
 7\. Database views
 ------------------
 
-The schema of source data can change over time, and LDP1 reflects
-these changes when it updates data.  For this reason, LDP1 does not
-support the use of database views.  LDP1 updates may fail to run if
+The schema of source data can change over time, and LDP reflects
+these changes when it updates data.  For this reason, LDP does not
+support the use of database views.  LDP updates may fail to run if
 the database contains views.  Instead of creating a view, use `CREATE
 TABLE ... AS SELECT ...` to store a result set, as in the local schema
 example above.
@@ -350,7 +350,7 @@ example above.
 8\. JSON arrays
 ---------------
 
-LDP1 does not yet support extracting arrays from JSON data.  However,
+LDP does not yet support extracting arrays from JSON data.  However,
 there is a workaround for PostgreSQL users.
 
 A lateral join can be used with the function `json_array_elements()`
@@ -382,30 +382,6 @@ SELECT id AS holdings_id,
         CROSS JOIN LATERAL json_array_elements(json_extract_path(data, 'notes')) WITH ORDINALITY
             AS notes (data);
 ```
-
-
-9\. Community
--------------
-
-### Getting help
-
-The LDP project runs a Slack workspace which is a good place to ask
-questions or to share your work.  It also serves as a community space
-for working together on library data problems.  To request an
-invitation, use the [Contact
-page](https://librarydataplatform.org/contact/) on the LDP website.
-
-### Bug reports
-
-The [issue
-tracker](https://github.com/library-data-platform/ldp/issues) can be
-used to report a bug.
-
-### Reporting queries
-
-The FOLIO community maintain a [repository of reporting
-queries](https://github.com/folio-org/folio-analytics) that run on
-LDP1 databases.
 
 
 Further reading
