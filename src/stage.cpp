@@ -721,7 +721,7 @@ static void compose_data_file_path(const string& load_dir,
     *path += suffix;
 }
 
-void add_primary_keys(ldp_log* lg, const table_schema& table, etymon::pgconn* conn, dbtype* dbt)
+void add_pkey_and_indexes(ldp_log* lg, const table_schema& table, etymon::pgconn* conn, dbtype* dbt, bool create_indexes)
 {
     lg->detail("creating primary key indexes: " + table.name);
     // If there is no table schema, define a primary key on (id) and return.
@@ -737,7 +737,7 @@ void add_primary_keys(ldp_log* lg, const table_schema& table, etymon::pgconn* co
         }
         return;
     }
-    // If there is a table schema, define the primary key.
+    // If there is a table schema, define the primary key and optionally create indexes.
     for (const auto& column : table.columns) {
         if (column.name == "id") {
             string sql =
@@ -748,6 +748,18 @@ void add_primary_keys(ldp_log* lg, const table_schema& table, etymon::pgconn* co
                 { etymon::pgconn_result r(conn, sql); }
             } catch (runtime_error& e) {
                 lg->write(log_level::warning, "server", "", e.what(), -1);
+            }
+        } else {
+            if (create_indexes && column.name != "data" && (column.type != column_type::varchar || column.length < 200)) {
+                string colname;
+                expand_column_name(column.name, &colname);
+                string sql = "CREATE INDEX ON " + table.name + " (\"" + colname + "\") WITH (fillfactor=100);";
+                lg->detail(sql);
+                try {
+                    { etymon::pgconn_result r(conn, sql); }
+                } catch (runtime_error& e) {
+                    lg->write(log_level::warning, "server", "", "Unable to create B-tree index: table=" + table.name + " column=" + colname, -1);
+                }
             }
         }
     }
