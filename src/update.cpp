@@ -342,7 +342,7 @@ void select_config_general(etymon::pgconn* conn, ldp_log* lg,
 }
 
 bool stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const vector<source_state>& source_states, const string& load_dir,
-                 field_set* drop_fields, vector<string>* users)
+    field_set* drop_fields, vector<string>* users, bool lz4)
 {
     etymon::pgconn conn(opt.dbinfo);
     dbtype dbt(&conn);
@@ -359,7 +359,7 @@ bool stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const
         { etymon::pgconn_result r(&conn, "BEGIN;"); }
 
         lg->trace(table->name + ": staging pass 1");
-        bool ok = stage_table_1(opt, source_states, lg, table, &conn, &dbt, load_dir, drop_fields, read_buffer, users);
+        bool ok = stage_table_1(opt, source_states, lg, table, &conn, &dbt, load_dir, drop_fields, read_buffer, users, lz4);
         if (!ok) {
             return false;
         }
@@ -425,11 +425,11 @@ bool stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const
     return true;
 }
 
-void run_stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const vector<source_state>& source_states, const string& load_dir,
-                     field_set* drop_fields, vector<string>* users)
+void run_stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const vector<source_state>& source_states,
+    const string& load_dir, field_set* drop_fields, vector<string>* users, bool lz4)
 {
     try {
-        stage_merge(opt, lg, table, source_states, load_dir, drop_fields, users);
+        stage_merge(opt, lg, table, source_states, load_dir, drop_fields, users, lz4);
         exit(0);
     } catch (runtime_error& e) {
         string s = e.what();
@@ -475,6 +475,22 @@ void check_for_views(const ldp_options& opt, ldp_log* lg)
     }
 }
 
+bool is_lz4_available(const etymon::pgconn_info* dbinfo)
+{
+    etymon::pgconn conn(*dbinfo);
+    string q = "CREATE TEMP TABLE lz4test (c text COMPRESSION lz4);";
+    try {
+        { etymon::pgconn_result r(&conn, q); }
+    } catch (runtime_error& e) {
+        return false;
+    }
+    q = "DROP TABLE lz4test;";
+    try {
+        { etymon::pgconn_result r(&conn, q); }
+    } catch (runtime_error& e) {}
+    return true;
+}
+
 void run_update(const ldp_options& opt, bool update_users)
 {
     CURLcode cc;
@@ -507,6 +523,8 @@ void run_update(const ldp_options& opt, bool update_users)
     lg.write(log_level::detail, "", "", "okapi timeout: " + to_string(opt.okapi_timeout), -1);
 
     check_for_views(opt, &lg);
+
+    bool lz4 = is_lz4_available(&opt.dbinfo);
 
     ldp_schema schema;
     ldp_schema::make_default_schema(&schema);
@@ -647,7 +665,7 @@ void run_update(const ldp_options& opt, bool update_users)
                 }
                 pid_t pid = fork();
                 if (pid == 0) {
-                    run_stage_merge(opt, &lg, &table, source_states, load_dir, &drop_fields, &users);
+                    run_stage_merge(opt, &lg, &table, source_states, load_dir, &drop_fields, &users, lz4);
                 }
                 if (pid < 0) {
                     throw runtime_error("error starting child process");
@@ -657,7 +675,7 @@ void run_update(const ldp_options& opt, bool update_users)
                 worker_ext_files = ext_files;
             } else {  // single process
                 try {
-                    if (stage_merge(opt, &lg, &table, source_states, load_dir, &drop_fields, &users)) {
+                    if (stage_merge(opt, &lg, &table, source_states, load_dir, &drop_fields, &users, lz4)) {
                         lg.write(log_level::trace, "", table.name, table.name + ": completed update", -1);
                         delete ext_files;
                     } else {

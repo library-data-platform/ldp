@@ -776,8 +776,9 @@ static unsigned int min_varchar_size(unsigned int varchar_size)
 }
 
 static void create_loading_table(const ldp_options& opt, ldp_log* lg,
-                                 const table_schema& table,
-                                 etymon::pgconn* conn, const dbtype& dbt, vector<string>* users)
+    const table_schema& table,
+    etymon::pgconn* conn, const dbtype& dbt, vector<string>* users,
+    bool lz4)
 {
     string loading_table;
     loading_table_name(table.name, &loading_table);
@@ -800,16 +801,23 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
             sql += "    \"";
             sql += colname;
             sql += "\" ";
-            if (column.type == column_type::varchar)
+            if (column.type == column_type::varchar) {
                 column_type = "VARCHAR(" + to_string(min_varchar_size(column.length)) + ")";
-            else
+                if (lz4 && column.length > 127) {
+                    column_type += " COMPRESSION lz4";
+                }
+            } else {
                 column_schema::type_to_string(column.type, &column_type);
+            }
             sql += column_type;
             sql += ",\n";
         }
     }
-    sql += string("    data ") + dbt.json_type() + "\n"
-        ")" + rskeys + ";";
+    sql += string("    data ") + dbt.json_type();
+    if (lz4) {
+        sql += " COMPRESSION lz4";
+    }
+    sql += "\n)" + rskeys + ";";
     lg->write(log_level::detail, "", "", sql, -1);
     { etymon::pgconn_result r(conn, sql); }
 
@@ -835,15 +843,16 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
 }
 
 bool stage_table_1(const ldp_options& opt,
-                   const vector<source_state>& source_states,
-                   ldp_log* lg,
-                   table_schema* table,
-                   etymon::pgconn* conn,
-                   dbtype* dbt,
-                   const string& load_dir,
-                   field_set* drop_fields,
-                   char* read_buffer,
-                   vector<string>* users)
+    const vector<source_state>& source_states,
+    ldp_log* lg,
+    table_schema* table,
+    etymon::pgconn* conn,
+    dbtype* dbt,
+    const string& load_dir,
+    field_set* drop_fields,
+    char* read_buffer,
+    vector<string>* users,
+    bool lz4)
 {
     map<string,type_counts> stats;
 
@@ -924,7 +933,7 @@ bool stage_table_1(const ldp_options& opt,
         column.source_name = field;
         table->columns.push_back(column);
     }
-    create_loading_table(opt, lg, *table, conn, *dbt, users);
+    create_loading_table(opt, lg, *table, conn, *dbt, users, lz4);
 
     return true;
 }
