@@ -16,10 +16,10 @@ LDP User Guide
 1\. Data model
 --------------
 
-The LDP data model is a hybrid of relational and JSON schemas.  Each
-table contains JSON data in a relational attribute called `data`, and
-a subset of the JSON fields is also stored in individual relational
-attributes.  It is typically queried via SQL:
+The data model used for most LDP tables is a hybrid of relational and
+JSON schemas.  Each table contains JSON data in a relational attribute
+called `data`, and a subset of the JSON fields is also stored in
+individual relational attributes.  It is typically queried via SQL:
 
 ```sql
 SELECT * FROM circulation_loans LIMIT 1;
