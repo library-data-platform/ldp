@@ -108,9 +108,9 @@ SELECT jsonb_extract_path_text(data, 'status', 'name') AS status,
 In this example, `jsonb_extract_path_text(data, 'status', 'name')`
 refers to the `name` field nested within the `status` field.
 
-### Compatibility across LDP versions 1.x and 2.x
+### JSON compatibility across LDP versions 1.x and 2.x
 
-If there is a need for compatibility across LDP 1.x and 2.x, the
+If there is a need to maintain compatibility across LDP 1.x and 2.x, the
 `#>`and `#>>` operators may be used, for example:
 ```
 t #>> '{f1,f2,f3}'
