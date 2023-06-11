@@ -108,6 +108,21 @@ SELECT jsonb_extract_path_text(data, 'status', 'name') AS status,
 In this example, `jsonb_extract_path_text(data, 'status', 'name')`
 refers to the `name` field nested within the `status` field.
 
+### Compatibility across LDP versions 1.x and 2.x
+
+If there is a need for compatibility across LDP 1.x and 2.x, the
+`#>`and `#>>` operators may be used, for example:
+```
+t #>> '{f1,f2,f3}'
+```
+instead of:
+```
+jsonb_extract_path_text(t, f1, f2, f3)
+```
+
+Otherwise, the longer forms such as `jsonb_extract_path_text()` are
+preferred, because they are significantly more readable.
+
 
 3\. Relational attributes vs. JSON
 ----------------------------------
