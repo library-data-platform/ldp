@@ -67,8 +67,9 @@ convention used in published SQL queries and in documentation.)
 2\. JSON queries
 ----------------
 
-To access the JSON fields, the function `json_extract_path_text()` can
-be used to retrieve data from a path of nested fields, for example:
+To access the JSON fields, the function `jsonb_extract_path_text()` (or
+`json_extract_path_text()` for LDP 1.x.) can be used to retrieve data
+from a path of nested fields, for example:
 
 ```sql
 SELECT data FROM circulation_loans LIMIT 1;
@@ -91,7 +92,7 @@ SELECT data FROM circulation_loans LIMIT 1;
 ```
 
 ```sql
-SELECT json_extract_path_text(data, 'status', 'name') AS status,
+SELECT jsonb_extract_path_text(data, 'status', 'name') AS status,
        count(*)
     FROM circulation_loans
     GROUP BY status;
@@ -104,7 +105,7 @@ SELECT json_extract_path_text(data, 'status', 'name') AS status,
  Open   |   1294
 ```
 
-In this example, `json_extract_path_text(data, 'status', 'name')`
+In this example, `jsonb_extract_path_text(data, 'status', 'name')`
 refers to the `name` field nested within the `status` field.
 
 
@@ -114,11 +115,11 @@ refers to the `name` field nested within the `status` field.
 An example of a query written entirely using JSON data:
 
 ```sql
-SELECT json_extract_path_text(u.data, 'id') AS user_id,
-       json_extract_path_text(g.data, 'group') AS "group"
+SELECT jsonb_extract_path_text(u.data, 'id') AS user_id,
+       jsonb_extract_path_text(g.data, 'group') AS "group"
     FROM user_users AS u
         LEFT JOIN user_groups AS g
-            ON json_extract_path_text(u.data, 'patronGroup') = json_extract_path_text(g.data, 'id')
+            ON jsonb_extract_path_text(u.data, 'patronGroup') = jsonb_extract_path_text(g.data, 'id')
     LIMIT 5;
 ```
 
@@ -153,7 +154,7 @@ including storing the results of queries, e.g.:
 
 ```sql
 CREATE TABLE local.loan_status AS
-SELECT json_extract_path_text(data, 'status', 'name') AS status,
+SELECT jsonb_extract_path_text(data, 'status', 'name') AS status,
        count(*)
     FROM circulation_loans
     GROUP BY status;
@@ -303,8 +304,8 @@ The `SELECT` clause of this query can be modified to examine only
 specific fields, e.g.:
 
 ```sql
-SELECT json_extract_path_text(data, 'action'),
-       json_extract_path_text(data, 'returnDate'),
+SELECT jsonb_extract_path_text(data, 'action'),
+       jsonb_extract_path_text(data, 'returnDate'),
        updated
     FROM history.circulation_loans
     WHERE id = '0bab56e5-1ab6-4ac2-afdf-8b2df0434378'
@@ -324,7 +325,7 @@ result in a local table, e.g.:
 ```sql
 CREATE TABLE local.loan_status_history AS
 SELECT id,
-       json_extract_path_text(data, 'itemStatus') AS item_status,
+       jsonb_extract_path_text(data, 'itemStatus') AS item_status,
        updated
     FROM history.circulation_loans
     WHERE '2020-01-01' <= updated AND updated < '2021-01-01';
@@ -353,9 +354,9 @@ example above.
 LDP does not yet support extracting arrays from JSON data.  However,
 there is a workaround for PostgreSQL users.
 
-A lateral join can be used with the function `json_array_elements()`
-to convert the elements of a JSON array to a set of rows, one row per
-array element.
+A lateral join can be used with the function `jsonb_array_elements()`
+(or `json_array_elements()` for LDP 1.x) to convert the elements of a
+JSON array to a set of rows, one row per array element.
 
 For example, if the array elements are simple `varchar` strings:
 
@@ -365,7 +366,7 @@ SELECT id AS instance_id,
        instance_format_ids.data #>> '{}' AS instance_format_id,
        instance_format_ids.ordinality
     FROM inventory_instances
-        CROSS JOIN LATERAL json_array_elements(json_extract_path(data, 'instanceFormatIds')) WITH ORDINALITY
+        CROSS JOIN LATERAL jsonb_array_elements(jsonb_extract_path(data, 'instanceFormatIds')) WITH ORDINALITY
             AS instance_format_ids (data);
 ```
 
@@ -374,12 +375,12 @@ If the array elements are JSON objects:
 ```sql
 CREATE TABLE local.example_array_objects AS
 SELECT id AS holdings_id,
-       json_extract_path_text(notes.data, 'holdingsNoteTypeId') AS holdings_note_type_id,
-        json_extract_path_text(notes.data, 'note') AS note,
-        (json_extract_path_text(notes.data, 'staffOnly'))::boolean AS staff_only,
+       jsonb_extract_path_text(notes.data, 'holdingsNoteTypeId') AS holdings_note_type_id,
+        jsonb_extract_path_text(notes.data, 'note') AS note,
+        (jsonb_extract_path_text(notes.data, 'staffOnly'))::boolean AS staff_only,
         notes.ordinality
     FROM inventory_holdings
-        CROSS JOIN LATERAL json_array_elements(json_extract_path(data, 'notes')) WITH ORDINALITY
+        CROSS JOIN LATERAL jsonb_array_elements(jsonb_extract_path(data, 'notes')) WITH ORDINALITY
             AS notes (data);
 ```
 
