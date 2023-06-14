@@ -385,7 +385,7 @@ bool stage_merge(const ldp_options& opt, ldp_log* lg, table_schema* table, const
         { etymon::pgconn_result r(&conn, "COMMIT;"); }
     }
 
-    add_pkey_and_indexes(lg, *table, &conn, &dbt, opt.create_indexes);
+    add_pkey_and_indexes(lg, *table, &conn, &dbt, opt.all_indexes);
 
     if (opt.record_history) {
         drop_latest_history_table(opt, lg, *table, &conn);

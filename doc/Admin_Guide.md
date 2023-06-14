@@ -474,11 +474,11 @@ Reference
   Please read the section on "Data privacy" above before changing this
   setting.
 
-* `create_indexes` (Boolean; optional) when set to `true`, enables
+* `all_indexes` (Boolean; optional) when set to `true`, enables
   automatic creation of indexes on most columns.  The default value is
-  `false`.  Enabling indexes will slow down the update process and is
-  not recommended, but it can improve the performance of certain
-  queries.
+  `false`.  Enabling the additional indexes will slow down the update
+  process and is not recommended, but it can improve the performance
+  of certain queries.
 
 * `deployment_environment` (string; required) is the deployment
   environment of the LDP instance.  Supported values are

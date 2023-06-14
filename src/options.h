@@ -87,7 +87,7 @@ public:
     string table;
     bool anonymize = true;
     bool record_history = true;
-    bool create_indexes = false;
+    bool all_indexes = false;
     bool parallel_vacuum = true;
     bool parallel_update = true;
     bool index_large_varchar = false;
