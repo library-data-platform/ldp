@@ -721,7 +721,7 @@ static void compose_data_file_path(const string& load_dir,
     *path += suffix;
 }
 
-void add_pkey_and_indexes(ldp_log* lg, const table_schema& table, etymon::pgconn* conn, dbtype* dbt, bool create_indexes)
+void add_pkey_and_indexes(ldp_log* lg, const table_schema& table, etymon::pgconn* conn, dbtype* dbt, bool all_indexes)
 {
     lg->detail("creating primary key indexes: " + table.name);
     // If there is no table schema, define a primary key on (id) and return.
@@ -750,7 +750,14 @@ void add_pkey_and_indexes(ldp_log* lg, const table_schema& table, etymon::pgconn
                 lg->write(log_level::warning, "server", "", e.what(), -1);
             }
         } else {
-            if (create_indexes && column.name != "data" && (column.type != column_type::varchar || column.length < 200)) {
+            bool index = false;
+            if (column.type == column_type::id) {
+                index = true;
+            }
+            if (all_indexes && column.name != "data" && (column.type != column_type::varchar || column.length < 200)) {
+                index = true;
+            }
+            if (index) {
                 string colname;
                 expand_column_name(column.name, &colname);
                 string sql = "CREATE INDEX ON " + table.name + " (\"" + colname + "\") WITH (fillfactor=100);";

@@ -23,7 +23,7 @@ bool stage_table_2(const ldp_options& opt,
     field_set* drop_fields,
     char* read_buffer);
 
-void add_pkey_and_indexes(ldp_log* lg, const table_schema& table, etymon::pgconn* conn, dbtype* dbt, bool create_indexes);
+void add_pkey_and_indexes(ldp_log* lg, const table_schema& table, etymon::pgconn* conn, dbtype* dbt, bool all_indexes);
 
 #endif
 
