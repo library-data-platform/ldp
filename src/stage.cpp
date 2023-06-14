@@ -792,7 +792,7 @@ static void create_loading_table(const ldp_options& opt, ldp_log* lg,
     sql = "CREATE TABLE ";
     sql += loading_table;
     sql += " (\n"
-        "    id VARCHAR(36) NOT NULL,\n";
+        "    id UUID NOT NULL,\n";
     string column_type;
     for (const auto& column : table.columns) {
         if (column.name != "id") {

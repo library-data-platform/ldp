@@ -30,7 +30,7 @@ const char* dbtype::json_type() const
 {
     switch (dbt) {
     case dbsys::postgresql:
-	return "JSON";
+	return "JSONB";
     case dbsys::redshift:
 	return "VARCHAR(65535)";
     default:

@@ -787,7 +787,7 @@ void column_schema::type_to_string(column_type type, string* str)
         *str = "TIMESTAMPTZ";
         break;
     case column_type::id:
-        *str = "VARCHAR(36)";
+        *str = "UUID";
         break;
     case column_type::varchar:
         *str = "VARCHAR";
