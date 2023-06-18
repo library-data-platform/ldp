@@ -1604,20 +1604,18 @@ void database_upgrade_34(database_upgrade_options* opt)
     ldp_schema schema;
     ldp_schema::make_default_schema(&schema);
 
-    // History tables
     for (auto& table : schema.tables) {
-        fprintf(stderr, "%s: Upgrading table history.%s\n", opt->prog, table.name.data());
-        string sql = "ALTER TABLE history." + table.name +
+        // Main tables
+        fprintf(stderr, "%s: Upgrading table public.%s\n", opt->prog, table.name.data());
+        string sql = "ALTER TABLE public." + table.name +
             " ALTER COLUMN id TYPE uuid USING id::uuid, ALTER COLUMN data TYPE jsonb;";
         ulog_sql(sql, opt);
         try {
             etymon::pgconn_result r(opt->conn, sql);
         } catch (runtime_error& e) {}
-    }
-    // Main tables
-    for (auto& table : schema.tables) {
-        fprintf(stderr, "%s: Upgrading table public.%s\n", opt->prog, table.name.data());
-        string sql = "ALTER TABLE public." + table.name +
+        // History tables
+        fprintf(stderr, "%s: Upgrading table history.%s\n", opt->prog, table.name.data());
+        sql = "ALTER TABLE history." + table.name +
             " ALTER COLUMN id TYPE uuid USING id::uuid, ALTER COLUMN data TYPE jsonb;";
         ulog_sql(sql, opt);
         try {
