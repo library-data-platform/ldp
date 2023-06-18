@@ -1596,3 +1596,49 @@ void database_upgrade_33(database_upgrade_options* opt)
     { etymon::pgconn_result r(opt->conn, "COMMIT;"); }
     ulog_commit(opt);
 }
+
+void database_upgrade_34(database_upgrade_options* opt)
+{
+    dbtype dbt(opt->conn);
+
+    { etymon::pgconn_result r(opt->conn, "BEGIN;"); }
+
+    ldp_schema schema;
+    ldp_schema::make_default_schema(&schema);
+
+    for (auto& table : schema.tables) {
+        fprintf(stderr, "%s: Upgrading table public.%s\n", opt->prog, table.name.data());
+        // public table: id uuid
+        string sql = "ALTER TABLE public." + table.name + " ALTER COLUMN id TYPE uuid USING id::uuid;";
+        ulog_sql(sql, opt);
+        try {
+            etymon::pgconn_result r(opt->conn, sql);
+        } catch (runtime_error& e) {}
+        // public table: data jsonb
+        sql = "ALTER TABLE public." + table.name + " ALTER COLUMN data TYPE jsonb;";
+        ulog_sql(sql, opt);
+        try {
+            etymon::pgconn_result r(opt->conn, sql);
+        } catch (runtime_error& e) {}
+        fprintf(stderr, "%s: Upgrading table history.%s\n", opt->prog, table.name.data());
+        // history table: id uuid
+        sql = "ALTER TABLE history." + table.name + " ALTER COLUMN id TYPE uuid USING id::uuid;";
+        ulog_sql(sql, opt);
+        try {
+            etymon::pgconn_result r(opt->conn, sql);
+        } catch (runtime_error& e) {}
+        // history table: data jsonb
+        sql = "ALTER TABLE history." + table.name + " ALTER COLUMN data TYPE jsonb;";
+        ulog_sql(sql, opt);
+        try {
+            etymon::pgconn_result r(opt->conn, sql);
+        } catch (runtime_error& e) {}
+    }
+
+    string sql = "UPDATE dbsystem.main SET database_version = 34;";
+    ulog_sql(sql, opt);
+    { etymon::pgconn_result r(opt->conn, sql); }
+
+    { etymon::pgconn_result r(opt->conn, "COMMIT;"); }
+    ulog_commit(opt);
+}

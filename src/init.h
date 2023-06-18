@@ -11,6 +11,7 @@ public:
     string ldp_user;
     string ldpconfig_user;
     string datadir;
+    const char* prog;
 };
 
 int64_t latest_database_version();

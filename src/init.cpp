@@ -14,7 +14,7 @@
 
 namespace fs = std::experimental::filesystem;
 
-static int64_t ldp_latest_database_version = 33;
+static int64_t ldp_latest_database_version = 34;
 
 database_upgrade_array database_upgrades[] = {
     nullptr,  // Version 0 has no migration.
@@ -50,7 +50,8 @@ database_upgrade_array database_upgrades[] = {
     database_upgrade_30,
     database_upgrade_31,
     database_upgrade_32,
-    database_upgrade_33
+    database_upgrade_33,
+    database_upgrade_34
 };
 
 int64_t latest_database_version()
@@ -375,16 +376,6 @@ static void upgrade_database_all(etymon::pgconn* conn, const string& ldp_user,
         string ulog_filename = "upgrade_" + to_string(v) + ".sql";
         fs::path ulog_path = ulog_dir / ulog_filename;
         etymon::file ulog_file(ulog_path, "a");
-        if (!upgraded) {
-            fprintf(stderr, "%s: ", prog);
-            print_banner_line(stderr, '=', 74);
-            fprintf(stderr,
-                    "%s: Upgrading database: "
-                    "Do not interrupt the upgrade process\n",
-                    prog);
-            fprintf(stderr, "%s: ", prog);
-            print_banner_line(stderr, '=', 74);
-        }
         fprintf(stderr, "%s: Upgrading: %s\n", prog, to_string(v).c_str());
         print_banner_line(ulog_file.fp, '-', 79);
         fprintf(ulog_file.fp, "-- Upgrading: %s\n", to_string(v).c_str());
@@ -395,6 +386,7 @@ static void upgrade_database_all(etymon::pgconn* conn, const string& ldp_user,
         opt.ldp_user = ldp_user;
         opt.ldpconfig_user = ldpconfig_user;
         opt.datadir = datadir;
+        opt.prog = prog;
         database_upgrades[v](&opt);
         print_banner_line(ulog_file.fp, '-', 79);
         fprintf(ulog_file.fp, "-- Completed upgrade: %s\n",
