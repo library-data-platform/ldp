@@ -1,5 +1,5 @@
-LDP Administrator Guide
-=======================
+LDP 2.x Administrator Guide
+===========================
 
 ##### Contents  
 1\. [Overview](#1-overview)  
