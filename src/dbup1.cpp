@@ -1601,8 +1601,6 @@ void database_upgrade_34(database_upgrade_options* opt)
 {
     dbtype dbt(opt->conn);
 
-    { etymon::pgconn_result r(opt->conn, "BEGIN;"); }
-
     ldp_schema schema;
     ldp_schema::make_default_schema(&schema);
 
@@ -1638,7 +1636,4 @@ void database_upgrade_34(database_upgrade_options* opt)
     string sql = "UPDATE dbsystem.main SET database_version = 34;";
     ulog_sql(sql, opt);
     { etymon::pgconn_result r(opt->conn, sql); }
-
-    { etymon::pgconn_result r(opt->conn, "COMMIT;"); }
-    ulog_commit(opt);
 }
