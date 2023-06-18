@@ -7,7 +7,7 @@ void create_main_table_sql(const string& table_name, etymon::pgconn* conn,
     dbt.redshift_keys("id", "id", &rskeys);
     *sql =
         "CREATE TABLE " + table_name + " (\n"
-        "    id VARCHAR(36) NOT NULL,\n"
+        "    id UUID NOT NULL,\n"
         "    data " + dbt.json_type() + ",\n"
         "    PRIMARY KEY (id)\n"
         ")" + rskeys + ";";
@@ -22,7 +22,7 @@ void create_history_table_sql(const string& table_name,
     *sql =
         "CREATE TABLE IF NOT EXISTS\n"
         "    history." + table_name + " (\n"
-        "    id VARCHAR(36) NOT NULL,\n"
+        "    id UUID NOT NULL,\n"
         "    data " + dbt.json_type() + " NOT NULL,\n"
         "    updated TIMESTAMP WITH TIME ZONE NOT NULL,\n"
         "    CONSTRAINT\n"
