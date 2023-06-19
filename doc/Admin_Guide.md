@@ -37,12 +37,11 @@ LDP instance.
 * Operating systems supported:
   * Linux
 * Database systems supported:
-  * [PostgreSQL](https://www.postgresql.org/) 13 or later
-    * PostgreSQL 15 or later is recommended
+  * [PostgreSQL](https://www.postgresql.org/) 15 or later
     * AWS RDS PostgreSQL optionally may be used (with servers in the
       same zone/subnet); Aurora is not supported
 * Other software dependencies:
-  * [libpq](https://www.postgresql.org/) 13.6 or later
+  * [libpq](https://www.postgresql.org/) 15.3 or later
   * [libcurl](https://curl.haxx.se/) 7.64.0 or later
   * [RapidJSON](https://rapidjson.org/) 1.1.0 or later
 * Required to build from source code:
