@@ -200,8 +200,12 @@ including the dates directly within the query, we will define them as
 parameters: `start_date` and `end_date`.
 
 ```sql
-CREATE FUNCTION local.lisa_count_loans(start_date date, end_date date)
-    RETURNS TABLE(item_id text, loan_count integer) AS
+CREATE FUNCTION local.lisa_count_loans(
+    start_date date DEFAULT '2000-01-01',
+    end_date date DEFAULT '2050-01-01')
+RETURNS TABLE(
+    item_id text,
+    loan_count integer) AS
 $$
 SELECT item_id,
        count(*) AS loan_count
@@ -216,9 +220,9 @@ Now the function can be called with different arguments to generate
 reports:
 
 ```sql
-SELECT * FROM local.lisa_count_loans('2023-01-01', '2024-01-01');
+SELECT * FROM local.lisa_count_loans(start_date => '2022-01-01', end_date => '2023-01-01');
 
-SELECT * FROM local.lisa_count_loans('2022-01-01', '2023-01-01');
+SELECT * FROM local.lisa_count_loans(start_date => '2023-01-01');
 ```
 
 By default, all LDP users share the same user account, and all users
@@ -373,7 +377,7 @@ A lateral join can be used with the function `jsonb_array_elements()`
 (or `json_array_elements()` for LDP 1.x) to convert the elements of a
 JSON array to a set of rows, one row per array element.
 
-For example, if the array elements are simple `varchar` strings:
+For example, if the array elements are simple `text` strings:
 
 ```sql
 CREATE TABLE local.example_array_simple AS
