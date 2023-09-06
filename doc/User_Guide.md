@@ -205,15 +205,17 @@ CREATE FUNCTION local.lisa_count_loans(
     end_date date DEFAULT '2050-01-01')
 RETURNS TABLE(
     item_id text,
-    loan_count integer) AS
-$$
+    loan_count integer)
+AS $$
 SELECT item_id,
        count(*) AS loan_count
     FROM circulation_loans
     WHERE start_date <= loan_date AND loan_date < end_date
     GROUP BY item_id
 $$
-LANGUAGE SQL;
+LANGUAGE SQL
+STABLE
+PARALLEL SAFE;
 ```
 
 Now the function can be called with different arguments to generate
