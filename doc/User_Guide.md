@@ -1,5 +1,5 @@
-LDP 2.x User Guide
-==================
+LDP User Guide
+==============
 
 ##### Contents  
 1\. [Data model](#1-data-model)  
