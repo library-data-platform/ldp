@@ -35,7 +35,7 @@ LDP instance.
 ### Software
 
 * Operating systems supported:
-  * Linux
+  * Linux (Debian 12 recommended)
 * Database systems supported:
   * [PostgreSQL](https://www.postgresql.org/) 15 or later
     * AWS RDS PostgreSQL optionally may be used (with servers in the
@@ -83,12 +83,12 @@ The LDP repository has two types of branches:
 Dependencies required for building the LDP software can be installed
 via a package manager on some platforms.
 
-#### Debian/Ubuntu Linux
+#### Debian Linux
 
 ```
 sudo apt update
 
-sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev postgresql-server-dev-all rapidjson-dev
+sudo apt install cmake g++ libcurl4-openssl-dev libpq-dev rapidjson-dev
 ```
 
 ### Building the software
