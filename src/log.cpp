@@ -114,6 +114,8 @@ void ldp_log::write(log_level lv, const char* type, const string& table,
         if (console && !quiet)
             fprintf(stderr, "%s\n", printmsg.c_str());
         return;
+    default:
+        level_str = "";
     }
 
     // Log the message, and print if the log is not available.
