@@ -1,6 +1,4 @@
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-
-#include <experimental/filesystem>
+#include <filesystem>
 #include <sstream>
 #include <stdexcept>
 
@@ -12,7 +10,7 @@
 #include "schema.h"
 #include "util.h"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 static int64_t ldp_latest_database_version = 34;
 

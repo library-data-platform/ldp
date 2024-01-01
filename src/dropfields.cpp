@@ -1,14 +1,12 @@
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-
 #include <algorithm>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
 #include "dropfields.h"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 void get_drop_field_filename(const ldp_options& opt, string* filename)
 {

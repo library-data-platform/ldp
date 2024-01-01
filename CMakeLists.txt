@@ -24,7 +24,7 @@ set(RapidJSON_DIR "${CMAKE_SOURCE_DIR}/cmake")
 
 #add_subdirectory (src)
 
-SET(MACOS_RAPIDJSON_INCLUDE "-I/opt/homebrew//Cellar/rapidjson/1.1.0/include")
+SET(MACOS_RAPIDJSON_INCLUDE "-I/opt/homebrew/Cellar/rapidjson/1.1.0/include")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pedantic -Wall -Wno-deprecated-declarations ${MACOS_RAPIDJSON_INCLUDE}")
 
 IF(CMAKE_COMPILER_IS_GNUCXX)

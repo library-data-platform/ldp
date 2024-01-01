@@ -1,14 +1,12 @@
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-
 #include <algorithm>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
 #include "addcolumns.h"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 void get_add_column_filename(const ldp_options& opt, string* filename)
 {

@@ -1,8 +1,6 @@
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-
 #include <cstdint>
 #include <curl/curl.h>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <iostream>
 #include <map>
 #include <stdexcept>
@@ -24,7 +22,7 @@
 #include "update.h"
 #include "users.h"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 void make_update_tmp_dir(const ldp_options& opt, string* loaddir)
 {

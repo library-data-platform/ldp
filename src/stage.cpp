@@ -1,8 +1,6 @@
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-
 #include <algorithm>
 #include <cstdio>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <map>
 #include <memory>
 #include <regex>
@@ -22,7 +20,7 @@
 #include "schema.h"
 #include "stage.h"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 namespace json = rapidjson;
 
 const long unsigned int copy_buffer_size = 12500000;
