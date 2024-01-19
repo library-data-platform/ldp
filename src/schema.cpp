@@ -642,20 +642,6 @@ void ldp_schema::make_default_schema(ldp_schema* schema)
     table.anonymize = false;
     table.source_type = data_source_type::rmb;
 
-    table.source_type = data_source_type::notes_link;
-    table.direct_source_table = "mod_notes.link";
-    table.name = "notes_link";
-    table.source_spec = "";
-    schema->tables.push_back(table);
-    table.source_type = data_source_type::rmb;
-
-    table.source_type = data_source_type::notes_note_link;
-    table.direct_source_table = "mod_notes.note_link";
-    table.name = "notes_note_link";
-    table.source_spec = "";
-    schema->tables.push_back(table);
-    table.source_type = data_source_type::rmb;
-
     ///////////////////////////////////////////////////////////////////////////
     table.module_name = "mod-orders-storage";
 
