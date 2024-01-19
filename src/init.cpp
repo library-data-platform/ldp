@@ -49,7 +49,8 @@ database_upgrade_array database_upgrades[] = {
     database_upgrade_31,
     database_upgrade_32,
     database_upgrade_33,
-    database_upgrade_34
+    database_upgrade_34,
+    database_upgrade_35
 };
 
 int64_t latest_database_version()
