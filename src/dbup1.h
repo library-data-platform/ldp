@@ -37,6 +37,7 @@ void database_upgrade_31(database_upgrade_options* opt);
 void database_upgrade_32(database_upgrade_options* opt);
 void database_upgrade_33(database_upgrade_options* opt);
 void database_upgrade_34(database_upgrade_options* opt);
+void database_upgrade_35(database_upgrade_options* opt);
 
 void ulog_sql(const string& sql, database_upgrade_options* opt);
 void ulog_commit(database_upgrade_options* opt);
