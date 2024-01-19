@@ -545,6 +545,32 @@ void retrieve_direct_notes(const PGresult *res, string* j)
         "  }";
 }
 
+void retrieve_direct_notes_link(const PGresult *res, string* j)
+{
+    string id, object_id, object_type;
+    pq_get_value_json_string(res, 0, 0, &id);
+    pq_get_value_json_string(res, 0, 1, &object_id);
+    pq_get_value_json_string(res, 0, 2, &object_type);
+    *j = string("") +
+        "  {\n" +
+        "    \"id\": " + id + ",\n" +
+        "    \"objectId\": " + object_id + ",\n" +
+        "    \"objectType\": " + object_type + "\n" +
+        "  }";
+}
+
+void retrieve_direct_notes_note_link(const PGresult *res, string* j)
+{
+    string id, link_id;
+    pq_get_value_json_string(res, 0, 0, &id);
+    pq_get_value_json_string(res, 0, 2, &link_id);
+    *j = string("") +
+        "  {\n" +
+        "    \"id\": " + id + ",\n" +
+        "    \"linkId\": " + link_id + "\n" +
+        "  }";
+}
+
 bool try_retrieve_direct(const data_source& source, ldp_log* lg,
                      const table_schema& table, const string& loadDir,
                      extraction_files* ext_files, bool direct_extraction_no_ssl, const char* instance)
@@ -566,6 +592,12 @@ bool try_retrieve_direct(const data_source& source, ldp_log* lg,
     }
     if (table.source_type == data_source_type::notes) {
         attr = "id,title,content,indexed_content,domain,type_id,pop_up_on_user,pop_up_on_user,created_by,created_date,updated_by,updated_date";
+    }
+    if (table.source_type == data_source_type::notes_link) {
+        attr = "id,object_id,object_type";
+    }
+    if (table.source_type == data_source_type::notes_note_link) {
+        attr = "note_id AS id,link_id";
     }
 
     // Select from table.direct_source_table and write to JSON file.
@@ -619,6 +651,12 @@ bool try_retrieve_direct(const data_source& source, ldp_log* lg,
             retrieve_direct_srs_records(res.result, &j);
             break;
         case data_source_type::notes:
+            retrieve_direct_notes(res.result, &j);
+            break;
+        case data_source_type::notes_link:
+            retrieve_direct_notes(res.result, &j);
+            break;
+        case data_source_type::notes_note_link:
             retrieve_direct_notes(res.result, &j);
             break;
         default:
