@@ -1637,7 +1637,7 @@ void database_upgrade_35(database_upgrade_options* opt)
     upgrade_add_new_table_dbsystem("notes_link", opt, dbt, false);
     upgrade_add_new_table_dbsystem("notes_note_link", opt, dbt, false);
 
-    string sql = "UPDATE dbsystem.main SET database_version = 34;";
+    string sql = "UPDATE dbsystem.main SET database_version = 35;";
     ulog_sql(sql, opt);
     { etymon::pgconn_result r(opt->conn, sql); }
 
