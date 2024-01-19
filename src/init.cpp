@@ -12,7 +12,7 @@
 
 namespace fs = std::filesystem;
 
-static int64_t ldp_latest_database_version = 34;
+static int64_t ldp_latest_database_version = 35;
 
 database_upgrade_array database_upgrades[] = {
     nullptr,  // Version 0 has no migration.
