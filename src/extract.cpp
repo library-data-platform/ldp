@@ -563,7 +563,7 @@ void retrieve_direct_notes_note_link(const PGresult *res, string* j)
 {
     string id, link_id;
     pq_get_value_json_string(res, 0, 0, &id);
-    pq_get_value_json_string(res, 0, 2, &link_id);
+    pq_get_value_json_string(res, 0, 1, &link_id);
     *j = string("") +
         "  {\n" +
         "    \"id\": " + id + ",\n" +
