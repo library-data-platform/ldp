@@ -654,10 +654,10 @@ bool try_retrieve_direct(const data_source& source, ldp_log* lg,
             retrieve_direct_notes(res.result, &j);
             break;
         case data_source_type::notes_link:
-            retrieve_direct_notes(res.result, &j);
+            retrieve_direct_notes_link(res.result, &j);
             break;
         case data_source_type::notes_note_link:
-            retrieve_direct_notes(res.result, &j);
+            retrieve_direct_notes_note_link(res.result, &j);
             break;
         default:
             throw runtime_error("internal error: unknown value for data_source_type");
