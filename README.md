@@ -1,7 +1,7 @@
 LDP
 ===
 
-Copyright (C) 2019-2023 The Open Library Foundation  
+Copyright (C) 2019-2024 The Open Library Foundation  
 Copyright (C) 2019-2020 Index Data  
 Copyright (C) 1998-2006 Etymon Systems
 
