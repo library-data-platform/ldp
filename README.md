@@ -10,8 +10,7 @@ Version 2.0.  See the file
 [LICENSE](https://github.com/folio-org/ldp/blob/master/LICENSE) for more
 information.
 
-See
-[CURL_LICENSE](https://github.com/folio-org/ldp/blob/master/CURL_LICENSE)
+See [CURL_LICENSE](https://github.com/folio-org/ldp/blob/master/CURL_LICENSE)
 for copyright and license information for Curl/libcurl.
 
 __LDP is open-source software that provides an analytics capability
